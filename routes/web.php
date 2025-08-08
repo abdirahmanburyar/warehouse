@@ -38,6 +38,7 @@ use App\Http\Controllers\LogisticCompanyController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\ReasonController;
 use App\Http\Controllers\ReorderLevelController;
+use Maatwebsite\Excel\Facades\Excel;
 
 // Welcome route - accessible without authentication
 
@@ -655,6 +656,12 @@ Route::controller(LocationController::class)
             // upload assets excel file 
             Route::post('/assets/import', 'import')->name('assets.import');
 
+            // export
+            Route::get('/assets/export', function(\Illuminate\Http\Request $request){
+                if (!auth()->user()->can('asset-export')) { abort(403); }
+                return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\AssetsExport($request->all()), 'assets.xlsx');
+            })->name('assets.export');
+
             // Asset Document Upload Route
             Route::post('/assets/documents/store', 'storeDocument')->name('assets.documents.store');
 
@@ -673,6 +680,17 @@ Route::controller(LocationController::class)
             Route::get('/history', 'getAllAssetHistory')->name('assets.history.index');
             Route::get('/{asset}/debug-approval', 'debugApprovalWorkflow')->name('assets.debug-approval');
         });
+
+    // Assignees API (minimal for inline creation)
+    Route::post('assets-management/assignees', [\App\Http\Controllers\AssigneeController::class, 'store'])->name('assets.assignees.store');
+
+    // Asset Types
+    Route::prefix('assets-management/types')->controller(\App\Http\Controllers\AssetTypeController::class)->group(function(){
+        Route::get('/', 'index')->name('assets.types.index');
+        Route::post('/', 'store')->name('assets.types.store');
+        Route::put('/{assetType}', 'update')->name('assets.types.update');
+        Route::delete('/{assetType}', 'destroy')->name('assets.types.destroy');
+    });
 
     // Inventory Management Routes
     Route::prefix('inventory')->group(function () {

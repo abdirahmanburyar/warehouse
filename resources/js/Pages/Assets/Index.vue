@@ -22,7 +22,7 @@
                             </div>
                         </div>
                         <div class="mt-6 sm:mt-0 flex space-x-3">
-                            <Link v-if="page.props.auth.can.asset_import" :href="route('assets.create')"
+                            <Link v-if="page.props.auth.can.asset_create" :href="route('assets.create')"
                                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-indigo-700 bg-white hover:bg-indigo-50 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                                 class="w-4 h-4 mr-2">
@@ -47,7 +47,7 @@
                                 </svg>
                                 Export
                             </button>
-                            <button v-if="page.props.auth.can.asset_import" @click="showImportModal = true"
+                            <button v-if="page.props.auth.can.asset_bulk_import" @click="showImportModal = true"
                                 class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                                     class="w-4 h-4 mr-2">
@@ -140,56 +140,103 @@
 
             <!-- Filter and Search Section -->
             <div class="bg-white rounded-xl">
-                <div class="p-3">
-                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                        <div>
+                <div class="p-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-6 gap-4">
+                        <div class="lg:col-span-2">
                             <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                        class="w-4 h-4 text-gray-400">
-                                        <path fill-rule="evenodd"
-                                            d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
-                                            clip-rule="evenodd" />
-                                    </svg>
-                                </div>
-                                <input v-model="search" type="text" id="search"
-                                    class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="Search by asset tag, model, or brand..." />
-                            </div>
+                            <input v-model="search" type="text" id="search"
+                                class="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="Search by name, tag no, serial, source..." />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                            <Multiselect v-model="categoryFilter" :options="props.categories || []" placeholder="All Categories"
+                                label="name" track-by="id" :show-labels="false" :close-on-select="true" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Asset Type</label>
+                            <Multiselect v-model="typeFilter" :options="filteredTypeOptions" :placeholder="categoryFilter ? 'All Types' : 'Select Category first'"
+                                label="name" track-by="id" :show-labels="false" :close-on-select="true" :disabled="!categoryFilter" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Assignee</label>
+                            <Multiselect v-model="assigneeFilter" :options="props.assignees || []" placeholder="All Assignees"
+                                label="name" track-by="id" :show-labels="false" :close-on-select="true" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Region</label>
+                            <Multiselect v-model="regionFilter" :options="regionOptions" placeholder="All Regions"
+                                label="name" track-by="id" :show-labels="false" :close-on-select="true" />
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                            <Multiselect v-model="selectedLocation" :options="safeLocationOptions" placeholder="All Locations"
-                                label="name" track-by="id" :show-labels="false" :close-on-select="true"
-                                :clear-on-select="false" :preserve-search="true" />
+                            <Multiselect
+                                v-model="locationFilter"
+                                :options="locationOptions"
+                                :placeholder="regionFilter ? 'All Locations' : 'Select Region first'"
+                                label="name"
+                                track-by="id"
+                                :show-labels="false"
+                                :close-on-select="true"
+                                :disabled="!regionFilter"
+                                @select="onLocationChange"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Sub-location</label>
+                            <Multiselect
+                                v-model="subLocationFilter"
+                                :options="subLocationOptions"
+                                :placeholder="locationFilter ? 'All Sub-locations' : 'Select Location first'"
+                                label="name"
+                                track-by="id"
+                                :show-labels="false"
+                                :close-on-select="true"
+                                :disabled="!locationFilter"
+                            />
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                             <Multiselect v-model="selectedStatus" :options="statusOptions" placeholder="All Statuses"
-                                label="label" track-by="value" :show-labels="false" :close-on-select="true"
-                                :clear-on-select="false" :preserve-search="true" />
+                                label="label" track-by="value" :show-labels="false" :close-on-select="true" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Acquisition From</label>
+                            <input v-model="acquisitionFrom" type="date" class="block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Acquisition To</label>
+                            <input v-model="acquisitionTo" type="date" class="block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Created From</label>
+                            <input v-model="createdFrom" type="date" class="block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Created To</label>
+                            <input v-model="createdTo" type="date" class="block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" />
                         </div>
 
                         <div class="flex items-end space-x-2">
                             <button @click="clearFilters"
                                 class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm">
-                                Clear Filters
+                                Clear
                             </button>
-                        </div>
-
-                        <div class="flex justify-emd">
-                            <div class="flex items-center space-x-2">
-                                <select v-model="per_page" @change="props.filters.page = 1"
-                                    class="w-[200px] border border-gray-300 rounded-md py-1 px-3 text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                    <option value="10">10 Per Page</option>
-                                    <option value="25">25 Per Page</option>
-                                    <option value="50">50 Per Page</option>
-                                    <option value="100">100 Per Page</option>
-                                </select>
-                            </div>
+                            <select v-model="per_page" @change="props.filters.page = 1; reloadAssets();"
+                                class="w-[140px] border border-gray-300 rounded-md py-2 px-3 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="10">10 / page</option>
+                                <option value="25">25 / page</option>
+                                <option value="50">50 / page</option>
+                                <option value="100">100 / page</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -256,14 +303,6 @@
                                         <span>Value & Source</span>
                                     </div>
                                 </th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-white capitalize tracking-wider border-r border-slate-600 last:border-r-0">
-                                    <div class="flex items-center space-x-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-                                            <path fill-rule="evenodd" d="M15.621 4.379a3 3 0 00-4.242 0l-7 7a3 3 0 004.241 4.243h.001l.497-.5a.75.75 0 011.064 1.057l-.498.501-.002.002a4.5 4.5 0 01-6.364-6.364l7-7a4.5 4.5 0 016.368 6.36l-3.455 3.553A2.625 2.625 0 119.52 9.52l3.45-3.451a.75.75 0 111.061 1.06l-3.45 3.451a1.125 1.125 0 001.587 1.595l3.454-3.553a3 3 0 000-4.242z" clip-rule="evenodd" />
-                                        </svg>
-                                        <span>Files</span>
-                                    </div>
-                                </th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-white capitalize tracking-wider">
                                     <div class="flex items-center space-x-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
@@ -280,13 +319,15 @@
                                 <td class="px-6 py-5 border-r border-gray-100 last:border-r-0">
                                     <div class="flex items-center">
                                         <div class="ml-4 flex-1">
-                                            <div class="flex items-center space-x-3">
+                                            <div class="flex flex-col">
                                                 <div class="text-sm font-semibold text-gray-900">
                                                     <Link :href="route('assets.show', asset.id)"
                                                         class="hover:text-indigo-600 transition-colors">
-                                                    {{ asset.asset_tag }}
+                                                    {{ asset.name || asset.asset_tag }}
                                                     </Link>
                                                 </div>
+                                                <div v-if="asset.tag_no" class="text-xs text-gray-500">Tag: {{ asset.tag_no }}</div>
+                                                <div class="text-xs text-gray-500">Type: {{ asset.type?.name }}</div>
                                             </div>
                                             <div class="flex items-center space-x-3 mt-2">
                                                 <span class="text-sm font-medium text-gray-600">S/N:</span>
@@ -300,24 +341,14 @@
                                                 </div>
                                                 <!-- Assignment Status Indicator -->
                                                 <div class="flex items-center text-xs">
-                                                    <span v-if="asset.person_assigned"
+                                                    <span
                                                         class="inline-flex items-center text-sm text-green-700">
                                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
                                                             fill="currentColor" class="w-4 h-4 mr-1">
                                                             <path
                                                                 d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" />
                                                         </svg>
-                                                        {{ asset.person_assigned }}
-                                                    </span>
-                                                    <span v-else
-                                                        class="inline-flex items-center text-sm text-orange-600">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                            fill="currentColor" class="w-4 h-4 mr-1">
-                                                            <path fill-rule="evenodd"
-                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zM10 15a1 1 0 100-2 1 1 0 000 2z"
-                                                                clip-rule="evenodd" />
-                                                        </svg>
-                                                        Unassigned
+                                                        {{ asset.assignee?.name || 'N/A' }}
                                                     </span>
                                                 </div>
                                             </div>
@@ -461,18 +492,7 @@
                                 </td>
 
                                     <!-- Files Column -->
-                                    <td class="px-6 py-5 border-r border-gray-100 last:border-r-0">
-                                        <div v-if="asset.attachments && asset.attachments.length > 0"
-                                            class="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-amber-50 to-amber-100 text-amber-700 text-xs font-medium rounded-md border border-amber-200 shadow-sm">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3 mr-1">
-                                                <path fill-rule="evenodd" d="M15.621 4.379a3 3 0 00-4.242 0l-7 7a3 3 0 004.241 4.243h.001l.497-.5a.75.75 0 011.064 1.057l-.498.501-.002.002a4.5 4.5 0 01-6.364-6.364l7-7a4.5 4.5 0 016.368 6.36l-3.455 3.553A2.625 2.625 0 119.52 9.52l3.45-3.451a.75.75 0 111.061 1.06l-3.45 3.451a1.125 1.125 0 001.587 1.595l3.454-3.553a3 3 0 000-4.242z" clip-rule="evenodd" />
-                                            </svg>
-                                            {{ asset.attachments.length }} file(s)
-                                        </div>
-                                        <div v-else class="text-sm text-gray-500">
-                                            No files
-                                        </div>
-                                    </td>
+                                    
 
                                     <!-- Actions Dropdown Column -->
                                     <td class="px-6 py-5 relative">
@@ -1058,6 +1078,9 @@ const props = defineProps({
         type: Array,
         required: true,
     },
+    categories: { type: Array, required: false },
+    types: { type: Array, required: false },
+    assignees: { type: Array, required: false },
     assets: {
         type: Object,
         required: true,
@@ -1157,6 +1180,23 @@ const locationFilter = ref(null);
 const subLocationFilter = ref(null);
 const subLocationOptions = ref([]);
 const fundSourceFilter = ref(null);
+const categoryFilter = ref(null);
+const typeFilter = ref(null);
+const assigneeFilter = ref(null);
+const acquisitionFrom = ref(props.filters?.acquisition_from || '');
+const acquisitionTo = ref(props.filters?.acquisition_to || '');
+const createdFrom = ref(props.filters?.created_from || '');
+const createdTo = ref(props.filters?.created_to || '');
+
+const filteredTypeOptions = computed(() => {
+    if (!props.types) return [];
+    if (!categoryFilter.value) return [];
+    return props.types.filter(t => t.asset_category_id === categoryFilter.value.id);
+});
+
+watch(() => categoryFilter.value, () => {
+    typeFilter.value = null;
+});
 
 // Dropdown functionality
 const activeDropdown = ref(null);
@@ -1212,6 +1252,14 @@ const locationOptions = computed(() => {
     return (props.locations || []).filter(location =>
         locationIdsInRegion.has(location.id)
     );
+});
+
+// Clear dependent filters when region changes
+watch(() => regionFilter.value, () => {
+    locationFilter.value = null;
+    subLocationFilter.value = null;
+    subLocationOptions.value = [];
+    selectedSubLocations.value = [];
 });
 
 
@@ -1302,6 +1350,14 @@ watch(
         () => (regionFilter.value ? regionFilter.value.id : null),
         () => (locationFilter.value ? locationFilter.value.id : null),
         () => (fundSourceFilter.value ? fundSourceFilter.value.id : null),
+        () => (categoryFilter.value ? categoryFilter.value.id : null),
+        () => (typeFilter.value ? typeFilter.value.id : null),
+        () => (assigneeFilter.value ? assigneeFilter.value.id : null),
+        () => (subLocationFilter.value ? subLocationFilter.value.id : null),
+        () => acquisitionFrom.value,
+        () => acquisitionTo.value,
+        () => createdFrom.value,
+        () => createdTo.value,
     ],
     () => {
         reloadAssets();
@@ -1343,6 +1399,16 @@ function reloadAssets() {
     }
     if (fundSourceFilter.value && fundSourceFilter.value.id)
         query.fund_source_id = fundSourceFilter.value.id;
+    if (categoryFilter.value && categoryFilter.value.id)
+        query.category_id = categoryFilter.value.id;
+    if (typeFilter.value && typeFilter.value.id)
+        query.type_id = typeFilter.value.id;
+    if (assigneeFilter.value && assigneeFilter.value.id)
+        query.assignee_id = assigneeFilter.value.id;
+    if (acquisitionFrom.value) query.acquisition_from = acquisitionFrom.value;
+    if (acquisitionTo.value) query.acquisition_to = acquisitionTo.value;
+    if (createdFrom.value) query.created_from = createdFrom.value;
+    if (createdTo.value) query.created_to = createdTo.value;
     router.get(route("assets.index"), query, {
         preserveState: true,
         preserveScroll: true,
@@ -1466,36 +1532,12 @@ const importAssets = async () => {
     }
 };
 
-// Excel export function
+// Server-side export function
 const exportToExcel = () => {
-    // Prepare the data
-    const exportData = props.assets.data.map((asset) => ({
-        "Asset Tag": asset.asset_tag,
-        Category: asset.category?.name || '',
-        "Serial Number": asset.serial_number,
-        Description: asset.item_description,
-        "Assigned To": asset.person_assigned,
-        Region: asset.region?.name || '',
-        Location: asset.location?.name || '',
-        "Sub Location": asset.sub_location?.name || "",
-        "Acquisition Date": formatDate(asset.acquisition_date),
-        Status: formatStatus(asset.status),
-        "Original Value": asset.original_value,
-        "Source Agency": asset.fund_source?.name || "",
-        "Approval Status": asset.submitted_for_approval ? 'Pending Approval' : 'Approved',
-    }));
-
-    // Create worksheet
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Assets");
-
-    // Generate file name with current date
-    const date = new Date().toISOString().split("T")[0];
-    const fileName = `assets_${date}.xlsx`;
-
-    // Save the file
-    XLSX.writeFile(workbook, fileName);
+    const params = {};
+    if (selectedStatus?.value) params.status = [selectedStatus.value];
+    if (selectedLocation?.id) params.location_id = selectedLocation.id;
+    window.location.href = route('assets.export', params);
 };
 
 // Clear all filters
@@ -1625,7 +1667,7 @@ async function processTransferApproval() {
 
     processingApproval.value = true;
     try {
-        const response = await axios.post(route('assets.transfer.approve', selectedAsset.value.id), {
+    const response = await axios.post(route('assets.approve-transfer', selectedAsset.value.id), {
             approval_id: transferApprovalData.approval_id,
             action: transferApprovalData.action,
             notes: transferApprovalData.notes

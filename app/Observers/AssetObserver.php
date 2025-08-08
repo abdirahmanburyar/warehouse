@@ -14,7 +14,7 @@ class AssetObserver
     {
         CustodyHistory::create([
             'asset_id' => $asset->id,
-            'custodian' => $asset->person_assigned,
+            'custodian' => $asset->person_assigned ?? 'Unassigned',
             'assigned_by' => auth()->id(),
             'assigned_at' => now(),
             'status' => $asset->status,

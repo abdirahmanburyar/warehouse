@@ -14,25 +14,57 @@ class Asset extends Model
     use HasFactory, SoftDeletes, HasApprovals;
 
     protected $fillable = [
+        'uuid',
+        'tag_no',
+        'name',
         'asset_tag',
         'asset_category_id',
+        'type_id',
         'serial_number',
-        'item_description',
-        'person_assigned',
         'asset_location_id',
-        'sub_location_id',
+        'assigned_to',
+        'assignee_id',
         'fund_source_id',
         'region_id',
+        'sub_location_id',
+        'sub_location',
         'acquisition_date',
+        'purchase_date',
+        'cost',
+        'supplier',
+        'transfer_date',
         'status',
         'original_value',
         'has_warranty',
         'has_documents',
         'asset_warranty_start',
         'asset_warranty_end',
+        'warranty_start',
+        'warranty_months',
+        'maintenance_interval_months',
+        'last_maintenance_at',
+        'metadata',
         'submitted_for_approval',
         'submitted_at',
         'submitted_by'
+    ];
+
+    protected $casts = [
+        'uuid' => 'string',
+        'acquisition_date' => 'date',
+        'purchase_date' => 'date',
+        'transfer_date' => 'date',
+        'asset_warranty_start' => 'date',
+        'asset_warranty_end' => 'date',
+        'warranty_start' => 'date',
+        'last_maintenance_at' => 'date',
+        'submitted_at' => 'datetime',
+        'metadata' => 'array',
+        'has_warranty' => 'boolean',
+        'has_documents' => 'boolean',
+        'submitted_for_approval' => 'boolean',
+        'cost' => 'decimal:2',
+        'original_value' => 'decimal:2',
     ];
 
 
@@ -46,9 +78,19 @@ class Asset extends Model
         return $this->belongsTo(FundSource::class, 'fund_source_id');
     }
 
-    public function location()
+    public function location(): BelongsTo
     {
         return $this->belongsTo(AssetLocation::class, 'asset_location_id');
+    }
+
+    public function type(): BelongsTo
+    {
+        return $this->belongsTo(AssetType::class, 'type_id');
+    }
+
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(Assignee::class, 'assignee_id');
     }
     
     /**
@@ -64,7 +106,7 @@ class Asset extends Model
         return $this->belongsTo(AssetCategory::class, 'asset_category_id');
     }
 
-    public function subLocation()
+    public function subLocation(): BelongsTo
     {
         return $this->belongsTo(SubLocation::class, 'sub_location_id');
     }

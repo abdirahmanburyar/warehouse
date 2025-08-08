@@ -755,11 +755,10 @@ class DashboardController extends Controller
         $colors = [
             'Regional Hospital' => 'red',
             'District Hospital' => 'orange',
-            'Health Centre' => 'blue',
+            'Health Center' => 'blue',
             'Primary Health Unit' => 'green',
             'regional hospital' => 'red',
             'district hospital' => 'orange',
-            'health centre' => 'blue',
             'primary health unit' => 'green'
         ];
 
@@ -771,11 +770,10 @@ class DashboardController extends Controller
         $abbreviations = [
             'Regional Hospital' => 'RH',
             'District Hospital' => 'DH',
-            'Health Centre' => 'HC',
+            'Health Center' => 'HC',
             'Primary Health Unit' => 'PHU',
             'regional hospital' => 'RH',
             'district hospital' => 'DH',
-            'health centre' => 'HC',
             'primary health unit' => 'PHU'
         ];
 

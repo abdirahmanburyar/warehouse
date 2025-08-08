@@ -7,7 +7,9 @@ use App\Models\SubLocation;
 use App\Models\AssetLocation;
 use App\Models\Region;
 use App\Models\User;
+use App\Models\Assignee;
 use App\Models\AssetCategory;
+use App\Models\AssetType;
 use App\Models\CustodyHistory;
 use App\Models\FundSource;
 use App\Models\AssetAttachment;
@@ -26,7 +28,12 @@ class AssetController extends Controller
         $assets = Asset::query();
 
         if($request->filled('search')){
-            $assets->whereLike('asset_tag', '%'.$request->search.'%');
+            $assets->whereLike('asset_tag', '%'.$request->search.'%')   
+                ->orWhereLike('name', '%'.$request->search.'%')
+                ->orWhereLike('serial_number', '%'.$request->search.'%')
+                ->orWhereHas('fundSource', function($query) use ($request){
+                    $query->where('name', 'like', '%'.$request->search.'%');
+                });
         }
 
         if($request->filled('region_id')){
@@ -47,7 +54,40 @@ class AssetController extends Controller
             $assets->where('fund_source_id', $request->fund_source_id);
         }
 
-        $assets = $assets->with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history','attachments','fundSource','region:id,name')
+        // New filters
+        if ($request->filled('category_id')) {
+            $assets->where('asset_category_id', $request->category_id);
+        }
+        if ($request->filled('type_id')) {
+            $assets->where('type_id', $request->type_id);
+        }
+        if ($request->filled('assignee_id')) {
+            $assets->where('assignee_id', $request->assignee_id);
+        }
+        if ($request->filled('acquisition_from') || $request->filled('acquisition_to')) {
+            $from = $request->input('acquisition_from');
+            $to = $request->input('acquisition_to');
+            if ($from && $to) {
+                $assets->whereBetween('acquisition_date', [$from, $to]);
+            } elseif ($from) {
+                $assets->whereDate('acquisition_date', '>=', $from);
+            } elseif ($to) {
+                $assets->whereDate('acquisition_date', '<=', $to);
+            }
+        }
+        if ($request->filled('created_from') || $request->filled('created_to')) {
+            $from = $request->input('created_from');
+            $to = $request->input('created_to');
+            if ($from && $to) {
+                $assets->whereBetween('created_at', [$from, $to]);
+            } elseif ($from) {
+                $assets->whereDate('created_at', '>=', $from);
+            } elseif ($to) {
+                $assets->whereDate('created_at', '<=', $to);
+            }
+        }
+
+        $assets = $assets->with('category:id,name','type:id,name','location:id,name', 'subLocation:id,name', 'assignee:id,name', 'history','attachments','fundSource','region:id,name')
             ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
@@ -56,13 +96,19 @@ class AssetController extends Controller
         $count = Asset::count();
 
         $locations = AssetLocation::with('subLocations')->get();
+        $categories = AssetCategory::select('id','name')->get();
+        $types = AssetType::select('id','name','asset_category_id')->get();
+        $assignees = Assignee::select('id','name')->get();
         return inertia('Assets/Index', [
             'locations' => $locations,
             'assets' => AssetResource::collection($assets),
-            'filters' => $request->only('page','per_page','search','region_id','location_id','sub_location_id','fund_source_id'),
+            'filters' => $request->only('page','per_page','search','region_id','location_id','sub_location_id','fund_source_id','category_id','type_id','assignee_id','acquisition_from','acquisition_to','created_from','created_to'),
             'assetsCount' => $count,
             'regions' => Region::get(),
             'fundSources' => FundSource::get(),
+            'categories' => $categories,
+            'types' => $types,
+            'assignees' => $assignees,
         ]);
     }
 
@@ -78,24 +124,14 @@ class AssetController extends Controller
             foreach ($request->documents as $document) {
                 $asset = Asset::findOrFail($document['asset_id']);
                 if (!empty($document['type']) && !empty($document['file'])) {
-                    // Handle file upload
+                    // Handle file upload to storage/app/public/assets/{asset_id}
                     if (is_object($document['file']) && method_exists($document['file'], 'getClientOriginalName')) {
                         $fileName = time() . '_' . $document['file']->getClientOriginalName();
-                        
-                        // Create documents directory if it doesn't exist
-                        $documentPath = public_path('documents');
-                        if (!file_exists($documentPath)) {
-                            mkdir($documentPath, 0755, true);
-                        }
-                        
-                        // Move the file to the public directory
-                        $document['file']->move($documentPath, $fileName);
-                        $filePath = 'documents/' . $fileName;
-                        
+                        $path = $document['file']->storeAs("assets/{$asset->id}", $fileName, 'public');
                         // Create attachment record
                         $asset->attachments()->create([
                             'type' => $document['type'],
-                            'file' => $filePath
+                            'file' => "storage/{$path}"
                         ]);
                     }
                 }
@@ -253,11 +289,17 @@ class AssetController extends Controller
         $categories = AssetCategory::all();
         $fundSources = fundSource::get();
         $regions = Region::get();
+        $types = AssetType::all();
+        $users = User::select('id','name','email')->get();
+        $assignees = Assignee::select('id','name')->orderBy('name')->get();
         return Inertia::render('Assets/Create', [
             'locations' => $locations,
             'categories' => $categories,
             'fundSources' => $fundSources,
-            'regions' => $regions
+            'regions' => $regions,
+            'types' => $types,
+            'users' => $users,
+            'assignees' => $assignees,
         ]);
     }
 
@@ -270,7 +312,8 @@ class AssetController extends Controller
             $request->validate([
                 'file' => 'required|file|mimes:xlsx,xls'
             ]);
-            Excel::import(new AssetsImport, $request->file('file'));
+            // Queue the import job
+            Excel::queue(new AssetsImport, $request->file('file'));
             return response()->json('Import started. You will be notified when complete.');
         } catch (\Throwable $e) {
             return response($e->getMessage(), 500);
@@ -290,8 +333,8 @@ class AssetController extends Controller
                 'asset_location_id' => 'required',
                 'sub_location_id' => 'required',
                 'serial_number' => 'required|string|max:255|unique:assets,serial_number,' . $request->id,
-                'item_description' => 'required|string',
-                'person_assigned' => 'required',
+                'item_description' => 'nullable|string',
+                'person_assigned' => 'nullable|string',
                 'acquisition_date' => 'required|date',
                 'status' => 'required|string|in:active,in_use,maintenance,retired,disposed',
                 'original_value' => 'required|numeric|min:0',
@@ -299,6 +342,23 @@ class AssetController extends Controller
                 'has_documents' => 'required|in:0,1,true,false',
                 'asset_warranty_start' => 'nullable|date|required_if:has_warranty,1',
                 'asset_warranty_end' => 'nullable|date|required_if:has_warranty,1|after_or_equal:asset_warranty_start',
+                // New optional fields
+                'tag_no' => 'nullable|string|unique:assets,tag_no',
+                'name' => 'nullable|string|max:255',
+                'type_id' => 'nullable|exists:asset_types,id',
+                'assigned_to' => 'nullable|exists:users,id',
+                'assignee_id' => 'nullable|exists:assignees,id',
+                'assignee_name' => 'nullable|string|max:255',
+                'assignee_email' => 'nullable|email',
+                'assignee_phone' => 'nullable|string|max:50',
+                'assignee_department' => 'nullable|string|max:100',
+                'serial_no' => 'nullable|string|max:255',
+                'purchase_date' => 'nullable|date',
+                'cost' => 'nullable|numeric',
+                'supplier' => 'nullable|string|max:255',
+                'warranty_months' => 'nullable|integer|min:0',
+                'maintenance_interval_months' => 'nullable|integer|min:0',
+                'last_maintenance_at' => 'nullable|date',
                 'documents' => 'array|required_if:has_documents,1',
                 'documents.*.type' => 'required_if:has_documents,1|string',
                 'documents.*.file' => 'nullable'
@@ -309,23 +369,53 @@ class AssetController extends Controller
             $hasDocuments = filter_var($request->has_documents, FILTER_VALIDATE_BOOLEAN);
             
             // Create asset data array with the correct IDs
+            // Use provided assignee or create a new one if details provided
+            $assigneeId = null;
+            // If a valid assignee_id provided and exists, use it
+            if ($request->filled('assignee_id')) {
+                $assigneeId = optional(\App\Models\Assignee::find($request->assignee_id))->id;
+            }
+            if (!$assigneeId && ($request->assignee_name)) {
+                $assignee = Assignee::create([
+                    'name' => $request->assignee_name,
+                    'email' => $request->assignee_email,
+                    'phone' => $request->assignee_phone,
+                    'department' => $request->assignee_department,
+                ]);
+                $assigneeId = $assignee->id;
+            }
+
             $assetData = [
+                'tag_no' => $request->tag_no,
+                'name' => $request->name,
                 'asset_tag' => $request->asset_tag,
                 'asset_category_id' => $request->asset_category_id,
+                'type_id' => $request->type_id,
                 'serial_number' => $request->serial_number,
+                'serial_no' => $request->serial_no,
                 'item_description' => $request->item_description,
-                'person_assigned' => $request->person_assigned,
+                'person_assigned' => $request->person_assigned
+                    ?: optional(User::find($request->assigned_to))->name
+                    ?: optional(Assignee::find($assigneeId))->name,
                 'asset_location_id' => $request->asset_location_id,
                 'sub_location_id' => $request->sub_location_id,
+                'assigned_to' => $request->assigned_to,
+                'assignee_id' => $assigneeId,
                 'fund_source_id' => $request->fund_source_id,
                 'region_id' => $request->region_id,
                 'acquisition_date' => $request->acquisition_date,
+                'purchase_date' => $request->purchase_date,
+                'cost' => $request->cost,
+                'supplier' => $request->supplier,
                 'status' => $request->status,
                 'original_value' => $request->original_value,
                 'has_warranty' => $hasWarranty,
                 'has_documents' => $hasDocuments,
                 'asset_warranty_start' => $hasWarranty ? $request->asset_warranty_start : null,
-                'asset_warranty_end' => $hasWarranty ? $request->asset_warranty_end : null
+                'asset_warranty_end' => $hasWarranty ? $request->asset_warranty_end : null,
+                'warranty_months' => $request->warranty_months,
+                'maintenance_interval_months' => $request->maintenance_interval_months,
+                'last_maintenance_at' => $request->last_maintenance_at,
             ];
             
             // Create or update the asset
@@ -379,18 +469,20 @@ class AssetController extends Controller
 
     public function edit(Asset $asset)
     {
-        $asset = Asset::with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history', 'attachments', 'fundSource', 'region')
+        $asset = Asset::with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history', 'attachments', 'fundSource', 'region', 'assignee')
             ->findOrFail($asset->id);
         $locations = AssetLocation::all();
         $categories = AssetCategory::all();
         $fundSources = fundSource::get();
         $regions = Region::get();
+        $types = AssetType::all();
         return Inertia::render('Assets/Edit', [
             'asset' => $asset,
             'locations' => $locations,
             'categories' => $categories,
             'fundSources' => $fundSources,
-            'regions' => $regions
+            'regions' => $regions,
+            'types' => $types,
         ]);
     }
 
@@ -401,8 +493,8 @@ class AssetController extends Controller
                 'asset_tag' => 'required|string|max:255',
                 'asset_category_id' => 'required|exists:asset_categories,id',
                 'serial_number' => 'required|string|max:255|unique:assets,serial_number,' . $asset->id,
-                'item_description' => 'required|string',
-                'person_assigned' => 'required',
+                'item_description' => 'nullable|string',
+                'person_assigned' => 'nullable',
                 'asset_location_id' => 'required',
                 'sub_location_id' => 'required',
                 'region_id' => 'required',

@@ -70,10 +70,10 @@ class PermissionSeeder extends Seeder
             'asset-view',
             'asset-create',
             'asset-edit',
-            'asset-toggle',
-            'asset-review',
+            'asset-delete',
             'asset-approve',
-            'asset-reject',
+            'asset-bulk-import',
+            'asset-export',
             
             // Purchase Order Management (with approval workflow)
             'purchase-order-manage',

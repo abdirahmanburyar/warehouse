@@ -13,6 +13,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         $schedule->command('assets:notify-warranty-expiring')->daily();
+        $schedule->command('assets:generate-maintenance-schedules')->dailyAt('01:10');
+        $schedule->command('assets:notify-maintenance-due')->dailyAt('08:00');
         // Generate inventory report on the first day of each month at 00:01 AM
         $schedule->command('inventory:generate-report')->monthlyOn(1, '00:01');
         // Generate AMC records on the first day of each month at 00:01 AM

@@ -30,6 +30,11 @@ const props = defineProps({
         required: true,
         default: () => [],
     },
+    types: {
+        type: Array,
+        required: false,
+        default: () => [],
+    },
     fundSources: {
         type: Array,
         required: true,
@@ -38,6 +43,16 @@ const props = defineProps({
     regions: {
         type: Array,
         required: true,
+        default: () => [],
+    },
+    users: {
+        type: Array,
+        required: false,
+        default: () => [],
+    },
+    assignees: {
+        type: Array,
+        required: false,
         default: () => [],
     },
 });
@@ -57,6 +72,138 @@ watch(
     },
     { immediate: true, deep: true }
 );
+const typeOptions = ref([]);
+watch(
+    () => props.types,
+    (newTypes) => {
+        typeOptions.value = [
+            { id: "new", name: "+ Add New Type", isAddNew: true },
+            ...newTypes,
+        ];
+    },
+    { immediate: true, deep: true }
+);
+
+const filteredTypeOptions = computed(() => {
+    const categoryId = form.value.asset_category_id || form.value.asset_category?.id;
+    if (!categoryId) {
+        return [{ id: "new", name: "+ Add New Type", isAddNew: true }];
+    }
+    const base = typeOptions.value.filter(
+        t => !t.isAddNew && (!t.asset_category_id || t.asset_category_id === categoryId)
+    );
+    // Always append the add-new option at the end
+    return [
+        ...base,
+        { id: "new", name: "+ Add New Type", isAddNew: true },
+    ];
+});
+
+// Will be attached after form is defined to avoid temporal dead zone
+let detachCategoryWatch = null;
+
+const usersAsOptions = computed(() => (props.users || []).map(u => ({ id: u.id, name: u.name })));
+
+const assigneeOptions = computed(() => [
+    { id: 'new', name: '+ Add New Assignee', isAddNew: true },
+    ...((props.assignees || []).map(a => ({ id: a.id, name: a.name })))
+]);
+
+const showAssigneeModal = ref(false);
+const newAssignee = ref({ name: '', email: '', phone: '', department: '' });
+
+const onAssigneeSelect = (opt) => {
+    if (!opt) return;
+    if (opt.isAddNew) {
+        showAssigneeModal.value = true;
+        return;
+    }
+    // Selecting from this dropdown chooses an Assignee, not a User
+    form.value.assignee_id = opt.id;
+    form.value.assigned_to = '';
+    // clear manual assignee fields
+    form.value.assignee_name = '';
+    form.value.assignee_email = '';
+    form.value.assignee_phone = '';
+    form.value.assignee_department = '';
+};
+
+const onAssigneeClear = () => {
+    form.value.assigned_to = '';
+    form.value.assignee_id = null;
+};
+
+const createAssignee = async () => {
+    if (!newAssignee.value.name) {
+        toast.error('Full name is required');
+        return;
+    }
+    try {
+        const { data } = await axios.post(route('assets.assignees.store'), {
+            name: newAssignee.value.name,
+            email: newAssignee.value.email || null,
+            phone: newAssignee.value.phone || null,
+            department: newAssignee.value.department || null,
+        });
+        form.value.assigned_user = { id: null, name: data.name };
+        form.value.assignee_id = data.id;
+        form.value.assigned_to = '';
+        newAssignee.value = { name: '', email: '', phone: '', department: '' };
+        showAssigneeModal.value = false;
+        toast.success('Assignee created');
+    } catch (e) {
+        toast.error(e.response?.data || 'Failed to create assignee');
+    }
+};
+
+const showTypeModal = ref(false);
+const newType = ref("");
+const isNewType = ref(false);
+
+const handleTypeSelect = (selected) => {
+    if (!selected) {
+        form.value.type_id = null;
+        form.value.type = null;
+        return;
+    }
+    if (selected.isAddNew) {
+        showTypeModal.value = true;
+        return;
+    }
+    form.value.type_id = selected.id;
+    form.value.type = selected;
+};
+
+const createType = async () => {
+    if (!newType.value) {
+        toast.error("Please enter a type name");
+        return;
+    }
+    isNewType.value = true;
+    try {
+        const response = await axios.post(route('assets.types.store'), {
+            name: newType.value,
+            asset_category_id: form.value.asset_category_id || (form.value.asset_category?.id ?? null),
+        });
+
+        const newTypeData = response.data;
+        typeOptions.value = [
+            ...typeOptions.value.filter(t => !t.isAddNew),
+            newTypeData,
+            { id: "new", name: "+ Add New Type", isAddNew: true },
+        ];
+        form.value.type = newTypeData;
+        form.value.type_id = newTypeData.id;
+        newType.value = "";
+        showTypeModal.value = false;
+        toast.success("Type created successfully");
+    } catch (error) {
+        console.error("Error creating type:", error);
+        toast.error(error.response?.data || "Error creating type");
+    } finally {
+        isNewType.value = false;
+    }
+};
 
 watch(
     () => props.locations,
@@ -92,20 +239,37 @@ watch(
 );
 
 const form = ref({
+    tag_no: "",
+    name: "",
     asset_tag: "",
     asset_category_id: null,
     asset_category: null,
+    type_id: "",
+    type: null,
     serial_number: "",
+    serial_no: "",
     item_description: "",
     person_assigned: "",
+    assigned_to: "",
+    assignee_id: null,
+    assigned_user: null,
+    assignee_name: "",
+    assignee_email: "",
+    assignee_phone: "",
+    assignee_department: "",
     asset_location_id: "",
     asset_location: null,
     sub_location_id: "",
     sub_location: null,
     acquisition_date: "",
+    cost: "",
+    supplier: "",
     has_warranty: false,
     asset_warranty_start: "",
     asset_warranty_end: "",
+    warranty_months: "",
+    maintenance_interval_months: 0,
+    last_maintenance_at: "",
     has_documents: false,
     status: "active",
     original_value: "",
@@ -114,6 +278,14 @@ const form = ref({
     region: null,
     fund_source: null,
     documents: [{ type: "", file: "" }],
+});
+
+// Attach watcher after form is initialized
+detachCategoryWatch = watch(() => form.value.asset_category, (newVal) => {
+    if (!newVal) {
+        form.value.type = null;
+        form.value.type_id = null;
+    }
 });
 
 const subLocations = ref([]);
@@ -582,8 +754,12 @@ const submit = async () => {
         form.value.sub_location_id ||
         (form.value.sub_location ? form.value.sub_location.id : "");
     formData.append("sub_location_id", subLocationId);
-    formData.append("person_assigned", form.value.person_assigned);
+    if (form.value.assigned_user?.id) formData.append("assigned_to", form.value.assigned_user.id);
+    if (form.value.assignee_id) formData.append("assignee_id", form.value.assignee_id);
     formData.append("acquisition_date", form.value.acquisition_date);
+    if (form.value.purchase_date) formData.append("purchase_date", form.value.purchase_date);
+    if (form.value.cost) formData.append("cost", form.value.cost);
+    if (form.value.supplier) formData.append("supplier", form.value.supplier);
     formData.append("status", form.value.status);
     formData.append("original_value", form.value.original_value);
     // Convert boolean values to 0/1 format for Laravel
@@ -591,6 +767,9 @@ const submit = async () => {
     formData.append("has_documents", form.value.has_documents ? "1" : "0");
     formData.append("asset_warranty_start", form.value.asset_warranty_start);
     formData.append("asset_warranty_end", form.value.asset_warranty_end);
+    if (form.value.warranty_months !== "") formData.append("warranty_months", form.value.warranty_months);
+    formData.append("maintenance_interval_months", form.value.maintenance_interval_months ?? 0);
+    if (form.value.last_maintenance_at) formData.append("last_maintenance_at", form.value.last_maintenance_at);
 
     try {
         const response = await axios.post(route("assets.store"), formData, {
@@ -637,49 +816,84 @@ function handleDocumentUpload(index, event) {
             <div class="p-6 text-gray-900">
                 <h2 class="text-2xl font-semibold mb-6">Create New Asset</h2>
 
-                <form @submit.prevent="submit" class="space-y-6">
+                <form @submit.prevent="submit" novalidate class="space-y-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mt-4">Basic Details</h3>
                     <!-- Region, Location, SubLocation Filters -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <InputLabel for="tag_no" value="Tag No" />
+                            <TextInput id="tag_no" type="text" class="mt-1 block w-full" placeholder="e.g., AST-2025-001" v-model="form.tag_no" />
+                        </div>
+                        <div>
+                            <InputLabel for="name" value="Asset Name" />
+                            <TextInput id="name" type="text" class="mt-1 block w-full" placeholder="e.g., Dell Latitude 7420" v-model="form.name" />
+                        </div>
                         <div>
                             <InputLabel for="asset_tag" value="Asset Tag" />
                             <TextInput
                                 id="asset_tag"
                                 type="text"
                                 class="mt-1 block w-full"
+                                placeholder="Internal tag, e.g., INV-000123"
                                 v-model="form.asset_tag"
                                 required
                             />
                         </div>
 
-                        <div>
-                            <InputLabel
-                                for="asset_category"
-                                value="Asset Category"
-                            />
-                            <div class="w-full">
+                        <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <InputLabel
+                                    for="asset_category"
+                                    value="Asset Category"
+                                />
+                                <div class="w-full">
+                                    <Multiselect
+                                        v-model="form.asset_category"
+                                        :options="categoryOptions"
+                                        :searchable="true"
+                                        :close-on-select="true"
+                                        :show-labels="false"
+                                        :allow-empty="true"
+                                        placeholder="Select Category"
+                                        track-by="id"
+                                        label="name"
+                                        @select="handleCategorySelect"
+                                    >
+                                        <template v-slot:option="{ option }">
+                                            <div
+                                                :class="{
+                                                    'add-new-option': option.isAddNew,
+                                                }"
+                                            >
+                                                <span
+                                                    v-if="option.isAddNew"
+                                                    class="text-indigo-600 font-medium"
+                                                    >+ Add New Category</span
+                                                >
+                                                <span v-else>{{ option.name }}</span>
+                                            </div>
+                                        </template>
+                                    </Multiselect>
+                                </div>
+                            </div>
+                            <div>
+                                <InputLabel for="type" value="Asset Type" />
                                 <Multiselect
-                                    v-model="form.asset_category"
-                                    :options="categoryOptions"
+                                    v-model="form.type"
+                                    :options="filteredTypeOptions"
                                     :searchable="true"
                                     :close-on-select="true"
                                     :show-labels="false"
                                     :allow-empty="true"
-                                    placeholder="Select Category"
+                                    placeholder="Select Type"
                                     track-by="id"
                                     label="name"
-                                    @select="handleCategorySelect"
+                                    :disabled="!form.asset_category && !form.asset_category_id"
+                                    @select="handleTypeSelect"
                                 >
                                     <template v-slot:option="{ option }">
-                                        <div
-                                            :class="{
-                                                'add-new-option': option.isAddNew,
-                                            }"
-                                        >
-                                            <span
-                                                v-if="option.isAddNew"
-                                                class="text-indigo-600 font-medium"
-                                                >+ Add New Category</span
-                                            >
+                                        <div :class="{ 'add-new-option': option.isAddNew }">
+                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Type</span>
                                             <span v-else>{{ option.name }}</span>
                                         </div>
                                     </template>
@@ -693,37 +907,28 @@ function handleDocumentUpload(index, event) {
                                 id="serial_number"
                                 type="text"
                                 class="mt-1 block w-full"
+                                placeholder="Manufacturer serial no"
                                 v-model="form.serial_number"
                                 required
                             />
                         </div>
                     </div>
-                    
+                    <h3 class="text-lg font-semibold text-gray-800 mt-8">Assignment</h3>
                     <div class="grid grid-cols-3 gap-4">
                         <div>
-                            <InputLabel
-                                for="item_description"
-                                value="Description"
-                            />
-                            <TextInput
-                                id="item_description"
-                                type="text"
-                                class="mt-1 block w-full"
-                                v-model="form.item_description"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <InputLabel
-                                for="person_assigned"
-                                value="Person Assigned"
-                            />
-                            <TextInput
-                                id="person_assigned"
-                                type="text"
-                                class="mt-1 w-full"
-                                v-model="form.person_assigned"
-                                required
+                            <InputLabel for="assigned_to" value="Assigned User (optional)" />
+                            <Multiselect
+                                v-model="form.assigned_user"
+                                :options="assigneeOptions"
+                                :searchable="true"
+                                :close-on-select="true"
+                                :show-labels="false"
+                                :allow-empty="true"
+                                placeholder="Select user"
+                                track-by="id"
+                                label="name"
+                                @select="onAssigneeSelect"
+                                @clear="onAssigneeClear"
                             />
                         </div>
                         <div>
@@ -738,6 +943,37 @@ function handleDocumentUpload(index, event) {
                         </div>
                     </div>
                     
+                    <!-- New Assignee Modal -->
+                    <Modal :show="showAssigneeModal" @close="showAssigneeModal = false">
+                        <div class="p-6">
+                            <h2 class="text-lg font-medium text-gray-900">Add New Assignee</h2>
+                            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <InputLabel for="new_assignee_name" value="Full Name" />
+                                    <TextInput id="new_assignee_name" name="new_assignee_name" type="text" class="mt-1 block w-full" placeholder="e.g., John Doe" :required="showAssigneeModal" v-model="newAssignee.name" />
+                                </div>
+                                <div>
+                                    <InputLabel for="new_assignee_email" value="Email (optional)" />
+                                    <TextInput id="new_assignee_email" type="email" class="mt-1 block w-full" placeholder="name@example.com" v-model="newAssignee.email" />
+                                </div>
+                                <div>
+                                    <InputLabel for="new_assignee_phone" value="Phone" />
+                                    <TextInput id="new_assignee_phone" name="new_assignee_phone" type="text" class="mt-1 block w-full" placeholder="e.g., +1 555 123 4567" :required="showAssigneeModal" v-model="newAssignee.phone" />
+                                </div>
+                                <div>
+                                    <InputLabel for="new_assignee_department" value="Department" />
+                                    <TextInput id="new_assignee_department" name="new_assignee_department" type="text" class="mt-1 block w-full" placeholder="e.g., IT" :required="showAssigneeModal" v-model="newAssignee.department" />
+                                </div>
+                            </div>
+                            <div class="mt-6 flex justify-end space-x-3">
+                                <SecondaryButton @click="showAssigneeModal = false">Cancel</SecondaryButton>
+                                <PrimaryButton @click="createAssignee">Save</PrimaryButton>
+                            </div>
+                        </div>
+                    </Modal>
+                    
+                    
+                    <h3 class="text-lg font-semibold text-gray-800 mt-8">Location & Classification</h3>
                     <div class="grid grid-cols-3 gap-4">
                         <div>
                             <InputLabel for="region" value="Region" />
@@ -770,6 +1006,7 @@ function handleDocumentUpload(index, event) {
                             </Multiselect>
                             <div class="w-full"></div>
                         </div>
+                        
                         <div>
                             <InputLabel for="location" value="Location" />
                             <div class="w-full">
@@ -894,10 +1131,7 @@ function handleDocumentUpload(index, event) {
                         />
                         <InputLabel for="has_warranty" value="Has Warrantee" />
                     </div>
-                    <div
-                        class="grid grid-cols-2 gap-4"
-                        v-if="form.has_warranty"
-                    >
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4" v-if="form.has_warranty">
                         <div>
                             <InputLabel
                                 for="asset_warranty_start"
@@ -929,6 +1163,20 @@ function handleDocumentUpload(index, event) {
                             >
                                 {{ warrantyDateError }}
                             </div>
+                        </div>
+                        <div>
+                            <InputLabel for="warranty_months" value="Warranty (months)" />
+                            <TextInput id="warranty_months" type="number" class="mt-1 w-full" placeholder="e.g., 12" v-model="form.warranty_months" />
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <InputLabel for="maintenance_interval_months" value="Maintenance interval (months)" />
+                            <TextInput id="maintenance_interval_months" type="number" class="mt-1 w-full" placeholder="e.g., 3" v-model="form.maintenance_interval_months" />
+                        </div>
+                        <div>
+                            <InputLabel for="last_maintenance_at" value="Last maintenance date" />
+                            <TextInput id="last_maintenance_at" type="date" class="mt-1 w-full" v-model="form.last_maintenance_at" />
                         </div>
                     </div>
                     <div>
@@ -1163,6 +1411,21 @@ function handleDocumentUpload(index, event) {
                                 : "Create Fund Source"
                         }}</PrimaryButton
                     >
+                </div>
+            </div>
+        </Modal>
+        
+        <!-- New Type Modal -->
+        <Modal :show="showTypeModal" @close="showTypeModal = false">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">Add New Type</h2>
+                <div class="mt-6">
+                    <InputLabel for="new_type" value="Type Name" />
+                    <TextInput id="new_type" type="text" class="mt-1 block w-full" v-model="newType" required />
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <SecondaryButton @click="showTypeModal = false" :disabled="isNewType">Cancel</SecondaryButton>
+                    <PrimaryButton :disabled="isNewType" @click="createType">{{ isNewType ? 'Waiting...' : 'Create Type' }}</PrimaryButton>
                 </div>
             </div>
         </Modal>

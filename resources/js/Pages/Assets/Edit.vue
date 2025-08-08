@@ -10,7 +10,7 @@ import '@/Components/multiselect.css';
 import Modal from '@/Components/Modal.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import DangerButton from '@/Components/DangerButton.vue';
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useToast } from 'vue-toastification';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -39,6 +39,45 @@ const props = defineProps({
 });
 
 const toast = useToast();
+
+// Assignee handling (parity with Create.vue)
+const showAssigneeModal = ref(false);
+const newAssignee = ref({ name: '', email: '', phone: '', department: '' });
+const assigneeOptions = computed(() => [
+    { id: 'new', name: '+ Add New Assignee', isAddNew: true },
+]);
+
+const onAssigneeSelect = (opt) => {
+    if (!opt) return;
+    if (opt.isAddNew) {
+        showAssigneeModal.value = true;
+        return;
+    }
+    form.value.assigned_to = opt.id;
+    form.value.assignee_id = null;
+};
+
+const onAssigneeClear = () => {
+    form.value.assigned_to = '';
+    form.value.assignee_id = null;
+};
+
+const createAssignee = async () => {
+    if (!newAssignee.value.name) {
+        toast.error('Full name is required');
+        return;
+    }
+    try {
+        const { data } = await axios.post(route('assets.assignees.store'), newAssignee.value);
+        form.value.assignee_id = data.id;
+        form.value.assigned_to = '';
+        newAssignee.value = { name: '', email: '', phone: '', department: '' };
+        showAssigneeModal.value = false;
+        toast.success('Assignee created');
+    } catch (e) {
+        toast.error(e.response?.data || 'Failed to create assignee');
+    }
+};
 
 // Helper function to find item by id in array
 const findById = (array, id) => (Array.isArray(array) ? array.find(item => item.id === id) : '');
@@ -91,10 +130,20 @@ const warrantyDateError = ref("");
 // Initialize form with properly formatted dates
 const form = ref({
     ...props.asset,
+    tag_no: props.asset?.tag_no || '',
+    name: props.asset?.name || '',
+    asset_category_id: props.asset?.asset_category_id || null,
+    type_id: props.asset?.type_id || null,
+    serial_number: props.asset?.serial_number || '',
+    serial_no: props.asset?.serial_no || '',
+    item_description: props.asset?.item_description || '',
+    person_assigned: props.asset?.person_assigned || '',
+    assigned_to: props.asset?.assigned_to || '',
+    assignee_id: props.asset?.assignee_id || null,
     acquisition_date: formatDateForInput(props.asset?.acquisition_date),
     asset_warranty_start: formatDateForInput(props.asset?.asset_warranty_start),
-    asset_warranty_end: formatDateForInput(props.asset?.asset_warranty_end)
-} || {});
+    asset_warranty_end: formatDateForInput(props.asset?.asset_warranty_end),
+});
 
 const subLocations = ref([]);
 const locationOptions = ref([]);
@@ -358,6 +407,10 @@ const submit = async () => {
                                 v-model="form.serial_number" required />
                         </div>
                         <div>
+                            <InputLabel for="tag_no" value="Tag No" />
+                            <TextInput id="tag_no" type="text" class="mt-1 block w-full" v-model="form.tag_no" />
+                        </div>
+                        <div>
                             <InputLabel for="asset_category" value="Asset Category" />
                             <div class="w-full">
                                 <Multiselect v-model="form.category"
@@ -375,18 +428,34 @@ const submit = async () => {
                             </div>
                         </div>
                     </div>
+                    <!-- Assignee selector -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <InputLabel for="assignee" value="Assignee / User" />
+                            <Multiselect
+                                :options="assigneeOptions"
+                                :searchable="false"
+                                :close-on-select="true"
+                                :show-labels="false"
+                                placeholder="Select User or + Add New Assignee"
+                                label="name"
+                                track-by="id"
+                                @select="onAssigneeSelect"
+                                @remove="onAssigneeClear"
+                            />
+                        </div>
+                    </div>
                     <div class="grid grid-cols-3 gap-2">
 
                         <div>
-                            <InputLabel for="item_description" value="Description" />
-                            <TextInput id="item_description" type="text" class="mt-1 block w-full"
-                                v-model="form.item_description" required />
+                            <InputLabel for="name" value="Asset Name" />
+                            <TextInput id="name" type="text" class="mt-1 block w-full" v-model="form.name" />
                         </div>
 
                         <div>
                             <InputLabel for="person_assigned" value="Person Assigned" />
                             <TextInput id="person_assigned" type="text" class="mt-1 block w-full"
-                                v-model="form.person_assigned" required />
+                                v-model="form.person_assigned" />
                         </div>
 
                         <div>
@@ -487,26 +556,25 @@ const submit = async () => {
                         </div>
                     </div>
                     <!-- Warranty Section -->
-                    <div class="grid grid-cols-3 gap-4 mt-4">
-                        <div>
-                            <input type="checkbox" v-model="form.has_warranty" id="has_warranty" class="mt-1" />
-                            <InputLabel for="has_warranty" value="Has Warranty" />
+                    <div class="mt-4 bg-white rounded-xl shadow border">
+                        <div class="flex items-center justify-between p-4 border-b">
+                            <div class="font-semibold">Warranty</div>
+                            <label class="inline-flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" v-model="form.has_warranty" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                                <span class="text-sm text-gray-700">Has warranty</span>
+                            </label>
                         </div>
-                        <div class="col-span-2 grid grid-cols-2 gap-4" v-if="form.has_warranty">
+                        <div v-if="form.has_warranty" class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <InputLabel for="asset_warranty_start" value="Start Date" />
                                 <input type="date" v-model="form.asset_warranty_start" id="asset_warranty_start"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" 
-                                    @change="validateWarrantyDates" />
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
                             </div>
                             <div>
                                 <InputLabel for="asset_warranty_end" value="End Date" />
                                 <input type="date" v-model="form.asset_warranty_end" id="asset_warranty_end"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" 
-                                    @change="validateWarrantyDates" />
-                                <div v-if="warrantyDateError" class="text-red-500 text-sm mt-1">
-                                    {{ warrantyDateError }}
-                                </div>
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                <div v-if="warrantyDateError" class="text-red-500 text-sm mt-1">{{ warrantyDateError }}</div>
                             </div>
                         </div>
                     </div>
@@ -521,6 +589,34 @@ const submit = async () => {
                 </form>
             </div>
         </div>
+        <!-- New Assignee Modal -->
+        <Modal :show="showAssigneeModal" @close="showAssigneeModal = false">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">Add New Assignee</h2>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <InputLabel for="new_assignee_name" value="Full Name" />
+                        <TextInput id="new_assignee_name" name="new_assignee_name" type="text" class="mt-1 block w-full" placeholder="e.g., John Doe" v-model="newAssignee.name" />
+                    </div>
+                    <div>
+                        <InputLabel for="new_assignee_email" value="Email (optional)" />
+                        <TextInput id="new_assignee_email" type="email" class="mt-1 block w-full" placeholder="name@example.com" v-model="newAssignee.email" />
+                    </div>
+                    <div>
+                        <InputLabel for="new_assignee_phone" value="Phone" />
+                        <TextInput id="new_assignee_phone" name="new_assignee_phone" type="text" class="mt-1 block w-full" placeholder="e.g., +1 555 123 4567" v-model="newAssignee.phone" />
+                    </div>
+                    <div>
+                        <InputLabel for="new_assignee_department" value="Department" />
+                        <TextInput id="new_assignee_department" name="new_assignee_department" type="text" class="mt-1 block w-full" placeholder="e.g., IT" v-model="newAssignee.department" />
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <SecondaryButton @click="showAssigneeModal = false">Cancel</SecondaryButton>
+                    <PrimaryButton @click="createAssignee">Save</PrimaryButton>
+                </div>
+            </div>
+        </Modal>
         <!-- New Location Modal -->
         <Modal :show="showLocationModal" @close="showLocationModal = false">
             <div class="p-6">

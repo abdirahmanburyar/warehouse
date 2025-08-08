@@ -443,7 +443,7 @@ async function handleTracertItems() {
                     data: chart.data || [0],
                     backgroundColor: chart.backgroundColors || ['rgba(156, 163, 175, 0.8)'],
                     borderColor: chart.borderColors || ['rgba(156, 163, 175, 1)'],
-                    borderWidth: 2
+                    borderWidth: 0
                 }]
             }));
             chartCount.value = response.data.chartData.totalCharts;
@@ -466,7 +466,7 @@ async function handleTracertItems() {
                     data: [0],
                     backgroundColor: ['rgba(156, 163, 175, 0.8)'],
                     borderColor: ['rgba(156, 163, 175, 1)'],
-                    borderWidth: 2
+                    borderWidth: 0
                 }]
             }];
             chartCount.value = 1;
@@ -486,7 +486,7 @@ async function handleTracertItems() {
                 data: [0],
                 backgroundColor: ['rgba(239, 68, 68, 0.8)'],
                 borderColor: ['rgba(239, 68, 68, 1)'],
-                borderWidth: 2
+                borderWidth: 0
             }]
         }];
         chartCount.value = 1;
@@ -534,7 +534,7 @@ async function handleFacilityTracertItems() {
                     data: chart.data || [0],
                     backgroundColor: chart.backgroundColors || ['rgba(156, 163, 175, 0.8)'],
                     borderColor: chart.borderColors || ['rgba(156, 163, 175, 1)'],
-                    borderWidth: 2
+                    borderWidth: 0
                 }]
             }));
             facilityChartCount.value = response.data.chartData.totalCharts;
@@ -557,7 +557,7 @@ async function handleFacilityTracertItems() {
                     data: [0],
                     backgroundColor: ['rgba(156, 163, 175, 0.8)'],
                     borderColor: ['rgba(156, 163, 175, 1)'],
-                    borderWidth: 2
+                    borderWidth: 0
                 }]
             }];
             facilityChartCount.value = 1;
@@ -583,7 +583,7 @@ async function handleFacilityTracertItems() {
                 data: [0],
                 backgroundColor: ['rgba(239, 68, 68, 0.8)'],
                 borderColor: ['rgba(239, 68, 68, 1)'],
-                borderWidth: 2
+                borderWidth: 0
             }]
         }];
         facilityChartCount.value = 1;
@@ -602,7 +602,7 @@ function updateChartData(chartData) {
                 data: [0],
                 backgroundColor: ['rgba(156, 163, 175, 0.8)'],
                 borderColor: ['rgba(156, 163, 175, 1)'],
-                borderWidth: 2
+                borderWidth: 0
             }]
         };
         return;
@@ -615,7 +615,7 @@ function updateChartData(chartData) {
             data: chartData.data,
             backgroundColor: chartData.backgroundColors || generateColors(chartData.data.length, true),
             borderColor: chartData.borderColors || generateColors(chartData.data.length, false),
-            borderWidth: 2
+            borderWidth: 0
         }]
     };
 }
@@ -801,7 +801,7 @@ const barChartOptions = {
         y: { 
             beginAtZero: true,
             grid: {
-                color: 'rgba(0, 0, 0, 0.1)',
+                display: false,
                 drawBorder: false
             },
             ticks: {
@@ -810,7 +810,7 @@ const barChartOptions = {
                 },
                 font: {
                     size: 12,
-                    weight: '500'
+                    weight: 'bold'
                 },
                 padding: 8
             }
@@ -824,7 +824,7 @@ const barChartOptions = {
                 minRotation: 0,
                 font: {
                     size: 12,
-                    weight: '500'
+                    weight: 'bold'
                 },
                 padding: 8
             }
@@ -1476,9 +1476,9 @@ const productCategoryChartData = computed(() => ({
             filteredProductCategoryCard.value.Lab || 0
         ],
         backgroundColor: [
-            'rgba(68, 114, 196, 0.85)',  // Excel Blue
-            'rgba(237, 125, 49, 0.85)',  // Excel Orange
-            'rgba(165, 165, 165, 0.85)'  // Excel Gray
+            'rgba(68, 114, 196, 1)',  // Excel Blue
+            'rgba(237, 125, 49, 1)',  // Excel Orange
+            'rgba(165, 165, 165, 1)'  // Excel Gray
         ],
         borderColor: [
             'rgba(68, 114, 196, 1)',
@@ -1505,19 +1505,19 @@ const warehouseFacilitiesChartData = computed(() => {
     const facilityData = props.dashboardData.summary.map(item => {
         // Map colors based on facility type
         const colorMap = {
-            'WH': 'rgba(68, 114, 196, 0.85)', // Blue for Warehouses
-            'HC': 'rgba(237, 125, 49, 0.85)', // Orange for Health Centre
-            'PHU': 'rgba(165, 165, 165, 0.85)', // Gray for Primary Health Unit
-            'DH': 'rgba(112, 173, 71, 0.85)', // Green for District Hospital
-            'RH': 'rgba(255, 192, 0, 0.85)', // Yellow for Regional Hospital
-            'MT': 'rgba(91, 155, 213, 0.85)', // Light Blue for Mobile Team
+            'WH': 'rgba(68, 114, 196, 1)', // Blue for Warehouses
+            'HC': 'rgba(237, 125, 49, 1)', // Orange for Health Centre
+            'PHU': 'rgba(165, 165, 165, 1)', // Gray for Primary Health Unit
+            'DH': 'rgba(112, 173, 71, 1)', // Green for District Hospital
+            'RH': 'rgba(255, 192, 0, 1)', // Yellow for Regional Hospital
+            'MT': 'rgba(91, 155, 213, 1)', // Light Blue for Mobile Team
         };
 
         return {
             label: item.label, // Use abbreviated label (WH, HC, PHU, etc.)
             fullName: item.fullName, // Store full name for tooltip
             count: item.value,
-            color: colorMap[item.label] || 'rgba(68, 114, 196, 0.85)' // Default blue
+            color: colorMap[item.label] || 'rgba(68, 114, 196, 1)' // Default blue
         };
     });
 
@@ -1531,11 +1531,11 @@ const warehouseFacilitiesChartData = computed(() => {
             label: 'Facility Count',
             data: sortedData.map(item => item.count),
             backgroundColor: sortedData.map(item => item.color),
-            borderColor: sortedData.map(item => item.color.replace('0.85', '1')),
-            borderWidth: 2,
+            borderColor: sortedData.map(item => item.color),
+            borderWidth: 0,
             borderRadius: 6,
-            hoverBackgroundColor: sortedData.map(item => item.color.replace('0.85', '1')),
-            hoverBorderColor: sortedData.map(item => item.color.replace('0.85', '1')),
+            hoverBackgroundColor: sortedData.map(item => item.color),
+            hoverBorderColor: sortedData.map(item => item.color),
             hoverBorderWidth: 3
         }]
     };
@@ -1551,9 +1551,9 @@ const orderChartData = computed(() => ({
             filteredOrderCounts.value.BO || 0
         ],
         backgroundColor: [
-            'rgba(68, 114, 196, 0.85)',  // Excel Blue for Purchase Orders
-            'rgba(237, 125, 49, 0.85)',  // Excel Orange for Packing Lists
-            'rgba(165, 165, 165, 0.85)'  // Excel Gray for Back Orders
+            'rgba(68, 114, 196, 1)',  // Excel Blue for Purchase Orders
+            'rgba(237, 125, 49, 1)',  // Excel Orange for Packing Lists
+            'rgba(165, 165, 165, 1)'  // Excel Gray for Back Orders
         ],
         borderColor: [
             'rgba(68, 114, 196, 1)',
@@ -1610,16 +1610,16 @@ const fulfillmentChartData = computed(() => {
             label: 'Fulfillment Rate (%)',
             data: topSuppliers.map(supplier => supplier.fulfillment_percentage || 0),
             backgroundColor: [
-                'rgba(68, 114, 196, 0.85)',  // Excel Blue
-                'rgba(237, 125, 49, 0.85)',  // Excel Orange
-                'rgba(165, 165, 165, 0.85)', // Excel Gray
-                'rgba(255, 192, 0, 0.85)',   // Excel Yellow
-                'rgba(112, 173, 71, 0.85)',  // Excel Green
-                'rgba(91, 155, 213, 0.85)',  // Light Blue
-                'rgba(255, 102, 0, 0.85)',   // Orange
-                'rgba(128, 128, 128, 0.85)', // Gray
-                'rgba(0, 176, 80, 0.85)',    // Green
-                'rgba(0, 112, 192, 0.85)'    // Blue
+                'rgba(68, 114, 196, 1)',  // Excel Blue
+                'rgba(237, 125, 49, 1)',  // Excel Orange
+                'rgba(165, 165, 165, 1)', // Excel Gray
+                'rgba(255, 192, 0, 1)',   // Excel Yellow
+                'rgba(112, 173, 71, 1)',  // Excel Green
+                'rgba(91, 155, 213, 1)',  // Light Blue
+                'rgba(255, 102, 0, 1)',   // Orange
+                'rgba(128, 128, 128, 1)', // Gray
+                'rgba(0, 176, 80, 1)',    // Green
+                'rgba(0, 112, 192, 1)'    // Blue
             ],
             borderColor: [
                 'rgba(68, 114, 196, 1)',
@@ -1633,7 +1633,7 @@ const fulfillmentChartData = computed(() => {
                 'rgba(0, 176, 80, 1)',
                 'rgba(0, 112, 192, 1)'
             ],
-            borderWidth: 2,
+            borderWidth: 0,
             borderRadius: 6,
             hoverBackgroundColor: [
                 'rgba(68, 114, 196, 1)',
@@ -1709,14 +1709,14 @@ const delayedChartData = computed(() => ({
 // Order Status Chart Data
 const orderStatusChartData = computed(() => {
     const statusData = [
-        { key: 'pending', label: 'Pending', color: 'rgba(245, 158, 11, 0.85)' },
-        { key: 'reviewed', label: 'Reviewed', color: 'rgba(59, 130, 246, 0.85)' },
-        { key: 'approved', label: 'Approved', color: 'rgba(16, 185, 129, 0.85)' },
-        { key: 'in_process', label: 'In Process', color: 'rgba(168, 85, 247, 0.85)' },
-        { key: 'dispatched', label: 'Dispatched', color: 'rgba(236, 72, 153, 0.85)' },
-        { key: 'delivered', label: 'Delivered', color: 'rgba(34, 197, 94, 0.85)' },
-        { key: 'received', label: 'Received', color: 'rgba(6, 182, 212, 0.85)' },
-        { key: 'rejected', label: 'Rejected', color: 'rgba(239, 68, 68, 0.85)' }
+        { key: 'pending', label: 'Pending', color: 'rgba(245, 158, 11, 1)' },
+        { key: 'reviewed', label: 'Reviewed', color: 'rgba(59, 130, 246, 1)' },
+        { key: 'approved', label: 'Approved', color: 'rgba(16, 185, 129, 1)' },
+        { key: 'in_process', label: 'In Process', color: 'rgba(168, 85, 247, 1)' },
+        { key: 'dispatched', label: 'Dispatched', color: 'rgba(236, 72, 153, 1)' },
+        { key: 'delivered', label: 'Delivered', color: 'rgba(34, 197, 94, 1)' },
+        { key: 'received', label: 'Received', color: 'rgba(6, 182, 212, 1)' },
+        { key: 'rejected', label: 'Rejected', color: 'rgba(239, 68, 68, 1)' }
     ];
 
     // Filter data based on selected statuses
@@ -1732,11 +1732,11 @@ const orderStatusChartData = computed(() => {
             label: 'Order Count',
             data: filteredData.map(item => props.orderStats[item.key] || 0),
             backgroundColor: filteredData.map(item => item.color),
-            borderColor: filteredData.map(item => item.color.replace('0.85', '1')),
-            borderWidth: 2,
+            borderColor: filteredData.map(item => item.color),
+            borderWidth: 0,
             borderRadius: 6,
-            hoverBackgroundColor: filteredData.map(item => item.color.replace('0.85', '1')),
-            hoverBorderColor: filteredData.map(item => item.color.replace('0.85', '1')),
+            hoverBackgroundColor: filteredData.map(item => item.color),
+            hoverBorderColor: filteredData.map(item => item.color),
             hoverBorderWidth: 3
         }]
     };
@@ -1753,16 +1753,16 @@ const expiredChartData = computed(() => {
                 props.expiredStats?.expiring_within_1_year || 0
             ],
             backgroundColor: [
-                'rgba(75, 85, 99, 0.85)',    // Gray-600 for expired (from Expired/Index.vue)
-                'rgba(236, 72, 153, 0.85)',  // Pink-500 for 6 months (from Expired/Index.vue)
-                'rgba(251, 146, 60, 0.85)'   // Orange-400 for 1 year (from Expired/Index.vue)
+                'rgba(75, 85, 99, 1)',    // Gray-600 for expired (from Expired/Index.vue)
+                'rgba(236, 72, 153, 1)',  // Pink-500 for 6 months (from Expired/Index.vue)
+                'rgba(251, 146, 60, 1)'   // Orange-400 for 1 year (from Expired/Index.vue)
             ],
             borderColor: [
                 'rgba(75, 85, 99, 1)',       // Gray-600 for expired
                 'rgba(236, 72, 153, 1)',     // Pink-500 for 6 months
                 'rgba(251, 146, 60, 1)'      // Orange-400 for 1 year
             ],
-            borderWidth: 2,
+            borderWidth: 0,
             hoverBackgroundColor: [
                 'rgba(75, 85, 99, 1)',
                 'rgba(236, 72, 153, 1)',
@@ -1783,12 +1783,12 @@ const expiredChartData = computed(() => {
 // Asset Status Chart Data
 const assetStatusChartData = computed(() => {
     const statusData = [
-        { key: 'In Use', color: 'rgba(68, 114, 196, 0.85)' },      // Excel Blue
-        { key: 'Active', color: 'rgba(112, 173, 71, 0.85)' },      // Excel Green
-        { key: 'Needs Maintenance', color: 'rgba(237, 125, 49, 0.85)' }, // Excel Orange
-        { key: 'Pending Approval', color: 'rgba(255, 192, 0, 0.85)' },   // Excel Yellow
-        { key: 'Retired', color: 'rgba(128, 128, 128, 0.85)' },    // Gray
-        { key: 'Disposed', color: 'rgba(165, 165, 165, 0.85)' }    // Excel Gray
+        { key: 'In Use', color: 'rgba(68, 114, 196, 1)' },      // Excel Blue
+        { key: 'Active', color: 'rgba(112, 173, 71, 1)' },      // Excel Green
+        { key: 'Needs Maintenance', color: 'rgba(237, 125, 49, 1)' }, // Excel Orange
+        { key: 'Pending Approval', color: 'rgba(255, 192, 0, 1)' },   // Excel Yellow
+        { key: 'Retired', color: 'rgba(128, 128, 128, 1)' },    // Gray
+        { key: 'Disposed', color: 'rgba(165, 165, 165, 1)' }    // Excel Gray
     ];
 
     // Filter out statuses with zero count
@@ -1802,11 +1802,11 @@ const assetStatusChartData = computed(() => {
             label: 'Asset Status',
             data: filteredData.map(status => props.assetStatusStats?.[status.key] || 0),
             backgroundColor: filteredData.map(status => status.color),
-            borderColor: filteredData.map(status => status.color.replace('0.85', '1')),
-            borderWidth: 2,
+            borderColor: filteredData.map(status => status.color),
+            borderWidth: 0,
             borderRadius: 6,
-            hoverBackgroundColor: filteredData.map(status => status.color.replace('0.85', '1')),
-            hoverBorderColor: filteredData.map(status => status.color.replace('0.85', '1')),
+            hoverBackgroundColor: filteredData.map(status => status.color),
+            hoverBorderColor: filteredData.map(status => status.color),
             hoverBorderWidth: 3
         }]
     };
@@ -1924,7 +1924,7 @@ const assetStatsCards = computed(() => [
                             <h3 class="text-sm font-medium text-gray-800 mb-1">Total P.O Cost</h3>
                             <div class="text-2xl font-bold text-gray-900">{{ (filteredTotalCost || 0).toLocaleString() }}</div>
                             <div class="text-xs font-light text-gray-700 mt-1">{{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}</div>
-                        </div>
+                </div>
                         
                         <!-- Icon in bottom-right corner -->
                         <div class="absolute bottom-3 right-3">
@@ -1933,7 +1933,7 @@ const assetStatsCards = computed(() => [
                             </svg>
                         </div>
                     </div>
-                </div>
+                        </div>
             </Link>
 
             <!-- Gray Card -->
@@ -1956,7 +1956,7 @@ const assetStatsCards = computed(() => [
                             </svg>
                         </div>
                     </div>
-                </div>
+                    </div>
             </Link>
 
             <!-- Blue Card - Delayed Orders -->
@@ -1978,7 +1978,7 @@ const assetStatsCards = computed(() => [
                             </svg>
                         </div>
                     </div>
-                </div>
+                    </div>
             </Link>
 
             <!-- Orange Card - Low Stock -->
@@ -2000,7 +2000,7 @@ const assetStatsCards = computed(() => [
                             </svg>
                         </div>
                     </div>
-                </div>
+                    </div>
             </Link>
 
             <!-- Red Card - Out of Stock -->
@@ -2022,9 +2022,9 @@ const assetStatsCards = computed(() => [
                             </svg>
                         </div>
                     </div>
-                </div>
+                    </div>
             </Link>
-        </div>
+            </div>
 
      
 
