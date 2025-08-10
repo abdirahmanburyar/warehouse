@@ -55,6 +55,11 @@ class AssetController extends Controller
             $assets->where('fund_source_id', $request->fund_source_id);
         }
 
+        // Status filter
+        if ($request->filled('status')) {
+            $assets->where('status', $request->status);
+        }
+
         // New filters
         if ($request->filled('category_id')) {
             $assets->where('asset_category_id', $request->category_id);
@@ -103,7 +108,7 @@ class AssetController extends Controller
         return inertia('Assets/Index', [
             'locations' => $locations,
             'assets' => AssetResource::collection($assets),
-            'filters' => $request->only('page','per_page','search','region_id','location_id','sub_location_id','fund_source_id','category_id','type_id','assignee_id','acquisition_from','acquisition_to','created_from','created_to'),
+            'filters' => $request->only('page','per_page','search','region_id','location_id','sub_location_id','fund_source_id','category_id','type_id','assignee_id','acquisition_from','acquisition_to','created_from','created_to','status'),
             'assetsCount' => $count,
             'regions' => Region::get(),
             'fundSources' => FundSource::get(),
