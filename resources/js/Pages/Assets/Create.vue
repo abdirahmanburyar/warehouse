@@ -1,7 +1,6 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head, router, Link } from "@inertiajs/vue3";
-import TextInput from "@/Components/TextInput.vue";
 import InputLabel from "@/Components/InputLabel.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import Multiselect from "vue-multiselect";
@@ -104,13 +103,20 @@ let detachCategoryWatch = null;
 
 const usersAsOptions = computed(() => (props.users || []).map(u => ({ id: u.id, name: u.name })));
 
+// Maintain a local list to allow appending newly created assignees
+const assigneesList = ref([]);
+watch(() => props.assignees, (list) => {
+    assigneesList.value = Array.isArray(list) ? [...list] : [];
+}, { immediate: true, deep: true });
+
 const assigneeOptions = computed(() => [
     { id: 'new', name: '+ Add New Assignee', isAddNew: true },
-    ...((props.assignees || []).map(a => ({ id: a.id, name: a.name })))
+    ...assigneesList.value.map(a => ({ id: a.id, name: a.name }))
 ]);
 
 const showAssigneeModal = ref(false);
 const newAssignee = ref({ name: '', email: '', phone: '', department: '' });
+const isSavingAssignee = ref(false);
 
 const onAssigneeSelect = (opt) => {
     if (!opt) return;
@@ -133,11 +139,14 @@ const onAssigneeClear = () => {
     form.value.assignee_id = null;
 };
 
-const createAssignee = async () => {
+const createAssignee = async (e) => {
+    // Prevent parent form submission if button defaults to submit
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
     if (!newAssignee.value.name) {
         toast.error('Full name is required');
         return;
     }
+    isSavingAssignee.value = true;
     try {
         const { data } = await axios.post(route('assets.assignees.store'), {
             name: newAssignee.value.name,
@@ -145,14 +154,20 @@ const createAssignee = async () => {
             phone: newAssignee.value.phone || null,
             department: newAssignee.value.department || null,
         });
-        form.value.assigned_user = { id: null, name: data.name };
+        // Append to local list so it appears in dropdown
+        assigneesList.value = [...assigneesList.value, data];
+        // Select the new assignee by default
+        form.value.assigned_user = { id: data.id, name: data.name };
         form.value.assignee_id = data.id;
         form.value.assigned_to = '';
+        // Reset modal form
         newAssignee.value = { name: '', email: '', phone: '', department: '' };
         showAssigneeModal.value = false;
         toast.success('Assignee created');
     } catch (e) {
         toast.error(e.response?.data || 'Failed to create assignee');
+    } finally {
+        isSavingAssignee.value = false;
     }
 };
 
@@ -250,7 +265,6 @@ const form = ref({
     serial_no: "",
     item_description: "",
     person_assigned: "",
-    assigned_to: "",
     assignee_id: null,
     assigned_user: null,
     assignee_name: "",
@@ -822,15 +836,15 @@ function handleDocumentUpload(index, event) {
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <InputLabel for="tag_no" value="Tag No" />
-                            <TextInput id="tag_no" type="text" class="mt-1 block w-full" placeholder="e.g., AST-2025-001" v-model="form.tag_no" />
+                            <input id="tag_no" type="text" class="mt-1 block w-full" placeholder="e.g., AST-2025-001" v-model="form.tag_no" />
                         </div>
                         <div>
                             <InputLabel for="name" value="Asset Name" />
-                            <TextInput id="name" type="text" class="mt-1 block w-full" placeholder="e.g., Dell Latitude 7420" v-model="form.name" />
+                            <input id="name" type="text" class="mt-1 block w-full" placeholder="e.g., Dell Latitude 7420" v-model="form.name" />
                         </div>
                         <div>
                             <InputLabel for="asset_tag" value="Asset Tag" />
-                            <TextInput
+                            <input
                                 id="asset_tag"
                                 type="text"
                                 class="mt-1 block w-full"
@@ -903,7 +917,7 @@ function handleDocumentUpload(index, event) {
 
                         <div>
                             <InputLabel for="serial_number" value="Serial Number" />
-                            <TextInput
+                            <input
                                 id="serial_number"
                                 type="text"
                                 class="mt-1 block w-full"
@@ -933,7 +947,7 @@ function handleDocumentUpload(index, event) {
                         </div>
                         <div>
                             <InputLabel for="acquisition_date" value="Acquisition Date" />
-                            <TextInput
+                            <input
                                 id="acquisition_date"
                                 type="date"
                                 class="mt-1 block w-full"
@@ -950,24 +964,26 @@ function handleDocumentUpload(index, event) {
                             <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <InputLabel for="new_assignee_name" value="Full Name" />
-                                    <TextInput id="new_assignee_name" name="new_assignee_name" type="text" class="mt-1 block w-full" placeholder="e.g., John Doe" :required="showAssigneeModal" v-model="newAssignee.name" />
+                                    <input id="new_assignee_name" name="new_assignee_name" type="text" class="mt-1 block w-full" placeholder="e.g., John Doe" :required="showAssigneeModal" v-model="newAssignee.name" />
                                 </div>
                                 <div>
                                     <InputLabel for="new_assignee_email" value="Email (optional)" />
-                                    <TextInput id="new_assignee_email" type="email" class="mt-1 block w-full" placeholder="name@example.com" v-model="newAssignee.email" />
+                                    <input id="new_assignee_email" type="email" class="mt-1 block w-full" placeholder="name@example.com" v-model="newAssignee.email" />
                                 </div>
                                 <div>
                                     <InputLabel for="new_assignee_phone" value="Phone" />
-                                    <TextInput id="new_assignee_phone" name="new_assignee_phone" type="text" class="mt-1 block w-full" placeholder="e.g., +1 555 123 4567" :required="showAssigneeModal" v-model="newAssignee.phone" />
+                                    <input id="new_assignee_phone" name="new_assignee_phone" type="text" class="mt-1 block w-full" placeholder="e.g., +1 555 123 4567" :required="showAssigneeModal" v-model="newAssignee.phone" />
                                 </div>
                                 <div>
                                     <InputLabel for="new_assignee_department" value="Department" />
-                                    <TextInput id="new_assignee_department" name="new_assignee_department" type="text" class="mt-1 block w-full" placeholder="e.g., IT" :required="showAssigneeModal" v-model="newAssignee.department" />
+                                    <input id="new_assignee_department" name="new_assignee_department" type="text" class="mt-1 block w-full" placeholder="e.g., IT" :required="showAssigneeModal" v-model="newAssignee.department" />
                                 </div>
                             </div>
                             <div class="mt-6 flex justify-end space-x-3">
-                                <SecondaryButton @click="showAssigneeModal = false">Cancel</SecondaryButton>
-                                <PrimaryButton @click="createAssignee">Save</PrimaryButton>
+                    <SecondaryButton @click="showAssigneeModal = false" :disabled="isSavingAssignee">Cancel</SecondaryButton>
+                    <PrimaryButton @click="createAssignee" :disabled="isSavingAssignee">
+                        {{ isSavingAssignee ? 'Saving...' : 'Save' }}
+                    </PrimaryButton>
                             </div>
                         </div>
                     </Modal>
@@ -1083,7 +1099,7 @@ function handleDocumentUpload(index, event) {
                         </div>
                         <div>
                             <InputLabel for="original_value" value="Original Value" />
-                            <TextInput
+                            <input
                                 id="original_value"
                                 type="number"
                                 class="mt-1 block w-full"
@@ -1166,17 +1182,17 @@ function handleDocumentUpload(index, event) {
                         </div>
                         <div>
                             <InputLabel for="warranty_months" value="Warranty (months)" />
-                            <TextInput id="warranty_months" type="number" class="mt-1 w-full" placeholder="e.g., 12" v-model="form.warranty_months" />
+                            <input id="warranty_months" type="number" class="mt-1 w-full" placeholder="e.g., 12" v-model="form.warranty_months" />
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <InputLabel for="maintenance_interval_months" value="Maintenance interval (months)" />
-                            <TextInput id="maintenance_interval_months" type="number" class="mt-1 w-full" placeholder="e.g., 3" v-model="form.maintenance_interval_months" />
+                            <input id="maintenance_interval_months" type="number" class="mt-1 w-full" placeholder="e.g., 3" v-model="form.maintenance_interval_months" />
                         </div>
                         <div>
                             <InputLabel for="last_maintenance_at" value="Last maintenance date" />
-                            <TextInput id="last_maintenance_at" type="date" class="mt-1 w-full" v-model="form.last_maintenance_at" />
+                            <input id="last_maintenance_at" type="date" class="mt-1 w-full" v-model="form.last_maintenance_at" />
                         </div>
                     </div>
                     <div>
@@ -1247,7 +1263,7 @@ function handleDocumentUpload(index, event) {
                 </h2>
                 <div class="mt-6">
                     <InputLabel for="new_location" value="Location Name" />
-                    <TextInput
+                    <input
                         id="new_location"
                         type="text"
                         class="mt-1 block w-full"
@@ -1286,7 +1302,7 @@ function handleDocumentUpload(index, event) {
                         for="new_sub_location"
                         value="Sub-Location Name"
                     />
-                    <TextInput
+                    <input
                         id="new_sub_location"
                         type="text"
                         class="mt-1 block w-full"
@@ -1319,7 +1335,7 @@ function handleDocumentUpload(index, event) {
                 </h2>
                 <div class="mt-6">
                     <InputLabel for="new_category" value="Category Name" />
-                    <TextInput
+                    <input
                         id="new_category"
                         type="text"
                         class="mt-1 block w-full"
@@ -1352,7 +1368,7 @@ function handleDocumentUpload(index, event) {
                 </h2>
                 <div class="mt-6">
                     <InputLabel for="new_region" value="Region Name" />
-                    <TextInput
+                    <input
                         id="new_region"
                         type="text"
                         class="mt-1 block w-full"
@@ -1388,7 +1404,7 @@ function handleDocumentUpload(index, event) {
                         for="new_fund_source"
                         value="Fund Source Name"
                     />
-                    <TextInput
+                    <input
                         id="new_fund_source"
                         type="text"
                         class="mt-1 block w-full"
@@ -1421,7 +1437,7 @@ function handleDocumentUpload(index, event) {
                 <h2 class="text-lg font-medium text-gray-900">Add New Type</h2>
                 <div class="mt-6">
                     <InputLabel for="new_type" value="Type Name" />
-                    <TextInput id="new_type" type="text" class="mt-1 block w-full" v-model="newType" required />
+                    <input id="new_type" type="text" class="mt-1 block w-full" v-model="newType" required />
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
                     <SecondaryButton @click="showTypeModal = false" :disabled="isNewType">Cancel</SecondaryButton>

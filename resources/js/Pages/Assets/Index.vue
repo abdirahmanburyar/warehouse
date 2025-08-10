@@ -371,7 +371,7 @@
                                                 <!-- Location Indicator -->
                                                 <div class="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-green-500 to-green-600 shadow-sm" title="Location">
                                                 </div>
-                                                <div class="text-xs text-gray-700">{{ asset.location?.name || 'N/A'
+                                                <div class="text-xs text-gray-700">{{ asset.asset_location?.name || 'N/A'
                                                     }}</div>
                                             </div>
                                         </div>
@@ -447,7 +447,7 @@
                                                 </svg>
                                             </div>
                                             <div class="text-sm font-semibold text-gray-900">
-                                                {{ formatDate(asset.acquisition_date) }}
+                                                {{ asset.acquisition_date }}
                                             </div>
                                         </div>
                                         <div v-if="getAssetAge(asset) > 0" class="flex items-center space-x-2 pl-9">
@@ -1069,6 +1069,7 @@ const formatStatus = (status) => {
 };
 
 const formatDate = (date) => {
+    console.log(date);
     if (!date) return '-';
     return moment(date).format('DD/MM/YYYY');
 };

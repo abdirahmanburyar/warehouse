@@ -22,7 +22,6 @@ class Asset extends Model
         'type_id',
         'serial_number',
         'asset_location_id',
-        'assigned_to',
         'assignee_id',
         'fund_source_id',
         'region_id',
@@ -49,25 +48,6 @@ class Asset extends Model
         'submitted_by'
     ];
 
-    protected $casts = [
-        'uuid' => 'string',
-        'acquisition_date' => 'date',
-        'purchase_date' => 'date',
-        'transfer_date' => 'date',
-        'asset_warranty_start' => 'date',
-        'asset_warranty_end' => 'date',
-        'warranty_start' => 'date',
-        'last_maintenance_at' => 'date',
-        'submitted_at' => 'datetime',
-        'metadata' => 'array',
-        'has_warranty' => 'boolean',
-        'has_documents' => 'boolean',
-        'submitted_for_approval' => 'boolean',
-        'cost' => 'decimal:2',
-        'original_value' => 'decimal:2',
-    ];
-
-
 
     public function region(){
         return $this->belongsTo(Region::class);
@@ -78,7 +58,7 @@ class Asset extends Model
         return $this->belongsTo(FundSource::class, 'fund_source_id');
     }
 
-    public function location(): BelongsTo
+    public function assetLocation(): BelongsTo
     {
         return $this->belongsTo(AssetLocation::class, 'asset_location_id');
     }

@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\AssetsImport;
 use Inertia\Inertia;
+use Illuminate\Support\Carbon;
 
 class AssetController extends Controller
 {
@@ -87,7 +88,7 @@ class AssetController extends Controller
             }
         }
 
-        $assets = $assets->with('category:id,name','type:id,name','location:id,name', 'subLocation:id,name', 'assignee:id,name', 'history','attachments','fundSource','region:id,name')
+        $assets = $assets->with('category:id,name','type:id,name','assetLocation:id,name', 'subLocation:id,name', 'assignee:id,name', 'history','attachments','fundSource','region:id,name')
             ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
@@ -469,13 +470,15 @@ class AssetController extends Controller
 
     public function edit(Asset $asset)
     {
-        $asset = Asset::with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history', 'attachments', 'fundSource', 'region', 'assignee')
+        // Use relationship names that the frontend expects (location instead of assetLocation)
+        $asset = Asset::with('category:id,name', 'assetLocation:id,name', 'subLocation:id,name', 'fundSource','type:id,name', 'region', 'assignee')
             ->findOrFail($asset->id);
-        $locations = AssetLocation::all();
-        $categories = AssetCategory::all();
-        $fundSources = fundSource::get();
-        $regions = Region::get();
-        $types = AssetType::all();
+        $locations = AssetLocation::orderBy('name')->get();
+        $categories = AssetCategory::orderBy('name')->get();
+        $fundSources = fundSource::orderBy('name')->get();
+        $regions = Region::orderBy('name')->get();
+        $types = AssetType::orderBy('name')->get();
+        $assignees = Assignee::select('id','name')->orderBy('name')->get();
         return Inertia::render('Assets/Edit', [
             'asset' => $asset,
             'locations' => $locations,
@@ -483,6 +486,7 @@ class AssetController extends Controller
             'fundSources' => $fundSources,
             'regions' => $regions,
             'types' => $types,
+            'assignees' => $assignees,
         ]);
     }
 
@@ -492,20 +496,26 @@ class AssetController extends Controller
             $validated = $request->validate([
                 'asset_tag' => 'required|string|max:255',
                 'asset_category_id' => 'required|exists:asset_categories,id',
+                'type_id' => 'nullable|exists:asset_types,id',
+                'tag_no' => 'nullable|string|max:255',
+                'name' => 'nullable|string|max:255',
                 'serial_number' => 'required|string|max:255|unique:assets,serial_number,' . $asset->id,
+                'serial_no' => 'nullable|string|max:255',
                 'item_description' => 'nullable|string',
-                'person_assigned' => 'nullable',
-                'asset_location_id' => 'required',
-                'sub_location_id' => 'required',
-                'region_id' => 'required',
-                'fund_source_id' => 'required',
+                'person_assigned' => 'nullable|string',
+                'asset_location_id' => 'required|exists:asset_locations,id',
+                'sub_location_id' => 'required|exists:sub_locations,id',
+                'region_id' => 'required|exists:regions,id',
+                'fund_source_id' => 'required|exists:fund_sources,id',
+                'assigned_to' => 'nullable|exists:users,id',
+                'assignee_id' => 'nullable|exists:assignees,id',
                 'acquisition_date' => 'required|date',
                 'status' => 'required|string|in:active,in_use,maintenance,retired,disposed',
-                'original_value' => 'required|numeric|min:0'
+                'original_value' => 'required|numeric|min:0',
             ]);
-    
+
             $asset->update($validated);
-    
+
             return response()->json('Updated', 200);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);

@@ -1,6 +1,6 @@
 <template>
     <AuthenticatedLayout
-        :title="`Asset: ${props.asset.asset_tag}`"
+        :title="`Asset: ${props.asset.name || props.asset.asset_tag}`"
         description="Detailed asset information"
         img="/assets/images/asset-header.png"
     >
@@ -28,12 +28,11 @@
                             </div>
                             <div>
                                 <h1 class="text-3xl font-bold text-white">
-                                    {{ asset.asset_tag || "Asset Details" }}
+                                    {{ asset.name || asset.asset_tag || "Asset Details" }}
                                 </h1>
                                 <p class="text-blue-100 text-sm mt-1">
-                                    <p>
-                                        {{ asset.serial_number }}
-                                    </p>
+                                    <p class="opacity-90">Tag: {{ asset.tag_no || '—' }}</p>
+                                    <p class="opacity-90">S/N: {{ asset.serial_number || '—' }}</p>
                                     <span
                                         :class="[
                                             'px-2 py-0.5 rounded-full text-xs font-semibold',
@@ -157,12 +156,12 @@
                                     <dt
                                         class="text-sm font-medium text-gray-500"
                                     >
-                                        Description
+                                        Type
                                     </dt>
                                     <dd
                                         class="col-span-2 text-sm text-gray-900"
                                     >
-                                        {{ asset.item_description || "—" }}
+                                        {{ asset.type?.name || "—" }}
                                     </dd>
                                 </div>
                                 <div
@@ -171,12 +170,12 @@
                                     <dt
                                         class="text-sm font-medium text-gray-500"
                                     >
-                                        Assigned To
+                                        Assignee
                                     </dt>
                                     <dd
                                         class="col-span-2 text-sm text-gray-900"
                                     >
-                                        {{ asset.person_assigned || "—" }}
+                                        {{ asset.assignee?.name || asset.person_assigned || "—" }}
                                     </dd>
                                 </div>
                             </dl>
@@ -196,7 +195,7 @@
                                     <path
                                         d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
                                     /></svg
-                                >Location & Financials
+                                >Location & Classification
                             </h2>
                             <dl class="space-y-3">
                                 <div
@@ -275,6 +274,14 @@
                                     >
                                         {{ asset.fund_source?.name || "—" }}
                                     </dd>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 items-center">
+                                    <dt class="text-sm font-medium text-gray-500">Region</dt>
+                                    <dd class="col-span-2 text-sm text-gray-900">{{ asset.region?.name || '—' }}</dd>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 items-center">
+                                    <dt class="text-sm font-medium text-gray-500">Status</dt>
+                                    <dd class="col-span-2 text-sm text-gray-900">{{ formatStatus(asset.status) }}</dd>
                                 </div>
                             </dl>
                         </section>
@@ -421,6 +428,25 @@
                         <div v-if="isWarrantyExpiringSoon(asset.asset_warranty_end)" class="mt-2 text-sm text-yellow-600">
                             Warranty expires in {{ daysLeft(asset.asset_warranty_end) }} days
                         </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Maintenance Section (dynamic) -->
+            <div class="bg-white shadow-xl rounded-2xl p-6 sm:p-8 mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-yellow-500 mr-2">
+                        <path d="M22.7 19.3l-5.4-5.4a7.5 7.5 0 10-3.4 3.4l5.4 5.4a2.4 2.4 0 003.4-3.4zM4.5 10a5.5 5.5 0 1111 0 5.5 5.5 0 01-11 0z" />
+                    </svg>
+                    Maintenance
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-500">Maintenance Interval (months)</p>
+                        <p class="text-gray-900 font-medium">{{ asset.maintenance_interval_months ?? '—' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Last Maintenance</p>
+                        <p class="text-gray-900 font-medium">{{ formatDate(asset.last_maintenance_at) }}</p>
                     </div>
                 </div>
             </div>
