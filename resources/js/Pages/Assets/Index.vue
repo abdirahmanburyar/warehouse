@@ -258,6 +258,14 @@
 
                 <div v-else class="relative bg-white/90 backdrop-blur-sm rounded-xl shadow-sm ring-1 ring-gray-200/70">
                     <table class="min-w-full table-fixed divide-y divide-gray-200">
+                        <colgroup>
+                            <col style="width:34%" />
+                            <col style="width:20%" />
+                            <col style="width:16%" />
+                            <col style="width:14%" />
+                            <col style="width:10%" />
+                            <col style="width:6%" />
+                        </colgroup>
                         <thead class="sticky top-0 z-[1] bg-gradient-to-r from-slate-800 to-slate-700 text-white shadow">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
@@ -314,7 +322,7 @@
                         <tbody class="bg-white divide-y divide-gray-100">
                             <tr v-for="asset in props.assets.data" :key="asset.id"
                                  class="odd:bg-white even:bg-gray-50/60 hover:bg-indigo-50 transition-colors duration-150 border-b border-gray-100 group">
-                                <td class="px-6 py-4 align-top border-r border-gray-100 last:border-r-0">
+                                <td class="px-6 py-3 align-top border-r border-gray-100 last:border-r-0">
                                     <div class="flex items-center">
                                         <div class="ml-4 flex-1">
                                             <div class="flex flex-col">
@@ -353,7 +361,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 align-top border-r border-gray-100 last:border-r-0">
+                                <td class="px-6 py-3 align-top border-r border-gray-100 last:border-r-0">
                                     <div class="space-y-2">
                                         <!-- Location Hierarchy with Indicators -->
                                         <div class="flex items-center space-x-2">
@@ -385,7 +393,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 align-top border-r border-gray-100 last:border-r-0">
+                                <td class="px-6 py-3 align-top border-r border-gray-100 last:border-r-0">
                                     <div class="space-y-2">
                                         <div class="flex items-center space-x-2">
                                             <span :class="{
@@ -433,7 +441,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 align-top border-r border-gray-100 last:border-r-0">
+                                <td class="px-6 py-3 align-top border-r border-gray-100 last:border-r-0">
                                     <div class="space-y-2">
                                         <div class="flex items-center space-x-3">
                                             <div class="p-2 bg-gradient-to-r from-slate-100 to-slate-200 rounded-lg shadow-sm">
@@ -493,7 +501,7 @@
                                     
 
                                     <!-- Actions Dropdown Column -->
-                                    <td class="px-6 py-4 relative align-top">
+                                    <td class="px-6 py-3 relative align-top">
                                         <div class="relative dropdown-container">
                                             <button @click.stop="toggleDropdown(asset.id)" 
                                                 class="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 text-gray-700 hover:text-gray-900 text-xs font-medium rounded-md border border-gray-200 transition-all duration-200 group-hover:shadow-sm">

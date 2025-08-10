@@ -172,7 +172,7 @@ class AssetController extends Controller
 
     public function show(Request $request, $id)
     {
-        $asset = Asset::with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history', 'attachments', 'fundSource', 'submittedBy')
+        $asset = Asset::with('category:id,name', 'assetLocation:id,name', 'subLocation:id,name', 'history', 'attachments', 'fundSource', 'submittedBy')
             ->findOrFail($id);
 
         return inertia('Assets/Show', [
@@ -184,7 +184,7 @@ class AssetController extends Controller
     public function getAssets(Request $request)
     {
         $query = Asset::query()
-            ->with('category:id,name', 'location:id,name', 'subLocation:id,name', 'history');
+            ->with('category:id,name', 'assetLocation:id,name', 'subLocation:id,name', 'history');
 
         // Apply location filter if provided
         if ($request->has('locations')) {
@@ -1345,7 +1345,7 @@ class AssetController extends Controller
                       ->whereHas('role', function($roleQuery) use ($user) {
                           $roleQuery->whereIn('name', $user->roles->pluck('name'));
                       });
-            }, 'category', 'location', 'subLocation', 'submittedBy'])
+            }, 'category', 'assetLocation', 'subLocation', 'submittedBy'])
             ->get();
 
             return response()->json([
@@ -1422,7 +1422,7 @@ class AssetController extends Controller
             $users = User::whereIn('id', $asset->assetHistory()->distinct('performed_by')->pluck('performed_by'))->get();
 
             return Inertia::render('Assets/History', [
-                'asset' => $asset->load(['category', 'location', 'subLocation']),
+                'asset' => $asset->load(['category', 'assetLocation', 'subLocation']),
                 'history' => $history,
                 'users' => $users,
                 'filters' => $request->only('actionType', 'dateRange', 'performedBy'),
