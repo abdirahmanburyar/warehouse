@@ -374,6 +374,12 @@ class AssetController extends Controller
             $hasWarranty = filter_var($request->has_warranty, FILTER_VALIDATE_BOOLEAN);
             $hasDocuments = filter_var($request->has_documents, FILTER_VALIDATE_BOOLEAN);
             
+            // Keep a snapshot if updating to capture history changes later
+            $existingAsset = null;
+            if ($request->id) {
+                $existingAsset = Asset::find($request->id);
+            }
+
             // Create asset data array with the correct IDs
             // Use provided assignee or create a new one if details provided
             $assigneeId = null;
@@ -429,6 +435,32 @@ class AssetController extends Controller
                 ['id' => $request->id],
                 $assetData
             );
+
+            // Capture asset history (create or update)
+            if (!$existingAsset) {
+                // New asset: record initial status and custody if any
+                if (!empty($asset->status)) {
+                    $asset->createStatusChangeHistory(null, $asset->status, 'Asset created');
+                }
+                if (!empty($asset->assignee_id)) {
+                    $newAssigneeName = optional(\App\Models\Assignee::find($asset->assignee_id))->name;
+                    $asset->createCustodyChangeHistory(null, $newAssigneeName, 'Initial custody');
+                } elseif (!empty($asset->person_assigned)) {
+                    $asset->createCustodyChangeHistory(null, $asset->person_assigned, 'Initial custody');
+                }
+            } else {
+                // Updated asset: compare and record changes
+                if ($existingAsset->status !== $asset->status) {
+                    $asset->createStatusChangeHistory($existingAsset->status, $asset->status, 'Status updated');
+                }
+                if ($existingAsset->assignee_id !== $asset->assignee_id) {
+                    $oldAssigneeName = optional(\App\Models\Assignee::find($existingAsset->assignee_id))->name;
+                    $newAssigneeName = optional(\App\Models\Assignee::find($asset->assignee_id))->name;
+                    $asset->createCustodyChangeHistory($oldAssigneeName, $newAssigneeName, 'Custody updated');
+                } elseif ($existingAsset->person_assigned !== $asset->person_assigned) {
+                    $asset->createCustodyChangeHistory($existingAsset->person_assigned, $asset->person_assigned, 'Custody updated');
+                }
+            }
 
             // If this is a new asset (not an update), create automatic approvals
             if (!$request->id) {

@@ -704,16 +704,7 @@ const submit = async () => {
         sub_location: form.value.sub_location,
     });
 
-    // Validate warranty dates if has_warranty is checked
-    if (form.value.has_warranty) {
-        if (!validateWarrantyDates()) {
-            isSubmitting.value = false;
-            toast.error(
-                "Please fix the warranty date issues before submitting"
-            );
-            return;
-        }
-    }
+    // Warranty/maintenance have been moved to Show; ignore any toggles here
     processing.value = true;
 
     // Create a FormData object to handle file uploads
@@ -738,17 +729,7 @@ const submit = async () => {
         }
     });
 
-    // Handle documents if has_documents is true
-    if (form.value.has_documents) {
-        form.value.documents.forEach((doc, index) => {
-            if (doc.type) {
-                formData.append(`documents[${index}][type]`, doc.type);
-            }
-            if (doc.file instanceof File) {
-                formData.append(`documents[${index}][file]`, doc.file);
-            }
-        });
-    }
+    // Documents are uploaded on Show page now
 
     formData.append("asset_tag", form.value.asset_tag);
     formData.append("asset_category_id", form.value.asset_category_id);
@@ -776,14 +757,7 @@ const submit = async () => {
     if (form.value.supplier) formData.append("supplier", form.value.supplier);
     formData.append("status", form.value.status);
     formData.append("original_value", form.value.original_value);
-    // Convert boolean values to 0/1 format for Laravel
-    formData.append("has_warranty", form.value.has_warranty ? "1" : "0");
-    formData.append("has_documents", form.value.has_documents ? "1" : "0");
-    formData.append("asset_warranty_start", form.value.asset_warranty_start);
-    formData.append("asset_warranty_end", form.value.asset_warranty_end);
-    if (form.value.warranty_months !== "") formData.append("warranty_months", form.value.warranty_months);
-    formData.append("maintenance_interval_months", form.value.maintenance_interval_months ?? 0);
-    if (form.value.last_maintenance_at) formData.append("last_maintenance_at", form.value.last_maintenance_at);
+    // Skip warranty/maintenance/documents fields on create
 
     try {
         const response = await axios.post(route("assets.store"), formData, {
@@ -1138,109 +1112,7 @@ function handleDocumentUpload(index, event) {
                             </Multiselect>
                         </div>
                     </div>
-                    <div>
-                        <input
-                            type="checkbox"
-                            v-model="form.has_warranty"
-                            id="has_warranty"
-                            class="mt-1"
-                        />
-                        <InputLabel for="has_warranty" value="Has Warrantee" />
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4" v-if="form.has_warranty">
-                        <div>
-                            <InputLabel
-                                for="asset_warranty_start"
-                                value="Start Date"
-                            />
-                            <input
-                                type="date"
-                                v-model="form.asset_warranty_start"
-                                id="asset_warranty_start"
-                                class="mt-1 w-full"
-                                @change="validateWarrantyDates"
-                            />
-                        </div>
-                        <div>
-                            <InputLabel
-                                for="asset_warranty_end"
-                                value="End Date"
-                            />
-                            <input
-                                type="date"
-                                v-model="form.asset_warranty_end"
-                                id="asset_warranty_end"
-                                class="mt-1 w-full"
-                                @change="validateWarrantyDates"
-                            />
-                            <div
-                                v-if="warrantyDateError"
-                                class="text-red-500 text-sm mt-1"
-                            >
-                                {{ warrantyDateError }}
-                            </div>
-                        </div>
-                        <div>
-                            <InputLabel for="warranty_months" value="Warranty (months)" />
-                            <input id="warranty_months" type="number" class="mt-1 w-full" placeholder="e.g., 12" v-model="form.warranty_months" />
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <InputLabel for="maintenance_interval_months" value="Maintenance interval (months)" />
-                            <input id="maintenance_interval_months" type="number" class="mt-1 w-full" placeholder="e.g., 3" v-model="form.maintenance_interval_months" />
-                        </div>
-                        <div>
-                            <InputLabel for="last_maintenance_at" value="Last maintenance date" />
-                            <input id="last_maintenance_at" type="date" class="mt-1 w-full" v-model="form.last_maintenance_at" />
-                        </div>
-                    </div>
-                    <div>
-                        <input
-                            type="checkbox"
-                            v-model="form.has_documents"
-                            id="has_documents"
-                            class="mt-1"
-                        />
-                        <InputLabel for="has_documents" value="Has Documents" />
-                    </div>
-                    <div
-                        class="grid grid-cols-3 gap-4"
-                        v-if="form.has_documents"
-                        v-for="(document, index) in form.documents"
-                    >
-                        <div>
-                            <InputLabel for="type" value="Document Type" />
-                            <input
-                                type="text"
-                                v-model="document.type"
-                                id="type"
-                                class="mt-1 w-full"
-                                placeholder="Document Type, e.g. Warranty, Receipt"
-                            />
-                        </div>
-                        <div>
-                            <InputLabel for="file" value="Document Date" />
-                            <input
-                                type="file"
-                                accept=".pdf"
-                                @change="(e) => handleDocumentUpload(index, e)"
-                                id="file"
-                                class="mt-1 w-full"
-                            />
-                        </div>
-                        <div>
-                            <button
-                                @click.prevent="removeDocument(index)"
-                                class="mt-4"
-                            >
-                                Remove document
-                            </button>
-                        </div>
-                    </div>
-                    <button @click.prevent="addDocument" class="mt-4">
-                        Add document
-                    </button>
+                    <!-- Warranty, maintenance, and document uploads moved to Asset/Show.vue -->
                     <div class="flex items-center justify-end mt-6">
                         <Link
                             :href="route('assets.index')"
