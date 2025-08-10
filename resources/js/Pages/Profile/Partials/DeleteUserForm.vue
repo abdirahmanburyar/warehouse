@@ -75,7 +75,7 @@ const closeModal = () => {
                         class="sr-only"
                     />
 
-                    <TextInput
+                    <input
                         id="password"
                         ref="passwordInput"
                         v-model="form.password"

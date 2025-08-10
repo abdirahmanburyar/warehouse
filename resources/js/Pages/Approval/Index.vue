@@ -43,7 +43,7 @@
                     <!-- Sequence -->
                     <div>
                         <InputLabel for="sequence" value="Sequence" />
-                        <TextInput
+                        <input
                             id="sequence"
                             type="number"
                             min="1"

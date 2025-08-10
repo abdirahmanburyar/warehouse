@@ -16,7 +16,7 @@
             <form @submit.prevent="submitForm" class="space-y-6">
                 <div>
                     <InputLabel for="name" value="Name" />
-                    <TextInput
+                    <input
                         id="name"
                         v-model="form.name"
                         type="text"
@@ -30,7 +30,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <InputLabel for="email" value="Email" />
-                        <TextInput
+                        <input
                             id="email"
                             v-model="form.email"
                             type="email"
@@ -43,7 +43,7 @@
 
                     <div>
                         <InputLabel for="phone" value="Phone" />
-                        <TextInput
+                        <input
                             id="phone"
                             v-model="form.phone"
                             type="text"
@@ -56,7 +56,7 @@
 
                     <div>
                         <InputLabel for="address" value="Address" />
-                        <TextInput
+                        <input
                             id="address"
                             v-model="form.address"
                             type="text"
@@ -231,7 +231,7 @@
 
                 <div class="mt-6">
                     <InputLabel for="new_region" value="Region Name" />
-                    <TextInput
+                    <input
                         id="new_region"
                         type="text"
                         class="mt-1 block w-full"
@@ -267,7 +267,7 @@
 
                 <div class="mt-6">
                     <InputLabel for="name" value="District Name" />
-                    <TextInput
+                    <input
                         id="name"
                         type="text"
                         class="mt-1 block w-full"

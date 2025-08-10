@@ -467,7 +467,7 @@
                 <div class="space-y-4">
                     <div>
                         <InputLabel for="new_location" value="Location Name" />
-                        <TextInput id="new_location" type="text" class="mt-1 block w-full" v-model="newLocation" required />
+                        <input id="new_location" type="text" class="mt-1 block w-full" v-model="newLocation" required />
                     </div>
                     <div>
                         <InputLabel for="warehouse_id" value="Warehouse" />

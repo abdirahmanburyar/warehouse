@@ -16,10 +16,14 @@ return new class extends Migration
             $table->json('old_value')->nullable(); // Previous state (can be complex data)
             $table->json('new_value'); // New state (can be complex data)
             $table->text('notes')->nullable(); // Additional notes or comments
-            $table->foreignId('performed_by')->constrained('users'); // Who performed the action
+            $table->foreignId('performed_by')->nullable()->constrained('users')->nullOnDelete(); // Who performed the action
             $table->timestamp('performed_at'); // When the action was performed
-            $table->foreignId('approval_id')->nullable()->constrained('asset_approvals'); // Link to approval record
+            $table->foreignId('approval_id')->nullable()->constrained('asset_approvals')->nullOnDelete(); // Link to approval record
+            $table->foreignId('assignee_id')->nullable()->constrained('assignees')->nullOnDelete(); // New custodian
             $table->timestamps();
+
+            $table->index('action_type');
+            $table->index('performed_at');
         });
     }
 

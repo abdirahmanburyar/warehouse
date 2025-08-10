@@ -490,27 +490,27 @@
                                 <div class="grid grid-cols-1 gap-4">
                                     <div>
                                         <InputLabel for="received_quantity" value="Received Quantity" />
-                                        <TextInput id="received_quantity" type="number" class="mt-1 block w-full"
+                                        <input id="received_quantity" type="number" class="mt-1 block w-full"
                                             v-model="editForm.received_quantity" required />
                                     </div>
                                     <div>
                                         <InputLabel for="damage_quantity" value="Damage Quantity" />
-                                        <TextInput id="damage_quantity" type="number" class="mt-1 block w-full"
+                                        <input id="damage_quantity" type="number" class="mt-1 block w-full"
                                             v-model="editForm.damage_quantity" />
                                     </div>
                                     <div>
                                         <InputLabel for="batch_number" value="Batch Number" />
-                                        <TextInput id="batch_number" type="text" class="mt-1 block w-full"
+                                        <input id="batch_number" type="text" class="mt-1 block w-full"
                                             v-model="editForm.batch_number" />
                                     </div>
                                     <div>
                                         <InputLabel for="expiry_date" value="Expiry Date" />
-                                        <TextInput id="expiry_date" type="date" class="mt-1 block w-full"
+                                        <input id="expiry_date" type="date" class="mt-1 block w-full"
                                             v-model="editForm.expiry_date" />
                                     </div>
                                     <div>
                                         <InputLabel for="location" value="Location" />
-                                        <TextInput id="location" type="text" class="mt-1 block w-full"
+                                        <input id="location" type="text" class="mt-1 block w-full"
                                             v-model="editForm.location" />
                                     </div>
                                 </div>

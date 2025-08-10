@@ -188,7 +188,7 @@
                     <form @submit.prevent="createFacilityType">
                         <div class="mb-4">
                             <InputLabel for="new_facility_type_name" value="Facility Type Name" class="text-sm font-medium text-gray-700 mb-2" />
-                            <TextInput
+                            <input
                                 id="new_facility_type_name"
                                 v-model="newFacilityType.name"
                                 type="text"

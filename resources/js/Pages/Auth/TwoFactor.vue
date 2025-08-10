@@ -15,7 +15,7 @@
                 <div>
                     <InputLabel for="code" value="Verification Code" />
 
-                <TextInput
+                <input
                     id="code"
                     type="text"
                     class="mt-1 block w-full"

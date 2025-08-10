@@ -21,7 +21,7 @@
                         <!-- Name -->
                         <div>
                             <InputLabel for="name" value="Name" />
-                            <TextInput
+                            <input
                                 id="name"
                                 type="text"
                                 v-model="form.name"
@@ -32,7 +32,7 @@
                         <!-- Title -->
                         <div>
                             <InputLabel for="title" value="Title" />
-                            <TextInput
+                            <input
                                 id="title"
                                 type="text"
                                 v-model="form.title"
@@ -43,7 +43,7 @@
                         <!-- Username -->
                         <div>
                             <InputLabel for="username" value="Username" />
-                            <TextInput
+                            <input
                                 id="username"
                                 type="text"
                                 v-model="form.username"
@@ -58,7 +58,7 @@
                         <!-- Email -->
                         <div>
                             <InputLabel for="email" value="Email" />
-                            <TextInput
+                            <input
                                 id="email"
                                 type="email"
                                 v-model="form.email"
@@ -69,7 +69,7 @@
                         <!-- Password -->
                         <div>
                             <InputLabel for="password" value="Password" />
-                            <TextInput
+                            <input
                                 id="password"
                                 type="password"
                                 v-model="form.password"
@@ -80,7 +80,7 @@
                         <!-- Password Confirmation -->
                         <div>
                             <InputLabel for="password_confirmation" value="Confirm Password" />
-                            <TextInput
+                            <input
                                 id="password_confirmation"
                                 type="password"
                                 v-model="form.password_confirmation"

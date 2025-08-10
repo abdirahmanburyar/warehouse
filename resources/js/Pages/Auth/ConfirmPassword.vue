@@ -29,7 +29,7 @@ const submit = () => {
         <form @submit.prevent="submit">
             <div>
                 <InputLabel for="password" value="Password" />
-                <TextInput
+                <input
                     id="password"
                     type="password"
                     class="mt-1 block w-full"

@@ -70,7 +70,7 @@ const submit = () => {
 
                         <div class="input-with-icon">
                             <i class="input-icon">✉️</i>
-                            <TextInput
+                            <input
                                 id="email"
                                 type="email"
                                 class="input-enhanced"

@@ -5,7 +5,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
                     <div class="col-span-1 md:col-span-2 min-w-0">
                         <label class="block text-sm font-medium text-gray-700">Search</label>
-                        <TextInput v-model="search" type="text" class="w-full"
+                        <input v-model="search" type="text" class="w-full"
                             placeholder="Search by item name, barcode" />
                     </div>
                     <div class="col-span-1 min-w-0">

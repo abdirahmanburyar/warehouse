@@ -33,7 +33,7 @@
                 <div class="grid grid-cols-1 gap-6">
                     <div>
                         <InputLabel for="name" value="Facility Type Name" class="text-sm font-medium text-gray-700 mb-2" />
-                        <TextInput
+                        <input
                             id="name"
                             v-model="form.name"
                             type="text"
