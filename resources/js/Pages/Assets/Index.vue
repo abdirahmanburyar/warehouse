@@ -1231,6 +1231,41 @@ onMounted(() => {
     });
 });
 
+// Initialize filters from URL on hard reload/navigation (when props.filters may not include all keys)
+onMounted(async () => {
+    try {
+        const params = new URLSearchParams(window.location.search || '');
+        // Status
+        const statusParam = params.get('status');
+        if (statusParam) {
+            const match = (statusOptions.value || []).find(s => s.value === statusParam);
+            if (match) selectedStatus.value = match;
+        }
+        // Region
+        const regionId = params.get('region_id');
+        if (regionId && Array.isArray(props.regions)) {
+            const reg = props.regions.find(r => String(r.id) === String(regionId));
+            if (reg) regionFilter.value = reg;
+        }
+        // Location and Sub-location (dependent)
+        const locationId = params.get('location_id');
+        if (locationId && Array.isArray(props.locations)) {
+            const loc = props.locations.find(l => String(l.id) === String(locationId));
+            if (loc) {
+                locationFilter.value = loc;
+                await onLocationChange(loc);
+                const subId = params.get('sub_location_id');
+                if (subId && Array.isArray(subLocationOptions.value)) {
+                    const sub = subLocationOptions.value.find(s => String(s.id) === String(subId));
+                    if (sub) subLocationFilter.value = sub;
+                }
+            }
+        }
+    } catch (e) {
+        // ignore URL parsing errors
+    }
+});
+
 const regionOptions = computed(() => props.regions || []);
 
 // Location options: show all locations, sub-location depends on selected location
