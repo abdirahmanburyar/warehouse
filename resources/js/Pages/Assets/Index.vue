@@ -178,12 +178,11 @@
                             <Multiselect
                                 v-model="locationFilter"
                                 :options="locationOptions"
-                                :placeholder="regionFilter ? 'All Locations' : 'Select Region first'"
+                                placeholder="All Locations"
                                 label="name"
                                 track-by="id"
                                 :show-labels="false"
                                 :close-on-select="true"
-                                :disabled="!regionFilter"
                                 @select="onLocationChange"
                             />
                         </div>
@@ -1234,33 +1233,14 @@ onMounted(() => {
 
 const regionOptions = computed(() => props.regions || []);
 
-// Safe location options with fallback
-const safeLocationOptions = computed(() => props.locations || []);
-
-// Filter locations based on selected region (locations that have assets in the selected region)
-const locationOptions = computed(() => {
-    if (!regionFilter.value) return [];
-
-    // Get unique location IDs that have assets in the selected region
-    const locationIdsInRegion = new Set();
-    props.assets.data.forEach(asset => {
-        if (asset.region_id === regionFilter.value.id && asset.asset_location_id) {
-            locationIdsInRegion.add(asset.asset_location_id);
-        }
-    });
-
-    // Return only locations that have assets in the selected region
-    return (props.locations || []).filter(location =>
-        locationIdsInRegion.has(location.id)
-    );
-});
+// Location options: show all locations, sub-location depends on selected location
+const locationOptions = computed(() => props.locations || []);
 
 // Clear dependent filters when region changes
 watch(() => regionFilter.value, () => {
     locationFilter.value = null;
     subLocationFilter.value = null;
     subLocationOptions.value = [];
-    selectedSubLocations.value = [];
 });
 
 
@@ -1395,8 +1375,9 @@ function reloadAssets() {
         query.region_id = regionFilter.value.id;
     if (locationFilter.value && locationFilter.value.id)
         query.location_id = locationFilter.value.id;
-    if (selectedSubLocations.value && selectedSubLocations.value.length) {
-        query["sub_location_ids"] = selectedSubLocations.value.map((x) => x.id);
+    // Single sub-location filter (dependent on location)
+    if (subLocationFilter.value && subLocationFilter.value.id) {
+        query.sub_location_id = subLocationFilter.value.id;
     }
     if (fundSourceFilter.value && fundSourceFilter.value.id)
         query.fund_source_id = fundSourceFilter.value.id;
