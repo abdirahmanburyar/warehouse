@@ -240,7 +240,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- Assets Table -->
             <div class="bg-white rounded-2xl">
                 <div v-if="loading" class="flex justify-center items-center py-12">
@@ -257,11 +256,11 @@
                     <p class="text-gray-500">No assets match your current filters.</p>
                 </div>
 
-                <div v-else class="shadow-lg rounded-lg border border-gray-200">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gradient-to-r from-slate-800 to-slate-700">
+                <div v-else class="relative bg-white/90 backdrop-blur-sm rounded-xl shadow-sm ring-1 ring-gray-200/70">
+                    <table class="min-w-full table-fixed divide-y divide-gray-200">
+                        <thead class="sticky top-0 z-[1] bg-gradient-to-r from-slate-800 to-slate-700 text-white shadow">
                             <tr>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-white capitalize tracking-wider border-r border-slate-600 last:border-r-0">
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
                                     <div class="flex items-center space-x-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
                                             <path fill-rule="evenodd" d="M4.25 2A2.25 2.25 0 002 4.25v11.5A2.25 2.25 0 004.25 18h11.5A2.25 2.25 0 0018 15.75V4.25A2.25 2.25 0 0015.75 2H4.25zM15 5.75a.75.75 0 00-1.5 0v8.5a.75.75 0 001.5 0v-8.5zm-8.5 6a.75.75 0 01.75-.75h5a.75.75 0 010 1.5h-5a.75.75 0 01-.75-.75zm0 2.5a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
@@ -269,7 +268,7 @@
                                         <span>Asset Details</span>
                                     </div>
                                 </th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-white capitalize tracking-wider border-r border-slate-600 last:border-r-0">
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
                                     <div class="flex items-center space-x-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
                                             <path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.273 1.765 11.842 11.842 0 00.757.433c.112.057.218.11.281.14l.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clip-rule="evenodd" />
@@ -277,7 +276,7 @@
                                         <span>Location</span>
                                     </div>
                                 </th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-white capitalize tracking-wider border-r border-slate-600 last:border-r-0">
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
                                     <div class="flex items-center space-x-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
                                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.236 4.53L8.107 10.5a.75.75 0 00-1.214 1.029l1.5 2.25a.75.75 0 001.214-.15l4-5.75z" clip-rule="evenodd" />
@@ -285,7 +284,7 @@
                                         <span>Status</span>
                                     </div>
                                 </th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-white capitalize tracking-wider border-r border-slate-600 last:border-r-0">
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
                                     <div class="flex items-center space-x-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
                                             <path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clip-rule="evenodd" />
@@ -302,7 +301,7 @@
                                         <span>Value & Source</span>
                                     </div>
                                 </th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-white capitalize tracking-wider">
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider">
                                     <div class="flex items-center space-x-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
                                             <path d="M10 3.75a2 2 0 10-4 0 2 2 0 004 0zM17.25 4.5a.75.75 0 000-1.5h-5.5a.75.75 0 000 1.5h5.5zM5 3.75a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75zM8.25 8a2 2 0 100-4 2 2 0 000 4zM17.25 7.5a.75.75 0 000-1.5h-5.5a.75.75 0 000 1.5h5.5zM5 6.75a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75zM8.25 12a2 2 0 100-4 2 2 0 000 4zM17.25 11.5a.75.75 0 000-1.5h-5.5a.75.75 0 000 1.5h5.5zM5 10.75a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75z" />
@@ -314,8 +313,8 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-100">
                             <tr v-for="asset in props.assets.data" :key="asset.id"
-                                 class="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 border-b border-gray-100 hover:shadow-md group">
-                                <td class="px-6 py-5 border-r border-gray-100 last:border-r-0">
+                                 class="odd:bg-white even:bg-gray-50/60 hover:bg-indigo-50 transition-colors duration-150 border-b border-gray-100 group">
+                                <td class="px-6 py-4 align-top border-r border-gray-100 last:border-r-0">
                                     <div class="flex items-center">
                                         <div class="ml-4 flex-1">
                                             <div class="flex flex-col">
@@ -328,7 +327,7 @@
                                                 <div v-if="asset.tag_no" class="text-xs text-gray-500">Tag: {{ asset.tag_no }}</div>
                                                 <div class="text-xs text-gray-500">Type: {{ asset.type?.name }}</div>
                                             </div>
-                                            <div class="flex items-center space-x-3 mt-2">
+                                <div class="flex items-center space-x-3 mt-2 text-sm">
                                                 <span class="text-sm font-medium text-gray-600">S/N:</span>
                                                 <span class="text-sm text-gray-900">{{ asset.serial_number
                                                     || 'N/A' }}
@@ -354,7 +353,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-5 border-r border-gray-100 last:border-r-0">
+                                <td class="px-6 py-4 align-top border-r border-gray-100 last:border-r-0">
                                     <div class="space-y-2">
                                         <!-- Location Hierarchy with Indicators -->
                                         <div class="flex items-center space-x-2">
@@ -386,7 +385,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-5 border-r border-gray-100 last:border-r-0">
+                                <td class="px-6 py-4 align-top border-r border-gray-100 last:border-r-0">
                                     <div class="space-y-2">
                                         <div class="flex items-center space-x-2">
                                             <span :class="{
@@ -434,7 +433,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-5 border-r border-gray-100 last:border-r-0">
+                                <td class="px-6 py-4 align-top border-r border-gray-100 last:border-r-0">
                                     <div class="space-y-2">
                                         <div class="flex items-center space-x-3">
                                             <div class="p-2 bg-gradient-to-r from-slate-100 to-slate-200 rounded-lg shadow-sm">
@@ -494,7 +493,7 @@
                                     
 
                                     <!-- Actions Dropdown Column -->
-                                    <td class="px-6 py-5 relative">
+                                    <td class="px-6 py-4 relative align-top">
                                         <div class="relative dropdown-container">
                                             <button @click.stop="toggleDropdown(asset.id)" 
                                                 class="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 text-gray-700 hover:text-gray-900 text-xs font-medium rounded-md border border-gray-200 transition-all duration-200 group-hover:shadow-sm">
@@ -623,7 +622,11 @@
                 
 
                 <!-- Pagination -->
-                <div class="bg-gray-50 px-6 py-3 border-t border-gray-200 mb-[80px]">
+                <div class="bg-gray-50 px-6 py-3 border-t border-gray-200 mb-[80px] flex justify-between">
+                    <!-- FROM TO COUNT -->
+                    <div class="text-sm text-gray-500">
+                        Showing {{ props.assets.meta.from }} to {{ props.assets.meta.to }} of {{ props.assets.meta.total }} assets
+                    </div>
                     <div class="flex items-center justify-end">
                         <TailwindPagination :data="props.assets" @pagination-change-page="getResults" :limit="2" />
                     </div>

@@ -305,14 +305,14 @@ const submit = async () => {
     await axios.put(route('assets.update', props.asset.id), form.value)
     .then(response => {
         console.log(response);
-        processing.value = false;
+            processing.value = false;
         Swal.fire({ title: 'Success!', text: 'Asset updated successfully', icon: 'success', confirmButtonText: 'OK' })
             .then(() => router.get(route('assets.index')));
     })
     .catch(error => {
         console.log(error);
-        processing.value = false;
-        toast.error(error.response?.data || 'Error updating asset');
+            processing.value = false;
+            toast.error(error.response?.data || 'Error updating asset');
     });
 
 };
@@ -458,7 +458,7 @@ const submit = async () => {
                             <label for="original_value" class="block text-sm font-medium text-gray-700">Original Value</label>
                             <input id="original_value" type="number" 
                                     class="rounded-md border-gray-300 mt-1 block w-full shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
- v-model="form.original_value" required />
+                                v-model="form.original_value" required />
                         </div>
                         <div>
                             <label for="fund_source" class="block text-sm font-medium text-gray-700">Fund Source</label>

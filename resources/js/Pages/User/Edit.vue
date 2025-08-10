@@ -21,33 +21,33 @@
                         <!-- Name -->
                         <div>
                             <InputLabel for="name" value="Name" />
-                            <TextInput
+                            <input
                                 id="name"
                                 type="text"
                                 v-model="form.name"
-                                class="mt-1 block w-full"
+                                class="mt-1 block w-full rounded-md border-gray-300 mt-1 block w-full shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 required
                             />
                         </div>
                         <!-- Title -->
                         <div>
                             <InputLabel for="title" value="Title" />
-                            <TextInput
+                            <input
                                 id="title"
                                 type="text"
                                 v-model="form.title"
-                                class="mt-1 block w-full"
+                                class="mt-1 block w-full rounded-md border-gray-300 mt-1 block w-full shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 placeholder="e.g., Manager, Supervisor, etc."
                             />
                         </div>
                         <!-- Username -->
                         <div>
                             <InputLabel for="username" value="Username" />
-                            <TextInput
+                            <input
                                 id="username"
                                 type="text"
                                 v-model="form.username"
-                                class="mt-1 block w-full"
+                                class="mt-1 block w-full rounded-md border-gray-300 mt-1 block w-full shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 required
                             />
                         </div>
@@ -58,32 +58,32 @@
                         <!-- Email -->
                         <div>
                             <InputLabel for="email" value="Email" />
-                            <TextInput
+                            <input
                                 id="email"
                                 type="email"
                                 v-model="form.email"
-                                class="mt-1 block w-full"
+                                class="mt-1 block w-full rounded-md border-gray-300 mt-1 block w-full shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 required
                             />
                         </div>
                         <!-- Password -->
                         <div>
                             <InputLabel for="password" value="New Password (leave blank to keep current)" />
-                            <TextInput
+                            <input
                                 id="password"
                                 type="password"
                                 v-model="form.password"
-                                class="mt-1 block w-full"
+                                class="mt-1 block w-full rounded-md border-gray-300 mt-1 block w-full shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             />
                         </div>
                         <!-- Password Confirmation -->
                         <div>
                             <InputLabel for="password_confirmation" value="Confirm New Password" />
-                            <TextInput
+                            <input
                                 id="password_confirmation"
                                 type="password"
                                 v-model="form.password_confirmation"
-                                class="mt-1 block w-full"
+                                class="mt-1 block w-full rounded-md border-gray-300 mt-1 block w-full shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             />
                         </div>
                     </div>
@@ -96,7 +96,7 @@
                         <InputLabel value="Warehouse" />
                         <Multiselect
                             v-model="form.warehouse"
-                            :options="warehouses"
+                            :options="props.warehouses"
                             track-by="id"
                             label="name"
                             placeholder="Select warehouse"
@@ -112,7 +112,7 @@
                         <InputLabel value="Facility" />
                         <Multiselect
                             v-model="form.facility"
-                            :options="facilities"
+                            :options="props.facilities"
                             track-by="id"
                             label="name"
                             placeholder="Select facility"
@@ -138,11 +138,11 @@
                     </div>
                     
                     <div class="mt-2 border border-gray-200 rounded-lg p-4 max-h-60 overflow-y-auto">
-                        <div v-if="!permissions.length" class="text-gray-500 text-center py-4">
+                        <div v-if="!props.permissions.length" class="text-gray-500 text-center py-4">
                             No permissions available
                         </div>
                         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            <div v-for="permission in permissions" :key="permission.id" class="flex items-start">
+                            <div v-for="permission in props.permissions" :key="permission.id" class="flex items-start">
                                 <div class="flex items-center h-5">
                                     <input
                                         :id="`permission-${permission.id}`"
@@ -209,8 +209,6 @@
 import { ref, computed, watch } from 'vue';
 import UserAuthTab from '@/Layouts/UserAuthTab.vue';
 import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
-import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import { Link, router } from '@inertiajs/vue3';
 import Multiselect from 'vue-multiselect';
@@ -248,33 +246,25 @@ const form = ref({
 
 // Computed properties for permissions
 const allPermissionsSelected = computed(() => {
-    if (props.permissions.length === 0) return false;
+    if (!Array.isArray(props.permissions) || props.permissions.length === 0) return false;
     return form.value.permissions.length === props.permissions.length;
 });
 
 // Check if user has a facility assigned
-const hasFacility = computed(() => {
-    const hasFacilityValue = form.value.facility_id !== null;
-    console.log('hasFacility computed:', hasFacilityValue, 'facility_id:', form.value.facility_id);
-    return hasFacilityValue;
-});
+const hasFacility = computed(() => form.value.facility_id !== null);
 
 // Watch for facility changes and manage permissions accordingly
-watch(() => form.value.facility_id, (newValue, oldValue) => {
-    console.log('Facility ID changed:', oldValue, '->', newValue);
+watch(() => form.value.facility_id, (newValue) => {
     if (newValue !== null) {
         // Clear permissions when facility is assigned
         form.value.permissions = [];
-        console.log('Permissions cleared due to facility assignment');
     }
 });
 
 // Also watch the facility object itself
-watch(() => form.value.facility, (newValue, oldValue) => {
-    console.log('Facility object changed:', oldValue, '->', newValue);
+watch(() => form.value.facility, (newValue) => {
     if (!newValue) {
         form.value.facility_id = null;
-        console.log('Facility ID set to null due to facility object change');
     }
 });
 
