@@ -323,14 +323,26 @@ class Asset extends Model
      */
     public function createCustodyChangeHistory($oldCustodian, $newCustodian, $notes = null, $approvalId = null)
     {
-        return $this->createHistoryRecord(
+        // Resolve IDs when possible
+        $oldAssigneeId = $oldCustodian instanceof Assignee ? $oldCustodian->id : (is_numeric($oldCustodian) ? $oldCustodian : optional(Assignee::where('name', $oldCustodian)->first())->id);
+        $newAssigneeId = $newCustodian instanceof Assignee ? $newCustodian->id : (is_numeric($newCustodian) ? $newCustodian : optional(Assignee::where('name', $newCustodian)->first())->id);
+
+        $history = $this->createHistoryRecord(
             'custody_changed',
             'transfer',
-            ['person_assigned' => $oldCustodian],
-            ['person_assigned' => $newCustodian],
+            ['assignee_id' => $oldAssigneeId, 'person_assigned' => $oldCustodian],
+            ['assignee_id' => $newAssigneeId, 'person_assigned' => $newCustodian],
             $notes,
             $approvalId
         );
+
+        // Also set assignee_id on history for quick FK lookup
+        if ($newAssigneeId) {
+            $history->assignee_id = $newAssigneeId;
+            $history->save();
+        }
+
+        return $history;
     }
 
     /**

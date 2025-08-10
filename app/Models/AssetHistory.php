@@ -19,6 +19,7 @@ class AssetHistory extends Model
         'performed_by',
         'performed_at',
         'approval_id', // Reference to the approval that triggered this action
+        'assignee_id', // New custodian (FK to assignees)
     ];
 
     protected $casts = [
@@ -49,6 +50,14 @@ class AssetHistory extends Model
     public function approval()
     {
         return $this->belongsTo(AssetApproval::class);
+    }
+
+    /**
+     * New assignee relation (custodian at the time of action)
+     */
+    public function assignee()
+    {
+        return $this->belongsTo(Assignee::class);
     }
 
     /**

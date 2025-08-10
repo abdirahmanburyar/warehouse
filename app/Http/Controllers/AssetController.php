@@ -92,6 +92,8 @@ class AssetController extends Controller
                 $assets->whereDate('created_at', '<=', $to);
             }
         }
+    
+        $assets->orderBy('created_at', 'desc');
 
         $assets = $assets->with('category:id,name','type:id,name','assetLocation:id,name', 'subLocation:id,name', 'assignee:id,name','fundSource','region:id,name')
             ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
