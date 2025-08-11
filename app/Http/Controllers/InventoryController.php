@@ -340,17 +340,17 @@ class InventoryController extends Controller
 
         $now = now();
         foreach ($allInventories as $inventory) {
-            $amc = $inventory->amc ?: 0;
-            $reorderLevel = $inventory->reorder_level ?: 0;
-            
+            $amc = (float) ($inventory->amc ?: 0);
+            $reorderLevel = (float) ($inventory->reorder_level ?: 0);
+
             // Calculate total quantity for this inventory
-            $totalQuantity = 0;
+            $totalQuantity = 0.0;
             $hasExpiredItems = false;
             $hasSoonExpiringItems = false;
-            
+
             foreach ($inventory->items ?? [] as $item) {
-                $totalQuantity += $item->quantity;
-                
+                $totalQuantity += (float) ($item->quantity ?: 0);
+
                 if ($item->expiry_date) {
                     if ($item->expiry_date < $now) {
                         $hasExpiredItems = true;
@@ -359,16 +359,17 @@ class InventoryController extends Controller
                     }
                 }
             }
-            
+
             // Count at inventory level (not item level)
-            if ($totalQuantity == 0) {
+            if ($totalQuantity === 0.0) {
                 $statusCounts['out_of_stock']++;
-            } elseif ($totalQuantity <= $reorderLevel) {
+            } elseif ($reorderLevel > 0 && $totalQuantity <= (0.7 * $reorderLevel)) {
+                // Low stock when total_on_hand <= 70% of reorder level
                 $statusCounts['low_stock']++;
             } else {
                 $statusCounts['in_stock']++;
             }
-            
+
             // Count expiry status
             if ($hasExpiredItems) {
                 $statusCounts['expired']++;
