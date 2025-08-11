@@ -345,15 +345,18 @@ const formatDate = (date) => {
     return moment(date).format("DD/MM/YYYY");
 };
 
-// Check if inventory is low stock (total quantities < reorder_level)
+// Helpers
+function getTotalQuantity(inventory) {
+    if (!inventory?.items || !Array.isArray(inventory.items)) return 0;
+    return inventory.items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+}
+
+// Low stock formula: total_on_hand <= (reorder_level - 30% of reorder_level) = 0.7 * reorder_level
 const isLowStock = (inventory) => {
-    if (!inventory.items || !Array.isArray(inventory.items)) {
-        return false; // If no items, it's not low stock (it's out of stock)
-    }
-    const totalQuantity = inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-    return (
-        totalQuantity > 0 && totalQuantity <= inventory.reorder_level
-    );
+    const totalQuantity = getTotalQuantity(inventory);
+    const reorderLevel = Number(inventory.reorder_level) || 0;
+    if (totalQuantity <= 0 || reorderLevel <= 0) return false;
+    return totalQuantity <= reorderLevel * 0.7;
 };
 
 // Check if individual inventory item is out of stock
@@ -363,10 +366,7 @@ const isItemOutOfStock = (item) => {
 
 // Check if inventory is out of stock (sum of items.quantity is 0)
 const isOutOfStock = (inventory) => {
-    if (!inventory.items || !Array.isArray(inventory.items)) {
-        return true; // If no items, consider it out of stock
-    }
-    const totalQuantity = inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const totalQuantity = getTotalQuantity(inventory);
     return totalQuantity === 0;
 };
 
