@@ -42,7 +42,7 @@ class InventoryController extends Controller
             ->leftJoin('reorder_levels', 'inventories.product_id', '=', 'reorder_levels.product_id')
             ->addSelect('inventories.*')
             ->addSelect(DB::raw('COALESCE(reorder_levels.amc, 0) as amc'))
-            ->addSelect(DB::raw('COALESCE(reorder_levels.reorder_level, 0) as reorder_level'));
+            ->addSelect(DB::raw('COALESCE(reorder_levels.reorder_level, (reorder_levels.amc * NULLIF(reorder_levels.lead_time, 0)), ROUND(COALESCE(reorder_levels.amc, 0) * 6)) as reorder_level'));
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -301,7 +301,7 @@ class InventoryController extends Controller
             ->leftJoin('reorder_levels', 'inventories.product_id', '=', 'reorder_levels.product_id')
             ->addSelect('inventories.*')
             ->addSelect(DB::raw('COALESCE(reorder_levels.amc, 0) as amc'))
-            ->addSelect(DB::raw('COALESCE(reorder_levels.reorder_level, 0) as reorder_level'));
+            ->addSelect(DB::raw('COALESCE(reorder_levels.reorder_level, (reorder_levels.amc * NULLIF(reorder_levels.lead_time, 0)), ROUND(COALESCE(reorder_levels.amc, 0) * 6)) as reorder_level'));
 
         // Apply the same filters as the main query
         if ($request->filled('search')) {
