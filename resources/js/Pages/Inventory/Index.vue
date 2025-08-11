@@ -370,6 +370,13 @@ const isOutOfStock = (inventory) => {
     return totalQuantity === 0;
 };
 
+// Needs reorder: total_on_hand <= 70% of reorder level
+function needsReorder(inventory) {
+    const total = getTotalQuantity(inventory);
+    const reorder = Number(inventory.reorder_level) || 0;
+    return reorder > 0 && total <= (reorder * 0.7);
+}
+
 // Computed properties for inventory status counts
 const inStockCount = computed(() => {
     const stat = Object.values(props.inventoryStatusCounts).find(
@@ -473,7 +480,7 @@ function getResults(page = 1) {
                                 <th class="px-3 py-2 text-xs font-bold text-center" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" colspan="4">Item Details</th>
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Total QTY on Hand</th>
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Reorder Level</th>
-                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Status</th>
+                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Actions</th>
                             </tr>
                             <tr style="background-color: #F4F7FB;">
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">QTY</th>
@@ -531,32 +538,12 @@ function getResults(page = 1) {
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.reorder_level) }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                         <div class="flex items-center justify-center space-x-2">
-                                            <div v-if="isLowStock(inventory)" class="flex items-center">
+                                            <div v-if="needsReorder(inventory)">
                                                 <img
-                                                    src="/assets/images/low_stock.png"
-                                                    title="Low Stock"
+                                                    src="/assets/images/reorder_status.png"
+                                                    alt="Reorder Status"
                                                     class="w-6 h-6"
-                                                    alt="Low Stock"
-                                                />
-                                            </div>
-
-                                            <div v-if="isOutOfStock(inventory)" class="flex items-center">
-                                                <img
-                                                    src="/assets/images/out_stock.png"
-                                                    title="Out of Stock"
-                                                    class="w-6 h-6"
-                                                    alt="Out of Stock"
-                                                />
-                                            </div>
-                                            <div
-                                                v-if="!isLowStock(inventory) && !isOutOfStock(inventory)"
-                                                class="flex items-center"
-                                            >
-                                                <img
-                                                    src="/assets/images/in_stock.png"
-                                                    title="In Stock"
-                                                    class="w-6 h-6"
-                                                    alt="In Stock"
+                                                    title="Reorder Status"
                                                 />
                                             </div>
                                         </div>
