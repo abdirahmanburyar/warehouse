@@ -811,7 +811,7 @@ function getResults(page = 1) {
                   </div>
                 </li>
                 <li class="flex items-center gap-4">
-                    <img src="/assets/images/low_stock.png"  alt="Low Stock" />
+                    <img src="/assets/images/low_stock.png" class="w-10 h-10" alt="Low Stock" />
                     <div>
                     <div class="font-semibold text-orange-600">Low Stock</div>
                     <div class="text-xs text-gray-500">Indicates items that are below the reorder level.</div>
