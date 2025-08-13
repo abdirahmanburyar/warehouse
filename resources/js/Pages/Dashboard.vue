@@ -455,7 +455,9 @@ async function handleTracertItems() {
                     data: chart.data || [0],
                     backgroundColor: chart.backgroundColors || ['rgba(156, 163, 175, 0.8)'],
                     borderColor: chart.borderColors || ['rgba(156, 163, 175, 1)'],
-                    borderWidth: 0
+                    borderWidth: 0,
+                    borderRadius: { topLeft: 100, topRight: 100, bottomLeft: 0, bottomRight: 0 },
+                    borderSkipped: 'bottom'
                 }]
             }));
             chartCount.value = response.data.chartData.totalCharts;
@@ -478,7 +480,9 @@ async function handleTracertItems() {
                     data: [0],
                     backgroundColor: ['rgba(156, 163, 175, 0.8)'],
                     borderColor: ['rgba(156, 163, 175, 1)'],
-                    borderWidth: 0
+                    borderWidth: 0,
+                    borderRadius: { topLeft: 100, topRight: 100, bottomLeft: 0, bottomRight: 0 },
+                    borderSkipped: 'bottom'
                 }]
             }];
             chartCount.value = 1;
@@ -493,12 +497,14 @@ async function handleTracertItems() {
             category: 'Error',
             categoryDisplay: 'Error Loading Data',
             labels: ['Error'],
-            datasets: [{
+                datasets: [{
                 label: 'Quantity',
                 data: [0],
                 backgroundColor: ['rgba(239, 68, 68, 0.8)'],
                 borderColor: ['rgba(239, 68, 68, 1)'],
-                borderWidth: 0
+                    borderWidth: 0,
+                    borderRadius: { topLeft: 100, topRight: 100, bottomLeft: 0, bottomRight: 0 },
+                    borderSkipped: 'bottom'
             }]
         }];
         chartCount.value = 1;
@@ -546,7 +552,9 @@ async function handleFacilityTracertItems() {
                     data: chart.data || [0],
                     backgroundColor: chart.backgroundColors || ['rgba(156, 163, 175, 0.8)'],
                     borderColor: chart.borderColors || ['rgba(156, 163, 175, 1)'],
-                    borderWidth: 0
+                    borderWidth: 0,
+                    borderRadius: { topLeft: 100, topRight: 100, bottomLeft: 0, bottomRight: 0 },
+                    borderSkipped: 'bottom'
                 }]
             }));
             facilityChartCount.value = response.data.chartData.totalCharts;
@@ -569,7 +577,9 @@ async function handleFacilityTracertItems() {
                     data: [0],
                     backgroundColor: ['rgba(156, 163, 175, 0.8)'],
                     borderColor: ['rgba(156, 163, 175, 1)'],
-                    borderWidth: 0
+                    borderWidth: 0,
+                    borderRadius: { topLeft: 100, topRight: 100, bottomLeft: 0, bottomRight: 0 },
+                    borderSkipped: 'bottom'
                 }]
             }];
             facilityChartCount.value = 1;
@@ -595,7 +605,9 @@ async function handleFacilityTracertItems() {
                 data: [0],
                 backgroundColor: ['rgba(239, 68, 68, 0.8)'],
                 borderColor: ['rgba(239, 68, 68, 1)'],
-                borderWidth: 0
+                borderWidth: 0,
+                borderRadius: { topLeft: 100, topRight: 100, bottomLeft: 0, bottomRight: 0 },
+                borderSkipped: 'bottom'
             }]
         }];
         facilityChartCount.value = 1;
@@ -627,7 +639,9 @@ function updateChartData(chartData) {
             data: chartData.data,
             backgroundColor: chartData.backgroundColors || generateColors(chartData.data.length, true),
             borderColor: chartData.borderColors || generateColors(chartData.data.length, false),
-            borderWidth: 0
+            borderWidth: 0,
+            borderRadius: { topLeft: 100, topRight: 100, bottomLeft: 0, bottomRight: 0 },
+            borderSkipped: 'bottom'
         }]
     };
 }
@@ -712,7 +726,7 @@ const doughnutChartOptions = {
             titleColor: '#333333',
             bodyColor: '#333333',
             borderColor: 'rgba(0, 0, 0, 0.1)',
-            borderWidth: 1,
+            borderWidth: 0,
             cornerRadius: 6,
             padding: 10,
             displayColors: true,
@@ -781,7 +795,7 @@ const barChartOptions = {
             titleColor: 'white',
             bodyColor: 'white',
             borderColor: 'rgba(255, 255, 255, 0.2)',
-            borderWidth: 1,
+            borderWidth: 0,
             cornerRadius: 8,
             padding: 12,
             displayColors: true,
@@ -831,6 +845,7 @@ const barChartOptions = {
             grid: {
                 display: false
             },
+            border: { display: false },
             ticks: {
                 maxRotation: 45,
                 minRotation: 0,
@@ -870,7 +885,7 @@ const horizontalBarChartOptions = {
             titleColor: '#333333',
             bodyColor: '#333333',
             borderColor: 'rgba(0, 0, 0, 0.1)',
-            borderWidth: 1,
+            borderWidth: 0,
             cornerRadius: 6,
             padding: 10,
             displayColors: true,
@@ -913,11 +928,8 @@ const horizontalBarChartOptions = {
     scales: {
         x: { 
             beginAtZero: true,
-            grid: {
-                color: 'rgba(0, 0, 0, 0.08)',
-                drawBorder: false,
-                lineWidth: 1
-            },
+            grid: { display: false },
+            border: { display: false },
             ticks: {
                 callback: function(value) {
                     return formatLargeNumber(value);
@@ -931,9 +943,8 @@ const horizontalBarChartOptions = {
             }
         },
         y: {
-            grid: {
-                display: false
-            },
+            grid: { display: false },
+            border: { display: false },
             ticks: {
                 font: {
                     size: 11,
@@ -971,7 +982,7 @@ const orderChartOptions = {
             titleColor: '#333333',
             bodyColor: '#333333',
             borderColor: 'rgba(0, 0, 0, 0.1)',
-            borderWidth: 1,
+            borderWidth: 0,
             cornerRadius: 6,
             padding: 10,
             displayColors: true,
@@ -993,51 +1004,47 @@ const orderChartOptions = {
         },
         datalabels: {
             display: true,
-            anchor: 'center',
-            align: 'center',
-            color: '#ffffff',
+            anchor: 'end',
+            align: 'top',
+            color: '#374151',
             font: {
                 weight: 'bold',
-                size: 14,
+                size: 12,
                 family: 'Segoe UI, Arial, sans-serif'
             },
-            formatter: function(value, context) {
+            formatter: function(value) {
                 return value > 0 ? formatLargeNumber(value) : '';
             },
-            padding: 0
+            padding: 6
         }
     },
     scales: {
         y: { 
             beginAtZero: true,
-            grid: {
-                color: 'rgba(0, 0, 0, 0.08)',
-                drawBorder: false,
-                lineWidth: 1
-            },
+            grid: { display: false },
+            border: { display: false },
             ticks: {
                 callback: function(value) {
                     return formatLargeNumber(value);
                 },
                 font: {
-                    size: 11,
+                    size: 10,
                     weight: '500',
                     family: 'Segoe UI, Arial, sans-serif'
                 },
-                padding: 6
+                padding: 4
             }
         },
         x: {
-            grid: {
-                display: false
-            },
+            grid: { display: false },
+            border: { display: false },
             ticks: {
                 font: {
-                    size: 11,
+                    size: 10,
                     weight: '600',
                     family: 'Segoe UI, Arial, sans-serif'
                 },
-                padding: 6,
+                padding: 4,
                 callback: function(value, index, values) {
                     // Add custom labels for each order type
                     const labels = [
@@ -1077,7 +1084,7 @@ const lineChartOptions = {
             titleColor: 'white',
             bodyColor: 'white',
             borderColor: 'rgba(255, 255, 255, 0.1)',
-            borderWidth: 1,
+            borderWidth: 0,
             callbacks: {
                 label: function(context) {
                     return formatLargeNumberForTooltip(context.parsed.y);
@@ -1101,6 +1108,8 @@ const lineChartOptions = {
     scales: {
         y: { 
             beginAtZero: true,
+            grid: { display: false },
+            border: { display: false },
             ticks: {
                 callback: function(value) {
                     return formatLargeNumber(value);
@@ -1108,6 +1117,8 @@ const lineChartOptions = {
             }
         },
         x: {
+            grid: { display: false },
+            border: { display: false },
             ticks: {
                 maxRotation: 45,
                 minRotation: 0
@@ -1129,7 +1140,7 @@ const issuedChartOptions = {
             titleColor: 'white',
             bodyColor: 'white',
             borderColor: 'rgba(255, 255, 255, 0.1)',
-            borderWidth: 1,
+            borderWidth: 0,
             callbacks: {
                 label: function(context) {
                     return formatLargeNumberForTooltip(context.parsed.y);
@@ -1228,11 +1239,8 @@ const orderStatusChartOptions = {
     scales: {
         y: { 
             beginAtZero: true,
-            grid: {
-                color: 'rgba(0, 0, 0, 0.08)',
-                drawBorder: false,
-                lineWidth: 1
-            },
+            grid: { display: false },
+            border: { display: false },
             ticks: {
                 callback: function(value) {
                     return formatLargeNumber(value);
@@ -1246,9 +1254,8 @@ const orderStatusChartOptions = {
             }
         },
         x: {
-            grid: {
-                display: false
-            },
+            grid: { display: false },
+            border: { display: false },
             ticks: {
                 font: {
                     size: 11,
@@ -1329,10 +1336,10 @@ const fulfillmentBarChartOptions = {
             beginAtZero: true,
             max: 110,
             grid: {
-                color: 'rgba(0, 0, 0, 0.08)',
-                drawBorder: false,
-                lineWidth: 1
+                display: false,
+                drawBorder: false
             },
+            border: { display: false },
             ticks: {
                 callback: function(value) {
                     return `${value}%`;
@@ -1497,7 +1504,7 @@ const productCategoryChartData = computed(() => ({
             'rgba(237, 125, 49, 1)',
             'rgba(165, 165, 165, 1)'
         ],
-        borderWidth: 2,
+        borderWidth: 1,
         hoverBackgroundColor: [
             'rgba(68, 114, 196, 1)',
             'rgba(237, 125, 49, 1)',
@@ -1508,7 +1515,7 @@ const productCategoryChartData = computed(() => ({
             'rgba(237, 125, 49, 1)',
             'rgba(165, 165, 165, 1)'
         ],
-        hoverBorderWidth: 3
+        hoverBorderWidth: 0
     }]
 }));
 
@@ -1548,7 +1555,7 @@ const warehouseFacilitiesChartData = computed(() => {
             borderRadius: 6,
             hoverBackgroundColor: sortedData.map(item => item.color),
             hoverBorderColor: sortedData.map(item => item.color),
-            hoverBorderWidth: 3
+            hoverBorderWidth: 0
         }]
     };
 });
@@ -1572,8 +1579,12 @@ const orderChartData = computed(() => ({
             'rgba(237, 125, 49, 1)',
             'rgba(165, 165, 165, 1)'
         ],
-        borderWidth: 2,
-        borderRadius: 6,
+        borderWidth: 0,
+        borderRadius: { topLeft: 100, topRight: 100, bottomLeft: 0, bottomRight: 0 },
+        borderSkipped: 'bottom',
+        maxBarThickness: 40,
+        barPercentage: 0.6,
+        categoryPercentage: 0.6,
         hoverBackgroundColor: [
             'rgba(68, 114, 196, 1)',
             'rgba(237, 125, 49, 1)',
@@ -1584,7 +1595,7 @@ const orderChartData = computed(() => ({
             'rgba(237, 125, 49, 1)',
             'rgba(165, 165, 165, 1)'
         ],
-        hoverBorderWidth: 3
+        hoverBorderWidth: 0
     }]
 }));
 
@@ -1595,7 +1606,7 @@ const transferChartData = computed(() => ({
         data: [filteredTransferReceivedCard.value || 0],
         backgroundColor: 'rgba(20, 184, 166, 0.8)',
         borderColor: 'rgba(20, 184, 166, 1)',
-        borderWidth: 2
+        borderWidth: 0
     }]
 }));
 
@@ -1606,7 +1617,7 @@ const costChartData = computed(() => ({
         data: [filteredTotalCost.value || 0],
         backgroundColor: 'rgba(75, 85, 99, 0.8)',
         borderColor: 'rgba(75, 85, 99, 1)',
-        borderWidth: 2
+        borderWidth: 0
     }]
 }));
 
@@ -1646,7 +1657,11 @@ const fulfillmentChartData = computed(() => {
                 'rgba(0, 112, 192, 1)'
             ],
             borderWidth: 0,
-            borderRadius: 6,
+            borderRadius: { topLeft: 100, topRight: 100, bottomLeft: 0, bottomRight: 0 },
+            borderSkipped: 'bottom',
+            maxBarThickness: 40,
+            barPercentage: 0.6,
+            categoryPercentage: 0.6,
             hoverBackgroundColor: [
                 'rgba(68, 114, 196, 1)',
                 'rgba(237, 125, 49, 1)',
@@ -1671,7 +1686,7 @@ const fulfillmentChartData = computed(() => {
                 'rgba(0, 176, 80, 1)',
                 'rgba(0, 112, 192, 1)'
             ],
-            hoverBorderWidth: 3
+            hoverBorderWidth: 0
         }]
     };
 });
@@ -1749,7 +1764,7 @@ const orderStatusChartData = computed(() => {
             borderRadius: 6,
             hoverBackgroundColor: filteredData.map(item => item.color),
             hoverBorderColor: filteredData.map(item => item.color),
-            hoverBorderWidth: 3
+            hoverBorderWidth: 0
         }]
     };
 });
@@ -1785,14 +1800,14 @@ const expiredChartData = computed(() => {
                 'rgba(236, 72, 153, 1)',
                 'rgba(251, 146, 60, 1)'
             ],
-            hoverBorderWidth: 3
+            hoverBorderWidth: 0
         }]
     };
     
     return data;
 });
 
-// Asset Status Chart Data
+// Asset Status Chart Data (show all indicators even if zero)
 const assetStatusChartData = computed(() => {
     const statusData = [
         { key: 'In Use', color: 'rgba(68, 114, 196, 1)' },      // Excel Blue
@@ -1803,23 +1818,18 @@ const assetStatusChartData = computed(() => {
         { key: 'Disposed', color: 'rgba(165, 165, 165, 1)' }    // Excel Gray
     ];
 
-    // Filter out statuses with zero count
-    const filteredData = statusData.filter(status => 
-        (props.assetStatusStats?.[status.key] || 0) > 0
-    );
-
     return {
-        labels: filteredData.map(status => status.key),
+        labels: statusData.map(status => status.key),
         datasets: [{
             label: 'Asset Status',
-            data: filteredData.map(status => props.assetStatusStats?.[status.key] || 0),
-            backgroundColor: filteredData.map(status => status.color),
-            borderColor: filteredData.map(status => status.color),
+            data: statusData.map(status => props.assetStatusStats?.[status.key] || 0),
+            backgroundColor: statusData.map(status => status.color),
+            borderColor: statusData.map(status => status.color),
             borderWidth: 0,
             borderRadius: 6,
-            hoverBackgroundColor: filteredData.map(status => status.color),
-            hoverBorderColor: filteredData.map(status => status.color),
-            hoverBorderWidth: 3
+            hoverBackgroundColor: statusData.map(status => status.color),
+            hoverBorderColor: statusData.map(status => status.color),
+            hoverBorderWidth: 0
         }]
     };
 });
@@ -1850,10 +1860,8 @@ const assetStatusChartOptions = {
     scales: {
         y: {
             beginAtZero: true,
-            grid: {
-                color: 'rgba(0, 0, 0, 0.05)',
-                drawBorder: false
-            },
+            grid: { display: false },
+            border: { display: false },
             ticks: {
                 color: '#6b7280',
                 font: {
@@ -1866,9 +1874,8 @@ const assetStatusChartOptions = {
             }
         },
         x: {
-            grid: {
-                display: false
-            },
+            grid: { display: false },
+            border: { display: false },
             ticks: {
                 color: '#6b7280',
                 font: {
