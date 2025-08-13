@@ -1913,81 +1913,6 @@ const assetStatsCards = computed(() => [
     <AuthenticatedLayout title="Dashboard" description="Welcome to the dashboard">
         <!-- Modern Gradient Dashboard Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-            <!-- Teal Card -->
-            <Link :href="route('purchase-orders.index')" class="block">
-                <div class="relative overflow-hidden rounded-lg cursor-pointer">
-                    <div class="absolute inset-0" style="background: linear-gradient(45deg, #00D79F 0%, #37FFCB 54%, #DCFFF6 100%);"></div>
-                    <div class="relative p-4">
-
-                        <!-- Content -->
-                        <div class="flex flex-col">
-                            <h3 class="text-sm font-medium text-gray-800 mb-1">Total P.O Cost</h3>
-                            <div class="text-2xl font-bold text-gray-900">{{ (filteredTotalCost || 0).toLocaleString() }}</div>
-                            <div class="text-xs font-light text-gray-700 mt-1">{{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}</div>
-                </div>
-                        
-                        <!-- Icon in bottom-right corner -->
-                        <div class="absolute bottom-3 right-3">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                        </div>
-                    </div>
-                        </div>
-            </Link>
-
-            <!-- Gray Card -->
-            <Link :href="route('transfers.index')" class="block">
-                <div class="relative overflow-hidden rounded-lg cursor-pointer">
-                    <div class="absolute inset-0" style="background: linear-gradient(45deg, #5F5C65 0%, #888892 55%, #E7E2F2 100%);"></div>
-                    <div class="relative p-4">
-
-                        <!-- Content -->
-                        <div class="flex flex-col">
-                            <h3 class="text-sm font-medium text-white mb-1">Transfers</h3>
-                            <div class="text-2xl font-bold text-white">{{ filteredTransferReceivedCard || 0 }}</div>
-                            <div class="text-xs font-light text-gray-200 mt-1">{{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}</div>
-                        </div>
-                        
-                        <!-- Icon in bottom-right corner -->
-                        <div class="absolute bottom-3 right-3">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    </div>
-            </Link>
-
-            <!-- Blue Card - Delayed Orders -->
-            <Link :href="route('orders.index')" class="block">
-                <div class="relative overflow-hidden rounded-lg cursor-pointer">
-                    <div class="absolute inset-0" style="background: linear-gradient(45deg, #007BFF 0%, #6FB9FF 50%, #D0E7FF 100%);"></div>
-                    <div class="relative p-4">
-                        <!-- Content -->
-                        <div class="flex flex-col">
-                            <h3 class="text-sm font-medium text-white mb-1">Delayed Orders</h3>
-                            <div class="text-2xl font-bold text-white">{{ filteredOrdersDelayedCount || 0 }}</div>
-                            <div class="text-xs font-light text-white mt-1">{{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}</div>
-                        </div>
-                        
-                        <!-- Icon in bottom-right corner -->
-                        <div class="absolute bottom-3 right-3">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    </div>
-            </Link>
-
-            <!-- Orange Card - Low Stock -->
-            <Link :href="route('inventories.index')" class="block">
-                <div class="relative overflow-hidden rounded-lg cursor-pointer">
-                    <div class="absolute inset-0" style="background: linear-gradient(45deg, #FF8500 0%, #FFB15C 31%, #FFDBB7 100%);"></div>
-                    <div class="relative p-4">
-                        <!-- Content -->
-                        <div class="flex flex-col">
                             <h3 class="text-sm font-medium text-white mb-1">Low Stock</h3>
                             <div class="text-2xl font-bold text-white">{{ lowStockCount || 0 }}</div>
                             <div class="text-xs font-light text-white mt-1">{{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}</div>
@@ -2347,44 +2272,74 @@ const assetStatsCards = computed(() => [
                     </div>
                 </div>
 
-            <!-- Summary Stats - Takes 4 columns -->
-            <div class="lg:col-span-4 space-y-3">
-                <!-- Expired Items Card -->
-                <div class="bg-gray-600 rounded-xl shadow-sm border border-gray-200 p-3">
-                        <div class="flex items-center justify-between mb-2">
-                        <h3 class="text-sm font-semibold text-white">Expired Items</h3>
-                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                            </div>
-                    <div class="text-xl font-bold text-white">{{ props.expiredStats?.expired || 0 }}</div>
-                    <div class="text-xs text-white mt-1">Items past expiry date</div>
-                </div>
-                
-                <!-- Expiring in 6 Months Card -->
-                <div class="bg-pink-500 rounded-xl shadow-sm border border-gray-200 p-3">
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="text-sm font-semibold text-white">Expiring in 6 Months</h3>
-                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                </svg>
-                            </div>
-                    <div class="text-xl font-bold text-white">{{ props.expiredStats.expiring_within_6_months || 0 }}</div>
-                    <div class="text-xs text-white mt-1">Items expiring soon</div>
-                        </div>
-                
-                <!-- Expiring in 1 Year Card -->
-                <div class="bg-orange-400 rounded-xl shadow-sm border border-gray-200 p-3">
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="text-sm font-semibold text-white">Expiring in 1 Year</h3>
-                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                    </div>
-                    <div class="text-xl font-bold text-white">{{ props.expiredStats.expiring_within_1_year || 0 }}</div>
-                    <div class="text-xs text-white mt-1">Items to monitor</div>
-                        </div>
-                    </div>
+			<!-- Summary Stats - Takes 4 columns -->
+			<div class="lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 grid-rows-2 auto-rows-fr gap-3 h-full">
+				<!-- Quick Start: Placeholder (no link) - first card -->
+				<div class="relative overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm p-4 min-h-[88px] h-full">
+					<div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-amber-400 to-orange-500"></div>
+					<div class="flex items-center justify-between">
+						<div class="text-base font-semibold text-gray-900">Quick Start</div>
+						<div class="flex items-center justify-center h-10 w-10 rounded-full bg-amber-50 text-amber-600">
+							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.802 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.802-2.034a1 1 0 00-1.175 0l-2.802 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+							</svg>
+						</div>
+					</div>
+				</div>
+
+				<!-- Quick Start: Purchase Order -->
+				<Link :href="route('supplies.purchase_order')" class="block group">
+					<div class="relative overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm p-4 transition-all duration-200 hover:shadow-md min-h-[88px] h-full">
+						<div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-emerald-400 to-teal-500"></div>
+						<div class="flex items-center justify-between">
+							<div>
+								<div class="text-base font-semibold text-gray-900">Purchase Order</div>
+							</div>
+							<div class="flex items-center justify-center h-10 w-10 rounded-full bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-100">
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+								</svg>
+							</div>
+						</div>
+					</div>
+				</Link>
+				
+				<!-- Quick Start: Orders -->
+				<Link :href="route('orders.index')" class="block group">
+					<div class="relative overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm p-4 transition-all duration-200 hover:shadow-md min-h-[88px] h-full">
+						<div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-indigo-400 to-blue-500"></div>
+						<div class="flex items-center justify-between">
+							<div>
+								<div class="text-base font-semibold text-gray-900">Orders</div>
+							</div>
+							<div class="flex items-center justify-center h-10 w-10 rounded-full bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-100">
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+								</svg>
+							</div>
+						</div>
+					</div>
+				</Link>
+				
+				<!-- Quick Start: Transfers -->
+				<Link :href="route('transfers.index')" class="block group">
+					<div class="relative overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm p-4 transition-all duration-200 hover:shadow-md min-h-[88px] h-full">
+						<div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-violet-400 to-purple-600"></div>
+						<div class="flex items-center justify-between">
+							<div>
+								<div class="text-base font-semibold text-gray-900">Transfers</div>
+							</div>
+							<div class="flex items-center justify-center h-10 w-10 rounded-full bg-violet-50 text-violet-600 transition-colors group-hover:bg-violet-100">
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+								</svg>
+							</div>
+						</div>
+					</div>
+				</Link>
+
+				
+			</div>
                 </div>
 
         <!-- Order Status Chart Section -->
