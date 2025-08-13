@@ -186,6 +186,18 @@ const totalOrders = computed(() =>
     props.orderStats.delivered
 );
 
+// Order status configuration for dashboard vertical overview
+const orderStatusConfig = [
+    { key: 'pending', label: 'Pending', stroke: '#eab308', textClass: 'text-yellow-600' },
+    { key: 'reviewed', label: 'Reviewed', stroke: '#22c55e', textClass: 'text-green-600' },
+    { key: 'approved', label: 'Approved', stroke: '#22c55e', textClass: 'text-green-600' },
+    { key: 'in_process', label: 'In Process', stroke: '#3b82f6', textClass: 'text-blue-600' },
+    { key: 'dispatched', label: 'Dispatched', stroke: '#8b5cf6', textClass: 'text-purple-600' },
+    { key: 'delivered', label: 'Delivered', stroke: '#f59e42', textClass: 'text-orange-600' },
+    { key: 'received', label: 'Received', stroke: '#6366f1', textClass: 'text-indigo-600' },
+    { key: 'rejected', label: 'Rejected', stroke: '#ef4444', textClass: 'text-red-600' }
+];
+
 // Tab functionality
 const activeTab = ref('warehouse');
 
@@ -2417,44 +2429,46 @@ const assetStatsCards = computed(() => [
 			</div>
                 </div>
 
-        <!-- Order Status Chart Section -->
+        <!-- Order Status Overview (Vertical) -->
         <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-                <div>
-                    <h3 class="text-xl font-bold text-gray-900">Order Status Overview</h3>
-                    <p class="text-sm text-gray-600 mt-1">Track orders across different statuses</p>
-                            </div>
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <!-- Status Filter -->
-                    <div class="flex flex-col">
-                        <label class="text-xs font-medium text-gray-600 mb-1">Filter by Status:</label>
-                        <div class="flex gap-2">
-                            <Multiselect
-                                v-model="selectedOrderStatus"
-                                :options="orderStatusOptions"
-                                :searchable="true"
-                                :close-on-select="false"
-                                :multiple="true"
-                                :show-labels="false"
-                                label="label"
-                                track-by="value"
-                                placeholder="Select statuses..."
-                                class="w-full sm:w-48"
-                            />
-                            <button
-                                @click="clearAllStatuses"
-                                class="px-3 py-2 text-xs bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors mt-2"
-                            >
-                                Clear
-                            </button>
+            <div class="mb-4">
+                <h3 class="text-xl font-bold text-gray-900">Order Status Overview</h3>
+                <p class="text-sm text-gray-600 mt-1">Live distribution of orders</p>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                <div
+                    v-for="cfg in orderStatusConfig"
+                    :key="cfg.key"
+                    class="flex items-center justify-center gap-3 p-3 rounded-lg border border-gray-200 hover:shadow-sm transition-all"
+                >
+                    <div class="flex items-center">
+                        <div class="w-14 h-14 relative mr-2">
+                            <svg class="w-14 h-14 transform -rotate-90">
+                                <circle cx="28" cy="28" r="24" fill="none" stroke="#e2e8f0" stroke-width="4" />
+                                <circle
+                                    cx="28"
+                                    cy="28"
+                                    r="24"
+                                    fill="none"
+                                    :stroke="cfg.stroke"
+                                    stroke-width="4"
+                                    :stroke-dasharray="(props.orderStats[cfg.key] === totalOrders && totalOrders > 0) ? '150.72 150.72' : `${(props.orderStats[cfg.key] / totalOrders) * 150.72} 150.72`"
+                                />
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span :class="['text-xs font-bold', cfg.textClass]">
+                                    {{ totalOrders > 0 ? Math.round((props.orderStats[cfg.key] / totalOrders) * 100) : 0 }}%
+                                </span>
                             </div>
                         </div>
+                        <div class="text-center">
+                            <div class="text-base font-semibold text-gray-900">{{ props.orderStats[cfg.key] || 0 }}</div>
+                            <div class="text-xs text-gray-600">{{ cfg.label }}</div>
                         </div>
-                            </div>
-            <div class="h-80">
-                <Bar :data="orderStatusChartData" :options="orderStatusChartOptions" />
                     </div>
                 </div>
+            </div>
+        </div>
 
         <!-- Asset Statistics Row -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
