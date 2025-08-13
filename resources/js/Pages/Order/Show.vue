@@ -514,7 +514,7 @@
                                         </div>
                                         <div class="flex items-center">
                                             <ArchiveBoxIcon class="w-4 h-4 text-gray-400 mr-2" />
-                                            <span class="text-sm text-gray-600">{{ dispatch.no_of_cartoons }} Cartons</span>
+                                            <span class="text-sm text-gray-600">{{dispatch.received_cartons}}/{{ dispatch.no_of_cartoons }} Cartons</span>
                                         </div>
                                         <div class="flex items-center">
                                             <ClockIcon class="w-4 h-4 text-gray-400 mr-2" />
@@ -2042,25 +2042,29 @@ const trackDispatch = (dispatch) => {
 // Dispatch images modal methods
 const viewDispatchImages = (dispatch) => {
     dispatchImages.value = [];
-    
-    if (dispatch.image) {
+
+    const img = dispatch?.image;
+    if (!img) {
+        showDispatchImagesModal.value = true;
+        return;
+    }
+
+    if (Array.isArray(img)) {
+        dispatchImages.value = img.filter(Boolean);
+    } else if (typeof img === 'string') {
+        let parsed = null;
         try {
-            const images = JSON.parse(dispatch.image);
-            if (Array.isArray(images)) {
-                dispatchImages.value.push(...images);
-            } else if (typeof images === 'string') {
-                // If it's a single image path as string
-                dispatchImages.value.push(images);
-            }
+            parsed = JSON.parse(img);
         } catch (e) {
-            // If parsing fails, treat it as a single image path
-            if (typeof dispatch.image === 'string') {
-                dispatchImages.value.push(dispatch.image);
-            }
-            console.error('Error parsing dispatch images:', e);
+            parsed = null;
+        }
+        if (Array.isArray(parsed)) {
+            dispatchImages.value = parsed.filter(Boolean);
+        } else if (img) {
+            dispatchImages.value = [img];
         }
     }
-    
+
     showDispatchImagesModal.value = true;
 };
 
@@ -2071,9 +2075,12 @@ const closeDispatchImagesModal = () => {
 };
 
 const getImageUrl = (imagePath) => {
-    // Convert storage path to public URL
     if (!imagePath) return '';
-    return '/' + imagePath;
+    // If already an absolute URL, return as-is
+    if (/^https?:\/\//i.test(imagePath)) return imagePath;
+    // Normalize common storage prefixes and leading slashes
+    const normalized = imagePath.replace(/^\/?public\//, '/');
+    return normalized.startsWith('/') ? normalized : '/' + normalized;
 };
 
 const handleImageError = (event) => {
