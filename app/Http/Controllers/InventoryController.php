@@ -442,19 +442,48 @@ class InventoryController extends Controller
 			}
 		}
 
-		// Robust out-of-stock item count: count zero/non-positive quantity items within the filtered product set
-		$productIds = $allInventories->pluck('product_id')->unique()->values();
-		if ($productIds->isNotEmpty()) {
-			$outOfStockItems = InventoryItem::query()
-				->where(function($q){
-					$q->whereNull('quantity')->orWhere('quantity', '<=', 0);
-				})
-				->whereHas('inventory', function($q) use ($productIds) {
-					$q->whereIn('product_id', $productIds);
-				})
-				->count();
-			$statusCounts['out_of_stock'] = $outOfStockItems;
-		}
+        // Robust Out-of-Stock (product-level): number of products whose total quantity <= 0
+        // Build the filtered product set similarly to the index() product-first filters
+        $productFilterQuery = Product::query();
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $productFilterQuery->where(function($q) use ($search) {
+                $q->where('products.name', 'like', "%{$search}%")
+                  ->orWhereExists(function($sub) use ($search) {
+                      $sub->from('inventories')
+                          ->join('inventory_items', 'inventories.id', '=', 'inventory_items.inventory_id')
+                          ->whereColumn('inventories.product_id', 'products.id')
+                          ->where(function($w) use ($search){
+                              $w->where('inventory_items.barcode', 'like', "%{$search}%")
+                                ->orWhere('inventory_items.batch_number', 'like', "%{$search}%");
+                          });
+                  });
+            });
+        }
+        if ($request->filled('product_id')) {
+            $productFilterQuery->where('products.id', $request->product_id);
+        }
+        if ($request->filled('category')) {
+            $productFilterQuery->whereHas('category', fn($q) => $q->where('name', $request->category));
+        }
+        if ($request->filled('dosage')) {
+            $productFilterQuery->whereHas('dosage', fn($q) => $q->where('name', $request->dosage));
+        }
+
+        $filteredProductIds = $productFilterQuery->pluck('products.id');
+        if ($filteredProductIds->isNotEmpty()) {
+            // Count products with positive total quantity; avoid duplicate id columns by selecting product_id only
+            $positiveTotals = Inventory::query()
+                ->leftJoin('inventory_items', 'inventories.id', '=', 'inventory_items.inventory_id')
+                ->whereIn('inventories.product_id', $filteredProductIds)
+                ->select('inventories.product_id')
+                ->groupBy('inventories.product_id')
+                ->havingRaw('COALESCE(SUM(COALESCE(inventory_items.quantity,0)),0) > 0')
+                ->get()
+                ->count();
+
+            $statusCounts['out_of_stock'] = $filteredProductIds->count() - $positiveTotals;
+        }
 
 		return $statusCounts;
 	}
