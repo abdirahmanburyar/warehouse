@@ -181,18 +181,15 @@
                                         </div>
                                     </div>
                                 </th>
-                                <!-- Month groups with AMC columns -->
-                                <template v-for="(group, groupIndex) in monthGroups" :key="groupIndex">
-                                    <!-- Month columns for this group -->
-                                    <th v-for="month in group.months" :key="month"
-                                        class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        {{ formatMonthShort(month) }}-{{ formatYear(month) }}
-                                    </th>
-                                    <!-- AMC column for this group -->
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-white uppercase tracking-wider bg-sky-500">
-                                        AMC
-                                    </th>
-                                </template>
+                                <!-- Month columns -->
+                                <th v-for="month in sortedMonths" :key="month"
+                                    class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {{ formatMonthShort(month) }}-{{ formatYear(month) }}
+                                </th>
+                                <!-- Single AMC column at far right -->
+                                <th class="px-4 py-2 text-center text-xs font-medium text-white uppercase tracking-wider bg-sky-500">
+                                    AMC
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -203,18 +200,15 @@
                                 <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200">
                                     {{ row.product_name }}
                                 </td>
-                                <!-- Month groups with AMC columns -->
-                                <template v-for="(group, groupIndex) in monthGroups" :key="groupIndex">
-                                    <!-- Month columns with consumption values for this group -->
-                                    <td v-for="month in group.months" :key="month"
-                                        class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200 text-center">
-                                        {{ row[month] || 0 }}
-                                    </td>
-                                    <!-- AMC column for this group -->
-                                    <td class="px-4 py-2 whitespace-nowrap text-xs font-medium text-white border-r border-gray-200 text-center bg-sky-500">
-                                        {{ calculateGroupAMC(row, group) }}
-                                    </td>
-                                </template>
+                                <!-- Month columns values -->
+                                <td v-for="month in sortedMonths" :key="month"
+                                    class="px-4 py-2 whitespace-nowrap text-xs text-gray-500 border-r border-gray-200 text-center">
+                                    {{ row[month] || 0 }}
+                                </td>
+                                <!-- Single AMC value -->
+                                <td class="px-4 py-2 whitespace-nowrap text-xs font-medium text-white border-r border-gray-200 text-center bg-sky-500">
+                                    {{ calculateScreenedAMC(row) }}
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -367,22 +361,7 @@ const sortedMonths = computed(() => {
     return [...months.value].sort();
 });
 
-// Group months into 3-month periods with AMC columns
-const monthGroups = computed(() => {
-    const groups = [];
-    const months = sortedMonths.value;
-    
-    for (let i = 0; i < months.length; i += 3) {
-        const group = months.slice(i, i + 3);
-        groups.push({
-            months: group,
-            startIndex: i,
-            endIndex: Math.min(i + 2, months.length - 1)
-        });
-    }
-    
-    return groups;
-});
+// No grouping now; we render all months then a single AMC column
 
 // Transform data into pivot table format
 const pivotTableData = computed(() => {
@@ -945,19 +924,26 @@ async function downloadTemplate() {
     }
 }
 
-// Calculate AMC for a specific group of months
-function calculateGroupAMC(row, group) {
-    // Prefer backend AMC (screened) when available
+// Single AMC per row, prefer backend value
+function calculateScreenedAMC(row) {
     const backend = props.amcByProduct?.[row.product_id]?.amc;
     if (typeof backend === 'number' && !isNaN(backend)) {
         return backend;
     }
-    // Fallback to simple average of the displayed months
-    const groupValues = group.months.map(month => row[month] || 0);
-    if (groupValues.length === 0) return 'N/A';
-    const sum = groupValues.reduce((acc, val) => acc + val, 0);
-    const divisor = groupValues.length;
-    return Math.round((sum / divisor) * 100) / 100;
+    // Fallback: exclude current month, take average of last up to 3 months
+    const currentYM = new Date().toISOString().slice(0, 7);
+    const months = [...sortedMonths.value].reverse(); // newest first? our sortedMonths is ascending; adjust
+    const newestFirst = months.reverse();
+    const selected = [];
+    for (const m of newestFirst) {
+        if (m === currentYM) continue;
+        if (row[m] == null) continue;
+        selected.push(Number(row[m]) || 0);
+        if (selected.length === 3) break;
+    }
+    if (selected.length === 0) return 0;
+    const avg = selected.reduce((a, b) => a + b, 0) / selected.length;
+    return Math.round(avg * 100) / 100;
 }
 
 // Calculate average monthly consumption for a product (legacy function for compatibility)

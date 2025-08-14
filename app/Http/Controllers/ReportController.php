@@ -357,7 +357,7 @@ class ReportController extends Controller
             $productIds = array_keys($productIds);
 
             if (!empty($productIds)) {
-                // Pull the last up-to-12 months of non-zero consumptions per product within the selected range
+                // Pull the last up-to-12 months of consumptions per product within the selected range (exclude zeros for screening)
                 $allConsumptions = DB::table('monthly_consumption_items as mci')
                     ->join('monthly_consumption_reports as mcr', 'mci.parent_id', '=', 'mcr.id')
                     ->select('mci.product_id', 'mci.quantity', 'mcr.month_year')
@@ -382,7 +382,7 @@ class ReportController extends Controller
                         ];
                     }
 
-                    // Screening logic: skip only the real current month if present
+                    // Screening AMC: skip only the real current month if present, include first two, then screen <=70% deviation
                     $eligibleMonths = [];
                     $processedMonths = [];
                     $monthsCount = count($monthsData);
@@ -441,6 +441,7 @@ class ReportController extends Controller
                         }
                     }
 
+                    // Annotate current month exclusion, for transparency (not used by UI now)
                     if (count($monthsData) > 0) {
                         $currentMonthY = Carbon::now()->format('Y-m');
                         if ($monthsData[0]->month_year === $currentMonthY) {
