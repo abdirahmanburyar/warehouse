@@ -149,10 +149,9 @@ class Asset extends Model
             'status' => self::STATUS_PENDING_APPROVAL
         ]);
 
-        // Create single approval step
+        // Create single approval step (no roles)
         $this->createApprovalSteps([
             [
-                'role_id' => 1,
                 'action' => 'approve',
                 'sequence' => 1
             ]
@@ -179,10 +178,9 @@ class Asset extends Model
             'submitted_by' => auth()->id()
         ]);
 
-        // Create single approval step
+        // Create single approval step (no roles)
         $this->createApprovalSteps([
             [
-                'role_id' => 1,
                 'action' => 'approve',
                 'sequence' => 1
             ]

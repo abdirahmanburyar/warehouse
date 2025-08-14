@@ -40,7 +40,7 @@ trait HasApprovals
     {
         foreach ($steps as $step) {
             $this->approvals()->create([
-                'role_id' => $step['role_id'],
+                'role_id' => $step['role_id'] ?? null,
                 'action' => $step['action'],
                 'sequence' => $step['sequence'] ?? 1,
                 'status' => 'pending',

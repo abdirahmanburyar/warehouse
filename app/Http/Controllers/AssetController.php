@@ -1306,13 +1306,13 @@ class AssetController extends Controller
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
-                    'roles' => $user->roles->pluck('name'),
+                    'roles' => method_exists($user, 'roles') ? $user->roles->pluck('name') : [],
                     'permissions' => $user->getAllPermissions()->pluck('name')
                 ],
                 'approval_steps' => $approvalSteps->map(function($step) {
                     return [
                         'id' => $step->id,
-                        'role' => $step->role->name,
+                        'role' => optional($step->role)->name,
                         'action' => $step->action,
                         'sequence' => $step->sequence,
                         'status' => $step->status,
@@ -1324,7 +1324,7 @@ class AssetController extends Controller
                 }),
                 'next_step' => $nextStep ? [
                     'id' => $nextStep->id,
-                    'role' => $nextStep->role->name,
+                    'role' => optional($nextStep->role)->name,
                     'action' => $nextStep->action,
                     'sequence' => $nextStep->sequence,
                     'status' => $nextStep->status
@@ -1348,15 +1348,9 @@ class AssetController extends Controller
         try {
             $user = auth()->user();
             $pendingAssets = Asset::whereHas('approvals', function($query) use ($user) {
-                $query->where('status', 'pending')
-                      ->whereHas('role', function($roleQuery) use ($user) {
-                          $roleQuery->whereIn('name', $user->roles->pluck('name'));
-                      });
-            })->with(['approvals' => function($query) use ($user) {
-                $query->where('status', 'pending')
-                      ->whereHas('role', function($roleQuery) use ($user) {
-                          $roleQuery->whereIn('name', $user->roles->pluck('name'));
-                      });
+                $query->where('status', 'pending');
+            })->with(['approvals' => function($query) {
+                $query->where('status', 'pending');
             }, 'category', 'assetLocation', 'subLocation', 'submittedBy'])
             ->get();
 
@@ -1375,7 +1369,7 @@ class AssetController extends Controller
     {
         try {
             $approvalHistory = $asset->approvals()
-                ->with(['approver', 'role'])
+                ->with(['approver'])
                 ->orderBy('sequence')
                 ->get();
 
@@ -1494,7 +1488,7 @@ class AssetController extends Controller
      */
     public function approvalsIndex(Request $request)
     {
-        $query = AssetApproval::with(['approvable', 'role', 'approver', 'reviewer', 'creator'])
+        $query = AssetApproval::with(['approvable', 'approver', 'reviewer', 'creator'])
             ->where('approvable_type', Asset::class);
 
         // Apply filters
