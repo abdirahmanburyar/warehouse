@@ -63,6 +63,10 @@
                                 <option value="rejected">Rejected</option>
                             </select>
                         </div>
+                        <div class="flex items-center mt-6">
+                            <input id="for_approval" type="checkbox" v-model="filters.for_approval" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                            <label for="for_approval" class="ml-2 block text-sm text-gray-700">Only items that need approval</label>
+                        </div>
 
                     </div>
                 </div>
@@ -84,6 +88,12 @@
                     </div>
 
                     <div v-else class="space-y-4">
+                        <div class="mb-2">
+                            <div class="flex items-center mb-3">
+                                <input type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded mr-2" @change="toggleSelectionAll($event)" />
+                                <button @click="bulkApprove" :disabled="selected.length===0" class="ml-2 px-3 py-1.5 text-sm rounded bg-green-600 text-white disabled:opacity-50">Bulk Approve</button>
+                            </div>
+                        </div>
                         <div v-for="approval in props.approvals.data" :key="approval.id" 
                              class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
                             <div class="flex items-start justify-between">
@@ -97,9 +107,12 @@
                                             </div>
                                         </div>
                                         <div class="flex-1">
-                                            <h3 class="text-lg font-semibold text-gray-900">
-                                                {{ approval.approvable?.asset_tag || 'Unknown Asset' }}
-                                            </h3>
+                                            <div class="flex items-center mb-1">
+                                                <input type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded mr-2" :value="approval" v-model="selected" />
+                                                <h3 class="text-lg font-semibold text-gray-900">
+                                                    {{ approval.approvable?.asset_tag || 'Unknown Asset' }}
+                                                </h3>
+                                            </div>
                                             <p class="text-sm text-gray-500">
                                                 {{ approval.approvable?.serial_number || 'N/A' }} • {{ approval.approvable?.item_description || 'No description' }}
                                             </p>
@@ -265,12 +278,13 @@ const props = defineProps({
 })
 
 const loading = ref(false)
-const filters = ref({ search: '', status: '' })
+const filters = ref({ search: '', status: '', for_approval: true })
 const selectedApproval = ref(null)
 const showModal = ref(false)
 const modalAction = ref('')
 const approvalNotes = ref('')
 const processing = ref(false)
+const selected = ref([])
 
 function canApprove(approval) {
     // Disallow approving when asset status is in_use, maintenance, or retired
@@ -352,5 +366,32 @@ function getResults(pageNum) {
         preserveState: true,
         preserveScroll: true,
     })
+}
+
+function toggleSelectionAll(event) {
+    if (event.target.checked) {
+        selected.value = props.approvals.data.slice()
+    } else {
+        selected.value = []
+    }
+}
+
+async function bulkApprove() {
+    if (selected.value.length === 0) return
+    const approvals = selected.value
+    selected.value = []
+
+    for (const approval of approvals) {
+        try {
+            await axios.post(route('assets.approve', approval.approvable.id), {
+                action: 'approve',
+                notes: 'Bulk approval'
+            })
+        } catch (e) {
+            // continue; show a toast for the first error only
+        }
+    }
+
+    router.reload()
 }
 </script> 

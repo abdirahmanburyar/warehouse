@@ -1504,6 +1504,17 @@ class AssetController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Only items that need approval by default
+        if ($request->boolean('for_approval', true)) {
+            $query->where(function($q) {
+                $q->where(function($q2) {
+                    $q2->where('status', 'pending')
+                       ->where('action', 'approve');
+                })
+                ->orWhere('status', 'reviewed');
+            });
+        }
+
 
 
         $approvals = $query->orderBy('created_at', 'desc')->paginate(10);
