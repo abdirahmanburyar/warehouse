@@ -268,6 +268,15 @@ watch(() => form.value.facility, (newValue) => {
     }
 });
 
+// Keep warehouse_id in sync with warehouse object
+watch(() => form.value.warehouse, (newValue) => {
+    if (newValue && newValue.id) {
+        form.value.warehouse_id = newValue.id;
+    } else {
+        form.value.warehouse_id = null;
+    }
+});
+
 // Toggle all permissions
 function toggleAllPermissions() {
     if (allPermissionsSelected.value) {

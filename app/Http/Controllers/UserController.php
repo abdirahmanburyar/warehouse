@@ -86,10 +86,28 @@ class UserController extends Controller
             DB::beginTransaction();
             
             // Normalize potential string values from the UI
-            $request->merge([
-                'warehouse_id' => ($request->warehouse_id === '' || $request->warehouse_id === 'null') ? null : $request->warehouse_id,
-                'facility_id' => ($request->facility_id === '' || $request->facility_id === 'null') ? null : $request->facility_id,
-            ]);
+            $payload = $request->all();
+            // If a warehouse object was sent, extract its id
+            if (isset($payload['warehouse']) && is_array($payload['warehouse']) && isset($payload['warehouse']['id'])) {
+                $payload['warehouse_id'] = $payload['warehouse']['id'];
+            }
+            // If a facility object was sent, extract its id
+            if (isset($payload['facility']) && is_array($payload['facility']) && isset($payload['facility']['id'])) {
+                $payload['facility_id'] = $payload['facility']['id'];
+            }
+            // Normalize empty strings and string 'null' to null
+            $payload['warehouse_id'] = ($payload['warehouse_id'] === '' || $payload['warehouse_id'] === 'null') ? null : $payload['warehouse_id'] ?? null;
+            $payload['facility_id'] = ($payload['facility_id'] === '' || $payload['facility_id'] === 'null') ? null : $payload['facility_id'] ?? null;
+
+            // Coerce numeric strings to integers
+            if (isset($payload['warehouse_id']) && is_numeric($payload['warehouse_id'])) {
+                $payload['warehouse_id'] = (int) $payload['warehouse_id'];
+            }
+            if (isset($payload['facility_id']) && is_numeric($payload['facility_id'])) {
+                $payload['facility_id'] = (int) $payload['facility_id'];
+            }
+
+            $request->replace($payload);
 
             $validationRules = [
                 'id' => 'nullable|exists:users,id',
