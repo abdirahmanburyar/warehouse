@@ -1164,6 +1164,8 @@ const issuedChartOptions = {
     scales: {
         y: { 
             beginAtZero: true,
+            grid: { display: false },
+            border: { display: false },
             ticks: {
                 callback: function(value) {
                     return formatLargeNumber(value);
@@ -1171,6 +1173,8 @@ const issuedChartOptions = {
             }
         },
         x: {
+            grid: { display: false },
+            border: { display: false },
             ticks: {
                 maxRotation: 45,
                 minRotation: 0
@@ -1179,10 +1183,20 @@ const issuedChartOptions = {
     },
     layout: {
         padding: {
-            top: 20,
-            bottom: 10,
-            left: 10,
-            right: 10
+            top: 10,
+            bottom: 0,
+            left: 0,
+            right: 0
+        }
+    },
+    elements: {
+        bar: {
+            borderWidth: 0,
+            borderSkipped: 'bottom',
+            borderRadius: { topLeft: 100, topRight: 100, bottomLeft: 0, bottomRight: 0 },
+            maxBarThickness: 20,
+            barPercentage: 0.5,
+            categoryPercentage: 0.5
         }
     }
 };
@@ -2082,7 +2096,7 @@ const assetStatsCards = computed(() => [
                     <!-- Warehouse Tab -->
                     <div v-if="activeTab === 'warehouse'" class="">
                         <div class="bg-white rounded-xl shadow-lg p-1 border border-gray-100">
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                 <div class="flex gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
@@ -2126,7 +2140,7 @@ const assetStatsCards = computed(() => [
                                                 {{ localWarehouseChartData[0]?.categoryDisplay || localWarehouseChartData[0]?.category || 'Unknown Category' }}
                                             </h3>
                                         </div>
-                                        <div class="h-full">
+                                        <div class="h-64">
                                             <Bar :data="localWarehouseChartData[0]" :options="issuedChartOptions" />
                                         </div>
                                     </div>
@@ -2155,7 +2169,7 @@ const assetStatsCards = computed(() => [
                     <!-- Facilities Tab -->
                     <div v-if="activeTab === 'facilities'" class="">
                         <div class="bg-white rounded-xl shadow-lg p-1 border border-gray-100">
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                 <div class="flex gap-4">
                                     <div class="w-[300px]">
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Facility</label>
@@ -2213,7 +2227,7 @@ const assetStatsCards = computed(() => [
                                                 {{ localFacilityChartData[0]?.categoryDisplay || localFacilityChartData[0]?.category || 'Unknown Category' }}
                                             </h3>
                                         </div>
-                                        <div class="h-full">
+                                        <div class="h-64">
                                             <Bar :data="localFacilityChartData[0]" :options="issuedChartOptions" />
                                         </div>
                                     </div>
