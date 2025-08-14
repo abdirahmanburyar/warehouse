@@ -149,11 +149,11 @@ class Asset extends Model
             'status' => self::STATUS_PENDING_APPROVAL
         ]);
 
-        // Create single review step for asset approval
+        // Create single approval step
         $this->createApprovalSteps([
             [
-                'role_id' => 1, // Use a general role ID that all users can have
-                'action' => 'review',
+                'role_id' => 1,
+                'action' => 'approve',
                 'sequence' => 1
             ]
         ]);
@@ -179,11 +179,11 @@ class Asset extends Model
             'submitted_by' => auth()->id()
         ]);
 
-        // Create single review step for asset approval
+        // Create single approval step
         $this->createApprovalSteps([
             [
-                'role_id' => 1, // Use a general role ID that all users can have
-                'action' => 'review',
+                'role_id' => 1,
+                'action' => 'approve',
                 'sequence' => 1
             ]
         ]);

@@ -70,7 +70,14 @@ trait HasApprovals
             return false;
         }
 
-        return auth()->user()->hasRole($nextStep->role->name);
+        // Permission-based checks (no roles): allow approval when the next step is an approval step or a reviewed step
+        if (($nextStep->action === 'approve' && in_array($nextStep->status, ['pending'])) ||
+            ($nextStep->action === 'review' && $nextStep->status === 'reviewed')) {
+            return auth()->user()->can('asset_approve');
+        }
+
+        // Fallback: if the step is pending review, checking approval does not apply yet
+        return false;
     }
 
     /**
@@ -79,11 +86,12 @@ trait HasApprovals
     public function canReviewNextStep(): bool
     {
         $nextStep = $this->getNextApprovalStep();
-        if (!$nextStep || $nextStep->action !== 'review' || $nextStep->status !== 'pending') {
+        if (!$nextStep || !in_array($nextStep->action, ['approve','review']) || $nextStep->status !== 'pending') {
             return false;
         }
 
-        return auth()->user()->hasRole($nextStep->role->name);
+        // With no review, treat pending approval as reviewable only by approve permission
+        return auth()->user()->can('asset_approve');
     }
 
     /**
@@ -92,10 +100,11 @@ trait HasApprovals
     public function canApproveRejectNextStep(): bool
     {
         $nextStep = $this->getNextApprovalStep();
-        if (!$nextStep || $nextStep->action !== 'review' || $nextStep->status !== 'reviewed') {
+        if (!$nextStep || !in_array($nextStep->action, ['approve','review']) || !in_array($nextStep->status, ['pending','reviewed'])) {
             return false;
         }
 
-        return auth()->user()->hasRole($nextStep->role->name);
+        // Permission-based: allow if user can approve or reject assets
+        return auth()->user()->can('asset_approve') || auth()->user()->can('asset_reject');
     }
 }

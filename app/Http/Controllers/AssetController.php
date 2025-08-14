@@ -1157,49 +1157,18 @@ class AssetController extends Controller
                 'requested_action' => $validated['action']
             ]);
 
-            if ($validated['action'] === 'review') {
-                // Check asset_review permission
-                if (!auth()->user()->can('asset_review')) {
-                    return response()->json('You do not have permission to review assets', 403);
-                }
-
-                // Handle review step
-                if ($nextStep->action !== 'review' || $nextStep->status !== 'pending') {
-                    return response()->json('Current step is not a pending review step', 400);
-                }
-
-                $nextStep->update([
-                    'status' => 'reviewed',
-                    'reviewed_by' => auth()->id(),
-                    'reviewed_at' => now(),
-                    'notes' => $validated['notes'] ?? null,
-                    'updated_by' => auth()->id()
-                ]);
-
-                // Create history record
-                $asset->createHistoryRecord(
-                    'reviewed',
-                    'approval',
-                    ['status' => 'pending'],
-                    ['status' => 'reviewed'],
-                    $validated['notes'] ?? 'Asset reviewed',
-                    $nextStep->id
-                );
-
-                return response()->json([
-                    'message' => 'Asset reviewed successfully, waiting for final approval',
-                    'asset' => $asset->fresh()
-                ], 200);
-
-            } elseif ($validated['action'] === 'approve') {
+            if ($validated['action'] === 'approve') {
                 // Check asset_approve permission
                 if (!auth()->user()->can('asset_approve')) {
                     return response()->json('You do not have permission to approve assets', 403);
                 }
 
-                // Handle approve step
-                if ($nextStep->action !== 'review' || $nextStep->status !== 'reviewed') {
-                    return response()->json('Current step is not a reviewed step ready for approval', 400);
+                // Handle approve step (either direct approve step pending or reviewed review step)
+                if (!(
+                    ($nextStep->action === 'approve' && $nextStep->status === 'pending') ||
+                    ($nextStep->action === 'review' && $nextStep->status === 'reviewed')
+                )) {
+                    return response()->json('Current step is not ready for approval', 400);
                 }
 
                 $oldStatus = $asset->status;
@@ -1259,9 +1228,12 @@ class AssetController extends Controller
                     return response()->json('You do not have permission to reject assets', 403);
                 }
 
-                // Handle reject step
-                if ($nextStep->action !== 'review' || $nextStep->status !== 'reviewed') {
-                    return response()->json('Current step is not a reviewed step ready for approval', 400);
+                // Handle reject step (either direct approve step pending or reviewed review step)
+                if (!(
+                    ($nextStep->action === 'approve' && $nextStep->status === 'pending') ||
+                    ($nextStep->action === 'review' && $nextStep->status === 'reviewed')
+                )) {
+                    return response()->json('Current step is not ready for rejection', 400);
                 }
 
                 $oldStatus = $asset->status;

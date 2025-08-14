@@ -154,20 +154,7 @@
 
                                 </div>
 
-                                <!-- Action Buttons -->
-                                <div v-if="canReview(approval)" class="ml-6 flex flex-col space-y-2">
-                                    <button
-                                        @click="showApprovalModal(approval, 'review')"
-                                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-2">
-                                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                        Review
-                                    </button>
-                                </div>
-                                
-                                <!-- Approve/Reject Buttons (only show after review) -->
+                                <!-- Action Buttons: Approve / Reject only -->
                                 <div v-if="canApprove(approval) || canReject(approval)" class="ml-6 flex flex-col space-y-2">
                                     <button
                                         v-if="canApprove(approval)"
@@ -213,7 +200,7 @@
             <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
                 <div class="mt-3">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        {{ modalAction === 'review' ? 'Review' : (modalAction === 'approve' ? 'Approve' : 'Reject') }} Asset
+                        {{ modalAction === 'approve' ? 'Approve' : 'Reject' }} Asset
                     </h3>
                     <div class="mb-4">
                         <p class="text-sm text-gray-600 mb-2">
@@ -238,16 +225,20 @@
                             Cancel
                         </button>
                         <button
+                            v-if="modalAction === 'approve'"
                             @click="processApproval"
+                            class="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                             :disabled="processing"
-                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
-                            :class="modalAction === 'review' ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' : (modalAction === 'approve' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-red-600 hover:bg-red-700 focus:ring-red-500')"
                         >
-                            <svg v-if="processing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            {{ modalAction === 'review' ? 'Review' : (modalAction === 'approve' ? 'Approve' : 'Reject') }}
+                            Approve
+                        </button>
+                        <button
+                            v-else
+                            @click="processApproval"
+                            class="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                            :disabled="processing"
+                        >
+                            Reject
                         </button>
                     </div>
                 </div>
@@ -257,99 +248,68 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { router, usePage } from '@inertiajs/vue3';
-import axios from 'axios';
-import Swal from 'sweetalert2';
-import moment from 'moment';
-import TailwindPagination from '@/Components/Pagination.vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3'
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import { TailwindPagination } from 'laravel-vue-pagination'
+import Swal from 'sweetalert2'
+import moment from 'moment'
+import { ref } from 'vue'
+import axios from 'axios'
+
+const page = usePage()
 
 const props = defineProps({
     approvals: Object,
-    filters: Object,
     pendingCount: Number,
-    approvedCount: Number,
-});
+    approvedCount: Number
+})
 
-const page = usePage();
-
-const loading = ref(false);
-const showModal = ref(false);
-const selectedApproval = ref(null);
-const modalAction = ref('');
-const approvalNotes = ref('');
-const processing = ref(false);
-
-const filters = ref({
-    search: props.filters?.search || '',
-    status: props.filters?.status || '',
-});
-
-// Watch for filter changes and reload data
-watch(filters, async (newFilters) => {
-    await loadApprovals();
-}, { deep: true });
-
-async function loadApprovals() {
-    loading.value = true;
-    try {
-        const response = await axios.get(route('assets.pending-approvals'), {
-            params: filters.value
-        });
-        // Update the approvals data
-        // In a real app, you'd update the reactive data here
-    } catch (error) {
-        console.error('Error loading approvals:', error);
-    } finally {
-        loading.value = false;
-    }
-}
-
-function canReview(approval) {
-    // Can review only if status is pending and user has asset_review permission
-    return approval.status === 'pending' && 
-           approval.action === 'review' && 
-           page.props.auth.can.asset_review;
-}
+const loading = ref(false)
+const filters = ref({ search: '', status: '' })
+const selectedApproval = ref(null)
+const showModal = ref(false)
+const modalAction = ref('')
+const approvalNotes = ref('')
+const processing = ref(false)
 
 function canApprove(approval) {
-    // Can approve only if status is reviewed and user has asset_approve permission
-    return approval.status === 'reviewed' && 
-           approval.action === 'review' && 
-           page.props.auth.can.asset_approve;
+    // Direct approval: approval step pending or reviewed review-step
+    return (
+        (approval.action === 'approve' && approval.status === 'pending') ||
+        (approval.action === 'review' && approval.status === 'reviewed')
+    ) && page.props.auth.can.asset_approve
 }
 
 function canReject(approval) {
-    // Can reject only if status is reviewed and user has asset_reject permission
-    return approval.status === 'reviewed' && 
-           approval.action === 'review' && 
-           page.props.auth.can.asset_reject;
+    return (
+        (approval.action === 'approve' && approval.status === 'pending') ||
+        (approval.action === 'review' && approval.status === 'reviewed')
+    ) && page.props.auth.can.asset_reject
 }
 
 function showApprovalModal(approval, action) {
-    selectedApproval.value = approval;
-    modalAction.value = action;
-    approvalNotes.value = '';
-    showModal.value = true;
+    selectedApproval.value = approval
+    modalAction.value = action
+    approvalNotes.value = ''
+    showModal.value = true
 }
 
 function closeModal() {
-    showModal.value = false;
-    selectedApproval.value = null;
-    modalAction.value = '';
-    approvalNotes.value = '';
+    showModal.value = false
+    selectedApproval.value = null
+    modalAction.value = ''
+    approvalNotes.value = ''
 }
 
 async function processApproval() {
-    if (!selectedApproval.value) return;
+    if (!selectedApproval.value) return
 
-    processing.value = true;
+    processing.value = true
     try {
         const response = await axios.post(route('assets.approve', selectedApproval.value.approvable.id), {
             action: modalAction.value,
             notes: approvalNotes.value
-        });
+        })
 
         Swal.fire({
             icon: 'success',
@@ -358,9 +318,9 @@ async function processApproval() {
             showConfirmButton: false,
             timer: 1500
         }).then(() => {
-            closeModal();
-            router.reload();
-        });
+            closeModal()
+            router.reload()
+        })
     } catch (error) {
         Swal.fire({
             icon: 'error',
@@ -368,28 +328,24 @@ async function processApproval() {
             text: error.response?.data || 'Failed to process approval',
             showConfirmButton: false,
             timer: 1500
-        });
+        })
     } finally {
-        processing.value = false;
+        processing.value = false
     }
 }
 
 function formatDate(date) {
-    if (!date) return '-';
-    return moment(date).format('DD/MM/YYYY HH:mm');
+    if (!date) return '-'
+    return moment(date).format('DD/MM/YYYY HH:mm')
 }
 
-function getResults(page) {
+function getResults(pageNum) {
     router.get(route('assets.approvals.index'), {
         ...filters.value,
-        page: page
+        page: pageNum
     }, {
         preserveState: true,
         preserveScroll: true,
-    });
+    })
 }
-
-onMounted(() => {
-    // Initialize any necessary data
-});
 </script> 
