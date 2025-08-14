@@ -85,6 +85,12 @@ class UserController extends Controller
         try {
             DB::beginTransaction();
             
+            // Normalize potential string values from the UI
+            $request->merge([
+                'warehouse_id' => ($request->warehouse_id === '' || $request->warehouse_id === 'null') ? null : $request->warehouse_id,
+                'facility_id' => ($request->facility_id === '' || $request->facility_id === 'null') ? null : $request->facility_id,
+            ]);
+
             $validationRules = [
                 'id' => 'nullable|exists:users,id',
                 'name' => 'required|string|max:255',
