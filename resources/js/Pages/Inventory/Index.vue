@@ -562,7 +562,10 @@ function getResults(page = 1) {
                         </tbody>
                     </table>
 
-                    <div class="mt-2 flex justify-end">
+                    <div class="mt-2 flex justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-gray-500">Showing {{ props.inventories.meta.from }} to {{ props.inventories.meta.to }} of {{ props.inventories.meta.total }} items</span>
+                        </div>
                         <TailwindPagination
                             :data="props.inventories"
                             @pagination-change-page="getResults"
