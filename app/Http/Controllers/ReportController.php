@@ -337,17 +337,140 @@ class ReportController extends Controller
         $endMonth = $request->input('end_month', Carbon::now()->format('Y-m'));
         $isSubmitted = $request->input('is_submitted', false);
         
-        $monthlyConsumptionReport = [];        
+        $monthlyConsumptionReport = [];
+        $amcByProduct = [];
         // Only fetch data if the form has been submitted with valid filters
         if ($isSubmitted && $facilityId && $startMonth && $endMonth) {
             $monthlyConsumptionReport = MonthlyConsumptionReport::where('facility_id', $facilityId)
                 ->with('facility.user','items.product')
                 ->whereBetween('month_year', [$startMonth, $endMonth])
                 ->get();
+
+            // Collect product ids present in the fetched reports
+            $productIds = [];
+            foreach ($monthlyConsumptionReport as $report) {
+                foreach ($report->items as $item) {
+                    $productIds[$item->product_id] = true;
+                }
+            }
+
+            $productIds = array_keys($productIds);
+
+            if (!empty($productIds)) {
+                // Pull the last up-to-12 months of non-zero consumptions per product within the selected range
+                $allConsumptions = DB::table('monthly_consumption_items as mci')
+                    ->join('monthly_consumption_reports as mcr', 'mci.parent_id', '=', 'mcr.id')
+                    ->select('mci.product_id', 'mci.quantity', 'mcr.month_year')
+                    ->where('mcr.facility_id', $facilityId)
+                    ->whereIn('mci.product_id', $productIds)
+                    ->whereBetween('mcr.month_year', [$startMonth, $endMonth])
+                    ->where('mci.quantity', '>', 0)
+                    ->orderBy('mci.product_id')
+                    ->orderBy('mcr.month_year', 'desc')
+                    ->get()
+                    ->groupBy('product_id');
+
+                foreach ($allConsumptions as $pid => $rows) {
+                    // Sort already desc by month_year; limit to 12 months
+                    $monthsData = array_slice($rows->values()->toArray(), 0, 12);
+
+                    $totalMonths = [];
+                    foreach ($monthsData as $consumption) {
+                        $totalMonths[] = [
+                            'month' => $consumption->month_year,
+                            'quantity' => (float) $consumption->quantity,
+                        ];
+                    }
+
+                    // Screening logic (skip index 0 which is the most recent month)
+                    $eligibleMonths = [];
+                    $processedMonths = [];
+                    $monthsCount = count($monthsData);
+
+                    for ($index = 1; $index < $monthsCount && count($eligibleMonths) < 3; $index++) {
+                        $currentMonth = $monthsData[$index];
+                        $monthName = $currentMonth->month_year;
+                        $currentQuantity = (float) $currentMonth->quantity;
+
+                        if (count($eligibleMonths) < 2) {
+                            $eligibleMonths[] = $currentMonth;
+                            $processedMonths[] = [
+                                'month' => $monthName,
+                                'quantity' => $currentQuantity,
+                                'status' => 'included',
+                                'reason' => 'First 2 eligible months - no screening applied',
+                            ];
+                            continue;
+                        }
+
+                        $recent1 = $eligibleMonths[count($eligibleMonths) - 1];
+                        $recent2 = $eligibleMonths[count($eligibleMonths) - 2];
+                        $averageOfRecent = ((float) $recent1->quantity + (float) $recent2->quantity) / 2;
+
+                        $percentDifference = $averageOfRecent > 0
+                            ? round(abs(($currentQuantity - $averageOfRecent) / $averageOfRecent) * 100, 2)
+                            : ($currentQuantity > 0 ? 100 : 0);
+
+                        if ($percentDifference <= 70) {
+                            $eligibleMonths[] = $currentMonth;
+                            $processedMonths[] = [
+                                'month' => $monthName,
+                                'quantity' => $currentQuantity,
+                                'status' => 'included',
+                                'reason' => "Deviation {$percentDifference}% ≤ 70%",
+                                'deviation_percentage' => $percentDifference,
+                                'average_of_recent_2' => round($averageOfRecent, 2),
+                            ];
+                        } else {
+                            $processedMonths[] = [
+                                'month' => $monthName,
+                                'quantity' => $currentQuantity,
+                                'status' => 'excluded',
+                                'reason' => "Deviation {$percentDifference}% > 70% - continuing search",
+                                'deviation_percentage' => $percentDifference,
+                                'average_of_recent_2' => round($averageOfRecent, 2),
+                            ];
+                        }
+                    }
+
+                    if (count($monthsData) > 0) {
+                        $currentMonth = $monthsData[0];
+                        array_unshift($processedMonths, [
+                            'month' => $currentMonth->month_year,
+                            'quantity' => (float) $currentMonth->quantity,
+                            'status' => 'excluded',
+                            'reason' => 'Current month - excluded from AMC calculation',
+                        ]);
+                    }
+
+                    $eligibleCount = count($eligibleMonths);
+                    if ($eligibleCount >= 3) {
+                        $sum = 0;
+                        for ($i = 0; $i < 3; $i++) {
+                            $sum += (float) $eligibleMonths[$i]->quantity;
+                        }
+                        $amc = $sum / 3;
+                    } elseif ($eligibleCount == 2) {
+                        $amc = ((float) $eligibleMonths[0]->quantity + (float) $eligibleMonths[1]->quantity) / 2;
+                    } elseif ($eligibleCount == 1) {
+                        $amc = (float) $eligibleMonths[0]->quantity;
+                    } else {
+                        $amc = 0;
+                    }
+
+                    $amcByProduct[(string) $pid] = [
+                        'amc' => round($amc, 2),
+                        'eligible_months_count' => $eligibleCount,
+                        'included_months' => $processedMonths,
+                        'total_months' => $totalMonths,
+                    ];
+                }
+            }
         }
 
         return inertia('Report/MonthlyConsumption', [
             'pivotData' => $monthlyConsumptionReport,
+            'amcByProduct' => $amcByProduct,
             'facilities' => Facility::select('id', 'name', 'facility_type')->get(),
             'products' => Product::select('id', 'name')->get(),
             'facilityInfo' => null,

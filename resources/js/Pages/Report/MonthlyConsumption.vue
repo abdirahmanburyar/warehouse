@@ -343,7 +343,8 @@ const props = defineProps({
     facilities: Array,
     products: Array,
     yearMonths: Array,
-    filters: Object
+    filters: Object,
+    amcByProduct: Object
 });
 
 // For product search filtering
@@ -946,13 +947,16 @@ async function downloadTemplate() {
 
 // Calculate AMC for a specific group of months
 function calculateGroupAMC(row, group) {
+    // Prefer backend AMC (screened) when available
+    const backend = props.amcByProduct?.[row.product_id]?.amc;
+    if (typeof backend === 'number' && !isNaN(backend)) {
+        return backend;
+    }
+    // Fallback to simple average of the displayed months
     const groupValues = group.months.map(month => row[month] || 0);
-    
     if (groupValues.length === 0) return 'N/A';
-    
     const sum = groupValues.reduce((acc, val) => acc + val, 0);
     const divisor = groupValues.length;
-    
     return Math.round((sum / divisor) * 100) / 100;
 }
 
@@ -1080,34 +1084,45 @@ function exportToExcel() {
                     
                     // Add average value after every 3 months
                     if ((index + 1) % 3 === 0 && index > 0) {
-                        // Calculate average for the last three months
-                        const lastThreeMonths = sortedMonths.value.slice(index - 2, index + 1);
+                        // Prefer backend AMC where available
+                        const backend = props.amcByProduct?.[row.product_id]?.amc;
+                        if (typeof backend === 'number' && !isNaN(backend)) {
+                            dataRow.push(backend);
+                        } else {
+                            // Fallback to simple average for the last three months
+                            const lastThreeMonths = sortedMonths.value.slice(index - 2, index + 1);
+                            let sum = 0;
+                            let count = 0;
+                            lastThreeMonths.forEach(m => {
+                                sum += parseInt(row[m] || 0);
+                                count++;
+                            });
+                            const avg = count > 0 ? (sum / count).toFixed(1) : '0.0';
+                            dataRow.push(avg);
+                        }
+                    }
+                });
+                
+                // Add final average if needed
+                if (sortedMonths.value.length % 3 !== 0 && sortedMonths.value.length > 0) {
+                    const backend = props.amcByProduct?.[row.product_id]?.amc;
+                    if (typeof backend === 'number' && !isNaN(backend)) {
+                        dataRow.push(backend);
+                    } else {
+                        // Calculate average for the remaining months
+                        const remainingCount = sortedMonths.value.length % 3;
+                        const startIndex = sortedMonths.value.length - remainingCount;
+                        const remainingMonths = sortedMonths.value.slice(startIndex);
+                        
                         let sum = 0;
                         let count = 0;
-                        lastThreeMonths.forEach(m => {
+                        remainingMonths.forEach(m => {
                             sum += parseInt(row[m] || 0);
                             count++;
                         });
                         const avg = count > 0 ? (sum / count).toFixed(1) : '0.0';
                         dataRow.push(avg);
                     }
-                });
-                
-                // Add final average if needed
-                if (sortedMonths.value.length % 3 !== 0 && sortedMonths.value.length > 0) {
-                    // Calculate average for the remaining months
-                    const remainingCount = sortedMonths.value.length % 3;
-                    const startIndex = sortedMonths.value.length - remainingCount;
-                    const remainingMonths = sortedMonths.value.slice(startIndex);
-                    
-                    let sum = 0;
-                    let count = 0;
-                    remainingMonths.forEach(m => {
-                        sum += parseInt(row[m] || 0);
-                        count++;
-                    });
-                    const avg = count > 0 ? (sum / count).toFixed(1) : '0.0';
-                    dataRow.push(avg);
                 }
             } else {
                 // Use the provided months
@@ -1117,34 +1132,44 @@ function exportToExcel() {
                     
                     // Add average value after every 3 months
                     if ((index + 1) % 3 === 0 && index > 0) {
-                        // Calculate average for the last three months
-                        const lastThreeMonths = monthsToUse.slice(index - 2, index + 1);
+                        const backend = props.amcByProduct?.[row.product_id]?.amc;
+                        if (typeof backend === 'number' && !isNaN(backend)) {
+                            dataRow.push(backend);
+                        } else {
+                            // Calculate average for the last three months
+                            const lastThreeMonths = monthsToUse.slice(index - 2, index + 1);
+                            let sum = 0;
+                            let count = 0;
+                            lastThreeMonths.forEach(m => {
+                                sum += parseInt(row[m] || 0);
+                                count++;
+                            });
+                            const avg = count > 0 ? (sum / count).toFixed(1) : '0.0';
+                            dataRow.push(avg);
+                        }
+                    }
+                });
+                
+                // Add final average if needed
+                if (monthsToUse.length % 3 !== 0 && monthsToUse.length > 0) {
+                    const backend = props.amcByProduct?.[row.product_id]?.amc;
+                    if (typeof backend === 'number' && !isNaN(backend)) {
+                        dataRow.push(backend);
+                    } else {
+                        // Calculate average for the remaining months
+                        const remainingCount = monthsToUse.length % 3;
+                        const startIndex = monthsToUse.length - remainingCount;
+                        const remainingMonths = monthsToUse.slice(startIndex);
+                        
                         let sum = 0;
                         let count = 0;
-                        lastThreeMonths.forEach(m => {
+                        remainingMonths.forEach(m => {
                             sum += parseInt(row[m] || 0);
                             count++;
                         });
                         const avg = count > 0 ? (sum / count).toFixed(1) : '0.0';
                         dataRow.push(avg);
                     }
-                });
-                
-                // Add final average if needed
-                if (monthsToUse.length % 3 !== 0 && monthsToUse.length > 0) {
-                    // Calculate average for the remaining months
-                    const remainingCount = monthsToUse.length % 3;
-                    const startIndex = monthsToUse.length - remainingCount;
-                    const remainingMonths = monthsToUse.slice(startIndex);
-                    
-                    let sum = 0;
-                    let count = 0;
-                    remainingMonths.forEach(m => {
-                        sum += parseInt(row[m] || 0);
-                        count++;
-                    });
-                    const avg = count > 0 ? (sum / count).toFixed(1) : '0.0';
-                    dataRow.push(avg);
                 }
             }
 
