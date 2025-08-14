@@ -1163,6 +1163,12 @@ class AssetController extends Controller
                     return response()->json('You do not have permission to approve assets', 403);
                 }
 
+                // Block approval for disallowed statuses
+                $disallowedStatuses = [Asset::STATUS_IN_USE, Asset::STATUS_MAINTENANCE, Asset::STATUS_RETIRED];
+                if (in_array($asset->status, $disallowedStatuses, true)) {
+                    return response()->json('Asset cannot be approved in its current status', 400);
+                }
+
                 // Handle approve step (either direct approve step pending or reviewed review step)
                 if (!(
                     ($nextStep->action === 'approve' && $nextStep->status === 'pending') ||

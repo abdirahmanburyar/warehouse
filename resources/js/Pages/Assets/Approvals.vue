@@ -273,6 +273,11 @@ const approvalNotes = ref('')
 const processing = ref(false)
 
 function canApprove(approval) {
+    // Disallow approving when asset status is in_use, maintenance, or retired
+    const status = approval.approvable?.status
+    const disallowed = ['in_use', 'maintenance', 'retired']
+    if (status && disallowed.includes(status)) return false
+
     // Direct approval: approval step pending or reviewed review-step
     return (
         (approval.action === 'approve' && approval.status === 'pending') ||
