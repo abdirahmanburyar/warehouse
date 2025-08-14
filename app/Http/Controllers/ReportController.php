@@ -382,12 +382,20 @@ class ReportController extends Controller
                         ];
                     }
 
-                    // Screening logic (skip index 0 which is the most recent month)
+                    // Screening logic: skip only the real current month if present
                     $eligibleMonths = [];
                     $processedMonths = [];
                     $monthsCount = count($monthsData);
 
-                    for ($index = 1; $index < $monthsCount && count($eligibleMonths) < 3; $index++) {
+                    $startIndex = 0;
+                    if ($monthsCount > 0) {
+                        $currentMonthY = Carbon::now()->format('Y-m');
+                        if (isset($monthsData[0]->month_year) && $monthsData[0]->month_year === $currentMonthY) {
+                            $startIndex = 1; // skip real current month
+                        }
+                    }
+
+                    for ($index = $startIndex; $index < $monthsCount && count($eligibleMonths) < 3; $index++) {
                         $currentMonth = $monthsData[$index];
                         $monthName = $currentMonth->month_year;
                         $currentQuantity = (float) $currentMonth->quantity;
@@ -434,13 +442,16 @@ class ReportController extends Controller
                     }
 
                     if (count($monthsData) > 0) {
-                        $currentMonth = $monthsData[0];
-                        array_unshift($processedMonths, [
-                            'month' => $currentMonth->month_year,
-                            'quantity' => (float) $currentMonth->quantity,
-                            'status' => 'excluded',
-                            'reason' => 'Current month - excluded from AMC calculation',
-                        ]);
+                        $currentMonthY = Carbon::now()->format('Y-m');
+                        if ($monthsData[0]->month_year === $currentMonthY) {
+                            $currentMonth = $monthsData[0];
+                            array_unshift($processedMonths, [
+                                'month' => $currentMonth->month_year,
+                                'quantity' => (float) $currentMonth->quantity,
+                                'status' => 'excluded',
+                                'reason' => 'Current month - excluded from AMC calculation',
+                            ]);
+                        }
                     }
 
                     $eligibleCount = count($eligibleMonths);
