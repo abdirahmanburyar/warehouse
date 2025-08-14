@@ -997,167 +997,36 @@ function exportToExcel() {
             wsData.push([]);
         }
 
-        // Prepare the header row with average columns
-        const excelHeaderRow = [
-            'SN',
-            'ITEMS DESCRIPTION'
-        ];
-
-        // Add month headers and average headers
-        const monthsToUse = props.months || [];
-        
-        if (monthsToUse.length === 0) {
-            // If no months data, use the sorted months from computed property
-            sortedMonths.value.forEach((month, index) => {
-                // Format month as MMM-YYYY (e.g., NOV-2024)
-                const monthDate = new Date(month);
-                const monthStr = monthDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
-                const yearStr = monthDate.getFullYear();
-                
-                // Add regular month header
-                excelHeaderRow.push(`${monthStr}-${yearStr}`);
-                
-                // Add average header after every 3 months
-                if ((index + 1) % 3 === 0 && index > 0) {
-                    excelHeaderRow.push('AMC');
-                }
-            });
-            
-            // Add final average header if needed
-            if (sortedMonths.value.length % 3 !== 0 && sortedMonths.value.length > 0) {
-                excelHeaderRow.push('AMC');
-            }
-        } else {
-            // Use the provided months
-            monthsToUse.forEach((month, index) => {
-                // Format month as MMM-YYYY (e.g., NOV-2024)
-                const monthDate = new Date(month);
-                const monthStr = monthDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
-                const yearStr = monthDate.getFullYear();
-                
-                // Add regular month header
-                excelHeaderRow.push(`${monthStr}-${yearStr}`);
-                
-                // Add average header after every 3 months
-                if ((index + 1) % 3 === 0 && index > 0) {
-                    excelHeaderRow.push('AMC');
-                }
-            });
-            
-            // Add final average header if needed
-            if (monthsToUse.length % 3 !== 0 && monthsToUse.length > 0) {
-                excelHeaderRow.push('AMC');
-            }
-        }
+        // Prepare header row: months + single AMC column
+        const excelHeaderRow = ['SN', 'ITEMS DESCRIPTION'];
+        sortedMonths.value.forEach((month) => {
+            const monthDate = new Date(month);
+            const monthStr = monthDate.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+            const yearStr = monthDate.getFullYear();
+            excelHeaderRow.push(`${monthStr}-${yearStr}`);
+        });
+        excelHeaderRow.push('AMC');
 
         // Add the header row to the worksheet
         wsData.push(excelHeaderRow);
 
-        // Add data rows with averages
+        // Add data rows with single AMC
         let rowNumber = 1;
         filteredPivotTableData.value.forEach(row => {
             const dataRow = [
                 rowNumber++,
                 row.product_name || 'N/A'
             ];
-
-            // Add month values and average values
-            if (monthsToUse.length === 0) {
-                // If no months data, use the sorted months from computed property
-                sortedMonths.value.forEach((month, index) => {
-                    // Add regular month value
-                    dataRow.push(row[month] || 0);
-                    
-                    // Add average value after every 3 months
-                    if ((index + 1) % 3 === 0 && index > 0) {
-                        // Prefer backend AMC where available
-                        const backend = props.amcByProduct?.[row.product_id]?.amc;
-                        if (typeof backend === 'number' && !isNaN(backend)) {
-                            dataRow.push(backend);
-                        } else {
-                            // Fallback to simple average for the last three months
-                            const lastThreeMonths = sortedMonths.value.slice(index - 2, index + 1);
-                            let sum = 0;
-                            let count = 0;
-                            lastThreeMonths.forEach(m => {
-                                sum += parseInt(row[m] || 0);
-                                count++;
-                            });
-                            const avg = count > 0 ? (sum / count).toFixed(1) : '0.0';
-                            dataRow.push(avg);
-                        }
-                    }
-                });
-                
-                // Add final average if needed
-                if (sortedMonths.value.length % 3 !== 0 && sortedMonths.value.length > 0) {
-                    const backend = props.amcByProduct?.[row.product_id]?.amc;
-                    if (typeof backend === 'number' && !isNaN(backend)) {
-                        dataRow.push(backend);
-                    } else {
-                        // Calculate average for the remaining months
-                        const remainingCount = sortedMonths.value.length % 3;
-                        const startIndex = sortedMonths.value.length - remainingCount;
-                        const remainingMonths = sortedMonths.value.slice(startIndex);
-                        
-                        let sum = 0;
-                        let count = 0;
-                        remainingMonths.forEach(m => {
-                            sum += parseInt(row[m] || 0);
-                            count++;
-                        });
-                        const avg = count > 0 ? (sum / count).toFixed(1) : '0.0';
-                        dataRow.push(avg);
-                    }
-                }
-            } else {
-                // Use the provided months
-                monthsToUse.forEach((month, index) => {
-                    // Add regular month value
-                    dataRow.push(row[month] || 0);
-                    
-                    // Add average value after every 3 months
-                    if ((index + 1) % 3 === 0 && index > 0) {
-                        const backend = props.amcByProduct?.[row.product_id]?.amc;
-                        if (typeof backend === 'number' && !isNaN(backend)) {
-                            dataRow.push(backend);
-                        } else {
-                            // Calculate average for the last three months
-                            const lastThreeMonths = monthsToUse.slice(index - 2, index + 1);
-                            let sum = 0;
-                            let count = 0;
-                            lastThreeMonths.forEach(m => {
-                                sum += parseInt(row[m] || 0);
-                                count++;
-                            });
-                            const avg = count > 0 ? (sum / count).toFixed(1) : '0.0';
-                            dataRow.push(avg);
-                        }
-                    }
-                });
-                
-                // Add final average if needed
-                if (monthsToUse.length % 3 !== 0 && monthsToUse.length > 0) {
-                    const backend = props.amcByProduct?.[row.product_id]?.amc;
-                    if (typeof backend === 'number' && !isNaN(backend)) {
-                        dataRow.push(backend);
-                    } else {
-                        // Calculate average for the remaining months
-                        const remainingCount = monthsToUse.length % 3;
-                        const startIndex = monthsToUse.length - remainingCount;
-                        const remainingMonths = monthsToUse.slice(startIndex);
-                        
-                        let sum = 0;
-                        let count = 0;
-                        remainingMonths.forEach(m => {
-                            sum += parseInt(row[m] || 0);
-                            count++;
-                        });
-                        const avg = count > 0 ? (sum / count).toFixed(1) : '0.0';
-                        dataRow.push(avg);
-                    }
-                }
-            }
+            // Add month values in order
+            sortedMonths.value.forEach((month) => {
+                dataRow.push(row[month] || 0);
+            });
+            // Add AMC: prefer backend, else fallback to screened calculation
+            const backendAmc = props.amcByProduct?.[row.product_id]?.amc;
+            const amcValue = (typeof backendAmc === 'number' && !isNaN(backendAmc))
+                ? backendAmc
+                : calculateScreenedAMC(row);
+            dataRow.push(amcValue);
 
             wsData.push(dataRow);
         });
@@ -1171,65 +1040,17 @@ function exportToExcel() {
             throw new Error('Failed to create Excel worksheet: ' + error.message);
         }
 
-        // Add styling to AMC columns in Excel
-        // Track AMC column indices
-        const amcColumns = [];
-        let colIndex = 2; // Start after SN and Items columns
-
-        // Find AMC column indices
-        if (monthsToUse.length === 0) {
-            // If no months data, use the sorted months from computed property
-            sortedMonths.value.forEach((month, index) => {
-                colIndex++; // Move to next column after each month
-                if ((index + 1) % 3 === 0 && index > 0) {
-                    amcColumns.push(colIndex);
-                    colIndex++; // Move past the AMC column
-                }
-            });
-            
-            // Add final AMC column if needed
-            if (sortedMonths.value.length % 3 !== 0 && sortedMonths.value.length > 0) {
-                amcColumns.push(colIndex);
-            }
-        } else {
-            // Use the provided months
-            monthsToUse.forEach((month, index) => {
-                colIndex++; // Move to next column after each month
-                if ((index + 1) % 3 === 0 && index > 0) {
-                    amcColumns.push(colIndex);
-                    colIndex++; // Move past the AMC column
-                }
-            });
-            
-            // Add final AMC column if needed
-            if (monthsToUse.length % 3 !== 0 && monthsToUse.length > 0) {
-                amcColumns.push(colIndex);
-            }
-        }
-
-        // Apply sky blue color to all cells in AMC columns
+        // Style the single AMC column (last column)
         if (!ws['!cols']) ws['!cols'] = [];
-
-        // Define the column style for AMC columns
-        amcColumns.forEach(col => {
-            // Convert column index to letter (e.g., 3 -> D)
-            const colLetter = XLSX.utils.encode_col(col);
-
-            // Apply background color to all cells in this column
-            for (let row = 0; row < wsData.length; row++) {
-                const cellRef = colLetter + (row + 1);
-                if (!ws[cellRef]) ws[cellRef] = { v: '' };
-                if (!ws[cellRef].s) ws[cellRef].s = {};
-                ws[cellRef].s.fill = { fgColor: { rgb: "87CEEB" } }; // Sky blue color
-                ws[cellRef].s.font = { color: { rgb: "FFFFFF" } }; // White text
-
-                // Add bold to header row
-                if (row === 0) {
-                    if (!ws[cellRef].s.font) ws[cellRef].s.font = {};
-                    ws[cellRef].s.font.bold = true;
-                }
-            }
-        });
+        const amcColIndex = 2 + sortedMonths.value.length; // SN, ITEM, months, then AMC
+        const colLetter = XLSX.utils.encode_col(amcColIndex);
+        for (let row = 0; row < wsData.length; row++) {
+            const cellRef = colLetter + (row + 1);
+            if (!ws[cellRef]) ws[cellRef] = { v: '' };
+            if (!ws[cellRef].s) ws[cellRef].s = {};
+            ws[cellRef].s.fill = { fgColor: { rgb: '87CEEB' } };
+            ws[cellRef].s.font = { color: { rgb: 'FFFFFF' }, bold: row === 0 };
+        }
 
         // Create workbook
         const wb = XLSX.utils.book_new();
