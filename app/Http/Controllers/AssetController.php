@@ -1506,13 +1506,7 @@ class AssetController extends Controller
 
         // Only items that need approval by default
         if ($request->boolean('for_approval', true)) {
-            $query->where(function($q) {
-                $q->where(function($q2) {
-                    $q2->where('status', 'pending')
-                       ->where('action', 'approve');
-                })
-                ->orWhere('status', 'reviewed');
-            });
+            $query->whereIn('status', ['pending', 'reviewed']);
         }
 
 
