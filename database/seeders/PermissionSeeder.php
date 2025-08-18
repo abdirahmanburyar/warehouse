@@ -16,6 +16,26 @@ class PermissionSeeder extends Seeder
         $now = Carbon::now();
 
         $permissions = [
+            // System-Level Permissions (Highest Authority)
+            [
+                'name' => 'manage-system',
+                'display_name' => 'Manage System',
+                'description' => 'Full system administration with complete authority over all modules and functions',
+                'module' => 'System Administration',
+                'guard_name' => 'web',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'view-system',
+                'display_name' => 'View System',
+                'description' => 'View access to all system modules and data without ability to perform actions',
+                'module' => 'System Administration',
+                'guard_name' => 'web',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            
             // User Management Module
             [
                 'name' => 'user-view',
@@ -159,7 +179,7 @@ class PermissionSeeder extends Seeder
                 'guard_name' => 'web',
             ],
 
-            // Order Management Module
+            // Order Management
             [
                 'name' => 'order-view',
                 'display_name' => 'View Orders',

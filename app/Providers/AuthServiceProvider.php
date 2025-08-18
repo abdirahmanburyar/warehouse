@@ -50,50 +50,76 @@ class AuthServiceProvider extends ServiceProvider
     /**
      * Define special access gates for admin and manager roles.
      */
-    protected function defineSpecialGates(): void
+    protected function defineSpecialGates()
     {
-        // Admin has access to everything
-        Gate::define('admin-access', function (User $user) {
-            return $user->isAdmin();
+        // Admin access - highest level
+        Gate::define('admin-access', function ($user) {
+            return $user->hasPermissionTo('admin-access') || $user->hasPermissionTo('manage-system');
         });
 
-        // Manager system has access to everything
-        Gate::define('manager-access', function (User $user) {
-            return $user->hasPermission('manager-system');
+        // Manager access - high level
+        Gate::define('manager-access', function ($user) {
+            return $user->hasPermissionTo('manager-access') || $user->hasPermissionTo('manage-system');
         });
 
-        // View-only access - can view but not modify
-        Gate::define('view-only', function (User $user) {
-            return $user->hasPermission('view-only-access');
+        // View-only access - can see but not modify
+        Gate::define('view-only', function ($user) {
+            return $user->hasPermissionTo('view-only-access') || $user->hasPermissionTo('view-system');
+        });
+
+        // System management - full authority
+        Gate::define('manage-system', function ($user) {
+            return $user->hasPermissionTo('manage-system');
+        });
+
+        // System view - view everything but no actions
+        Gate::define('view-system', function ($user) {
+            return $user->hasPermissionTo('view-system');
         });
 
         // Module-specific access gates
-        Gate::define('user-management', function (User $user) {
-            return $user->hasAnyPermission(['user-view', 'user-create', 'user-edit', 'user-delete']);
+        Gate::define('user-management', function ($user) {
+            return $user->hasPermissionTo('user-view') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
         });
 
-        Gate::define('facility-management', function (User $user) {
-            return $user->hasAnyPermission(['facility-view', 'facility-create', 'facility-edit', 'facility-delete', 'facility-import']);
+        Gate::define('facility-management', function ($user) {
+            return $user->hasPermissionTo('facility-view') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
         });
 
-        Gate::define('product-management', function (User $user) {
-            return $user->hasAnyPermission(['product-view', 'product-create', 'product-edit', 'product-delete', 'product-import']);
+        Gate::define('product-management', function ($user) {
+            return $user->hasPermissionTo('product-view') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
         });
 
-        Gate::define('inventory-management', function (User $user) {
-            return $user->hasAnyPermission(['inventory-view', 'inventory-adjust', 'inventory-transfer']);
+        Gate::define('inventory-management', function ($user) {
+            return $user->hasPermissionTo('inventory-view') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
         });
 
-        Gate::define('warehouse-management', function (User $user) {
-            return $user->hasAnyPermission(['warehouse-view', 'warehouse-manage']);
+        Gate::define('warehouse-management', function ($user) {
+            return $user->hasPermissionTo('warehouse-view') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
         });
 
-        Gate::define('reports-access', function (User $user) {
-            return $user->hasAnyPermission(['reports-view', 'reports-export']);
+        Gate::define('order-management', function ($user) {
+            return $user->hasPermissionTo('order-view') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
         });
 
-        Gate::define('system-administration', function (User $user) {
-            return $user->hasAnyPermission(['system-settings', 'permission-manage']);
+        Gate::define('transfer-management', function ($user) {
+            return $user->hasPermissionTo('transfer-view') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
+        });
+
+        Gate::define('asset-management', function ($user) {
+            return $user->hasPermissionTo('asset-view') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
+        });
+
+        Gate::define('liquidate-management', function ($user) {
+            return $user->hasPermissionTo('liquidate-view') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
+        });
+
+        Gate::define('supply-management', function ($user) {
+            return $user->hasPermissionTo('supply-view') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
+        });
+
+        Gate::define('report-management', function ($user) {
+            return $user->hasPermissionTo('report-view') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
         });
     }
 }

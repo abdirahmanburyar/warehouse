@@ -13,12 +13,12 @@
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- System Configuration -->
-            <div v-if="hasPermissionTo('permission-manage') || hasPermissionTo('system-settings')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div v-if="hasPermissionTo('permission-manage') || hasPermissionTo('system-settings') || hasPermissionTo('manage-system') || hasPermissionTo('view-system')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <h2 class="text-xl font-semibold mb-4 border-b pb-2">System Configuration</h2>
                     
                     <div class="space-y-6">
-                        <div v-if="hasPermissionTo('permission-manage')">
+                        <div v-if="hasPermissionTo('permission-manage') || hasPermissionTo('manage-system')">
                             <h3 class="text-lg font-medium mb-2">User & Access Management</h3>
                             <ul class="space-y-2">
                                 <li><Link :href="route('settings.users.index')" class="text-gray-600 hover:text-indigo-600">Manage Users</Link></li>
@@ -27,7 +27,7 @@
                             </ul>
                         </div>
                         
-                        <div v-if="hasPermissionTo('system-settings')">
+                        <div v-if="hasPermissionTo('system-settings') || hasPermissionTo('manage-system') || hasPermissionTo('view-system')">
                             <h3 class="text-lg font-medium mb-2">Inventory Management</h3>
                             <ul class="space-y-2">
                                 <li><Link :href="route('settings.reorder-levels.index')" class="text-gray-600 hover:text-indigo-600">Reorder Levels</Link></li>
@@ -38,7 +38,7 @@
             </div>
 
             <!-- Logistics Management -->
-            <div v-if="hasPermissionTo('system-settings')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div v-if="hasPermissionTo('system-settings') || hasPermissionTo('manage-system') || hasPermissionTo('view-system')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <h2 class="text-xl font-semibold mb-4 border-b pb-2">Logistics Management</h2>
                     
@@ -55,7 +55,7 @@
             </div>
 
             <!-- Permission Management -->
-            <div v-if="hasPermissionTo('permission-manage')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div v-if="hasPermissionTo('permission-manage') || hasPermissionTo('manage-system')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <h2 class="text-xl font-semibold mb-4 border-b pb-2">Permission Management</h2>
                     
@@ -69,6 +69,21 @@
                             </ul>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- System Status (for view-system users) -->
+            <div v-if="hasPermissionTo('view-system') && !hasPermissionTo('manage-system')" class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4 text-blue-800">System Status</h2>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-blue-700">View Mode:</span>
+                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">Active</span>
+                    </div>
+                    <p class="text-blue-600 text-sm">
+                        You have view access to all system modules. 
+                        Contact an administrator for action permissions.
+                    </p>
                 </div>
             </div>
         </div>

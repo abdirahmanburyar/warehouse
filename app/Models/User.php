@@ -190,7 +190,6 @@ class User extends Authenticatable
     public function isAdmin()
     {
         // Check if user has admin email or username
-        return in_array($this->email, ['admin@warehouse.com', 'admin@admin.com']) || 
-               in_array($this->username, ['admin', 'administrator']);
+        return in_array($this->username, ['admin', 'administrator']);
     }
 }

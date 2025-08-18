@@ -59,9 +59,36 @@ trait HasPermissions
     /**
      * Check if user has permission for a specific module.
      */
-    public function canAccessModule($module): bool
+    public function canAccessModule(string $moduleName): bool
     {
-        return $this->permissions()->where('module', $module)->exists();
+        // System managers can access everything
+        if ($this->canManageSystem()) {
+            return true;
+        }
+        
+        // View system users can see everything but not perform actions
+        if ($this->hasViewSystemAccess()) {
+            return true;
+        }
+        
+        // Check specific module permissions
+        $modulePermissions = [
+            'facilities' => ['facility-view', 'facility-create', 'facility-edit', 'facility-delete', 'facility-import'],
+            'products' => ['product-view', 'product-create', 'product-edit', 'product-delete', 'product-import'],
+            'inventory' => ['inventory-view', 'inventory-adjust', 'inventory-transfer'],
+            'orders' => ['order-view', 'order-create', 'order-edit', 'order-delete', 'order-approve'],
+            'transfers' => ['transfer-view', 'transfer-create', 'transfer-edit', 'transfer-delete', 'transfer-approve'],
+            'assets' => ['asset-view', 'asset-create', 'asset-edit', 'asset-delete'],
+            'users' => ['user-view', 'user-create', 'user-edit', 'user-delete'],
+            'reports' => ['report-view', 'report-export'],
+            'settings' => ['system-settings', 'permission-manage']
+        ];
+        
+        if (isset($modulePermissions[$moduleName])) {
+            return $this->hasAnyPermission($modulePermissions[$moduleName]);
+        }
+        
+        return false;
     }
 
     /**
@@ -81,18 +108,34 @@ trait HasPermissions
     }
 
     /**
-     * Check if user is a system manager.
+     * Check if user is a system manager (full authority)
      */
     public function isSystemManager(): bool
     {
-        return $this->hasPermission('manager-system');
+        return $this->canManageSystem() || $this->isAdmin();
     }
 
     /**
-     * Check if user can perform actions (not view-only).
+     * Check if user can manage the entire system
+     */
+    public function canManageSystem(): bool
+    {
+        return $this->hasPermissionTo('manage-system');
+    }
+
+    /**
+     * Check if user has view-only system access
+     */
+    public function hasViewSystemAccess(): bool
+    {
+        return $this->hasPermissionTo('view-system');
+    }
+
+    /**
+     * Check if user can perform actions (not just view)
      */
     public function canPerformActions(): bool
     {
-        return !$this->isViewOnly();
+        return !$this->hasViewSystemAccess() && !$this->isViewOnly();
     }
 }

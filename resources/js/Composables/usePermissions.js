@@ -32,24 +32,9 @@ export function usePermissions() {
         return permissions.every(permission => hasPermissionTo(permission))
     }
     
-    // Check if user can access a specific module
-    const canAccessModule = (module) => {
-        return userPermissions.value.some(p => p.module === module)
-    }
-    
     // Check if user is view-only
     const isViewOnly = computed(() => {
         return hasPermissionTo('view-only-access')
-    })
-    
-    // Check if user can perform actions (not view-only)
-    const canPerformActions = computed(() => {
-        return !isViewOnly.value
-    })
-    
-    // Check if user is system manager
-    const isSystemManager = computed(() => {
-        return hasPermissionTo('manager-system')
     })
     
     // Check if user is admin
@@ -103,6 +88,49 @@ export function usePermissions() {
     const canManageSystem = computed(() => {
         return hasAnyPermission(['system-settings', 'permission-manage'])
     })
+
+    // Check if user has view-only system access
+    const hasViewSystemAccess = computed(() => {
+        return hasPermissionTo('view-system');
+    });
+
+    // Check if user can perform actions (not just view)
+    const canPerformActions = computed(() => {
+        return !hasViewSystemAccess.value && !isViewOnly.value;
+    });
+
+    // Check if user is a system manager (full authority)
+    const isSystemManager = computed(() => {
+        return canManageSystem.value || isAdmin.value;
+    });
+
+    // Check if user can access a specific module
+    const canAccessModule = (moduleName) => {
+        // System managers can access everything
+        if (canManageSystem.value) return true;
+        
+        // View system users can see everything but not perform actions
+        if (hasViewSystemAccess.value) return true;
+        
+        // Check specific module permissions
+        const modulePermissions = {
+            'facilities': ['facility-view', 'facility-create', 'facility-edit', 'facility-delete', 'facility-import'],
+            'products': ['product-view', 'product-create', 'product-edit', 'product-delete', 'product-import'],
+            'inventory': ['inventory-view', 'inventory-adjust', 'inventory-transfer'],
+            'orders': ['order-view', 'order-create', 'order-edit', 'order-delete', 'order-approve'],
+            'transfers': ['transfer-view', 'transfer-create', 'transfer-edit', 'transfer-delete', 'transfer-approve'],
+            'assets': ['asset-view', 'asset-create', 'asset-edit', 'asset-delete'],
+            'users': ['user-view', 'user-create', 'user-edit', 'user-delete'],
+            'reports': ['report-view', 'report-export'],
+            'settings': ['system-settings', 'permission-manage']
+        };
+        
+        if (modulePermissions[moduleName]) {
+            return modulePermissions[moduleName].some(permission => hasPermissionTo(permission));
+        }
+        
+        return false;
+    };
     
     return {
         // Basic permission checks
@@ -119,6 +147,8 @@ export function usePermissions() {
         canPerformActions,
         isSystemManager,
         isAdmin,
+        canManageSystem,
+        hasViewSystemAccess,
         
         // Module-specific checks
         canManageFacilities,
@@ -128,5 +158,15 @@ export function usePermissions() {
         canManageWarehouses,
         canAccessReports,
         canManageSystem,
+        // Module-specific computed properties
+        canManageFacilities: computed(() => canAccessModule('facilities')),
+        canManageProducts: computed(() => canAccessModule('products')),
+        canManageInventory: computed(() => canAccessModule('inventory')),
+        canManageOrders: computed(() => canAccessModule('orders')),
+        canManageTransfers: computed(() => canAccessModule('transfers')),
+        canManageAssets: computed(() => canAccessModule('assets')),
+        canManageUsers: computed(() => canAccessModule('users')),
+        canViewReports: computed(() => canAccessModule('reports')),
+        canAccessSettings: computed(() => canAccessModule('settings')),
     }
 }

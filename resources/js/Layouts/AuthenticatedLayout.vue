@@ -284,7 +284,7 @@
                 
                 <!-- Settings Menu -->
                 <Link
-                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'system-settings') || page.props.auth.user?.permissions?.some(p => p.name === 'permission-manage') || page.props.auth.isAdmin"
+                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'system-settings') || page.props.auth.user?.permissions?.some(p => p.name === 'permission-manage') || page.props.auth.user?.permissions?.some(p => p.name === 'manage-system') || page.props.auth.user?.permissions?.some(p => p.name === 'view-system') || page.props.auth.isAdmin"
                     :href="route('settings.index')"
                     class="menu-item"
                     :class="{ active: route().current('settings.*') }"

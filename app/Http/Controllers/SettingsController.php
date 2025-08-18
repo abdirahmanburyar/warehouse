@@ -15,8 +15,8 @@ class SettingsController extends Controller
 {
     public function index(Request $request)
     {
-        // Check if user can access system settings or manage permissions
-        if (!Gate::allows('system-settings') && !Gate::allows('permission-manage')) {
+        // Check if user can access system settings, manage permissions, manage system, or view system
+        if (!Gate::allows('system-settings') && !Gate::allows('permission-manage') && !Gate::allows('manage-system') && !Gate::allows('view-system')) {
             abort(403, 'Access denied. You do not have permission to access settings.');
         }
 
