@@ -9,12 +9,17 @@ use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
 use App\Models\Facility;
 use Inertia\Inertia;
-
+use Illuminate\Support\Facades\Gate;
 
 class SettingsController extends Controller
 {
     public function index(Request $request)
     {
+        // Check if user can access system settings or manage permissions
+        if (!Gate::allows('system-settings') && !Gate::allows('permission-manage')) {
+            abort(403, 'Access denied. You do not have permission to access settings.');
+        }
+
         $tab = $request->query('tab', 'General');
         
         // Get users with filtering if tab is 'users'

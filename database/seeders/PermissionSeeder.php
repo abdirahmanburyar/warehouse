@@ -159,7 +159,157 @@ class PermissionSeeder extends Seeder
                 'guard_name' => 'web',
             ],
 
-            // Reports Module
+            // Order Management Module
+            [
+                'name' => 'order-view',
+                'display_name' => 'View Orders',
+                'description' => 'Can view order list and details',
+                'module' => 'Order Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'order-create',
+                'display_name' => 'Create Orders',
+                'description' => 'Can create new orders',
+                'module' => 'Order Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'order-edit',
+                'display_name' => 'Edit Orders',
+                'description' => 'Can edit existing orders',
+                'module' => 'Order Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'order-delete',
+                'display_name' => 'Delete Orders',
+                'description' => 'Can delete orders',
+                'module' => 'Order Management',
+                'guard_name' => 'web',
+            ],
+
+            // Transfer Management Module
+            [
+                'name' => 'transfer-view',
+                'display_name' => 'View Transfers',
+                'description' => 'Can view transfer list and details',
+                'module' => 'Transfer Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'transfer-create',
+                'display_name' => 'Create Transfers',
+                'description' => 'Can create new transfers',
+                'module' => 'Transfer Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'transfer-edit',
+                'display_name' => 'Edit Transfers',
+                'description' => 'Can edit existing transfers',
+                'module' => 'Transfer Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'transfer-delete',
+                'display_name' => 'Delete Transfers',
+                'description' => 'Can delete transfers',
+                'module' => 'Transfer Management',
+                'guard_name' => 'web',
+            ],
+
+            // Asset Management Module
+            [
+                'name' => 'asset-view',
+                'display_name' => 'View Assets',
+                'description' => 'Can view asset list and details',
+                'module' => 'Asset Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'asset-create',
+                'display_name' => 'Create Assets',
+                'description' => 'Can create new assets',
+                'module' => 'Asset Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'asset-edit',
+                'display_name' => 'Edit Assets',
+                'description' => 'Can edit existing assets',
+                'module' => 'Asset Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'asset-delete',
+                'display_name' => 'Delete Assets',
+                'description' => 'Can delete assets',
+                'module' => 'Asset Management',
+                'guard_name' => 'web',
+            ],
+
+            // Liquidate/Disposal Module
+            [
+                'name' => 'liquidate-view',
+                'display_name' => 'View Liquidations',
+                'description' => 'Can view liquidation and disposal records',
+                'module' => 'Liquidate Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'liquidate-create',
+                'display_name' => 'Create Liquidations',
+                'description' => 'Can create liquidation and disposal records',
+                'module' => 'Liquidate Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'liquidate-edit',
+                'display_name' => 'Edit Liquidations',
+                'description' => 'Can edit liquidation and disposal records',
+                'module' => 'Liquidate Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'liquidate-delete',
+                'display_name' => 'Delete Liquidations',
+                'description' => 'Can delete liquidation and disposal records',
+                'module' => 'Liquidate Management',
+                'guard_name' => 'web',
+            ],
+
+            // Supply Management Module
+            [
+                'name' => 'supply-view',
+                'display_name' => 'View Supplies',
+                'description' => 'Can view supply list and details',
+                'module' => 'Supply Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'supply-create',
+                'display_name' => 'Create Supplies',
+                'description' => 'Can create new supplies',
+                'module' => 'Supply Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'supply-edit',
+                'display_name' => 'Edit Supplies',
+                'description' => 'Can edit existing supplies',
+                'module' => 'Supply Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'supply-delete',
+                'display_name' => 'Delete Supplies',
+                'description' => 'Can delete supplies',
+                'module' => 'Supply Management',
+                'guard_name' => 'web',
+            ],
+
+            // Reports Module (Update existing)
             [
                 'name' => 'reports-view',
                 'display_name' => 'View Reports',

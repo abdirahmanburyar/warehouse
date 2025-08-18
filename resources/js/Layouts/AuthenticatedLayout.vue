@@ -30,7 +30,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.can.order_view"
+                    v-if="$page.props.auth.user?.hasPermission('order-view')"
                     :href="route('orders.index')"
                     class="menu-item"
                     :class="{ active: route().current('orders.*') }"
@@ -55,7 +55,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.can.transfer_view"
+                    v-if="$page.props.auth.user?.hasPermission('transfer-view')"
                     :href="route('transfers.index')"
                     class="menu-item"
                     :class="{ active: route().current('transfers.*') }"
@@ -80,7 +80,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.can.product_view"
+                    v-if="$page.props.auth.user?.hasPermission('product-view')"
                     :href="route('products.index')"
                     class="menu-item"
                     :class="{ active: route().current('products.*') }"
@@ -105,7 +105,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.can.inventory_view"
+                    v-if="$page.props.auth.user?.hasPermission('inventory-view')"
                     :href="route('inventories.index')"
                     class="menu-item"
                     :class="{ active: route().current('inventories.*') }"
@@ -130,7 +130,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.can.inventory_view"
+                    v-if="$page.props.auth.user?.hasPermission('inventory-view')"
                     :href="route('expired.index')"
                     class="menu-item"
                     :class="{ active: route().current('expired.*') }"
@@ -156,7 +156,7 @@
                 </Link>
                 <!-- Liquidate and disposals -->
                 <Link
-                    v-if="$page.props.auth.can.liquidate_view"
+                    v-if="$page.props.auth.user?.hasPermission('liquidate-view')"
                     :href="route('liquidate-disposal.index')"
                     class="menu-item"
                     :class="{ active: route().current('liquidate-disposal.*') }"
@@ -181,7 +181,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.can.supply_view"
+                    v-if="$page.props.auth.user?.hasPermission('supply-view')"
                     :href="route('supplies.index')"
                     class="menu-item"
                     :class="{ active: route().current('supplies.*') }"
@@ -206,7 +206,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.can.report_view"
+                    v-if="$page.props.auth.user?.hasPermission('reports-view')"
                     :href="route('reports.index')"
                     class="menu-item"
                     :class="{ active: route().current('reports.*') }"
@@ -231,7 +231,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.can.facility_view"
+                    v-if="$page.props.auth.user?.hasPermission('facility-view')"
                     :href="route('facilities.index')"
                     class="menu-item"
                     :class="{ active: route().current('facilities.*') }"
@@ -255,9 +255,9 @@
                         <span class="menu-text">Facilities</span>
                     </div>
                 </Link>
-                <!-- Assets Menu with Dropdown -->
+                <!-- Assets Menu -->
                 <Link
-                    v-if="$page.props.auth.can.settings_view"
+                    v-if="$page.props.auth.user?.hasPermission('asset-view')"
                     :href="route('assets.index')"
                     class="menu-item"
                     :class="{ active: route().current('assets.*') }"
@@ -268,21 +268,22 @@
                             <img
                                 v-if="route().current('assets.*')"
                                 src="/assets/images/asset-b.png"
-                                class="setting-icon"
+                                class="asset-icon"
                                 style="height: 15px"
                             />
                             <img
                                 v-else
                                 src="/assets/images/asset-w.png"
-                                class="setting-icon"
+                                class="asset-icon"
                                 style="height: 15px"
                             />
                         </div>
                         <span class="menu-text">Assets</span>
                     </div>
                 </Link>
+                <!-- Settings Menu -->
                 <Link
-                    v-if="$page.props.auth.can.settings_view"
+                    v-if="$page.props.auth.user?.hasPermission('system-settings') || $page.props.auth.user?.hasPermission('permission-manage')"
                     :href="route('settings.index')"
                     class="menu-item"
                     :class="{ active: route().current('settings.*') }"
