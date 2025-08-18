@@ -308,7 +308,7 @@
                         <span class="menu-text">Settings</span>
                     </div>
                 </Link>
-                
+
                 <!-- Toggle Sidebar Button at Bottom -->
                 <button @click="toggleSidebar" class="sidebar-toggle-bottom">
                     <svg

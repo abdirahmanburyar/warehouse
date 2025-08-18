@@ -6,9 +6,15 @@
         <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
             <strong>Debug Info:</strong>
             <p>User: {{ $page.props.auth.user?.name || 'No user' }}</p>
+            <p>Username: {{ $page.props.auth.user?.username || 'No username' }}</p>
             <p>Permissions Count: {{ $page.props.auth.user?.permissions?.length || 0 }}</p>
             <p>Is Admin: {{ $page.props.auth.isAdmin || false }}</p>
             <p>Page Props: {{ Object.keys($page.props) }}</p>
+            <p>Auth Props: {{ Object.keys($page.props.auth || {}) }}</p>
+            <p>User Permissions: {{ $page.props.auth.user?.permissions?.map(p => p.name) || [] }}</p>
+            <p>Has manage-system: {{ $page.props.auth.user?.permissions?.some(p => p.name === 'manage-system') || false }}</p>
+            <p>Has view-system: {{ $page.props.auth.user?.permissions?.some(p => p.name === 'view-system') || false }}</p>
+            <p>Has system-settings: {{ $page.props.auth.user?.permissions?.some(p => p.name === 'system-settings') || false }}</p>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
