@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->nullable()->unique();
             $table->foreignIdFor(User::class)->nullable()->cascadeOnDelete();
-            $table->foreignIdFor(User::class,'handled_by');
+            $table->foreignIdFor(User::class,'handled_by')->nullable();
             $table->string('district');
             $table->string('region');
             $table->string('phone')->nullable();

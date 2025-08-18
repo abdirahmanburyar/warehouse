@@ -102,7 +102,7 @@ class FacilitiesImport implements
                 $district = $this->districtCache[$districtName];
             }
 
-            // Region (optional - can be derived from district or left null)
+            // Region (required - derive from district if not provided)
             $region = null;
             if (!empty($row['region'])) {
                 $regionName = trim($row['region']);
@@ -119,6 +119,25 @@ class FacilitiesImport implements
                     $this->regionCache[$regionName] = $regionModel->name;
                 }
                 $region = $this->regionCache[$regionName];
+            } else {
+                // If region is not provided, derive it from district or use a default
+                if (!empty($district)) {
+                    // Try to find a region that matches the district
+                    $regionModel = Region::where('name', 'like', '%' . $district . '%')->first();
+                    if ($regionModel) {
+                        $region = $regionModel->name;
+                    } else {
+                        // Create a default region based on district
+                        $region = 'Region ' . $district;
+                        $regionModel = Region::firstOrCreate(['name' => $region]);
+                        $region = $regionModel->name;
+                    }
+                } else {
+                    // If no district either, use a default region
+                    $region = 'Default Region';
+                    $regionModel = Region::firstOrCreate(['name' => $region]);
+                    $region = $regionModel->name;
+                }
             }
 
             // Email validation
@@ -143,6 +162,26 @@ class FacilitiesImport implements
                 }
             }
 
+            // Handle required fields that are system-managed
+            $handledBy = null;
+            
+            // Always use the first available user or create a default
+            $defaultUser = \App\Models\User::first();
+            if ($defaultUser) {
+                $handledBy = $defaultUser->id;
+            } else {
+                // Create a default user if none exists
+                $defaultUser = \App\Models\User::create([
+                    'name' => 'System Admin',
+                    'username' => 'system_admin',
+                    'email' => 'admin@warehouse.com',
+                    'password' => bcrypt('password'),
+                    'title' => 'System Administrator',
+                    'is_active' => true,
+                ]);
+                $handledBy = $defaultUser->id;
+            }
+
             $this->importedCount++;
 
             // Update progress in cache
@@ -159,6 +198,7 @@ class FacilitiesImport implements
                 'email' => $email,
                 'phone' => $phone,
                 'address' => !empty($row['address']) ? trim($row['address']) : null,
+                'handled_by' => $handledBy,
                 'is_active' => true,
                 'has_cold_storage' => false, // Default value
             ]);
