@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\Permission;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class PermissionSeeder extends Seeder
 {
@@ -13,152 +13,216 @@ class PermissionSeeder extends Seeder
      */
     public function run(): void
     {
+        $now = Carbon::now();
+
         $permissions = [
-            // ========================================
-            // SYSTEM-LEVEL PERMISSIONS
-            // ========================================
-            
-            // System Management (Full Access)
-            'manager-system',
-            
-            // ========================================
-            // VIEW-ONLY PERMISSION (READ-ONLY ACCESS)
-            // ========================================
-            // This permission allows viewing all modules but prevents any actions
-            'view-only-access',
-            
-            // ========================================
-            // USER MANAGEMENT PERMISSIONS
-            // ========================================
-            'user-manage',      // Full user management access
-            'user-view',        // View user information
-            'user-create',      // Create new users
-            'user-edit',        // Edit existing users
-            'user-toggle',      // Activate/deactivate users
-            'user-permission',  // Manage user permissions
-            
-            // ========================================
-            // ORDER MANAGEMENT PERMISSIONS
-            // ========================================
-            'order-manage',     // Full order management access
-            'order-view',       // View orders
-            'order-create',     // Create new orders
-            'order-edit',       // Edit existing orders
-            'order-toggle',     // Activate/deactivate orders
-            'order-review',     // Review orders
-            'order-approve',    // Approve orders
-            'order-reject',     // Reject orders
-            'order-delivery',   // Manage order delivery
-            'order-receive',    // Receive orders
-            'order-dispatch',   // Dispatch orders
-            
-            // ========================================
-            // PRODUCT MANAGEMENT PERMISSIONS
-            // ========================================
-            'product-manage',   // Full product management access
-            'product-view',     // View products
-            'product-create',   // Create new products
-            'product-edit',     // Edit existing products
-            'product-toggle',   // Activate/deactivate products
-            
-            // ========================================
-            // INVENTORY MANAGEMENT PERMISSIONS
-            // ========================================
-            'inventory-manage', // Full inventory management access
-            'inventory-view',   // View inventory
-            'inventory-create', // Create inventory records
-            'inventory-edit',   // Edit inventory records
-            'inventory-toggle', // Activate/deactivate inventory
-            
-            // ========================================
-            // TRANSFER MANAGEMENT PERMISSIONS
-            // ========================================
-            'transfer-manage',  // Full transfer management access
-            'transfer-view',    // View transfers
-            'transfer-create',  // Create new transfers
-            'transfer-edit',    // Edit existing transfers
-            'transfer-toggle',  // Activate/deactivate transfers
-            'transfer-review',  // Review transfers
-            'transfer-approve', // Approve transfers
-            'transfer-reject',  // Reject transfers
-            'transfer-delivery', // Manage transfer delivery
-            'transfer-receive', // Receive transfers
-            'transfer-dispatch', // Dispatch transfers
-            
-            // ========================================
-            // ASSET MANAGEMENT PERMISSIONS
-            // ========================================
-            'asset-manage',     // Full asset management access
-            'asset-view',       // View assets
-            'asset-create',     // Create new assets
-            'asset-edit',       // Edit existing assets
-            'asset-delete',     // Delete assets
-            'asset-approve',    // Approve assets
-            'asset-bulk-import', // Bulk import assets
-            'asset-export',     // Export assets
-            
-            // ========================================
-            // PURCHASE ORDER MANAGEMENT PERMISSIONS
-            // ========================================
-            'purchase-order-manage', // Full purchase order management access
-            'purchase-order-view',   // View purchase orders
-            'purchase-order-create', // Create new purchase orders
-            'purchase-order-edit',   // Edit existing purchase orders
-            'purchase-order-toggle', // Activate/deactivate purchase orders
-            'purchase-order-review', // Review purchase orders
-            'purchase-order-approve', // Approve purchase orders
-            'purchase-order-reject',  // Reject purchase orders
-            
-            // ========================================
-            // FACILITY MANAGEMENT PERMISSIONS
-            // ========================================
-            'facility-manage',  // Full facility management access
-            'facility-view',    // View facilities
-            'facility-create',  // Create new facilities
-            'facility-edit',    // Edit existing facilities
-            'facility-toggle',  // Activate/deactivate facilities
-            
-            // ========================================
-            // WAREHOUSE MANAGEMENT PERMISSIONS
-            // ========================================
-            'warehouse-manage', // Full warehouse management access
-            'warehouse-view',   // View warehouses
-            'warehouse-create', // Create new warehouses
-            'warehouse-edit',   // Edit existing warehouses
-            'warehouse-toggle', // Activate/deactivate warehouses
-            
-            // ========================================
-            // SUPPLIER MANAGEMENT PERMISSIONS
-            // ========================================
-            'supplier-manage',  // Full supplier management access
-            'supplier-view',    // View suppliers
-            'supplier-create',  // Create new suppliers
-            'supplier-edit',    // Edit existing suppliers
-            'supplier-toggle',  // Activate/deactivate suppliers
-            
-            // ========================================
-            // REPORT PERMISSIONS
-            // ========================================
-            'report-view',      // View reports
-            'report-export',    // Export reports
-            
-            // ========================================
-            // SETTINGS PERMISSIONS
-            // ========================================
-            'setting-manage',   // Full settings management access
-            'setting-view',     // View settings
-            
-            // ========================================
-            // DASHBOARD ACCESS PERMISSIONS
-            // ========================================
-            'dashboard-view',   // Access to dashboard
+            // User Management Module
+            [
+                'name' => 'user-view',
+                'display_name' => 'View Users',
+                'description' => 'Can view user list and details',
+                'module' => 'User Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'user-create',
+                'display_name' => 'Create Users',
+                'description' => 'Can create new users',
+                'module' => 'User Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'user-edit',
+                'display_name' => 'Edit Users',
+                'description' => 'Can edit existing users',
+                'module' => 'User Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'user-delete',
+                'display_name' => 'Delete Users',
+                'description' => 'Can delete users',
+                'module' => 'User Management',
+                'guard_name' => 'web',
+            ],
+
+            // Facility Management Module
+            [
+                'name' => 'facility-view',
+                'display_name' => 'View Facilities',
+                'description' => 'Can view facility list and details',
+                'module' => 'Facility Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'facility-create',
+                'display_name' => 'Create Facilities',
+                'description' => 'Can create new facilities',
+                'module' => 'Facility Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'facility-edit',
+                'display_name' => 'Edit Facilities',
+                'description' => 'Can edit existing facilities',
+                'module' => 'Facility Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'facility-delete',
+                'display_name' => 'Delete Facilities',
+                'description' => 'Can delete facilities',
+                'module' => 'Facility Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'facility-import',
+                'display_name' => 'Import Facilities',
+                'description' => 'Can import facilities from Excel',
+                'module' => 'Facility Management',
+                'guard_name' => 'web',
+            ],
+
+            // Product Management Module
+            [
+                'name' => 'product-view',
+                'display_name' => 'View Products',
+                'description' => 'Can view product list and details',
+                'module' => 'Product Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'product-create',
+                'display_name' => 'Create Products',
+                'description' => 'Can create new products',
+                'module' => 'Product Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'product-edit',
+                'display_name' => 'Edit Products',
+                'description' => 'Can edit existing products',
+                'module' => 'Product Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'product-delete',
+                'display_name' => 'Delete Products',
+                'description' => 'Can delete products',
+                'module' => 'Product Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'product-import',
+                'display_name' => 'Import Products',
+                'description' => 'Can import products from Excel',
+                'module' => 'Product Management',
+                'guard_name' => 'web',
+            ],
+
+            // Inventory Management Module
+            [
+                'name' => 'inventory-view',
+                'display_name' => 'View Inventory',
+                'description' => 'Can view inventory levels and movements',
+                'module' => 'Inventory Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'inventory-adjust',
+                'display_name' => 'Adjust Inventory',
+                'description' => 'Can adjust inventory quantities',
+                'module' => 'Inventory Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'inventory-transfer',
+                'display_name' => 'Transfer Inventory',
+                'description' => 'Can transfer inventory between locations',
+                'module' => 'Inventory Management',
+                'guard_name' => 'web',
+            ],
+
+            // Warehouse Management Module
+            [
+                'name' => 'warehouse-view',
+                'display_name' => 'View Warehouses',
+                'description' => 'Can view warehouse information',
+                'module' => 'Warehouse Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'warehouse-manage',
+                'display_name' => 'Manage Warehouses',
+                'description' => 'Can create, edit, and delete warehouses',
+                'module' => 'Warehouse Management',
+                'guard_name' => 'web',
+            ],
+
+            // Reports Module
+            [
+                'name' => 'reports-view',
+                'display_name' => 'View Reports',
+                'description' => 'Can view system reports',
+                'module' => 'Reports',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'reports-export',
+                'display_name' => 'Export Reports',
+                'description' => 'Can export reports to various formats',
+                'module' => 'Reports',
+                'guard_name' => 'web',
+            ],
+
+            // System Administration Module
+            [
+                'name' => 'system-settings',
+                'display_name' => 'System Settings',
+                'description' => 'Can modify system settings',
+                'module' => 'System Administration',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'permission-manage',
+                'display_name' => 'Manage Permissions',
+                'description' => 'Can assign and manage user permissions',
+                'module' => 'System Administration',
+                'guard_name' => 'web',
+            ],
+
+            // View-Only Access (Special Permission)
+            [
+                'name' => 'view-only-access',
+                'display_name' => 'View Only Access',
+                'description' => 'Can view all modules but cannot perform any actions',
+                'module' => 'System Administration',
+                'guard_name' => 'web',
+            ],
+
+            // Manager System (Full Access)
+            [
+                'name' => 'manager-system',
+                'display_name' => 'System Manager',
+                'description' => 'Full system access and management capabilities',
+                'module' => 'System Administration',
+                'guard_name' => 'web',
+            ],
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(
-                ['name' => $permission],
-                ['guard_name' => 'web']
-            );
+            DB::table('permissions')->insertOrIgnore([
+                'name' => $permission['name'],
+                'display_name' => $permission['display_name'],
+                'description' => $permission['description'],
+                'module' => $permission['module'],
+                'guard_name' => $permission['guard_name'],
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
         }
+
+        $this->command->info('Permissions seeded successfully!');
+        $this->command->info('Created ' . count($permissions) . ' permissions across ' . count(array_unique(array_column($permissions, 'module'))) . ' modules.');
     }
 }

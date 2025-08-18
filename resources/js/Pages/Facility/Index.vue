@@ -25,7 +25,7 @@
                     </div>
                     <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
                         <!-- Excel Upload Button -->
-                        <button @click="openUploadModal" 
+                        <button v-if="hasPermissionTo('facility-import')" @click="openUploadModal" 
                             class="inline-flex items-center px-6 py-3 bg-white text-blue-600 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 cursor-pointer border-2 border-transparent hover:border-blue-200">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
@@ -34,7 +34,7 @@
                         </button>
                         
                         <!-- Add Facility Button -->
-                        <Link :href="route('facilities.create')"
+                        <Link v-if="hasPermissionTo('facility-create')" :href="route('facilities.create')"
                             class="inline-flex items-center px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -206,6 +206,7 @@
                             <td class="px-3 py-2 whitespace-nowrap text-center">
                                 <div class="flex items-end justify-end space-x-2">
                                     <Link
+                                        v-if="hasPermissionTo('facility-edit')"
                                         :href="route('facilities.edit', facility.id)"
                                         class="inline-flex items-center p-1.5 border border-transparent rounded-lg text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200"
                                         title="Edit Facility"
@@ -215,6 +216,7 @@
                                         </svg>
                                     </Link>
                                     <button
+                                        v-if="hasPermissionTo('facility-edit')"
                                         @click="confirmToggleStatus(facility)"
                                         :disabled="loadingProducts.has(facility.id)"
                                         class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -234,6 +236,11 @@
                                             class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
                                         ></span>
                                     </button>
+                                    
+                                    <!-- View-only message for users without edit permissions -->
+                                    <span v-if="!hasPermissionTo('facility-edit')" class="text-xs text-gray-500 italic">
+                                        View Only
+                                    </span>
                                 </div>
                             </td>
                         </tr>
@@ -470,7 +477,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 import axios from 'axios'
 import Multiselect from 'vue-multiselect'
@@ -481,7 +488,12 @@ import Swal from 'sweetalert2'
 import { useToast } from 'vue-toastification'
 import { TailwindPagination } from "laravel-vue-pagination"
 import moment from "moment"
+import { usePermissions } from '@/Composables/usePermissions'
 
+// Use permissions composable
+const { hasPermissionTo, hasAnyPermission, isViewOnly, canPerformActions } = usePermissions()
+
+// Toast notifications
 const toast = useToast()
 const isUploading = ref(false)
 const uploadErrors = ref([])

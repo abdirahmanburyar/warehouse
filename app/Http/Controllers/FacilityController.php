@@ -15,11 +15,17 @@ use App\Imports\FacilitiesImport;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Gate;
 
 class FacilityController extends Controller
 {
     public function import(Request $request)
     {
+        // Check if user can import facilities
+        if (!Gate::allows('facility-import')) {
+            abort(403, 'Access denied. You do not have permission to import facilities.');
+        }
+
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv'
         ]);
@@ -94,6 +100,11 @@ class FacilityController extends Controller
     }
     public function index(Request $request)
     {
+        // Check if user can view facilities
+        if (!Gate::allows('facility-view')) {
+            abort(403, 'Access denied. You do not have permission to view facilities.');
+        }
+
         // Get facility counts before pagination (independent of filters)
         $totalFacilities = Facility::count();
         $activeFacilities = Facility::where('is_active', true)->count();
@@ -131,6 +142,11 @@ class FacilityController extends Controller
     }
 
     public function show(Request $request, $id){
+        // Check if user can view facilities
+        if (!Gate::allows('facility-view')) {
+            abort(403, 'Access denied. You do not have permission to view facilities.');
+        }
+
         $facility = Facility::find($id);
         return inertia('Facility/Show', [
             'facility' => $facility,
@@ -140,6 +156,11 @@ class FacilityController extends Controller
 
     // tabs
     public function inventory(Request $request, $id){
+        // Check if user can view facilities
+        if (!Gate::allows('facility-view')) {
+            abort(403, 'Access denied. You do not have permission to view facilities.');
+        }
+
         $facility = Facility::find($id);
         return inertia('Facility/Inventory', [
             'facility' => $facility,
@@ -148,6 +169,11 @@ class FacilityController extends Controller
     }
 
     public function dispence(Request $request, $id){
+        // Check if user can view facilities
+        if (!Gate::allows('facility-view')) {
+            abort(403, 'Access denied. You do not have permission to view facilities.');
+        }
+
         $facility = Facility::find($id);
         return inertia('Facility/Dispence', [
             'facility' => $facility,
@@ -156,6 +182,11 @@ class FacilityController extends Controller
     }
 
     public function stock(Request $request, $id){
+        // Check if user can view facilities
+        if (!Gate::allows('facility-view')) {
+            abort(403, 'Access denied. You do not have permission to view facilities.');
+        }
+
         $facility = Facility::find($id);
         return inertia('Facility/Stock', [
             'facility' => $facility,
@@ -164,6 +195,11 @@ class FacilityController extends Controller
     }
 
     public function expiry(Request $request, $id){
+        // Check if user can view facilities
+        if (!Gate::allows('facility-view')) {
+            abort(403, 'Access denied. You do not have permission to view facilities.');
+        }
+
         $facility = Facility::find($id);
         return inertia('Facility/Expiry', [
             'facility' => $facility,
@@ -173,6 +209,11 @@ class FacilityController extends Controller
     
     public function create()
     {
+        // Check if user can create facilities
+        if (!Gate::allows('facility-create')) {
+            abort(403, 'Access denied. You do not have permission to create facilities.');
+        }
+
         return inertia('Facility/Create', [
             'users' => User::get(),
             'districts' => District::pluck('name')->toArray(),
@@ -183,6 +224,11 @@ class FacilityController extends Controller
     
     public function edit(Facility $facility)
     {
+        // Check if user can edit facilities
+        if (!Gate::allows('facility-edit')) {
+            abort(403, 'Access denied. You do not have permission to edit facilities.');
+        }
+
         return inertia('Facility/Edit', [
             'facility' => $facility,
             'users' => User::get(),
