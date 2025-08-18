@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('delivery_notes', function (Blueprint $table) {
+        Schema::create('monthly_consumption_items', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('parent_id')->constrained('monthly_consumption_reports')->onDelete('cascade');
+            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+            $table->integer('quantity');
             $table->timestamps();
         });
     }
@@ -22,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('delivery_notes');
+        Schema::dropIfExists('monthly_consumption_items');
     }
 };

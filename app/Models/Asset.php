@@ -111,6 +111,14 @@ class Asset extends Model
         return $this->belongsTo(User::class, 'submitted_by');
     }
 
+    /**
+     * Get the asset items for this asset.
+     */
+    public function assetItems()
+    {
+        return $this->hasMany(AssetItem::class);
+    }
+
     const STATUS_ACTIVE = 'active';
     const STATUS_IN_USE = 'in_use';
     const STATUS_MAINTENANCE = 'maintenance';

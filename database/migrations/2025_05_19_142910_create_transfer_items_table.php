@@ -1,10 +1,8 @@
-p<?php
+<?php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use App\Models\Transfer;
-use App\Models\Product;
 
 return new class extends Migration
 {
@@ -15,14 +13,12 @@ return new class extends Migration
     {
         Schema::create('transfer_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Transfer::class)->cascadeOnDelete();
-            $table->foreignIdFor(Product::class)->nullable()->cascadeOnDelete();
-            $table->integer('quantity'); // This stores the needed quantity
-            $table->integer('quantity_on_order')->default(0);
-            $table->integer('quantity_to_release')->default(0);
-            $table->integer('quantity_per_unit')->default(0);            
+            $table->foreignId('transfer_id')->constrained('transfers')->onDelete('cascade');
+            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+            $table->decimal('quantity', 10, 2);
+            $table->decimal('quantity_to_release', 10, 2)->nullable();
+            $table->decimal('quantity_per_unit', 10, 2)->nullable();
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 

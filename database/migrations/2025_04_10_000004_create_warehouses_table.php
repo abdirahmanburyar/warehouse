@@ -23,7 +23,7 @@ return new class extends Migration
         Schema::create('warehouses', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->text('address')->nullable()->comment('Street name');
+            $table->text('address')->nullable();
             $table->string('district');
             $table->string('region');
             $table->string('manager_name')->nullable();

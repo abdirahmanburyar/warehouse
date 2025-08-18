@@ -14,19 +14,16 @@ return new class extends Migration
         Schema::create('asset_histories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('asset_id')->constrained('assets')->onDelete('cascade');
-            $table->string('action'); // 'status_changed', 'transferred', 'retired', 'approved', 'rejected'
-            $table->string('action_type'); // 'status_change', 'transfer', 'retirement', 'approval'
-            $table->json('old_value')->nullable(); // Store old values
-            $table->json('new_value')->nullable(); // Store new values
+            $table->string('action');
+            $table->string('action_type')->nullable(); // 'status_change', 'transfer', 'retirement', 'approval'
+            $table->json('old_value')->nullable();
+            $table->json('new_value')->nullable();
             $table->text('notes')->nullable();
-            $table->foreignId('performed_by')->nullable()->constrained('users');
+            $table->foreignId('performed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('performed_at')->nullable();
-            $table->foreignId('approval_id')->nullable()->constrained('asset_approvals');
+            $table->foreignId('approval_id')->nullable()->constrained('asset_approvals')->nullOnDelete();
+            $table->foreignId('assignee_id')->nullable()->constrained('assignees')->nullOnDelete();
             $table->timestamps();
-            
-            // Indexes for better performance
-            $table->index(['asset_id', 'action_type']);
-            $table->index(['performed_by', 'performed_at']);
         });
     }
 

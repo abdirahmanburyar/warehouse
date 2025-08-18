@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('facility_id')->constrained('facilities')->onDelete('cascade');
             $table->string('month_year');
-            $table->string('generated_by');
+            $table->foreignId('generated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }

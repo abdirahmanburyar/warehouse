@@ -13,17 +13,18 @@ return new class extends Migration
     {
         Schema::create('inventory_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('inventory_id')->constrained()->onDelete('cascade');
-            $table->foreignId('warehouse_id')->constrained()->onDelete('cascade');
-            $table->string('location')->nullable();
+            $table->foreignId('inventory_id')->constrained('inventories')->onDelete('cascade');
+            $table->foreignId('product_id')->nullable()->constrained('products')->nullOnDelete();
+            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
+            $table->decimal('quantity', 10, 2)->default(0);
             $table->date('expiry_date')->nullable();
             $table->string('batch_number')->nullable();
-            $table->integer('quantity');
-            $table->double('unit_cost')->default(0.00);
-            $table->double('total_cost')->default(0.00);
             $table->string('barcode')->nullable();
+            $table->string('location')->nullable();
+            $table->text('notes')->nullable();
             $table->string('uom')->nullable();
+            $table->decimal('unit_cost', 10, 2)->nullable();
+            $table->decimal('total_cost', 10, 2)->nullable();
             $table->timestamps();
         });
     }

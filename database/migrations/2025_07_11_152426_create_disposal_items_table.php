@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('disposal_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('disposal_id')->constrained()->onDelete('cascade');
-            $table->foreignId('product_id')->nullable()->constrained()->nullOnDelete();
-            $table->integer('quantity');
-            $table->decimal('unit_cost', 10, 2)->nullable();
-            $table->decimal('total_cost', 10, 2)->nullable();
+            $table->foreignId('disposal_id')->constrained('disposals')->onDelete('cascade');
+            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+            $table->decimal('quantity', 10, 2);
+            $table->decimal('unit_cost', 10, 2);
+            $table->decimal('total_cost', 10, 2);
             $table->string('barcode')->nullable();
             $table->date('expire_date')->nullable();
             $table->string('batch_number')->nullable();

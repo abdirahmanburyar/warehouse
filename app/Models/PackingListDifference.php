@@ -12,8 +12,9 @@ class PackingListDifference extends Model
     protected $table = 'packing_list_differences';
 
     protected $fillable = [
-        'packing_listitem_id', // Keep for warehouse compatibility
-        'inventory_allocation_id', // Main field for facilities (replaces order_item_id and transfer_item_id)
+        'packing_list_item_id', // Updated field name
+        'order_item_id', // For order-based differences
+        'transfer_item_id', // For transfer-based differences
         'back_order_id',
         'product_id',
         'quantity',
@@ -24,12 +25,12 @@ class PackingListDifference extends Model
 
     public function orderItem()
     {
-        return $this->hasOneThrough(OrderItem::class, InventoryAllocation::class, 'id', 'id', 'inventory_allocation_id', 'order_item_id');
+        return $this->belongsTo(OrderItem::class);
     }
 
     public function transferItem()
     {
-        return $this->hasOneThrough(TransferItem::class, InventoryAllocation::class, 'id', 'id', 'inventory_allocation_id', 'transfer_item_id');
+        return $this->belongsTo(TransferItem::class);
     }
 
     public function product()
@@ -42,13 +43,8 @@ class PackingListDifference extends Model
         return $this->belongsTo(BackOrder::class);
     }
 
-    public function inventoryAllocation()
-    {
-        return $this->belongsTo(InventoryAllocation::class, 'inventory_allocation_id');
-    }
-
     public function packingListItem()
     {
-        return $this->belongsTo(PackingListItem::class, 'packing_listitem_id');
+        return $this->belongsTo(PackingListItem::class, 'packing_list_item_id');
     }
 } 

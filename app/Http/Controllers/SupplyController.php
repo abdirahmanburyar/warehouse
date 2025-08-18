@@ -424,7 +424,6 @@ class SupplyController extends Controller
             
             // Check all records for this packing_listitem_id to see if there are separate records for different statuses
             $allRecordsForPackingListItem = PackingListDifference::where('packing_listitem_id', $request->packing_listitem_id)->get();
-            logger()->info('All records for packing_listitem_id ' . $request->packing_listitem_id . ':', $allRecordsForPackingListItem->toArray());
             $packingListItem = PackingListItem::find($request->packing_listitem_id);
             $backOrder = BackOrder::with(['packingList', 'order', 'transfer'])->find($request->back_order_id);
             

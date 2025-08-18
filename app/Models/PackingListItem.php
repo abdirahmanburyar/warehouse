@@ -24,8 +24,9 @@ class PackingListItem extends Model
         'total_cost',
     ];
 
-    public function differences(){
-        return $this->hasMany(PackingListDifference::class, 'packing_listitem_id');
+    public function packingListDifferences()
+    {
+        return $this->hasMany(PackingListDifference::class, 'packing_list_item_id');
     }
 
     public function packingList()

@@ -13,46 +13,21 @@ return new class extends Migration
     {
         Schema::create('asset_approvals', function (Blueprint $table) {
             $table->id();
-            
-            // Polymorphic relationship for the asset being approved
             $table->morphs('approvable');
-            
-            // The role required to perform this approval action
-            $table->foreignId('role_id')->constrained('roles');
-            
-            // The type of approval action (verify, confirm, approve)
+            $table->foreignId('role_id')->nullable()->constrained('roles')->nullOnDelete();
             $table->string('action');
-            
-            // The order in which approvals should happen
-            $table->integer('sequence')->default(1);
-            
-            // Status of this approval step
-            $table->enum('status', ['pending', 'reviewed', 'approved', 'rejected'])->default('pending');
-            
-            // Who performed the approval action
-            $table->foreignId('approved_by')->nullable()->constrained('users');
-            $table->timestamp('approved_at')->nullable();
-            
-            // Review fields for the review step
-            $table->foreignId('reviewed_by')->nullable()->constrained('users');
-            $table->timestamp('reviewed_at')->nullable();
-            
-            // Comments or notes for this approval step
+            $table->integer('sequence');
+            $table->string('status')->default('pending'); // pending, reviewed, approved, rejected
             $table->text('notes')->nullable();
-            
-            // JSON data for transfer approvals (stores old/new custodian, dates, etc.)
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('approved_at')->nullable();
+            $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('reviewed_at')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->json('transfer_data')->nullable();
-            
-            // Tracking who created/updated this approval step
-            $table->foreignId('created_by')->nullable()->constrained('users');
-            $table->foreignId('updated_by')->nullable()->constrained('users');
-            
             $table->timestamps();
             $table->softDeletes();
-            
-            // Index for better performance
-            $table->index(['approvable_type', 'approvable_id', 'status']);
-            $table->index(['role_id', 'status']);
         });
     }
 

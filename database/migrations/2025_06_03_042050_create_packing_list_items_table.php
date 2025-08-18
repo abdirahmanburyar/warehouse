@@ -15,10 +15,10 @@ return new class extends Migration
     {
         Schema::create('packing_list_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('packing_list_id');
-            $table->foreignId('product_id')->constrained();
-            $table->foreignId('warehouse_id')->constrained();
-            $table->foreignIdFor(PurchaseOrderItem::class, 'po_item_id')->constrained();
+            $table->foreignId('packing_list_id')->constrained('packing_lists')->onDelete('cascade');
+            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+            $table->foreignId('warehouse_id')->constrained('warehouses')->onDelete('cascade');
+            $table->foreignIdFor(PurchaseOrderItem::class, 'po_item_id')->constrained()->onDelete('cascade');
             $table->string('barcode')->nullable();
             $table->string('batch_number')->nullable();        
             $table->string('location');
@@ -29,15 +29,16 @@ return new class extends Migration
             $table->double('total_cost');
             $table->timestamps();
         });
+
         Schema::create('packing_list_differences', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(PackingListItem::class, 'packing_listitem_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('order_item_id')->nullable()->constrained()->cascadeOnDelete();
-            $table->foreignId('transfer_item_id')->nullable()->constrained()->cascadeOnDelete();
-            $table->foreignId('back_order_id')->nullable()->constrained()->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('packing_list_item_id')->constrained('packing_list_items')->onDelete('cascade');
+            $table->foreignId('order_item_id')->nullable()->constrained('order_items')->onDelete('cascade');
+            $table->foreignId('transfer_item_id')->nullable()->constrained('transfer_items')->onDelete('cascade');
+            $table->foreignId('back_order_id')->nullable()->constrained('back_orders')->onDelete('cascade');
+            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->integer('quantity');
-            $table->string('finalized')->nullable();
+            $table->boolean('finalized')->default(false);
             $table->enum('status', ['Expired', 'Damaged','Missing','Low quality','Lost']);
             $table->text('notes')->nullable();
             $table->timestamps();
@@ -49,7 +50,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('packing_list_items');
         Schema::dropIfExists('packing_list_differences');
+        Schema::dropIfExists('packing_list_items');
     }
 };

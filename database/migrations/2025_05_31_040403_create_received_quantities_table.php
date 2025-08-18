@@ -14,19 +14,19 @@ return new class extends Migration
         Schema::create('received_quantities', function (Blueprint $table) {
             $table->id();
             $table->integer('quantity');
-            $table->foreignId('received_by')->nullable()->constrained('users');
+            $table->foreignId('received_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('received_at')->nullable();
-            $table->foreignId('transfer_id')->nullable()->constrained('transfers')->onDelete('cascade');
-            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
-            $table->foreignId('packing_list_id')->nullable()->constrained('packing_lists')->onDelete('cascade');
-            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->onDelete('cascade');
+            $table->foreignId('product_id')->nullable()->constrained('products')->nullOnDelete();
+            $table->foreignId('transfer_id')->nullable()->constrained('transfers')->nullOnDelete();
+            $table->foreignId('packing_list_id')->nullable()->constrained('packing_lists')->nullOnDelete();
             $table->date('expiry_date')->nullable();
             $table->string('uom')->nullable();
+            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->string('barcode')->nullable();
-            $table->double('unit_cost');
-            $table->double('total_cost');
-            $table->string('source')->nullable();
             $table->string('batch_number')->nullable();
+            $table->double('unit_cost')->nullable();
+            $table->string('source')->nullable();
+            $table->double('total_cost')->nullable();
             $table->timestamps();
         });
     }
