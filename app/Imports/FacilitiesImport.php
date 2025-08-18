@@ -83,25 +83,6 @@ class FacilitiesImport implements
                 $facilityType = $this->facilityTypeCache[$typeName];
             }
 
-            // District
-            $district = null;
-            if (!empty($row['district'])) {
-                $districtName = trim($row['district']);
-                if (strlen($districtName) > 255) {
-                    $this->errors[] = "District name too long: " . substr($districtName, 0, 50) . "...";
-                    $this->skippedCount++;
-                    return null;
-                }
-
-                if (!isset($this->districtCache[$districtName])) {
-                    $districtModel = District::firstOrCreate(
-                        ['name' => $districtName]
-                    );
-                    $this->districtCache[$districtName] = $districtModel->name;
-                }
-                $district = $this->districtCache[$districtName];
-            }
-
             // Region (required - derive from district if not provided)
             $region = null;
             if (!empty($row['region'])) {
@@ -121,23 +102,47 @@ class FacilitiesImport implements
                 $region = $this->regionCache[$regionName];
             } else {
                 // If region is not provided, derive it from district or use a default
-                if (!empty($district)) {
-                    // Try to find a region that matches the district
-                    $regionModel = Region::where('name', 'like', '%' . $district . '%')->first();
-                    if ($regionModel) {
-                        $region = $regionModel->name;
+                // Note: region is required in validation, but keep fallback for safety
+                $region = null;
+            }
+
+            // District (create if missing and link to region by name)
+            $district = null;
+            if (!empty($row['district'])) {
+                $districtName = trim($row['district']);
+                if (strlen($districtName) > 255) {
+                    $this->errors[] = "District name too long: " . substr($districtName, 0, 50) . "...";
+                    $this->skippedCount++;
+                    return null;
+                }
+
+                // If region was not provided, try derive from district; else ensure we have a region
+                if (empty($region)) {
+                    $derivedRegion = Region::where('name', 'like', '%' . $districtName . '%')->first();
+                    if ($derivedRegion) {
+                        $region = $derivedRegion->name;
                     } else {
-                        // Create a default region based on district
-                        $region = 'Region ' . $district;
+                        $region = 'Region ' . $districtName;
                         $regionModel = Region::firstOrCreate(['name' => $region]);
                         $region = $regionModel->name;
                     }
-                } else {
-                    // If no district either, use a default region
-                    $region = 'Default Region';
-                    $regionModel = Region::firstOrCreate(['name' => $region]);
-                    $region = $regionModel->name;
                 }
+
+                if (!isset($this->districtCache[$districtName])) {
+                    $districtModel = District::firstOrCreate(
+                        ['name' => $districtName],
+                        ['region' => $region]
+                    );
+                    $this->districtCache[$districtName] = $districtModel->name;
+                }
+                $district = $this->districtCache[$districtName];
+            }
+
+            // Ensure region has a value (should never be null at this point)
+            if (empty($region)) {
+                $region = 'Default Region';
+                $regionModel = Region::firstOrCreate(['name' => $region]);
+                $region = $regionModel->name;
             }
 
             // Email validation
@@ -162,6 +167,33 @@ class FacilitiesImport implements
                 }
             }
 
+            // Handle required fields that are system-managed
+            $handledBy = null;
+            
+            // Always use the first available user or create a default
+            $defaultUser = \App\Models\User::first();
+            if ($defaultUser) {
+                $handledBy = $defaultUser->id;
+            } else {
+                // Create a default user if none exists
+                $defaultUser = \App\Models\User::create([
+                    'name' => 'System Admin',
+                    'username' => 'system_admin',
+                    'email' => 'admin@warehouse.com',
+                    'password' => bcrypt('password'),
+                    'title' => 'System Administrator',
+                    'is_active' => true,
+                ]);
+                $handledBy = $defaultUser->id;
+            }
+
+            // Final validation - ensure all required fields are present (after handledBy is determined)
+            if (empty($facilityType) || empty($district) || empty($region) || empty($handledBy)) {
+                $this->errors[] = "Missing required fields for facility: " . $facilityName;
+                $this->skippedCount++;
+                return null;
+            }
+
             $this->importedCount++;
 
             // Update progress in cache
@@ -178,7 +210,7 @@ class FacilitiesImport implements
                 'email' => $email,
                 'phone' => $phone,
                 'address' => !empty($row['address']) ? trim($row['address']) : null,
-                'handled_by' => null,
+                'handled_by' => $handledBy,
                 'is_active' => true,
                 'has_cold_storage' => false, // Default value
             ]);
