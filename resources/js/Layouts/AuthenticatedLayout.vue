@@ -30,7 +30,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.user?.hasPermission('order-view')"
+                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'order-view') || page.props.auth.isAdmin"
                     :href="route('orders.index')"
                     class="menu-item"
                     :class="{ active: route().current('orders.*') }"
@@ -55,7 +55,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.user?.hasPermission('transfer-view')"
+                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'transfer-view') || page.props.auth.isAdmin"
                     :href="route('transfers.index')"
                     class="menu-item"
                     :class="{ active: route().current('transfers.*') }"
@@ -80,7 +80,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.user?.hasPermission('product-view')"
+                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'product-view') || page.props.auth.isAdmin"
                     :href="route('products.index')"
                     class="menu-item"
                     :class="{ active: route().current('products.*') }"
@@ -105,7 +105,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.user?.hasPermission('inventory-view')"
+                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'inventory-view') || page.props.auth.isAdmin"
                     :href="route('inventories.index')"
                     class="menu-item"
                     :class="{ active: route().current('inventories.*') }"
@@ -130,7 +130,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.user?.hasPermission('inventory-view')"
+                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'inventory-view') || page.props.auth.isAdmin"
                     :href="route('expired.index')"
                     class="menu-item"
                     :class="{ active: route().current('expired.*') }"
@@ -156,7 +156,7 @@
                 </Link>
                 <!-- Liquidate and disposals -->
                 <Link
-                    v-if="$page.props.auth.user?.hasPermission('liquidate-view')"
+                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'liquidate-view') || page.props.auth.isAdmin"
                     :href="route('liquidate-disposal.index')"
                     class="menu-item"
                     :class="{ active: route().current('liquidate-disposal.*') }"
@@ -181,7 +181,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.user?.hasPermission('supply-view')"
+                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'supply-view') || page.props.auth.isAdmin"
                     :href="route('supplies.index')"
                     class="menu-item"
                     :class="{ active: route().current('supplies.*') }"
@@ -206,7 +206,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.user?.hasPermission('reports-view')"
+                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'reports-view') || page.props.auth.isAdmin"
                     :href="route('reports.index')"
                     class="menu-item"
                     :class="{ active: route().current('reports.*') }"
@@ -231,7 +231,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.user?.hasPermission('facility-view')"
+                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'facility-view') || page.props.auth.isAdmin"
                     :href="route('facilities.index')"
                     class="menu-item"
                     :class="{ active: route().current('facilities.*') }"
@@ -257,7 +257,7 @@
                 </Link>
                 <!-- Assets Menu -->
                 <Link
-                    v-if="$page.props.auth.user?.hasPermission('asset-view')"
+                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'asset-view') || page.props.auth.isAdmin"
                     :href="route('assets.index')"
                     class="menu-item"
                     :class="{ active: route().current('assets.*') }"
@@ -283,7 +283,7 @@
                 </Link>
                 <!-- Settings Menu -->
                 <Link
-                    v-if="$page.props.auth.user?.hasPermission('system-settings') || $page.props.auth.user?.hasPermission('permission-manage')"
+                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'system-settings') || page.props.auth.user?.permissions?.some(p => p.name === 'permission-manage') || page.props.auth.isAdmin"
                     :href="route('settings.index')"
                     class="menu-item"
                     :class="{ active: route().current('settings.*') }"
