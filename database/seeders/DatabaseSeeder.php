@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,    // Create all permissions first
             UserSeeder::class,          // Create Super Admin user with all permissions
             ViewOnlyUserSeeder::class,  // Create View-Only user with restricted permissions
+            SomaliRegionsDistrictsSeeder::class, // Create Somali regions and districts
         ]);
     }
 }
