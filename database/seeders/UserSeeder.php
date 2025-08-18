@@ -6,7 +6,6 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 class UserSeeder extends Seeder
 {
@@ -15,15 +14,6 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create Super Admin role
-        $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']);
-
-        // Get all permissions
-        $permissions = Permission::all();
-
-        // Assign all permissions to Super Admin role
-        $superAdminRole->syncPermissions($permissions);
-
         // Create Super Admin user
         $superAdmin = User::firstOrCreate(
             ['email' => 'buryar313@gmail.com'],
@@ -37,11 +27,15 @@ class UserSeeder extends Seeder
             ]
         );
 
-        // Assign Super Admin role to the user
-        $superAdmin->assignRole($superAdminRole);
+        // Get all permissions
+        $permissions = Permission::all();
+
+        // Assign all permissions to Super Admin user
+        $superAdmin->permissions()->sync($permissions->pluck('id'));
 
         $this->command->info('Super Admin user created successfully!');
         $this->command->info('Email: buryar313@gmail.com');
         $this->command->info('Password: password');
+        $this->command->info('Assigned ' . $permissions->count() . ' permissions');
     }
 }
