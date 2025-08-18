@@ -18,7 +18,7 @@ class FacilityController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls'
+            'file' => 'required|mimes:xlsx,xls,csv'
         ]);
 
         try {
@@ -38,6 +38,30 @@ class FacilityController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
+    }
+
+    public function downloadTemplate()
+    {
+        // Create CSV content that matches ImportFacilitiesJob expectations
+        $headers = ['facility_name', 'facility type', 'district', 'email', 'phone'];
+        
+        // Sample data rows
+        $sampleData = [
+            ['Sample Hospital', 'General Hospital', 'Central District', 'hospital@example.com', '123-456-7890'],
+            ['Sample Clinic', 'Health Clinic', 'North District', 'clinic@example.com', '098-765-4321'],
+            ['Sample Medical Center', 'Medical Center', 'South District', 'medical@example.com', '555-123-4567']
+        ];
+        
+        // Create CSV content
+        $csvContent = implode(',', $headers) . "\n";
+        foreach ($sampleData as $row) {
+            $csvContent .= implode(',', $row) . "\n";
+        }
+        
+        // Return CSV file as download
+        return response($csvContent)
+            ->header('Content-Type', 'text/csv')
+            ->header('Content-Disposition', 'attachment; filename="facilities_import_template.csv"');
     }
     public function index(Request $request)
     {

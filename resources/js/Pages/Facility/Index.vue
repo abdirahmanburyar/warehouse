@@ -384,7 +384,7 @@
                             <div class="ml-3">
                                 <h4 class="text-sm font-medium text-green-800">Need a template?</h4>
                                 <p class="text-sm text-green-700 mt-1">
-                                    Download our template to see the correct format for uploading facilities.
+                                    Download our template to see the correct format for uploading facilities. The template includes sample data and the exact column names expected by the system.
                                 </p>
                                 <button
                                     @click="downloadTemplate"
@@ -405,38 +405,28 @@
                             <ul class="space-y-2 text-sm text-gray-600">
                                 <li class="flex items-center">
                                     <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Name</span>
+                                    <span class="font-medium">facility_name</span>
                                     <span class="text-gray-400 ml-2">(required)</span>
                                 </li>
                                 <li class="flex items-center">
                                     <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Facility Type</span>
+                                    <span class="font-medium">facility type</span>
                                     <span class="text-gray-400 ml-2">(required)</span>
                                 </li>
                                 <li class="flex items-center">
                                     <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">District</span>
+                                    <span class="font-medium">district</span>
                                     <span class="text-gray-400 ml-2">(required)</span>
                                 </li>
                                 <li class="flex items-center">
                                     <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Address</span>
+                                    <span class="font-medium">email</span>
                                     <span class="text-gray-400 ml-2">(optional)</span>
                                 </li>
                                 <li class="flex items-center">
                                     <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Phone</span>
+                                    <span class="font-medium">phone</span>
                                     <span class="text-gray-400 ml-2">(optional)</span>
-                                </li>
-                                <li class="flex items-center">
-                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Email</span>
-                                    <span class="text-gray-400 ml-2">(optional)</span>
-                                </li>
-                                <li class="flex items-center">
-                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Status</span>
-                                    <span class="text-gray-400 ml-2">(optional, default: active)</span>
                                 </li>
                             </ul>
                         </div>
@@ -728,33 +718,7 @@ const uploadFile = async () => {
 
 // Download template function
 const downloadTemplate = () => {
-    // Create a CSV format that Excel can open properly
-    const headers = ['Name', 'Facility Type', 'District', 'Address', 'Phone', 'Email', 'Status'];
-    
-    // Create CSV content with headers and sample data
-    const csvContent = headers.join(',') + '\n' +
-        'Sample Hospital,General Hospital,Central District,123 Main Street,123-456-7890,sample@hospital.com,active\n' +
-        'Sample Clinic,Health Clinic,North District,456 Oak Avenue,098-765-4321,clinic@sample.com,active';
-    
-    // Create blob with CSV MIME type
-    const blob = new Blob([csvContent], { 
-        type: 'text/csv;charset=utf-8;' 
-    });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'facilities_import_template.csv');
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Clean up the URL object
-    URL.revokeObjectURL(url);
-    
-    toast.success('Template downloaded successfully! Open with Excel to use.');
+    router.visit(route('facilities.download-template'));
 };
 
 // Open upload modal
