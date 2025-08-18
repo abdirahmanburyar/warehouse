@@ -125,42 +125,33 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     Route::get('/api/permissions', [\App\Http\Controllers\PermissionController::class, 'index'])->name('api.permissions.index');
     
     // User Management Routes
-    Route::middleware(PermissionMiddleware::class . ':user.view')->group(function () {
-        Route::get('/users', [UserController::class, 'index'])->name('settings.users.index');
-        Route::get('/users/create', [UserController::class, 'create'])
-            ->name('settings.users.create');
-        Route::post('/users', [UserController::class, 'store'])
-            ->name('settings.users.store');
-        Route::get('/users/{user}/edit', [UserController::class, 'edit'])
-            ->name('settings.users.edit');
-        Route::delete('/users/{user}', [UserController::class, 'destroy'])
-            ->name('users.destroy');
-            
-        // User status routes
-        Route::post('/users/toggle-status', [UserController::class, 'toggleStatus'])
-            ->name('users.toggle-status');
-            
-        Route::post('/users/bulk-status', [UserController::class, 'bulkToggleStatus'])
-            ->name('users.bulk-status');
+    Route::prefix('users')->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('users.index');
+        Route::get('/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/', [UserController::class, 'store'])->name('users.store');
+        Route::get('/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::post('/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+        Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+        Route::post('/{user}/assign-permissions', [UserController::class, 'assignPermissions'])->name('users.assign-permissions');
+        Route::get('/{user}/permissions', [UserController::class, 'getUserPermissions'])->name('users.permissions');
     });
 
-    // Logistics Management Routes
-    Route::prefix('settings')->group(function () {
-        // Logistic Companies
-        Route::prefix('logistics')->group(function () {
-            Route::get('/companies', [LogisticCompanyController::class, 'index'])->name('settings.logistics.companies.index');
-            Route::post('/companies', [LogisticCompanyController::class, 'store'])->name('settings.logistics.companies.store');
-            Route::delete('/companies/{company}', [LogisticCompanyController::class, 'destroy'])->name('settings.logistics.companies.destroy');
-            Route::put('/companies/{company}/toggle-status', [LogisticCompanyController::class, 'toggleStatus'])->name('settings.logistics.companies.toggle-status');
-        });
+    // Logistic Company Management Routes
+    Route::prefix('logistics')->group(function () {
+        Route::get('/companies', [LogisticCompanyController::class, 'index'])->name('logistics.companies.index');
+        Route::post('/companies', [LogisticCompanyController::class, 'store'])->name('logistics.companies.store');
+        Route::delete('/companies/{company}', [LogisticCompanyController::class, 'destroy'])->name('logistics.companies.destroy');
+        Route::put('/companies/{company}/toggle-status', [LogisticCompanyController::class, 'toggleStatus'])->name('logistics.companies.toggle-status');
+    });
 
-        // Drivers
-        Route::prefix('drivers')->group(function () {
-            Route::get('/', [DriverController::class, 'index'])->name('settings.drivers.index');
-            Route::post('/', [DriverController::class, 'store'])->name('settings.drivers.store');
-            Route::delete('/{driver}', [DriverController::class, 'destroy'])->name('settings.drivers.destroy');
-            Route::put('/{driver}/toggle-status', [DriverController::class, 'toggleStatus'])->name('settings.drivers.toggle-status');
-        });
+    // Driver Management Routes
+    Route::prefix('drivers')->group(function () {
+        Route::get('/', [DriverController::class, 'index'])->name('drivers.index');
+        Route::post('/', [DriverController::class, 'store'])->name('drivers.store');
+        Route::delete('/{driver}', [DriverController::class, 'destroy'])->name('drivers.destroy');
+        Route::put('/{driver}/toggle-status', [DriverController::class, 'toggleStatus'])->name('drivers.toggle-status');
     });
 
     // Role Management Routes
@@ -436,35 +427,25 @@ Route::controller(LocationController::class)
         Route::post('/dispose', [ExpiredController::class, 'dispose'])->name('expired.dispose');
     });
 
-    // Settings Management Routes
-    Route::prefix('settings')->group(function () {
-        Route::get('/', [SettingsController::class, 'index'])->name('settings.index');
-            Route::get('/create', [SettingsController::class, 'create'])->name('settings.create');
-            Route::post('/', [SettingsController::class, 'store'])->name('settings.store');
-            Route::get('/{settings}/edit', [SettingsController::class, 'edit'])->name('settings.edit');
-            Route::put('/{settings}', [SettingsController::class, 'update'])->name('settings.update');
-            Route::delete('/{settings}', [SettingsController::class, 'destroy'])->name('settings.destroy');
-    });
-
     // Reorder Level Management Routes
-        Route::group([], function () {
-        Route::get('/reorder-levels', [ReorderLevelController::class, 'index'])->name('settings.reorder-levels.index');
-        Route::get('/reorder-levels/create', [ReorderLevelController::class, 'create'])
-            ->name('settings.reorder-levels.create');
-        Route::post('/reorder-levels', [ReorderLevelController::class, 'store'])
-            ->name('settings.reorder-levels.store');
-        Route::get('/reorder-levels/{reorderLevel}/edit', [ReorderLevelController::class, 'edit'])
-            ->name('settings.reorder-levels.edit');
-        Route::put('/reorder-levels/{reorderLevel}', [ReorderLevelController::class, 'update'])
-            ->name('settings.reorder-levels.update');
-        Route::delete('/reorder-levels/{reorderLevel}', [ReorderLevelController::class, 'destroy'])
-            ->name('settings.reorder-levels.destroy');
+    Route::prefix('reorder-levels')->group(function () {
+        Route::get('/', [ReorderLevelController::class, 'index'])->name('reorder-levels.index');
+        Route::get('/create', [ReorderLevelController::class, 'create'])
+            ->name('reorder-levels.create');
+        Route::post('/', [ReorderLevelController::class, 'store'])
+            ->name('reorder-levels.store');
+        Route::get('/{reorderLevel}/edit', [ReorderLevelController::class, 'edit'])
+            ->name('reorder-levels.edit');
+        Route::put('/{reorderLevel}', [ReorderLevelController::class, 'update'])
+            ->name('reorder-levels.update');
+        Route::delete('/{reorderLevel}', [ReorderLevelController::class, 'destroy'])
+            ->name('reorder-levels.destroy');
         
         // Import routes
-        Route::post('/reorder-levels/import', [ReorderLevelController::class, 'importExcel'])
-            ->name('settings.reorder-levels.import');
-        Route::get('/reorder-levels/import/format', [ReorderLevelController::class, 'getImportFormat'])
-            ->name('settings.reorder-levels.import.format');
+        Route::post('/import', [ReorderLevelController::class, 'importExcel'])
+            ->name('reorder-levels.import');
+        Route::get('/import/format', [ReorderLevelController::class, 'getImportFormat'])
+            ->name('reorder-levels.import.format');
     });
 
     // Order Management Routes
@@ -809,6 +790,45 @@ Route::controller(LocationController::class)
         Route::get('/{approval}', [ApprovalController::class, 'show'])->name('approvals.show');
         Route::post('/{approval}/approve', [ApprovalController::class, 'approve'])->name('approvals.approve');
         Route::post('/{approval}/reject', [ApprovalController::class, 'reject'])->name('approvals.reject');
+    });
+
+    // Settings Management Routes
+    Route::prefix('settings')->group(function () {
+        Route::get('/', [SettingsController::class, 'index'])->name('settings.index');
+        
+        // Users routes
+        Route::get('/users', [UserController::class, 'index'])->name('settings.users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('settings.users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('settings.users.store');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('settings.users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('settings.users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('settings.users.destroy');
+        Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('settings.users.toggle-status');
+        Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('settings.users.reset-password');
+        Route::post('/users/{user}/assign-permissions', [UserController::class, 'assignPermissions'])->name('settings.users.assign-permissions');
+        Route::get('/users/{user}/permissions', [UserController::class, 'getUserPermissions'])->name('settings.users.permissions');
+        
+        // Logistic Companies
+        Route::get('/logistics/companies', [LogisticCompanyController::class, 'index'])->name('settings.logistics.companies.index');
+        Route::post('/logistics/companies', [LogisticCompanyController::class, 'store'])->name('settings.logistics.companies.store');
+        Route::delete('/logistics/companies/{company}', [LogisticCompanyController::class, 'destroy'])->name('settings.logistics.companies.destroy');
+        Route::put('/logistics/companies/{company}/toggle-status', [LogisticCompanyController::class, 'toggleStatus'])->name('settings.logistics.companies.toggle-status');
+        
+        // Drivers
+        Route::get('/drivers', [DriverController::class, 'index'])->name('settings.drivers.index');
+        Route::post('/drivers', [DriverController::class, 'store'])->name('settings.drivers.store');
+        Route::delete('/drivers/{driver}', [DriverController::class, 'destroy'])->name('settings.drivers.destroy');
+        Route::put('/drivers/{driver}/toggle-status', [DriverController::class, 'toggleStatus'])->name('settings.drivers.toggle-status');
+        
+        // Reorder Levels
+        Route::get('/reorder-levels', [ReorderLevelController::class, 'index'])->name('settings.reorder-levels.index');
+        Route::get('/reorder-levels/create', [ReorderLevelController::class, 'create'])->name('settings.reorder-levels.create');
+        Route::post('/reorder-levels', [ReorderLevelController::class, 'store'])->name('settings.reorder-levels.store');
+        Route::get('/reorder-levels/{reorderLevel}/edit', [ReorderLevelController::class, 'edit'])->name('settings.reorder-levels.edit');
+        Route::put('/reorder-levels/{reorderLevel}', [ReorderLevelController::class, 'update'])->name('settings.reorder-levels.update');
+        Route::delete('/reorder-levels/{reorderLevel}', [ReorderLevelController::class, 'destroy'])->name('settings.reorder-levels.destroy');
+        Route::post('/reorder-levels/import', [ReorderLevelController::class, 'importExcel'])->name('settings.reorder-levels.import');
+        Route::get('/reorder-levels/import/format', [ReorderLevelController::class, 'getImportFormat'])->name('settings.reorder-levels.import.format');
     });
 
 

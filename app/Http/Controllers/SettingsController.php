@@ -46,10 +46,6 @@ class SettingsController extends Controller
             }
         }
         
-
-
-
-        
         // Extract filters but only include non-empty ones
         $filters = [];
         if ($request->filled('search')) $filters['search'] = $request->input('search');

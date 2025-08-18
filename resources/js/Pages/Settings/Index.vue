@@ -1,75 +1,93 @@
 <template>
-    <div class="min-h-screen bg-gray-100 p-8">
-        <div class="max-w-4xl mx-auto">
-            <h1 class="text-3xl font-bold text-gray-900 mb-8">Settings Test Page</h1>
-            
-            <!-- Simple Test Content -->
-            <div class="bg-white rounded-lg shadow p-6 mb-6">
-                <h2 class="text-xl font-semibold mb-4">Basic Test</h2>
-                <p class="text-gray-600">If you can see this, the page is loading correctly.</p>
-                <p class="text-gray-600">Current time: {{ currentTime }}</p>
+    <AuthenticatedLayout :title="'Settings'" description="Customize it as You Like" img="/assets/images/settings.png">
+        <h1 class="text-2xl font-semibold text-gray-900 mb-6">Settings</h1>
+        
+        <!-- Debug Info -->
+        <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+            <strong>Debug Info:</strong>
+            <p>User: {{ $page.props.auth.user?.name || 'No user' }}</p>
+            <p>Permissions Count: {{ $page.props.auth.user?.permissions?.length || 0 }}</p>
+            <p>Is Admin: {{ $page.props.auth.isAdmin || false }}</p>
+            <p>Page Props: {{ Object.keys($page.props) }}</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- System Configuration -->
+            <div v-if="hasPermissionTo('permission-manage') || hasPermissionTo('system-settings')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6">
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2">System Configuration</h2>
+                    
+                    <div class="space-y-6">
+                        <div v-if="hasPermissionTo('permission-manage')">
+                            <h3 class="text-lg font-medium mb-2">User & Access Management</h3>
+                            <ul class="space-y-2">
+                                <li><Link :href="route('settings.users.index')" class="text-gray-600 hover:text-indigo-600">Manage Users</Link></li>
+                                <li><a href="#" class="text-gray-600 hover:text-indigo-600">Permissions</a></li>
+                                <li><a href="#" class="text-gray-600 hover:text-indigo-600">Audit Trials</a></li>
+                            </ul>
+                        </div>
+                        
+                        <div v-if="hasPermissionTo('system-settings')">
+                            <h3 class="text-lg font-medium mb-2">Inventory Management</h3>
+                            <ul class="space-y-2">
+                                <li><Link :href="route('settings.reorder-levels.index')" class="text-gray-600 hover:text-indigo-600">Reorder Levels</Link></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Debug Info -->
-            <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-6">
-                <strong>Debug Info:</strong>
-                <p>Page loaded: {{ pageLoaded }}</p>
-                <p>User: {{ userInfo.name || 'No user' }}</p>
-                <p>Email: {{ userInfo.email || 'No email' }}</p>
-                <p>Permissions: {{ permissionsCount }}</p>
+
+            <!-- Logistics Management -->
+            <div v-if="hasPermissionTo('system-settings')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6">
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2">Logistics Management</h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-medium mb-2">Transportation</h3>
+                            <ul class="space-y-2">
+                                <li><Link :href="route('settings.logistics.companies.index')" class="text-gray-600 hover:text-indigo-600">Logistic Companies</Link></li>
+                                <li><Link :href="route('settings.drivers.index')" class="text-gray-600 hover:text-indigo-600">Manage Drivers</Link></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Test Navigation -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-xl font-semibold mb-4">Test Navigation</h2>
-                <div class="space-y-2">
-                    <a href="/dashboard" class="block text-blue-600 hover:text-blue-800">Go to Dashboard</a>
-                    <a href="/facilities" class="block text-blue-600 hover:text-blue-800">Go to Facilities</a>
-                    <button @click="testFunction" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                        Test Button
-                    </button>
+
+            <!-- Permission Management -->
+            <div v-if="hasPermissionTo('permission-manage')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6">
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2">Permission Management</h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-medium mb-2">Access Control</h3>
+                            <ul class="space-y-2">
+                                <li><a href="#" class="text-gray-600 hover:text-indigo-600">User Permissions</a></li>
+                                <li><a href="#" class="text-gray-600 hover:text-indigo-600">Role Management</a></li>
+                                <li><a href="#" class="text-gray-600 hover:text-indigo-600">Permission Groups</a></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </AuthenticatedLayout>
 </template>
 
 <script setup>
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Link } from "@inertiajs/vue3";
 import { ref, onMounted } from 'vue';
+import { usePermissions } from '@/Composables/usePermissions';
 
-// Simple reactive variables
-const pageLoaded = ref(false);
-const currentTime = ref('');
-const userInfo = ref({});
-const permissionsCount = ref(0);
-
-// Test function
-const testFunction = () => {
-    alert('Button clicked! JavaScript is working.');
-};
+// Use permissions composable
+const { hasPermissionTo } = usePermissions();
 
 onMounted(() => {
-    console.log('Settings test page mounted');
-    
-    // Set current time
-    currentTime.value = new Date().toLocaleString();
-    
-    // Try to get user info from window if available
-    if (window.Inertia && window.Inertia.page && window.Inertia.page.props) {
-        const props = window.Inertia.page.props;
-        userInfo.value = {
-            name: props.auth?.user?.name || 'Unknown',
-            email: props.auth?.user?.email || 'Unknown'
-        };
-        permissionsCount.value = props.auth?.user?.permissions?.length || 0;
-        console.log('Inertia props found:', props);
-    } else {
-        console.log('Inertia props not found');
-    }
-    
-    // Mark page as loaded
-    pageLoaded.value = true;
-    
-    console.log('Page setup complete');
+    console.log('Settings page mounted');
+    console.log('Page props:', $page.props);
+    console.log('Auth user:', $page.props.auth?.user);
+    console.log('User permissions:', $page.props.auth?.user?.permissions);
 });
 </script>

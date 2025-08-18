@@ -281,6 +281,7 @@
                         <span class="menu-text">Assets</span>
                     </div>
                 </Link>
+                
                 <!-- Settings Menu -->
                 <Link
                     v-if="page.props.auth.user?.permissions?.some(p => p.name === 'system-settings') || page.props.auth.user?.permissions?.some(p => p.name === 'permission-manage') || page.props.auth.isAdmin"

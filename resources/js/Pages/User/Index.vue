@@ -21,11 +21,11 @@
                     </div>
                     <div class="mt-6 sm:mt-0">
                         <Link
-                            :href="route('settings.users.create')"
-                            class="inline-flex items-center px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                            :href="route('users.create')"
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150"
                         >
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
                             Add New User
                         </Link>
@@ -227,7 +227,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 <div class="flex items-center justify-center space-x-2">
                                     <Link 
-                                        :href="route('settings.users.edit', user.id)"
+                                        :href="route('users.edit', user.id)"
                                         class="inline-flex items-center p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
                                         title="Edit User"
                                     >
@@ -259,7 +259,7 @@
                 <p class="mt-1 text-sm text-gray-500">Get started by creating a new user.</p>
                 <div class="mt-6">
                     <Link
-                        :href="route('settings.users.create')"
+                        :href="route('users.create')"
                         class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
                     >
                         <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -363,7 +363,7 @@ const applyFilters = () => {
         params.page = props.filters.page;
     }
 
-    router.get(route('settings.users.index'), params, {
+    router.get(route('users.index'), params, {
         preserveState: true,
         preserveScroll: true,
         only: ['users', 'roles', 'warehouses', 'facilities'],
