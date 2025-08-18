@@ -25,13 +25,13 @@
                     </div>
                     <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
                         <!-- Excel Upload Button -->
-                        <label class="inline-flex items-center px-6 py-3 bg-white text-blue-600 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 cursor-pointer border-2 border-transparent hover:border-blue-200">
+                        <button @click="openUploadModal" 
+                            class="inline-flex items-center px-6 py-3 bg-white text-blue-600 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 cursor-pointer border-2 border-transparent hover:border-blue-200">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                             </svg>
                             Import Excel
-                            <input type="file" class="hidden" @change="handleFileUpload" accept=".xlsx,.xls"/>
-                        </label>
+                        </button>
                         
                         <!-- Add Facility Button -->
                         <Link :href="route('facilities.create')"
@@ -349,6 +349,209 @@
                 </div>
             </div>
         </div>
+
+        <!-- Excel Upload Modal -->
+        <div
+            v-if="showUploadModal"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            @click="closeUploadModal"
+        >
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" @click.stop>
+                <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Upload Facilities</h3>
+                        <p class="text-sm text-gray-500 mt-1">Import facilities from Excel file</p>
+                    </div>
+                    <button
+                        @click="closeUploadModal"
+                        class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                    >
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="p-6">
+                    <!-- Download Template Section -->
+                    <div class="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h4 class="text-sm font-medium text-green-800">Need a template?</h4>
+                                <p class="text-sm text-green-700 mt-1">
+                                    Download our template to see the correct format for uploading facilities.
+                                </p>
+                                <button
+                                    @click="downloadTemplate"
+                                    class="mt-3 inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-medium text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                >
+                                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    Download Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h4 class="text-sm font-medium text-gray-900 mb-3">Required Columns</h4>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <ul class="space-y-2 text-sm text-gray-600">
+                                <li class="flex items-center">
+                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
+                                    <span class="font-medium">Name</span>
+                                    <span class="text-gray-400 ml-2">(required)</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
+                                    <span class="font-medium">Facility Type</span>
+                                    <span class="text-gray-400 ml-2">(required)</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
+                                    <span class="font-medium">District</span>
+                                    <span class="text-gray-400 ml-2">(required)</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
+                                    <span class="font-medium">Address</span>
+                                    <span class="text-gray-400 ml-2">(optional)</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
+                                    <span class="font-medium">Phone</span>
+                                    <span class="text-gray-400 ml-2">(optional)</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
+                                    <span class="font-medium">Email</span>
+                                    <span class="text-gray-400 ml-2">(optional)</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
+                                    <span class="font-medium">Status</span>
+                                    <span class="text-gray-400 ml-2">(optional, default: active)</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <div
+                            class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer"
+                            @click="triggerFileInput"
+                        >
+                            <input
+                                type="file"
+                                ref="fileInput"
+                                class="hidden"
+                                @change="handleFileUpload"
+                                accept=".xlsx,.xls,.csv"
+                            />
+                            <svg class="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            <p class="text-lg font-medium text-gray-900 mb-2">
+                                {{ selectedFile ? 'File Selected' : 'Choose File' }}
+                            </p>
+                            <p class="text-sm text-gray-500">
+                                {{ selectedFile ? selectedFile.name : 'Click to select or drag and drop file here' }}
+                            </p>
+                            <p class="text-xs text-gray-400 mt-2">
+                                Supports .xlsx, .xls, and .csv files (max 5MB)
+                            </p>
+                        </div>
+
+                        <div
+                            v-if="selectedFile"
+                            class="mt-4 flex items-center justify-between bg-blue-50 p-4 rounded-lg border border-blue-200"
+                        >
+                            <div class="flex items-center">
+                                <svg class="h-5 w-5 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-medium text-blue-900">{{ selectedFile.name }}</p>
+                                    <p class="text-xs text-blue-700">{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</p>
+                                </div>
+                            </div>
+                            <button
+                                @click.stop="removeSelectedFile"
+                                class="text-red-500 hover:text-red-700 transition-colors duration-200"
+                            >
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Upload Progress -->
+                    <div v-if="isUploading" class="mb-6">
+                        <h4 class="text-sm font-medium text-gray-900 mb-3">Upload Progress</h4>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" :style="{ width: uploadProgress + '%' }"></div>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-2">{{ uploadProgress }}% complete</p>
+                    </div>
+
+                    <!-- Upload Results -->
+                    <div v-if="uploadResults && !isUploading" class="mb-6">
+                        <div class="bg-green-50 border border-green-200 rounded-md p-4">
+                            <h3 class="text-sm font-medium text-green-800">Upload Results</h3>
+                            <p class="text-sm text-green-700 mt-1">{{ uploadResults.message }}</p>
+                            <div v-if="uploadResults.import_id" class="mt-2 text-xs text-gray-600">
+                                <p>Import ID: {{ uploadResults.import_id }}</p>
+                                <p v-if="uploadResults.status">Status: {{ uploadResults.status }}</p>
+                                <p v-if="uploadResults.completed_at">Completed at: {{ formatDate(uploadResults.completed_at) }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Errors -->
+                    <div v-if="uploadErrors.length > 0" class="mb-6">
+                        <div class="bg-red-50 border border-red-200 rounded-md p-4">
+                            <h3 class="text-sm font-medium text-red-800">Upload Errors</h3>
+                            <ul class="mt-2 text-sm text-red-700 space-y-1">
+                                <li v-for="(error, index) in uploadErrors" :key="index" class="flex items-start">
+                                    <span class="w-2 h-2 bg-red-400 rounded-full mr-2 mt-2 flex-shrink-0"></span>
+                                    {{ error }}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                    <button
+                        @click="closeUploadModal"
+                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        @click="uploadFile"
+                        class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 border border-transparent rounded-lg font-medium text-sm text-white hover:from-amber-600 hover:to-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200"
+                        :disabled="!selectedFile || isUploading"
+                    >
+                        <svg v-if="isUploading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <svg v-else class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        {{ isUploading ? 'Uploading...' : 'Upload File' }}
+                    </button>
+                </div>
+            </div>
+        </div>
     </AuthenticatedLayout>
 </template>
 
@@ -362,12 +565,20 @@ import '@/Components/multiselect.css'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import Swal from 'sweetalert2'
 import { useToast } from 'vue-toastification'
-import { TailwindPagination } from "laravel-vue-pagination";
+import { TailwindPagination } from "laravel-vue-pagination"
+import moment from "moment"
 
 const toast = useToast()
 const selectedFile = ref(null)
 const isUploading = ref(false)
 const uploadErrors = ref([])
+
+// Upload modal states
+const showUploadModal = ref(false)
+const fileInput = ref(null)
+const uploadProgress = ref(0)
+const uploadResults = ref(null)
+const importId = ref(null)
 
 const props = defineProps({
     facilities: {
@@ -423,23 +634,50 @@ const loadingProducts = ref(new Set());
 // Handle file selection
 const handleFileUpload = (event) => {
     const file = event.target.files[0]
-    if (file) {
-        if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
-            file.type === 'application/vnd.ms-excel') {
-            selectedFile.value = file
-            uploadErrors.value = []
-            uploadFile() // Auto-upload when file is selected
-        } else {
-            toast.error('Please select a valid Excel file (.xlsx or .xls)')
-        }
+    if (!file) return
+
+    // Check file type - allow .xlsx, .xls and .csv
+    const fileExtension = "." + file.name.split(".").pop().toLowerCase()
+    const validExtensions = [".xlsx", ".xls", ".csv"]
+
+    if (!validExtensions.includes(fileExtension)) {
+        toast.error(
+            "Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file (.csv)"
+        )
+        event.target.value = null // Clear the file input
+        selectedFile.value = null
+        return
     }
+
+    // Check file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+        toast.error("File is too large. Maximum file size is 5MB.")
+        event.target.value = null
+        selectedFile.value = null
+        return
+    }
+
+    selectedFile.value = file
+    uploadErrors.value = []
 }
 
 // Upload the file
 const uploadFile = async () => {
-    if (!selectedFile.value) return
+    if (!selectedFile.value) {
+        toast.error('Please select a file to upload')
+        return
+    }
+    
+    // Show loading toast
+    const loadingToast = toast.info("Preparing to upload file...", {
+        timeout: false,
+        closeOnClick: false,
+        draggable: false,
+    })
     
     isUploading.value = true
+    uploadProgress.value = 0
     uploadErrors.value = []
     
     const formData = new FormData()
@@ -449,10 +687,21 @@ const uploadFile = async () => {
         const response = await axios.post(route('facilities.import'), formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
+            },
+            onUploadProgress: (progressEvent) => {
+                uploadProgress.value = Math.round(
+                    (progressEvent.loaded * 100) / progressEvent.total
+                )
             }
         })
         
-        toast.success(response.data.message)
+        isUploading.value = false
+        importId.value = response.data.import_id
+        uploadResults.value = response.data
+        
+        console.log('Upload response:', response.data)
+        toast.dismiss(loadingToast)
+        toast.success(response.data.message || "File uploaded successfully!")
         
         // Show processing notification
         toast.info('Processing facilities in the background. The page will refresh in 10 seconds.')
@@ -461,16 +710,95 @@ const uploadFile = async () => {
         setTimeout(() => {
             router.reload()
         }, 10000)
+        
     } catch (error) {
+        isUploading.value = false
+        console.error('Upload error:', error)
+        
         if (error.response?.data?.errors) {
             uploadErrors.value = Object.values(error.response.data.errors).flat()
         } else {
             uploadErrors.value = [error.response?.data?.message || 'Failed to import facilities']
         }
-    } finally {
-        isUploading.value = false
+        
+        toast.dismiss(loadingToast)
+        toast.error(error.response?.data?.message || "Failed to upload file")
     }
 }
+
+// Download template function
+const downloadTemplate = () => {
+    // Create a CSV format that Excel can open properly
+    const headers = ['Name', 'Facility Type', 'District', 'Address', 'Phone', 'Email', 'Status'];
+    
+    // Create CSV content with headers and sample data
+    const csvContent = headers.join(',') + '\n' +
+        'Sample Hospital,General Hospital,Central District,123 Main Street,123-456-7890,sample@hospital.com,active\n' +
+        'Sample Clinic,Health Clinic,North District,456 Oak Avenue,098-765-4321,clinic@sample.com,active';
+    
+    // Create blob with CSV MIME type
+    const blob = new Blob([csvContent], { 
+        type: 'text/csv;charset=utf-8;' 
+    });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'facilities_import_template.csv');
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up the URL object
+    URL.revokeObjectURL(url);
+    
+    toast.success('Template downloaded successfully! Open with Excel to use.');
+};
+
+// Open upload modal
+const openUploadModal = () => {
+    showUploadModal.value = true;
+    selectedFile.value = null;
+    uploadErrors.value = [];
+    uploadResults.value = null;
+    importId.value = null;
+    uploadProgress.value = 0;
+};
+
+// Close upload modal
+const closeUploadModal = () => {
+    showUploadModal.value = false;
+    selectedFile.value = null;
+    uploadErrors.value = [];
+    uploadResults.value = null;
+    importId.value = null;
+    uploadProgress.value = 0;
+    if (fileInput.value) {
+        fileInput.value.value = null;
+    }
+};
+
+// Trigger file input click
+const triggerFileInput = () => {
+    fileInput.value.click();
+};
+
+// Remove selected file
+const removeSelectedFile = () => {
+    selectedFile.value = null;
+    uploadErrors.value = [];
+    if (fileInput.value) {
+        fileInput.value.value = null;
+    }
+};
+
+// Format date for upload results
+const formatDate = (date) => {
+    if (!date) return "N/A";
+    return moment(date).format("DD/MM/YYYY");
+};
 
 watch([
     () => per_page.value,
