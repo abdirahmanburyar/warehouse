@@ -262,7 +262,9 @@ class FacilitiesImport implements
                 }
             }
 
-            return $facility;
+            // We already persisted the facility above; do not return a model instance here.
+            // Returning a persisted model can cause the Excel package to attempt a second bulk insert with explicit IDs.
+            return null;
 
         } catch (\Exception $e) {
             $facilityName = $row['facility_name'] ?? 'Unknown';
