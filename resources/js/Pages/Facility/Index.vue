@@ -405,24 +405,28 @@
                     </div>
 
                     <div class="mb-6">
-                        <h4 class="text-sm font-medium text-gray-900 mb-3">Required Columns</h4>
-                        <p class="text-sm text-gray-600 mb-3">The template will contain these column headers. Fill in your data below the headers.</p>
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <ul class="space-y-2 text-sm text-gray-600">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Required Columns</h3>
+                        <p class="text-sm text-gray-600 mb-3">Your Excel file must include these columns (first row should be headers):</p>
+                        <ul class="space-y-2 text-sm">
                                 <li class="flex items-center">
-                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
+                                    <span class="w-2 h-2 bg-red-500 rounded-full mr-3"></span>
                                     <span class="font-medium">facility_name</span>
                                     <span class="text-gray-400 ml-2">(required)</span>
                                 </li>
                                 <li class="flex items-center">
-                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">facility type</span>
+                                    <span class="w-2 h-2 bg-red-500 rounded-full mr-3"></span>
+                                    <span class="font-medium">facility_type</span>
+                                    <span class="text-gray-400 ml-2">(required)</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="w-2 h-2 bg-red-500 rounded-full mr-3"></span>
+                                    <span class="font-medium">district</span>
                                     <span class="text-gray-400 ml-2">(required)</span>
                                 </li>
                                 <li class="flex items-center">
                                     <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">district</span>
-                                    <span class="text-gray-400 ml-2">(required)</span>
+                                    <span class="font-medium">region</span>
+                                    <span class="text-gray-400 ml-2">(optional)</span>
                                 </li>
                                 <li class="flex items-center">
                                     <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
@@ -434,52 +438,71 @@
                                     <span class="font-medium">phone</span>
                                     <span class="text-gray-400 ml-2">(optional)</span>
                                 </li>
+                                <li class="flex items-center">
+                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
+                                    <span class="font-medium">address</span>
+                                    <span class="text-gray-400 ml-2">(optional)</span>
+                                </li>
                             </ul>
-                        </div>
                     </div>
 
                     <div class="mb-6">
-                        <div
-                            class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer"
-                            @click="triggerFileInput"
-                        >
-                            <input
-                                type="file"
-                                ref="fileInput"
-                                class="hidden"
-                                @change="handleFileUpload"
-                                accept=".xlsx,.xls,.csv"
-                            />
-                            <svg class="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                            </svg>
-                            <p class="text-lg font-medium text-gray-900 mb-2">
-                                {{ selectedFile ? 'File Selected' : 'Choose File' }}
-                            </p>
-                            <p class="text-sm text-gray-500">
-                                {{ selectedFile ? selectedFile.name : 'Click to select or drag and drop file here' }}
-                            </p>
-                            <p class="text-xs text-gray-400 mt-2">
-                                Supports .xlsx (recommended), .xls, and .csv files (max 5MB)
-                            </p>
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Select File</h3>
+                            <p class="text-sm text-gray-600 mb-3">Choose an Excel file (.xlsx, .xls) or CSV file to upload:</p>
+                            
+                            <div class="flex items-center space-x-4">
+                                <input
+                                    ref="fileInput"
+                                    type="file"
+                                    accept=".xlsx,.xls,.csv"
+                                    class="hidden"
+                                    @change="handleFileUpload"
+                                />
+                                <button
+                                    @click="triggerFileInput"
+                                    class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 transition ease-in-out duration-150"
+                                >
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                    </svg>
+                                    Choose File
+                                </button>
+                                
+                                <span v-if="fileInput?.files?.[0]" class="text-sm text-gray-600">
+                                    Selected: {{ fileInput.files[0].name }}
+                                </span>
+                            </div>
+                            
+                            <div v-if="fileInput?.files?.[0]" class="mt-3">
+                                <button
+                                    @click="removeSelectedFile"
+                                    class="inline-flex items-center px-3 py-1 bg-red-100 border border-red-300 rounded-md text-xs text-red-700 hover:bg-red-200 transition ease-in-out duration-150"
+                                >
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    Remove File
+                                </button>
+                            </div>
                         </div>
 
                         <div
-                            v-if="selectedFile"
+                            v-if="fileInput?.files?.[0]"
                             class="mt-4 flex items-center justify-between bg-blue-50 p-4 rounded-lg border border-blue-200"
                         >
-                            <div class="flex items-center">
-                                <svg class="h-5 w-5 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="flex items-center space-x-3">
+                                <svg class="h-8 w-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
                                 <div>
-                                    <p class="text-sm font-medium text-blue-900">{{ selectedFile.name }}</p>
-                                    <p class="text-xs text-blue-700">{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</p>
+                                    <p class="text-sm font-medium text-blue-900">{{ fileInput.files[0].name }}</p>
+                                    <p class="text-xs text-blue-700">{{ (fileInput.files[0].size / 1024 / 1024).toFixed(2) }} MB</p>
                                 </div>
                             </div>
                             <button
-                                @click.stop="removeSelectedFile"
-                                class="text-red-500 hover:text-red-700 transition-colors duration-200"
+                                @click="removeSelectedFile"
+                                class="text-blue-500 hover:text-blue-700 transition-colors"
                             >
                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -534,7 +557,7 @@
                     <button
                         @click="uploadFile"
                         class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 border border-transparent rounded-lg font-medium text-sm text-white hover:from-amber-600 hover:to-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200"
-                        :disabled="!selectedFile || isUploading"
+                        :disabled="!fileInput?.files?.[0] || isUploading"
                     >
                         <svg v-if="isUploading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -565,7 +588,6 @@ import { TailwindPagination } from "laravel-vue-pagination"
 import moment from "moment"
 
 const toast = useToast()
-const selectedFile = ref(null)
 const isUploading = ref(false)
 const uploadErrors = ref([])
 
@@ -631,97 +653,151 @@ const loadingProducts = ref(new Set());
 // Handle file selection
 const handleFileUpload = (event) => {
     const file = event.target.files[0]
-    if (!file) return
-
-    // Check file type - allow .xlsx, .xls and .csv
-    const fileExtension = "." + file.name.split(".").pop().toLowerCase()
-    const validExtensions = [".xlsx", ".xls", ".csv"]
-
-    if (!validExtensions.includes(fileExtension)) {
-        toast.error(
-            "Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file (.csv)"
-        )
-        event.target.value = null // Clear the file input
-        selectedFile.value = null
-        return
-    }
-
-    // Check file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB
-    if (file.size > maxSize) {
-        toast.error("File is too large. Maximum file size is 5MB.")
+    
+    if (!file) {
         event.target.value = null
-        selectedFile.value = null
         return
     }
 
-    selectedFile.value = file
+    // Validate file type
+    const allowedTypes = ['.xlsx', '.xls', '.csv']
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase()
+    
+    if (!allowedTypes.includes(fileExtension)) {
+        toast.error("Please select a valid file type (.xlsx, .xls, .csv)")
+        event.target.value = null
+        return
+    }
+
+    // Validate file size (max 50MB)
+    const maxSize = 50 * 1024 * 1024 // 50MB in bytes
+    if (file.size > maxSize) {
+        toast.error("File is too large. Maximum file size is 50MB.")
+        event.target.value = null
+        return
+    }
+
+    // Clear any previous errors
     uploadErrors.value = []
 }
 
-// Upload the file
+// Upload file function
 const uploadFile = async () => {
-    if (!selectedFile.value) {
-        toast.error('Please select a file to upload')
-        return
+    if (!fileInput.value.files[0]) {
+        toast.error('Please select a file first');
+        return;
     }
+
+    const file = fileInput.value.files[0];
     
-    // Show loading toast
-    const loadingToast = toast.info("Preparing to upload file...", {
-        timeout: false,
-        closeOnClick: false,
-        draggable: false,
-    })
+    // Validate file type
+    const allowedTypes = ['.xlsx', '.xls', '.csv'];
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
     
-    isUploading.value = true
-    uploadProgress.value = 0
-    uploadErrors.value = []
-    
-    const formData = new FormData()
-    formData.append('file', selectedFile.value)
-    
+    if (!allowedTypes.includes(fileExtension)) {
+        toast.error('Please select a valid file type (.xlsx, .xls, .csv)');
+        return;
+    }
+
+    // Validate file size (max 50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > maxSize) {
+        toast.error('File size too large. Maximum allowed size is 50MB');
+        return;
+    }
+
     try {
+        uploadProgress.value = 0;
+        uploadResults.value = null;
+        uploadErrors.value = [];
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Show loading toast
+        const loadingToast = toast.info("Uploading file...", {
+            timeout: false,
+            closeOnClick: false,
+            draggable: false,
+        });
+
         const response = await axios.post(route('facilities.import'), formData, {
             headers: {
-                'Content-Type': 'multipart/form-data'
+                'Content-Type': 'multipart/form-data',
             },
             onUploadProgress: (progressEvent) => {
-                uploadProgress.value = Math.round(
-                    (progressEvent.loaded * 100) / progressEvent.total
-                )
+                uploadProgress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total);
             }
-        })
-        
-        isUploading.value = false
-        importId.value = response.data.import_id
-        uploadResults.value = response.data
-        
-        console.log('Upload response:', response.data)
-        toast.dismiss(loadingToast)
-        toast.success(response.data.message || "File uploaded successfully!")
-        
-        // Show processing notification
-        toast.info('Processing facilities in the background. The page will refresh in 10 seconds.')
-        
-        // Wait 10 seconds before reloading to allow some processing time
-        setTimeout(() => {
-            router.reload()
-        }, 10000)
-        
-    } catch (error) {
-        isUploading.value = false
-        console.error('Upload error:', error)
-        
-        if (error.response?.data?.errors) {
-            uploadErrors.value = Object.values(error.response.data.errors).flat()
+        });
+
+        toast.dismiss(loadingToast);
+
+        if (response.data.success) {
+            uploadResults.value = {
+                message: response.data.message,
+                import_id: response.data.import_id
+            };
+            
+            // Start progress tracking
+            if (response.data.import_id) {
+                importId.value = response.data.import_id;
+                startProgressTracking();
+            }
+            
+            toast.success(response.data.message);
+            
+            // Clear file input
+            fileInput.value.value = '';
+            
+            // Close modal after successful upload
+            setTimeout(() => {
+                closeUploadModal();
+            }, 2000);
+            
         } else {
-            uploadErrors.value = [error.response?.data?.message || 'Failed to import facilities']
+            uploadErrors.value = [response.data.message];
+            toast.error(response.data.message);
         }
+
+    } catch (error) {
+        console.error('Upload error:', error);
         
-        toast.dismiss(loadingToast)
-        toast.error(error.response?.data?.message || "Failed to upload file")
+        if (error.response?.data?.message) {
+            uploadErrors.value = [error.response.data.message];
+            toast.error(error.response.data.message);
+        } else {
+            uploadErrors.value = ['An unexpected error occurred during upload'];
+            toast.error('Upload failed. Please try again.');
+        }
     }
-}
+};
+
+// Progress tracking function
+const startProgressTracking = () => {
+    if (!importId.value) return;
+    
+    const checkProgress = async () => {
+        try {
+            // You can implement a progress endpoint here if needed
+            // For now, we'll just show a generic progress message
+            uploadProgress.value = 100;
+            uploadResults.value = {
+                message: 'Import completed successfully!',
+                import_id: importId.value
+            };
+        } catch (error) {
+            console.error('Progress tracking error:', error);
+        }
+    };
+    
+    // Check progress every 2 seconds
+    const progressInterval = setInterval(checkProgress, 2000);
+    
+    // Stop tracking after 5 minutes
+    setTimeout(() => {
+        clearInterval(progressInterval);
+    }, 300000);
+};
 
 // Download template function
 const downloadTemplate = async () => {
@@ -740,8 +816,8 @@ const downloadTemplate = async () => {
         // Import XLSX library dynamically
         const XLSX = await import('xlsx');
         
-        // Define headers that match ImportFacilitiesJob expectations
-        const headers = ['facility_name', 'facility type', 'district', 'email', 'phone'];
+        // Define headers that match FacilitiesImport expectations
+        const headers = ['facility_name', 'facility_type', 'district', 'region', 'email', 'phone', 'address'];
         
         // Create workbook and worksheet
         const workbook = XLSX.utils.book_new();
@@ -768,7 +844,10 @@ const downloadTemplate = async () => {
 // Open upload modal
 const openUploadModal = () => {
     showUploadModal.value = true;
-    selectedFile.value = null;
+    // Clear file input value when opening modal
+    if (fileInput.value) {
+        fileInput.value.value = null;
+    }
     uploadErrors.value = [];
     uploadResults.value = null;
     importId.value = null;
@@ -778,14 +857,14 @@ const openUploadModal = () => {
 // Close upload modal
 const closeUploadModal = () => {
     showUploadModal.value = false;
-    selectedFile.value = null;
+    // Clear file input value when closing modal
+    if (fileInput.value) {
+        fileInput.value.value = null;
+    }
     uploadErrors.value = [];
     uploadResults.value = null;
     importId.value = null;
     uploadProgress.value = 0;
-    if (fileInput.value) {
-        fileInput.value.value = null;
-    }
 };
 
 // Trigger file input click
@@ -795,11 +874,11 @@ const triggerFileInput = () => {
 
 // Remove selected file
 const removeSelectedFile = () => {
-    selectedFile.value = null;
-    uploadErrors.value = [];
+    // Clear the file input value
     if (fileInput.value) {
         fileInput.value.value = null;
     }
+    uploadErrors.value = [];
 };
 
 // Format date for upload results

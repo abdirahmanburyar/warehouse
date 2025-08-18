@@ -11,7 +11,10 @@ use Illuminate\Http\Request;
 use App\Http\Resources\FacilityResource;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
-use App\Jobs\ImportFacilitiesJob;
+use App\Imports\FacilitiesImport;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class FacilityController extends Controller
 {
@@ -24,19 +27,55 @@ class FacilityController extends Controller
         try {
             $file = $request->file('file');
             
-            // Store file in storage/app/temp
-            $path = $file->store('temp');
-            $fullPath = storage_path('app/' . $path);
-            
-            // Dispatch job to process the file
-            ImportFacilitiesJob::dispatch($fullPath);
+            // Validate file type
+            $extension = $file->getClientOriginalExtension();
+            if (!$file->isValid() || !in_array($extension, ['xlsx', 'xls', 'csv'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file'
+                ], 422);
+            }
+
+            // Validate file size (max 50MB)
+            if ($file->getSize() > 50 * 1024 * 1024) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File size too large. Maximum allowed size is 50MB'
+                ], 422);
+            }
+
+            $importId = (string) Str::uuid();
+
+            Log::info('Queueing facilities import with Maatwebsite Excel', [
+                'import_id' => $importId,
+                'original_name' => $file->getClientOriginalName(),
+                'file_size' => $file->getSize(),
+                'extension' => $extension
+            ]);
+
+            // Initialize cache progress to 0
+            Cache::put($importId, 0);
+
+            // Queue the import job
+            Excel::queueImport(new FacilitiesImport($importId), $file)
+                ->onQueue('imports'); // optional: define a specific queue
 
             return response()->json([
-                'message' => 'File uploaded successfully. Facilities will be imported in the background.'
+                'success' => true,
+                'message' => 'Import has been queued successfully',
+                'import_id' => $importId
             ]);
 
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            Log::error('Facilities import failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Import failed: ' . $e->getMessage()
+            ], 500);
         }
     }
 
