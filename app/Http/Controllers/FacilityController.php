@@ -42,26 +42,16 @@ class FacilityController extends Controller
 
     public function downloadTemplate()
     {
-        // Create CSV content that matches ImportFacilitiesJob expectations
+        // Create CSV content with only headers (no sample data)
         $headers = ['facility_name', 'facility type', 'district', 'email', 'phone'];
         
-        // Sample data rows
-        $sampleData = [
-            ['Sample Hospital', 'General Hospital', 'Central District', 'hospital@example.com', '123-456-7890'],
-            ['Sample Clinic', 'Health Clinic', 'North District', 'clinic@example.com', '098-765-4321'],
-            ['Sample Medical Center', 'Medical Center', 'South District', 'medical@example.com', '555-123-4567']
-        ];
+        // Return only headers - frontend will generate XLSX
+        $csvContent = implode(',', $headers);
         
-        // Create CSV content
-        $csvContent = implode(',', $headers) . "\n";
-        foreach ($sampleData as $row) {
-            $csvContent .= implode(',', $row) . "\n";
-        }
-        
-        // Return CSV file as download
+        // Return CSV content as plain text for frontend XLSX generation
         return response($csvContent)
-            ->header('Content-Type', 'text/csv')
-            ->header('Content-Disposition', 'attachment; filename="facilities_import_template.csv"');
+            ->header('Content-Type', 'text/plain')
+            ->header('Content-Disposition', 'attachment; filename="facilities_template_headers.txt"');
     }
     public function index(Request $request)
     {

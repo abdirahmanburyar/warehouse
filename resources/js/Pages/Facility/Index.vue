@@ -384,16 +384,21 @@
                             <div class="ml-3">
                                 <h4 class="text-sm font-medium text-green-800">Need a template?</h4>
                                 <p class="text-sm text-green-700 mt-1">
-                                    Download our template to see the correct format for uploading facilities. The template includes sample data and the exact column names expected by the system.
+                                    Download our XLSX template with the correct column format for uploading facilities. The template includes only the required headers.
                                 </p>
                                 <button
                                     @click="downloadTemplate"
-                                    class="mt-3 inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-medium text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                    :disabled="isDownloadingTemplate"
+                                    class="mt-3 inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-medium text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg v-if="isDownloadingTemplate" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <svg v-else class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                     </svg>
-                                    Download Template
+                                    {{ isDownloadingTemplate ? 'Generating...' : 'Download XLSX Template' }}
                                 </button>
                             </div>
                         </div>
@@ -401,6 +406,7 @@
 
                     <div class="mb-6">
                         <h4 class="text-sm font-medium text-gray-900 mb-3">Required Columns</h4>
+                        <p class="text-sm text-gray-600 mb-3">The template will contain these column headers. Fill in your data below the headers.</p>
                         <div class="bg-gray-50 rounded-lg p-4">
                             <ul class="space-y-2 text-sm text-gray-600">
                                 <li class="flex items-center">
@@ -454,7 +460,7 @@
                                 {{ selectedFile ? selectedFile.name : 'Click to select or drag and drop file here' }}
                             </p>
                             <p class="text-xs text-gray-400 mt-2">
-                                Supports .xlsx, .xls, and .csv files (max 5MB)
+                                Supports .xlsx (recommended), .xls, and .csv files (max 5MB)
                             </p>
                         </div>
 
@@ -569,6 +575,7 @@ const fileInput = ref(null)
 const uploadProgress = ref(0)
 const uploadResults = ref(null)
 const importId = ref(null)
+const isDownloadingTemplate = ref(false)
 
 const props = defineProps({
     facilities: {
@@ -717,8 +724,45 @@ const uploadFile = async () => {
 }
 
 // Download template function
-const downloadTemplate = () => {
-    router.visit(route('facilities.download-template'));
+const downloadTemplate = async () => {
+    if (isDownloadingTemplate.value) return; // Prevent multiple downloads
+    
+    try {
+        isDownloadingTemplate.value = true;
+        
+        // Show loading state
+        const loadingToast = toast.info("Generating XLSX template...", {
+            timeout: false,
+            closeOnClick: false,
+            draggable: false,
+        });
+        
+        // Import XLSX library dynamically
+        const XLSX = await import('xlsx');
+        
+        // Define headers that match ImportFacilitiesJob expectations
+        const headers = ['facility_name', 'facility type', 'district', 'email', 'phone'];
+        
+        // Create workbook and worksheet
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.aoa_to_sheet([headers]);
+        
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Facilities Template');
+        
+        // Generate XLSX file and download
+        XLSX.writeFile(workbook, 'facilities_import_template.xlsx');
+        
+        // Dismiss loading toast and show success
+        toast.dismiss(loadingToast);
+        toast.success('XLSX template downloaded successfully! Open with Excel to use.');
+        
+    } catch (error) {
+        console.error('Error generating XLSX template:', error);
+        toast.error('Failed to generate template. Please try again.');
+    } finally {
+        isDownloadingTemplate.value = false;
+    }
 };
 
 // Open upload modal
