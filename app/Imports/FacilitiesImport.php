@@ -63,6 +63,13 @@ class FacilitiesImport implements
                 return null;
             }
 
+            // Check if facility already exists
+            $existingFacility = Facility::where('name', $facilityName)->first();
+            if ($existingFacility) {
+                // Log that we're updating an existing facility
+                $this->errors[] = "Info: Updating existing facility: " . $facilityName;
+            }
+
             // Facility Type
             $facilityType = null;
             if (!empty($row['facility_type'])) {
@@ -200,20 +207,60 @@ class FacilitiesImport implements
             Cache::increment($this->importId);
 
             // Create or update facility
-            $facility = Facility::updateOrCreate([
-                'name' => $facilityName,
-            ], [
-                'name' => $facilityName,
-                'facility_type' => $facilityType,
-                'district' => $district,
-                'region' => $region,
-                'email' => $email,
-                'phone' => $phone,
-                'address' => !empty($row['address']) ? trim($row['address']) : null,
-                'handled_by' => $handledBy,
-                'is_active' => true,
-                'has_cold_storage' => false, // Default value
-            ]);
+            try {
+                $facility = Facility::updateOrCreate([
+                    'name' => $facilityName,
+                ], [
+                    'name' => $facilityName,
+                    'facility_type' => $facilityType,
+                    'district' => $district,
+                    'region' => $region,
+                    'email' => $email,
+                    'phone' => $phone,
+                    'address' => !empty($row['address']) ? trim($row['address']) : null,
+                    'handled_by' => $handledBy,
+                    'is_active' => true,
+                    'has_cold_storage' => false, // Default value
+                ]);
+            } catch (\Illuminate\Database\QueryException $e) {
+                // Handle duplicate entry errors
+                if ($e->getCode() == 23000) {
+                    // Check if it's a duplicate name error
+                    if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+                        // Try to find existing facility by name
+                        $existingFacility = Facility::where('name', $facilityName)->first();
+                        if ($existingFacility) {
+                            // Update the existing facility
+                            $existingFacility->update([
+                                'facility_type' => $facilityType,
+                                'district' => $district,
+                                'region' => $region,
+                                'email' => $email,
+                                'phone' => $phone,
+                                'address' => !empty($row['address']) ? trim($row['address']) : null,
+                                'handled_by' => $handledBy,
+                                'is_active' => true,
+                                'has_cold_storage' => false,
+                            ]);
+                            $facility = $existingFacility;
+                            $this->errors[] = "Info: Successfully updated existing facility: " . $facilityName;
+                        } else {
+                            // This shouldn't happen, but handle it gracefully
+                            $this->errors[] = "Error updating facility: " . $facilityName . " - " . $e->getMessage();
+                            $this->skippedCount++;
+                            return null;
+                        }
+                    } else {
+                        // Other database constraint error
+                        $this->errors[] = "Database constraint error for facility: " . $facilityName . " - " . $e->getMessage();
+                        $this->skippedCount++;
+                        return null;
+                    }
+                } else {
+                    // Re-throw non-duplicate errors
+                    throw $e;
+                }
+            }
 
             return $facility;
 
