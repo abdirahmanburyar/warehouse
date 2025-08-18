@@ -162,26 +162,6 @@ class FacilitiesImport implements
                 }
             }
 
-            // Handle required fields that are system-managed
-            $handledBy = null;
-            
-            // Always use the first available user or create a default
-            $defaultUser = \App\Models\User::first();
-            if ($defaultUser) {
-                $handledBy = $defaultUser->id;
-            } else {
-                // Create a default user if none exists
-                $defaultUser = \App\Models\User::create([
-                    'name' => 'System Admin',
-                    'username' => 'system_admin',
-                    'email' => 'admin@warehouse.com',
-                    'password' => bcrypt('password'),
-                    'title' => 'System Administrator',
-                    'is_active' => true,
-                ]);
-                $handledBy = $defaultUser->id;
-            }
-
             $this->importedCount++;
 
             // Update progress in cache
@@ -198,7 +178,7 @@ class FacilitiesImport implements
                 'email' => $email,
                 'phone' => $phone,
                 'address' => !empty($row['address']) ? trim($row['address']) : null,
-                'handled_by' => $handledBy,
+                'handled_by' => null,
                 'is_active' => true,
                 'has_cold_storage' => false, // Default value
             ]);
@@ -219,7 +199,7 @@ class FacilitiesImport implements
             'facility_name' => 'required|string|max:255',
             'facility_type' => 'required|string|max:255',
             'district' => 'required|string|max:255',
-            'region' => 'nullable|string|max:255',
+            'region' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:255',
