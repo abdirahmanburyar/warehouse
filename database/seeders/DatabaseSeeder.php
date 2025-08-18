@@ -12,8 +12,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            PermissionSeeder::class, // Create all permissions first
-            UserSeeder::class,       // Create Super Admin user with all permissions
+            PermissionSeeder::class,    // Create all permissions first
+            UserSeeder::class,          // Create Super Admin user with all permissions
+            ViewOnlyUserSeeder::class,  // Create View-Only user with restricted permissions
         ]);
     }
 }

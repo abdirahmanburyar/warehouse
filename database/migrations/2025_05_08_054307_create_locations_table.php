@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('locations', function (Blueprint $table) {
             $table->id();
             $table->string('location');
-            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
+            $table->string('warehouse');
+            // $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->timestamps();
         });
     }

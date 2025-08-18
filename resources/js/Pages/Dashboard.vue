@@ -1954,7 +1954,7 @@ const assetStatsCards = computed(() => [
 
                         <!-- Content -->
                         <div class="flex flex-col">
-                            <h3 class="text-sm font-medium text-gray-800 mb-1">Total P.O Cost</h3>
+                            <h3 class="text-sm font-medium text-gray-800 mb-1">Total Cost of Supplies</h3>
                             <div class="text-2xl font-bold text-gray-900">{{ (filteredTotalCost || 0).toLocaleString() }}</div>
                             <div class="text-xs font-light text-gray-700 mt-1">{{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}</div>
                 </div>

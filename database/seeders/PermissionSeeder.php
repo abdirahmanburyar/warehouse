@@ -14,109 +14,144 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
+            // ========================================
+            // SYSTEM-LEVEL PERMISSIONS
+            // ========================================
+            
             // System Management (Full Access)
             'manager-system',
             
-            // User Management
-            'user-manage',
-            'user-view',
-            'user-create',
-            'user-edit',
-            'user-toggle',
-            'user-permission',
+            // ========================================
+            // VIEW-ONLY PERMISSION (READ-ONLY ACCESS)
+            // ========================================
+            // This permission allows viewing all modules but prevents any actions
+            'view-only-access',
             
-            // Order Management (with approval workflow)
-            'order-manage',
-            'order-view',
-            'order-create',
-            'order-edit',
-            'order-toggle',
-            'order-review',
-            'order-approve',
-            'order-reject',
-            'order-delivery',
-            'order-receive',
-            'order-dispatch',
+            // ========================================
+            // USER MANAGEMENT PERMISSIONS
+            // ========================================
+            'user-manage',      // Full user management access
+            'user-view',        // View user information
+            'user-create',      // Create new users
+            'user-edit',        // Edit existing users
+            'user-toggle',      // Activate/deactivate users
+            'user-permission',  // Manage user permissions
             
-            // Product Management
-            'product-manage',
-            'product-view',
-            'product-create',
-            'product-edit',
-            'product-toggle',
+            // ========================================
+            // ORDER MANAGEMENT PERMISSIONS
+            // ========================================
+            'order-manage',     // Full order management access
+            'order-view',       // View orders
+            'order-create',     // Create new orders
+            'order-edit',       // Edit existing orders
+            'order-toggle',     // Activate/deactivate orders
+            'order-review',     // Review orders
+            'order-approve',    // Approve orders
+            'order-reject',     // Reject orders
+            'order-delivery',   // Manage order delivery
+            'order-receive',    // Receive orders
+            'order-dispatch',   // Dispatch orders
             
-            // Inventory Management
-            'inventory-manage',
-            'inventory-view',
-            'inventory-create',
-            'inventory-edit',
-            'inventory-toggle',
+            // ========================================
+            // PRODUCT MANAGEMENT PERMISSIONS
+            // ========================================
+            'product-manage',   // Full product management access
+            'product-view',     // View products
+            'product-create',   // Create new products
+            'product-edit',     // Edit existing products
+            'product-toggle',   // Activate/deactivate products
             
-            // Transfer Management (with approval workflow)
-            'transfer-manage',
-            'transfer-view',
-            'transfer-create',
-            'transfer-edit',
-            'transfer-toggle',
-            'transfer-review',
-            'transfer-approve',
-            'transfer-reject',
-            'transfer-delivery',
-            'transfer-receive',
-            'transfer-dispatch',
+            // ========================================
+            // INVENTORY MANAGEMENT PERMISSIONS
+            // ========================================
+            'inventory-manage', // Full inventory management access
+            'inventory-view',   // View inventory
+            'inventory-create', // Create inventory records
+            'inventory-edit',   // Edit inventory records
+            'inventory-toggle', // Activate/deactivate inventory
             
-            // Asset Management (with approval workflow)
-            'asset-manage',
-            'asset-view',
-            'asset-create',
-            'asset-edit',
-            'asset-delete',
-            'asset-approve',
-            'asset-bulk-import',
-            'asset-export',
+            // ========================================
+            // TRANSFER MANAGEMENT PERMISSIONS
+            // ========================================
+            'transfer-manage',  // Full transfer management access
+            'transfer-view',    // View transfers
+            'transfer-create',  // Create new transfers
+            'transfer-edit',    // Edit existing transfers
+            'transfer-toggle',  // Activate/deactivate transfers
+            'transfer-review',  // Review transfers
+            'transfer-approve', // Approve transfers
+            'transfer-reject',  // Reject transfers
+            'transfer-delivery', // Manage transfer delivery
+            'transfer-receive', // Receive transfers
+            'transfer-dispatch', // Dispatch transfers
             
-            // Purchase Order Management (with approval workflow)
-            'purchase-order-manage',
-            'purchase-order-view',
-            'purchase-order-create',
-            'purchase-order-edit',
-            'purchase-order-toggle',
-            'purchase-order-review',
-            'purchase-order-approve',
-            'purchase-order-reject',
+            // ========================================
+            // ASSET MANAGEMENT PERMISSIONS
+            // ========================================
+            'asset-manage',     // Full asset management access
+            'asset-view',       // View assets
+            'asset-create',     // Create new assets
+            'asset-edit',       // Edit existing assets
+            'asset-delete',     // Delete assets
+            'asset-approve',    // Approve assets
+            'asset-bulk-import', // Bulk import assets
+            'asset-export',     // Export assets
             
-            // Facility Management
-            'facility-manage',
-            'facility-view',
-            'facility-create',
-            'facility-edit',
-            'facility-toggle',
+            // ========================================
+            // PURCHASE ORDER MANAGEMENT PERMISSIONS
+            // ========================================
+            'purchase-order-manage', // Full purchase order management access
+            'purchase-order-view',   // View purchase orders
+            'purchase-order-create', // Create new purchase orders
+            'purchase-order-edit',   // Edit existing purchase orders
+            'purchase-order-toggle', // Activate/deactivate purchase orders
+            'purchase-order-review', // Review purchase orders
+            'purchase-order-approve', // Approve purchase orders
+            'purchase-order-reject',  // Reject purchase orders
             
-            // Warehouse Management
-            'warehouse-manage',
-            'warehouse-view',
-            'warehouse-create',
-            'warehouse-edit',
-            'warehouse-toggle',
+            // ========================================
+            // FACILITY MANAGEMENT PERMISSIONS
+            // ========================================
+            'facility-manage',  // Full facility management access
+            'facility-view',    // View facilities
+            'facility-create',  // Create new facilities
+            'facility-edit',    // Edit existing facilities
+            'facility-toggle',  // Activate/deactivate facilities
             
-            // Reports
-            'report-view',
-            'report-export',
+            // ========================================
+            // WAREHOUSE MANAGEMENT PERMISSIONS
+            // ========================================
+            'warehouse-manage', // Full warehouse management access
+            'warehouse-view',   // View warehouses
+            'warehouse-create', // Create new warehouses
+            'warehouse-edit',   // Edit existing warehouses
+            'warehouse-toggle', // Activate/deactivate warehouses
             
-            // Settings
-            'setting-manage',
-            'setting-view',
+            // ========================================
+            // SUPPLIER MANAGEMENT PERMISSIONS
+            // ========================================
+            'supplier-manage',  // Full supplier management access
+            'supplier-view',    // View suppliers
+            'supplier-create',  // Create new suppliers
+            'supplier-edit',    // Edit existing suppliers
+            'supplier-toggle',  // Activate/deactivate suppliers
             
-            // Dashboard Access
-            'dashboard-view',
-
-            // Supplier Management
-            'supplier-manage',
-            'supplier-view',
-            'supplier-create',
-            'supplier-edit',
-            'supplier-toggle',
+            // ========================================
+            // REPORT PERMISSIONS
+            // ========================================
+            'report-view',      // View reports
+            'report-export',    // Export reports
             
+            // ========================================
+            // SETTINGS PERMISSIONS
+            // ========================================
+            'setting-manage',   // Full settings management access
+            'setting-view',     // View settings
+            
+            // ========================================
+            // DASHBOARD ACCESS PERMISSIONS
+            // ========================================
+            'dashboard-view',   // Access to dashboard
         ];
 
         foreach ($permissions as $permission) {
