@@ -11,9 +11,10 @@ use App\Models\User;
 use App\Models\Assignee;
 use App\Models\AssetCategory;
 use App\Models\AssetType;
-use App\Models\CustodyHistory;
+use App\Models\AssetHistory;
 use App\Models\FundSource;
 use App\Models\AssetDocument;
+
 use App\Models\AssetMaintenance;
 use App\Models\AssetDepreciation;
 use App\Http\Resources\AssetResource;
@@ -812,16 +813,7 @@ class AssetController extends Controller
                     'submitted_for_approval' => false
                 ]);
 
-                // Create custody history
-                $custodyHistory = \App\Models\CustodyHistory::create([
-                    'asset_id' => $asset->id,
-                    'custodian' => $transferData['new_custodian'],
-                    'assigned_by' => auth()->id(),
-                    'assigned_at' => now(),
-                    'assignment_notes' => $transferData['assignment_notes'] ?? null,
-                    'status' => 'assigned',
-                    'status_notes' => 'Transferred from ' . $transferData['old_custodian'] . ' to ' . $transferData['new_custodian'],
-                ]);
+
 
                 // Update approval status
                 $approval->update([
@@ -849,8 +841,7 @@ class AssetController extends Controller
 
                 return response()->json([
                     'message' => 'Transfer approved and executed successfully',
-                    'asset' => $asset->fresh(),
-                    'custody_history' => $custodyHistory
+                    'asset' => $asset->fresh()
                 ], 200);
 
             } else {
