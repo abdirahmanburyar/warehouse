@@ -1,178 +1,201 @@
 <template>
-    <AuthenticatedLayout
-        title="Asset History"
-        description="Complete audit trail and history of asset changes"
-        img="/assets/images/history-header.png"
-    >
+    <AuthenticatedLayout title="Asset History" description="Track all asset-related activities and changes">
         <div class="space-y-6">
-            <!-- Asset Info Header -->
-            <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 sm:p-8">
+            <!-- Header Section -->
+            <div class="bg-white shadow-xl rounded-2xl">
+                <div class="bg-gradient-to-r from-purple-600 to-indigo-700 p-6 sm:p-8">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex items-center space-x-4">
                             <div class="p-3 bg-white/20 rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                    class="w-10 h-10 text-white">
                                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                                 </svg>
                             </div>
                             <div>
                                 <h1 class="text-3xl font-bold text-white">Asset History</h1>
-                                <p class="text-blue-100 text-sm mt-1">
-                                    {{ asset?.asset_tag }} - {{ asset?.serial_number }}
-                                </p>
-                                <p class="text-blue-100 text-sm">
-                                    {{ asset?.item_description }}
+                                <p class="text-purple-100 text-sm mt-1">
+                                    Track all asset-related activities and changes
                                 </p>
                             </div>
                         </div>
                         <div class="mt-6 sm:mt-0">
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-white">{{ asset?.status }}</div>
-                                <div class="text-blue-100 text-sm">Current Status</div>
-                            </div>
+                            <Link :href="route('asset.history.create')"
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-purple-700 bg-white hover:bg-purple-50 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                    class="w-4 h-4 mr-2">
+                                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                                </svg>
+                                Add History Record
+                            </Link>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Filters -->
-            <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
-                <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Action Type</label>
-                            <select
-                                v-model="filters.actionType"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            >
-                                <option value="">All Actions</option>
-                                <option value="approval">Approvals</option>
-                                <option value="transfer">Transfers</option>
-                                <option value="retirement">Retirements</option>
-                                <option value="status_change">Status Changes</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
-                            <select
-                                v-model="filters.dateRange"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            >
-                                <option value="">All Time</option>
-                                <option value="today">Today</option>
-                                <option value="week">This Week</option>
-                                <option value="month">This Month</option>
-                                <option value="quarter">This Quarter</option>
-                                <option value="year">This Year</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Performed By</label>
-                            <select
-                                v-model="filters.performedBy"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            >
-                                <option value="">All Users</option>
-                                <option v-for="user in users" :key="user.id" :value="user.id">
-                                    {{ user.name }}
-                                </option>
-                            </select>
-                        </div>
+            <!-- Filters Section -->
+            <div class="bg-white shadow-xl rounded-2xl p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Search -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                        <input
+                            v-model="filters.search"
+                            type="text"
+                            placeholder="Search by asset number..."
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            @input="debouncedSearch"
+                        />
+                    </div>
+
+                    <!-- Action Type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Action Type</label>
+                        <select
+                            v-model="filters.action_type"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            @change="applyFilters"
+                        >
+                            <option value="">All Types</option>
+                            <option v-for="(label, value) in actionTypes" :key="value" :value="value">
+                                {{ label }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Asset -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Asset</label>
+                        <select
+                            v-model="filters.asset_id"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            @change="applyFilters"
+                        >
+                            <option value="">All Assets</option>
+                            <option v-for="asset in assets" :key="asset.id" :value="asset.id">
+                                {{ asset.asset_number }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Date Range -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date From</label>
+                        <input
+                            v-model="filters.date_from"
+                            type="date"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            @change="applyFilters"
+                        />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                    <!-- Date To -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date To</label>
+                        <input
+                            v-model="filters.date_to"
+                            type="date"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            @change="applyFilters"
+                        />
+                    </div>
+
+                    <!-- Clear Filters -->
+                    <div class="flex items-end">
+                        <button
+                            @click="clearFilters"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                        >
+                            Clear Filters
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- History Timeline -->
+            <!-- History Table -->
             <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
-                <div class="p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-6">Activity Timeline</h2>
-                    
-                    <div v-if="loading" class="flex justify-center items-center py-12">
-                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                    </div>
-
-                    <div v-else-if="!history.data || history.data.length === 0" class="text-center py-12">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-16 h-16 text-gray-400 mx-auto mb-4">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                        </svg>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">No history found</h3>
-                        <p class="text-gray-500">There are no history records for this asset.</p>
-                    </div>
-
-                    <div v-else class="space-y-6">
-                        <div v-for="record in history.data" :key="record.id" class="relative">
-                            <!-- Timeline connector -->
-                            <div class="absolute left-6 top-8 w-0.5 h-full bg-gray-200"></div>
-                            
-                            <div class="relative flex items-start space-x-4">
-                                <!-- Action Icon -->
-                                <div class="flex-shrink-0">
-                                    <div class="w-12 h-12 rounded-full flex items-center justify-center"
-                                         :class="getActionIconClass(record.action_type)">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-white">
-                                            <path v-if="record.action_type === 'approval'" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            <path v-else-if="record.action_type === 'transfer'" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                                            <path v-else-if="record.action_type === 'retirement'" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                            <path v-else d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">History Records</h3>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Asset
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Action
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Type
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Performed By
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Date
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="record in history.data" :key="record.id" class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        {{ record.asset?.asset_number || 'N/A' }}
                                     </div>
-                                </div>
-
-                                <!-- Content -->
-                                <div class="flex-1 min-w-0">
-                                    <div class="bg-gray-50 rounded-lg p-4">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <h3 class="text-lg font-medium text-gray-900">
-                                                {{ formatActionTitle(record.action, record.action_type) }}
-                                            </h3>
-                                            <span class="text-sm text-gray-500">
-                                                {{ formatDate(record.performed_at) }}
-                                            </span>
-                                        </div>
-                                        
-                                        <div class="text-sm text-gray-600 mb-3">
-                                            <p><strong>Performed by:</strong> {{ record.performer?.name || 'Unknown' }}</p>
-                                            <p v-if="record.notes"><strong>Notes:</strong> {{ record.notes }}</p>
-                                        </div>
-
-                                        <!-- Change Details -->
-                                        <div v-if="record.old_value || record.new_value" class="bg-white rounded border p-3">
-                                            <h4 class="text-sm font-medium text-gray-700 mb-2">Changes:</h4>
-                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                                <div v-if="record.old_value">
-                                                    <span class="text-gray-500">From:</span>
-                                                    <span class="ml-2 text-red-600">{{ formatValue(record.old_value) }}</span>
-                                                </div>
-                                                <div v-if="record.new_value">
-                                                    <span class="text-gray-500">To:</span>
-                                                    <span class="ml-2 text-green-600">{{ formatValue(record.new_value) }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Approval Context -->
-                                        <div v-if="record.approval" class="mt-3 pt-3 border-t border-gray-200">
-                                            <p class="text-xs text-gray-500">
-                                                <strong>Approval ID:</strong> {{ record.approval.id }} | 
-                                                <strong>Status:</strong> {{ record.approval.status }}
-                                            </p>
-                                        </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">{{ record.action }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                                        :class="getActionTypeClass(record.action_type)">
+                                        {{ actionTypes[record.action_type] || record.action_type }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {{ record.performer?.name || 'System' }}
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {{ formatDate(record.performed_at) }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex space-x-2">
+                                        <Link :href="route('asset.history.show', record.id)"
+                                            class="text-purple-600 hover:text-purple-900">
+                                            View
+                                        </Link>
+                                        <Link :href="route('asset.history.edit', record.id)"
+                                            class="text-indigo-600 hover:text-indigo-900">
+                                            Edit
+                                        </Link>
+                                        <button
+                                            @click="deleteRecord(record.id)"
+                                            class="text-red-600 hover:text-red-900"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <!-- Pagination -->
-                <div v-if="history.data && history.data.length > 0" class="bg-gray-50 px-6 py-3 border-t border-gray-200">
-                    <div class="flex items-center justify-end">
-                        <TailwindPagination
-                            :data="history"
-                            @pagination-change-page="getResults"
-                            :limit="2"
-                        />
-                    </div>
+                <div v-if="history.links && history.links.length > 3" class="px-6 py-4 border-t border-gray-200">
+                    <Pagination :links="history.links" />
                 </div>
             </div>
         </div>
@@ -180,95 +203,77 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { router, usePage } from '@inertiajs/vue3';
-import moment from 'moment';
-import TailwindPagination from '@/Components/Pagination.vue';
+import { ref, onMounted, watch } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import Pagination from '@/Components/Pagination.vue'
+import { debounce } from 'lodash'
 
 const props = defineProps({
-    asset: Object,
     history: Object,
-    users: Array,
     filters: Object,
-});
-
-const page = usePage();
-const loading = ref(false);
+    assets: Array,
+    actionTypes: Object,
+})
 
 const filters = ref({
-    actionType: props.filters?.actionType || '',
-    dateRange: props.filters?.dateRange || '',
-    performedBy: props.filters?.performedBy || '',
-});
+    search: props.filters?.search || '',
+    action_type: props.filters?.action_type || '',
+    asset_id: props.filters?.asset_id || '',
+    performed_by: props.filters?.performed_by || '',
+    date_from: props.filters?.date_from || '',
+    date_to: props.filters?.date_to || '',
+})
 
-// Watch for filter changes and reload data
-watch(filters, async (newFilters) => {
-    await loadHistory();
-}, { deep: true });
+const debouncedSearch = debounce(() => {
+    applyFilters()
+}, 300)
 
-async function loadHistory() {
-    loading.value = true;
-    try {
-        router.get(route('assets.history', props.asset.id), filters.value, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    } catch (error) {
-        console.error('Error loading history:', error);
-    } finally {
-        loading.value = false;
-    }
-}
-
-function getActionIconClass(actionType) {
-    const classes = {
-        'approval': 'bg-blue-500',
-        'transfer': 'bg-green-500',
-        'retirement': 'bg-red-500',
-        'status_change': 'bg-yellow-500',
-    };
-    return classes[actionType] || 'bg-gray-500';
-}
-
-function formatActionTitle(action, actionType) {
-    const titles = {
-        'reviewed': 'Asset Reviewed',
-        'approved': 'Asset Approved',
-        'rejected': 'Asset Rejected',
-        'transfer_reviewed': 'Transfer Reviewed',
-        'transfer_approved': 'Transfer Approved',
-        'transfer_rejected': 'Transfer Rejected',
-        'retirement_reviewed': 'Retirement Reviewed',
-        'retirement_approved': 'Retirement Approved',
-        'retirement_rejected': 'Retirement Rejected',
-    };
-    return titles[action] || `${actionType.replace('_', ' ').toUpperCase()}`;
-}
-
-function formatValue(value) {
-    if (typeof value === 'object') {
-        return JSON.stringify(value);
-    }
-    return value;
-}
-
-function formatDate(date) {
-    if (!date) return '-';
-    return moment(date).format('DD/MM/YYYY HH:mm');
-}
-
-function getResults(page) {
-    router.get(route('assets.history', props.asset.id), {
-        ...filters.value,
-        page: page
-    }, {
+const applyFilters = () => {
+    router.get(route('asset.history.index'), filters.value, {
         preserveState: true,
         preserveScroll: true,
-    });
+    })
 }
 
-onMounted(() => {
-    // Initialize any necessary data
-});
+const clearFilters = () => {
+    filters.value = {
+        search: '',
+        action_type: '',
+        asset_id: '',
+        performed_by: '',
+        date_from: '',
+        date_to: '',
+    }
+    applyFilters()
+}
+
+const deleteRecord = (id) => {
+    if (confirm('Are you sure you want to delete this history record?')) {
+        router.delete(route('asset.history.destroy', id))
+    }
+}
+
+const getActionTypeClass = (actionType) => {
+    const classes = {
+        'status_change': 'bg-blue-100 text-blue-800',
+        'transfer': 'bg-green-100 text-green-800',
+        'retirement': 'bg-red-100 text-red-800',
+        'approval': 'bg-purple-100 text-purple-800',
+        'maintenance': 'bg-yellow-100 text-yellow-800',
+        'depreciation': 'bg-indigo-100 text-indigo-800',
+    }
+    return classes[actionType] || 'bg-gray-100 text-gray-800'
+}
+
+const formatDate = (date) => {
+    if (!date) return 'N/A'
+    return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    })
+}
 </script>

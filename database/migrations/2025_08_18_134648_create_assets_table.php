@@ -13,42 +13,28 @@ return new class extends Migration
     {
         Schema::create('assets', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid')->nullable();
-            $table->string('tag_no')->nullable()->unique();
-            $table->string('name')->nullable();
-            $table->string('asset_tag');
-            $table->foreignId('asset_category_id');
-            $table->foreignId('assignee_id')->nullable()->constrained('assignees')->nullOnDelete();
-            $table->foreignId('type_id')->nullable()->constrained('asset_types')->nullOnDelete();
-            $table->string('serial_number')->unique();
-            $table->string('serial_no')->nullable();
-            $table->text('item_description')->nullable();
-            $table->string('person_assigned')->nullable();
-            $table->foreignId('asset_location_id');
-            $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('fund_source_id');
-            $table->foreignId('sub_location_id');
-            $table->boolean('has_warranty')->default(false);
-            $table->boolean('has_documents')->default(false);
-            $table->date('asset_warranty_start')->nullable();
-            $table->date('asset_warranty_end')->nullable();
-            $table->date('warranty_start')->nullable();
-            $table->unsignedInteger('warranty_months')->nullable();
-            $table->unsignedInteger('maintenance_interval_months')->default(0);
-            $table->date('last_maintenance_at')->nullable();
-            $table->json('metadata')->nullable();
-            $table->foreignId('region_id');
-            $table->string('sub_location')->nullable();
-            $table->date('acquisition_date');
-            $table->date('purchase_date')->nullable();
-            $table->decimal('cost', 12, 2)->nullable();
-            $table->string('supplier')->nullable();
-            $table->date('transfer_date')->nullable();
-            $table->enum('status', ['active', 'in_transfer_process', 'in_use', 'maintenance', 'retired', 'disposed', 'pending_approval'])->default('active');
-            $table->decimal('original_value', 10, 2)->nullable();
-            $table->boolean('submitted_for_approval')->default(false);
-            $table->timestamp('submitted_at')->nullable();
-            $table->foreignId('submitted_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->string('asset_number')->unique(); // Asset number (e.g., ASSET-001)
+            $table->date('acquisition_date'); // When the asset was acquired
+            $table->foreignId('fund_source_id')->constrained('fund_sources');
+            $table->foreignId('region_id')->constrained('regions');
+            $table->foreignId('asset_location_id')->constrained('asset_locations');
+            $table->foreignId('sub_location_id')->constrained('sub_locations');
+
+            // approvals
+            $table->foreignId('submitted_by')->constrained('users');
+            $table->date('submitted_at')->nullable();
+
+            $table->foreignId('reviewed_by')->constrained('users');
+            $table->date('reviewed_at')->nullable();
+
+            $table->foreignId('approved_by')->constrained('users');
+            $table->date('approved_at')->nullable();
+
+            $table->foreignId('rejected_by')->constrained('users');
+            $table->date('rejected_at')->nullable();
+
+            $table->text('rejection_reason')->nullable();
+
             $table->timestamps();
             $table->softDeletes();
         });

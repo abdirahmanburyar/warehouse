@@ -3,7 +3,7 @@
     <div class="min-h-screen bg-gradient-to-br from-green-500 via-teal-400 to-blue-500 p-0 flex flex-col justify-center">
         <div class="container mx-auto px-2">
             <!-- Main Content -->
-            <div class="flex flex-col lg:flex-row items-center justify-between gap-6">
+            <div class="flex flex-col lg:flex-row justify-between gap-6">
                 <!-- Left Content -->
                 <div class="flex-1 text-white">
                     <!-- Logos -->

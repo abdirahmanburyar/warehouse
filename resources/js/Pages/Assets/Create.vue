@@ -14,7 +14,6 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import moment from "moment";
 
-
 const toast = useToast();
 const processing = ref(false);
 const isSubmitting = ref(false);
@@ -71,6 +70,7 @@ watch(
     },
     { immediate: true, deep: true }
 );
+
 const typeOptions = ref([]);
 watch(
     () => props.types,
@@ -83,23 +83,19 @@ watch(
     { immediate: true, deep: true }
 );
 
-const filteredTypeOptions = computed(() => {
-    const categoryId = form.value.asset_category_id || form.value.asset_category?.id;
-    if (!categoryId) {
+const getFilteredTypeOptions = (category) => {
+    if (!category) {
         return [{ id: "new", name: "+ Add New Type", isAddNew: true }];
     }
+    const categoryId = category.id || category;
     const base = typeOptions.value.filter(
         t => !t.isAddNew && (!t.asset_category_id || t.asset_category_id === categoryId)
     );
-    // Always append the add-new option at the end
     return [
         ...base,
         { id: "new", name: "+ Add New Type", isAddNew: true },
     ];
-});
-
-// Will be attached after form is defined to avoid temporal dead zone
-let detachCategoryWatch = null;
+};
 
 const usersAsOptions = computed(() => (props.users || []).map(u => ({ id: u.id, name: u.name })));
 
@@ -124,10 +120,8 @@ const onAssigneeSelect = (opt) => {
         showAssigneeModal.value = true;
         return;
     }
-    // Selecting from this dropdown chooses an Assignee, not a User
     form.value.assignee_id = opt.id;
     form.value.assigned_to = '';
-    // clear manual assignee fields
     form.value.assignee_name = '';
     form.value.assignee_email = '';
     form.value.assignee_phone = '';
@@ -140,7 +134,6 @@ const onAssigneeClear = () => {
 };
 
 const createAssignee = async (e) => {
-    // Prevent parent form submission if button defaults to submit
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
     if (!newAssignee.value.name) {
         toast.error('Full name is required');
@@ -154,13 +147,10 @@ const createAssignee = async (e) => {
             phone: newAssignee.value.phone || null,
             department: newAssignee.value.department || null,
         });
-        // Append to local list so it appears in dropdown
         assigneesList.value = [...assigneesList.value, data];
-        // Select the new assignee by default
         form.value.assigned_user = { id: data.id, name: data.name };
         form.value.assignee_id = data.id;
         form.value.assigned_to = '';
-        // Reset modal form
         newAssignee.value = { name: '', email: '', phone: '', department: '' };
         showAssigneeModal.value = false;
         toast.success('Assignee created');
@@ -254,68 +244,39 @@ watch(
 );
 
 const form = ref({
-    tag_no: "",
-    name: "",
-    asset_tag: "",
-    asset_category_id: null,
-    asset_category: null,
-    type_id: "",
-    type: null,
-    serial_number: "",
-    serial_no: "",
-    item_description: "",
-    person_assigned: "",
-    assignee_id: null,
-    assigned_user: null,
-    assignee_name: "",
-    assignee_email: "",
-    assignee_phone: "",
-    assignee_department: "",
-    asset_location_id: "",
-    asset_location: null,
-    sub_location_id: "",
-    sub_location: null,
+    asset_number: "",
     acquisition_date: "",
-    cost: "",
-    supplier: "",
-    has_warranty: false,
-    asset_warranty_start: "",
-    asset_warranty_end: "",
-    warranty_months: "",
-    maintenance_interval_months: 0,
-    last_maintenance_at: "",
-    has_documents: false,
-    status: "active",
-    original_value: "",
     fund_source_id: "",
     region_id: "",
-    region: null,
-    fund_source: null,
-    documents: [{ type: "", file: "" }],
-});
-
-// Attach watcher after form is initialized
-detachCategoryWatch = watch(() => form.value.asset_category, (newVal) => {
-    if (!newVal) {
-        form.value.type = null;
-        form.value.type_id = null;
-    }
+    asset_location_id: "",
+    sub_location_id: "",
+    asset_items: [
+        {
+            asset_tag: "",
+            asset_name: "",
+            serial_number: "",
+            asset_category_id: null,
+            asset_category: null,
+            asset_type_id: null,
+            asset_type: null,
+            assignee_id: null,
+            assignee: null,
+            status: "pending_approval",
+            original_value: "",
+        },
+    ],
 });
 
 const subLocations = ref([]);
 
 const filteredSubLocations = computed(() => {
     if (!form.value.asset_location) return [];
-    // If asset_location is a Multiselect object, use its id
     const locId = form.value.asset_location.id || form.value.asset_location;
     return subLocations.value.filter((sub) => sub.location_id === locId);
 });
 
 function onLocationChange(selected) {
-    // Clear sub-location if location changes
     form.value.sub_location = null;
-    // If you want to trigger loading sublocations via API, uncomment next line:
-    // loadSubLocations(selected ? selected.id : null);
 }
 
 const loadSubLocations = async (locationId) => {
@@ -343,7 +304,7 @@ watch(
 );
 
 const statuses = ref([
-    { value: "active", label: "Active" },
+    { value: "pending_approval", label: "Pending Approval" },
     { value: "in_use", label: "In Use" },
     { value: "maintenance", label: "Maintenance" },
     { value: "retired", label: "Retired" },
@@ -364,11 +325,9 @@ const isNewRegion = ref(false);
 const isNewCategory = ref(false);
 const isNewFundSource = ref(false);
 const selectedLocationForSub = ref(null);
-const warrantyDateError = ref("");
 
 const handleLocationSelect = (selected) => {
     if (!selected) {
-        // Handle clearing the selection
         form.value.asset_location_id = null;
         selectedLocationForSub.value = null;
         form.value.sub_location_id = null;
@@ -378,7 +337,6 @@ const handleLocationSelect = (selected) => {
     }
 
     if (selected.isAddNew) {
-        // Show the modal and keep the previous selection
         const currentSelection = form.value.asset_location;
         showLocationModal.value = true;
         form.value.asset_location = currentSelection;
@@ -386,7 +344,6 @@ const handleLocationSelect = (selected) => {
         return;
     }
 
-    // Handle normal selection
     form.value.asset_location_id = selected.id;
     form.value.asset_location = selected;
     selectedLocationForSub.value = selected.id;
@@ -424,29 +381,24 @@ const createLocation = async () => {
         });
         const newLocationData = response.data;
 
-        // Add the new location to locationOptions
         locationOptions.value = [
             ...locationOptions.value.filter((loc) => !loc.isAddNew),
             newLocationData,
             { id: "new", name: "+ Add New Location", isAddNew: true },
         ];
 
-        // Select the new location in the multiselect
         form.value.asset_location = newLocationData;
         form.value.asset_location_id = newLocationData.id;
         selectedLocationForSub.value = newLocationData.id;
 
-        // Clear modal data
         newLocation.value = "";
         showLocationModal.value = false;
 
-        // Load sub-locations for the new location
         await loadSubLocations(newLocationData.id);
 
         toast.success("Location created successfully");
     } catch (error) {
         console.error(error);
-        // toast.error(error.response?.data || 'Error creating location');
     } finally {
         isNewLocation.value = false;
     }
@@ -469,18 +421,15 @@ const createRegion = async () => {
 
         const newRegionData = response.data;
 
-        // Add the new region to regionOptions
         regionOptions.value = [
             ...regionOptions.value.filter((reg) => !reg.isAddNew),
             newRegionData,
             { id: "new", name: "+ Add New Region", isAddNew: true },
         ];
 
-        // Select the new region in the multiselect
         form.value.region = newRegionData;
         form.value.region_id = newRegionData.id;
 
-        // Clear modal data
         newRegion.value = "";
         showRegionModal.value = false;
 
@@ -563,18 +512,15 @@ const createCategory = async () => {
 
         const newCategoryData = response.data;
 
-        // Add the new category to categoryOptions
         categoryOptions.value = [
             ...categoryOptions.value.filter((cat) => !cat.isAddNew),
             newCategoryData,
             { id: "new", name: "+ Add New Category", isAddNew: true },
         ];
 
-        // Select the new category in the multiselect
         form.value.asset_category = newCategoryData;
         form.value.asset_category_id = newCategoryData.id;
         
-        // Clear modal data
         newCategory.value = "";
         showCategoryModal.value = false;
 
@@ -585,31 +531,6 @@ const createCategory = async () => {
     } finally {
         isNewCategory.value = false;
     }
-};
-
-const validateWarrantyDates = () => {
-    warrantyDateError.value = "";
-
-    if (
-        form.value.has_warranty &&
-        form.value.asset_warranty_start &&
-        form.value.asset_warranty_end
-    ) {
-        const startDate = moment(form.value.asset_warranty_start);
-        const endDate = moment(form.value.asset_warranty_end);
-
-        if (!startDate.isValid() || !endDate.isValid()) {
-            warrantyDateError.value = "Invalid date format";
-            return false;
-        }
-
-        if (endDate.isBefore(startDate)) {
-            warrantyDateError.value =
-                "Warranty end date must be equal to or after start date";
-            return false;
-        }
-    }
-    return true;
 };
 
 const createFundSource = async () => {
@@ -628,18 +549,15 @@ const createFundSource = async () => {
 
         const newFundSourceData = response.data;
 
-        // Add the new fund source to fundSourceOptions
         fundSourceOptions.value = [
             ...fundSourceOptions.value.filter((fs) => !fs.isAddNew),
             newFundSourceData,
             { id: "new", name: "+ Add New Fund Source", isAddNew: true },
         ];
 
-        // Select the new fund source in the multiselect
         form.value.fund_source = newFundSourceData;
         form.value.fund_source_id = newFundSourceData.id;
 
-        // Clear modal data
         newFundSource.value = "";
         showFundSourceModal.value = false;
 
@@ -652,8 +570,6 @@ const createFundSource = async () => {
         isNewFundSource.value = false;
     }
 };
-
-const isSubLocationLoadint = ref(false);
 
 const createSubLocation = async () => {
     if (!newSubLocation.value || !selectedLocationForSub.value) {
@@ -674,14 +590,11 @@ const createSubLocation = async () => {
 
         const newSubLocationData = response.data;
 
-        // Add the new sub-location to the list
         subLocations.value = [...subLocations.value, newSubLocationData];
 
-        // Select the new sub-location in the multiselect
         form.value.sub_location = newSubLocationData;
         form.value.sub_location_id = newSubLocationData.id;
 
-        // Clear the form and close modal
         newSubLocation.value = "";
         showSubLocationModal.value = false;
 
@@ -693,73 +606,132 @@ const createSubLocation = async () => {
     }
 };
 
+// Asset Item Management Methods
+const addAssetItem = () => {
+    form.value.asset_items.push({
+        asset_tag: "",
+        asset_name: "",
+        serial_number: "",
+        asset_category_id: null,
+        asset_category: null,
+        asset_type_id: null,
+        asset_type: null,
+        assignee_id: null,
+        assignee: null,
+        status: "pending_approval",
+        original_value: "",
+    });
+};
+
+const removeAssetItem = (index) => {
+    if (form.value.asset_items.length > 1) {
+        form.value.asset_items.splice(index, 1);
+    } else {
+        toast.warning("At least one asset item is required");
+    }
+};
+
+const handleItemCategorySelect = (selected, index) => {
+    if (!selected) {
+        form.value.asset_items[index].asset_category_id = null;
+        form.value.asset_items[index].asset_category = null;
+        form.value.asset_items[index].asset_type_id = null;
+        form.value.asset_items[index].asset_type = null;
+        return;
+    }
+
+    if (selected.isAddNew) {
+        const currentSelection = form.value.asset_items[index].asset_category;
+        showCategoryModal.value = true;
+        form.value.asset_items[index].asset_category_id = currentSelection.id;
+        form.value.asset_items[index].asset_category = currentSelection;
+        return;
+    }
+
+    form.value.asset_items[index].asset_category_id = selected.id;
+    form.value.asset_items[index].asset_category = selected;
+    form.value.asset_items[index].asset_type_id = null;
+    form.value.asset_items[index].asset_type = null;
+};
+
+const handleItemTypeSelect = (selected, index) => {
+    if (!selected) {
+        form.value.asset_items[index].asset_type_id = null;
+        form.value.asset_items[index].asset_type = null;
+        return;
+    }
+
+    if (selected.isAddNew) {
+        const currentSelection = form.value.asset_items[index].asset_type;
+        showTypeModal.value = true;
+        form.value.asset_items[index].asset_type_id = currentSelection.id;
+        form.value.asset_items[index].asset_type = currentSelection;
+        return;
+    }
+
+    form.value.asset_items[index].asset_type_id = selected.id;
+    form.value.asset_items[index].asset_type = selected;
+};
+
+const handleItemAssigneeSelect = (selected, index) => {
+    if (!selected) {
+        form.value.asset_items[index].assignee_id = null;
+        form.value.asset_items[index].assignee = null;
+        return;
+    }
+
+    if (selected.isAddNew) {
+        showAssigneeModal.value = true;
+        return;
+    }
+
+    form.value.asset_items[index].assignee_id = selected.id;
+    form.value.asset_items[index].assignee = selected;
+};
+
+const handleItemAssigneeClear = (index) => {
+    form.value.asset_items[index].assignee_id = null;
+    form.value.asset_items[index].assignee = null;
+};
+
 const submit = async () => {
     isSubmitting.value = true;
-
-    // Debug location values
-    console.log("Location values before submit:", {
-        asset_location_id: form.value.asset_location_id,
-        asset_location: form.value.asset_location,
-        sub_location_id: form.value.sub_location_id,
-        sub_location: form.value.sub_location,
-    });
-
-    // Warranty/maintenance have been moved to Show; ignore any toggles here
     processing.value = true;
 
-    // Create a FormData object to handle file uploads
-    const formData = new FormData();
+    try {
+        // Validate form
+        if (!form.value.asset_number || !form.value.acquisition_date || !form.value.fund_source_id || !form.value.region_id || !form.value.asset_location_id) {
+            toast.error("Please fill in all required asset fields");
+            return;
+        }
 
-    // Add all form fields to FormData
-    Object.keys(form.value).forEach((key) => {
-        // Skip documents as we'll handle them separately
-        if (key !== "documents") {
-            // Handle nested objects (like asset_category, region, etc.)
-            if (
-                typeof form.value[key] === "object" &&
-                form.value[key] !== null
-            ) {
-                formData.append(key, form.value[key].id);
-            } else if (typeof form.value[key] === "boolean") {
-                // Convert boolean to 1/0 for PHP
-                formData.append(key, form.value[key] ? "1" : "0");
-            } else {
-                formData.append(key, form.value[key]);
+        if (form.value.asset_items.length === 0) {
+            toast.error("At least one asset item is required");
+            return;
+        }
+
+        // Validate asset items
+        for (let i = 0; i < form.value.asset_items.length; i++) {
+            const item = form.value.asset_items[i];
+            if (!item.asset_tag || !item.asset_name || !item.serial_number || !item.asset_category_id || !item.asset_type_id || !item.original_value) {
+                toast.error(`Please fill in all required fields for item #${i + 1}`);
+                return;
             }
         }
-    });
 
-    // Documents are uploaded on Show page now
+        const formData = new FormData();
 
-    formData.append("asset_tag", form.value.asset_tag);
-    formData.append("asset_category_id", form.value.asset_category_id);
-    formData.append("serial_number", form.value.serial_number);
-    formData.append("item_description", form.value.item_description);
-    formData.append("region_id", form.value.region_id);
-    formData.append("fund_source_id", form.value.fund_source_id);
+        // Asset data
+        formData.append("asset_number", form.value.asset_number);
+        formData.append("acquisition_date", form.value.acquisition_date);
+        formData.append("fund_source_id", form.value.fund_source_id);
+        formData.append("region_id", form.value.region_id);
+        formData.append("asset_location_id", form.value.asset_location_id);
+        formData.append("sub_location_id", form.value.sub_location_id || "");
 
-    // Ensure location ID is properly set (use the ID from the object if available)
-    const locationId =
-        form.value.asset_location_id ||
-        (form.value.asset_location ? form.value.asset_location.id : "");
-    formData.append("asset_location_id", locationId);
+        // Asset items data
+        formData.append("asset_items", JSON.stringify(form.value.asset_items));
 
-    // Ensure sub-location ID is properly set
-    const subLocationId =
-        form.value.sub_location_id ||
-        (form.value.sub_location ? form.value.sub_location.id : "");
-    formData.append("sub_location_id", subLocationId);
-    if (form.value.assigned_user?.id) formData.append("assigned_to", form.value.assigned_user.id);
-    if (form.value.assignee_id) formData.append("assignee_id", form.value.assignee_id);
-    formData.append("acquisition_date", form.value.acquisition_date);
-    if (form.value.purchase_date) formData.append("purchase_date", form.value.purchase_date);
-    if (form.value.cost) formData.append("cost", form.value.cost);
-    if (form.value.supplier) formData.append("supplier", form.value.supplier);
-    formData.append("status", form.value.status);
-    formData.append("original_value", form.value.original_value);
-    // Skip warranty/maintenance/documents fields on create
-
-    try {
         const response = await axios.post(route("assets.store"), formData, {
             headers: {
                 "Content-Type": "multipart/form-data",
@@ -768,6 +740,7 @@ const submit = async () => {
 
         processing.value = false;
         isSubmitting.value = false;
+        
         Swal.fire({
             title: "Success!",
             text: "Asset created successfully",
@@ -783,81 +756,95 @@ const submit = async () => {
         toast.error(error.response?.data || "Error creating asset");
     }
 };
-
-function addDocument() {
-    form.value.documents.push({ type: "", file: "" });
-}
-
-function removeDocument(index) {
-    form.value.documents.splice(index, 1);
-}
-
-function handleDocumentUpload(index, event) {
-    form.value.documents[index].file = event.target.files[0];
-}
 </script>
 
 <template>
-    <AuthenticatedLayout title="Assets management" description="Create new asset" img="/assets/images/asset-header.png">
+    <AuthenticatedLayout title="Assets management" description="Create new asset with multiple items" img="/assets/images/asset-header.png">
         <Head title="Create Asset" />
         <div class="mb-[80px]">
             <div class="p-6 text-gray-900">
                 <h2 class="text-2xl font-semibold mb-6">Create New Asset</h2>
 
                 <form @submit.prevent="submit" novalidate class="space-y-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mt-4">Basic Details</h3>
-                    <!-- Region, Location, SubLocation Filters -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <InputLabel for="tag_no" value="Tag No" />
-                            <input id="tag_no" type="text" class="mt-1 block w-full" placeholder="e.g., AST-2025-001" v-model="form.tag_no" />
-                        </div>
-                        <div>
-                            <InputLabel for="name" value="Asset Name" />
-                            <input id="name" type="text" class="mt-1 block w-full" placeholder="e.g., Dell Latitude 7420" v-model="form.name" />
-                        </div>
-                        <div>
-                            <InputLabel for="asset_tag" value="Asset Tag" />
-                            <input
-                                id="asset_tag"
-                                type="text"
-                                class="mt-1 block w-full"
-                                placeholder="Internal tag, e.g., INV-000123"
-                                v-model="form.asset_tag"
-                                required
-                            />
+                    <!-- Asset Information Section -->
+                    <div class="bg-white shadow-xl rounded-2xl p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Asset Information</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <InputLabel for="asset_number" value="Asset Number" />
+                                <input id="asset_number" type="text" class="mt-1 block w-full" placeholder="e.g., ASSET-2025-001" v-model="form.asset_number" required />
+                            </div>
+                            <div>
+                                <InputLabel for="acquisition_date" value="Acquisition Date" />
+                                <input id="acquisition_date" type="date" class="mt-1 block w-full" v-model="form.acquisition_date" required />
+                            </div>
+                            <div>
+                                <InputLabel for="fund_source" value="Fund Source" />
+                                <Multiselect
+                                    id="fund_source"
+                                    v-model="form.fund_source"
+                                    :options="fundSourceOptions"
+                                    :close-on-select="true"
+                                    :show-labels="false"
+                                    :allow-empty="true"
+                                    placeholder="Select Fund Source"
+                                    track-by="id"
+                                    label="name"
+                                    @select="handleFundSourceSelect"
+                                >
+                                    <template v-slot:option="{ option }">
+                                        <div :class="{ 'add-new-option': option.isAddNew }">
+                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Fund Source</span>
+                                            <span v-else>{{ option.name }}</span>
+                                        </div>
+                                    </template>
+                                </Multiselect>
+                            </div>
                         </div>
 
-                        <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                             <div>
-                                <InputLabel
-                                    for="asset_category"
-                                    value="Asset Category"
-                                />
+                                <InputLabel for="region" value="Region" />
+                                <Multiselect
+                                    v-model="form.region"
+                                    :options="regionOptions"
+                                    :searchable="true"
+                                    :close-on-select="true"
+                                    :show-labels="false"
+                                    :allow-empty="true"
+                                    placeholder="Select Region"
+                                    track-by="id"
+                                    label="name"
+                                    @select="handleRegionSelect"
+                                >
+                                    <template v-slot:option="{ option }">
+                                        <div :class="{ 'add-new-option': option.isAddNew }">
+                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Region</span>
+                                            <span v-else>{{ option.name }}</span>
+                                        </div>
+                                    </template>
+                                </Multiselect>
+                            </div>
+                            
+                            <div>
+                                <InputLabel for="location" value="Location" />
                                 <div class="w-full">
                                     <Multiselect
-                                        v-model="form.asset_category"
-                                        :options="categoryOptions"
+                                        v-model="form.asset_location"
+                                        :options="locationOptions"
                                         :searchable="true"
                                         :close-on-select="true"
                                         :show-labels="false"
                                         :allow-empty="true"
-                                        placeholder="Select Category"
+                                        placeholder="Select Location"
                                         track-by="id"
                                         label="name"
-                                        @select="handleCategorySelect"
+                                        @select="handleLocationSelect"
                                     >
                                         <template v-slot:option="{ option }">
-                                            <div
-                                                :class="{
-                                                    'add-new-option': option.isAddNew,
-                                                }"
-                                            >
-                                                <span
-                                                    v-if="option.isAddNew"
-                                                    class="text-indigo-600 font-medium"
-                                                    >+ Add New Category</span
-                                                >
+                                            <div :class="{ 'add-new-option': option.isAddNew }">
+                                                <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Location</span>
                                                 <span v-else>{{ option.name }}</span>
                                             </div>
                                         </template>
@@ -865,336 +852,220 @@ function handleDocumentUpload(index, event) {
                                 </div>
                             </div>
                             <div>
-                                <InputLabel for="type" value="Asset Type" />
-                                <Multiselect
-                                    v-model="form.type"
-                                    :options="filteredTypeOptions"
-                                    :searchable="true"
-                                    :close-on-select="true"
-                                    :show-labels="false"
-                                    :allow-empty="true"
-                                    placeholder="Select Type"
-                                    track-by="id"
-                                    label="name"
-                                    :disabled="!form.asset_category && !form.asset_category_id"
-                                    @select="handleTypeSelect"
-                                >
-                                    <template v-slot:option="{ option }">
-                                        <div :class="{ 'add-new-option': option.isAddNew }">
-                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Type</span>
-                                            <span v-else>{{ option.name }}</span>
-                                        </div>
-                                    </template>
-                                </Multiselect>
-                            </div>
-                        </div>
-
-                        <div>
-                            <InputLabel for="serial_number" value="Serial Number" />
-                            <input
-                                id="serial_number"
-                                type="text"
-                                class="mt-1 block w-full"
-                                placeholder="Manufacturer serial no"
-                                v-model="form.serial_number"
-                                required
-                            />
-                        </div>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-800 mt-8">Assignment</h3>
-                    <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <InputLabel for="assigned_to" value="Assigned User (optional)" />
-                            <Multiselect
-                                v-model="form.assigned_user"
-                                :options="assigneeOptions"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                :allow-empty="true"
-                                placeholder="Select user"
-                                track-by="id"
-                                label="name"
-                                @select="onAssigneeSelect"
-                                @clear="onAssigneeClear"
-                            />
-                        </div>
-                        <div>
-                            <InputLabel for="acquisition_date" value="Acquisition Date" />
-                            <input
-                                id="acquisition_date"
-                                type="date"
-                                class="mt-1 block w-full"
-                                v-model="form.acquisition_date"
-                                required
-                            />
-                        </div>
-                    </div>
-                    
-                    <!-- New Assignee Modal -->
-                    <Modal :show="showAssigneeModal" @close="showAssigneeModal = false">
-                        <div class="p-6">
-                            <h2 class="text-lg font-medium text-gray-900">Add New Assignee</h2>
-                            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <InputLabel for="new_assignee_name" value="Full Name" />
-                                    <input id="new_assignee_name" name="new_assignee_name" type="text" class="mt-1 block w-full" placeholder="e.g., John Doe" :required="showAssigneeModal" v-model="newAssignee.name" />
-                                </div>
-                                <div>
-                                    <InputLabel for="new_assignee_email" value="Email (optional)" />
-                                    <input id="new_assignee_email" type="email" class="mt-1 block w-full" placeholder="name@example.com" v-model="newAssignee.email" />
-                                </div>
-                                <div>
-                                    <InputLabel for="new_assignee_phone" value="Phone" />
-                                    <input id="new_assignee_phone" name="new_assignee_phone" type="text" class="mt-1 block w-full" placeholder="e.g., +1 555 123 4567" :required="showAssigneeModal" v-model="newAssignee.phone" />
-                                </div>
-                                <div>
-                                    <InputLabel for="new_assignee_department" value="Department" />
-                                    <input id="new_assignee_department" name="new_assignee_department" type="text" class="mt-1 block w-full" placeholder="e.g., IT" :required="showAssigneeModal" v-model="newAssignee.department" />
-                                </div>
-                            </div>
-                            <div class="mt-6 flex justify-end space-x-3">
-                    <SecondaryButton @click="showAssigneeModal = false" :disabled="isSavingAssignee">Cancel</SecondaryButton>
-                    <PrimaryButton @click="createAssignee" :disabled="isSavingAssignee">
-                        {{ isSavingAssignee ? 'Saving...' : 'Save' }}
-                    </PrimaryButton>
-                            </div>
-                        </div>
-                    </Modal>
-                    
-                    
-                    <h3 class="text-lg font-semibold text-gray-800 mt-8">Location & Classification</h3>
-                    <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <InputLabel for="region" value="Region" />
-                            <Multiselect
-                                v-model="form.region"
-                                :options="regionOptions"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                :allow-empty="true"
-                                placeholder="Select Region"
-                                track-by="id"
-                                label="name"
-                                @select="handleRegionSelect"
-                            >
-                                <template v-slot:option="{ option }">
-                                    <div
-                                        :class="{
-                                            'add-new-option': option.isAddNew,
-                                        }"
+                                <InputLabel for="sub_location" value="Sub Location" />
+                                <div class="w-full">
+                                    <Multiselect
+                                        v-model="form.sub_location"
+                                        :options="[
+                                            ...subLocations,
+                                            {
+                                                id: 'new',
+                                                name: '+ Add New Sub-location',
+                                                isAddNew: true,
+                                            },
+                                        ]"
+                                        :searchable="true"
+                                        :close-on-select="true"
+                                        :show-labels="false"
+                                        :allow-empty="true"
+                                        placeholder="Select Sub-location"
+                                        track-by="id"
+                                        label="name"
+                                        :disabled="!form.asset_location_id"
+                                        @select="handleSubLocationSelect"
                                     >
-                                        <span
-                                            v-if="option.isAddNew"
-                                            class="text-indigo-600 font-medium"
-                                            >+ Add New Region</span
-                                        >
-                                        <span v-else>{{ option.name }}</span>
-                                    </div>
-                                </template>
-                            </Multiselect>
-                            <div class="w-full"></div>
-                        </div>
-                        
-                        <div>
-                            <InputLabel for="location" value="Location" />
-                            <div class="w-full">
-                                <Multiselect
-                                    v-model="form.asset_location"
-                                    :options="locationOptions"
-                                    :searchable="true"
-                                    :close-on-select="true"
-                                    :show-labels="false"
-                                    :allow-empty="true"
-                                    placeholder="Select Location"
-                                    track-by="id"
-                                    label="name"
-                                    @select="handleLocationSelect"
-                                >
-                                    <template v-slot:option="{ option }">
-                                        <div :class="{ 'add-new-option': option.isAddNew }">
-                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Location</span>
-                                            <span v-else>{{ option.name }}</span>
-                                        </div>
-                                    </template>
-                                </Multiselect>
-                            </div>
-                        </div>
-                        <div>
-                            <InputLabel for="sub_location" value="Sub Location" />
-                            <div class="w-full">
-                                <Multiselect
-                                    v-model="form.sub_location"
-                                    :options="[
-                                        ...subLocations,
-                                        {
-                                            id: 'new',
-                                            name: '+ Add New Sub-location',
-                                            isAddNew: true,
-                                        },
-                                    ]"
-                                    :searchable="true"
-                                    :close-on-select="true"
-                                    :show-labels="false"
-                                    :allow-empty="true"
-                                    placeholder="Select Sub-location"
-                                    track-by="id"
-                                    label="name"
-                                    :disabled="!form.asset_location_id"
-                                    @select="handleSubLocationSelect"
-                                >
-                                    <template v-slot:option="{ option }">
-                                        <div :class="{ 'add-new-option': option.isAddNew }">
-                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Sub-location</span>
-                                            <span v-else>{{ option.name }}</span>
-                                        </div>
-                                    </template>
-                                </Multiselect>
+                                        <template v-slot:option="{ option }">
+                                            <div :class="{ 'add-new-option': option.isAddNew }">
+                                                <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Sub-location</span>
+                                                <span v-else>{{ option.name }}</span>
+                                            </div>
+                                        </template>
+                                    </Multiselect>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Acquisition Date, Status, Original Value, and Fund Source -->
-                    <div class="grid grid-cols-3 gap-3 mt-4">
-                        
-                        <div>
-                            <InputLabel for="status" value="Status" />
-                            <select
-                                id="status"
-                                class="mt-1 block w-full rounded border-gray-300"
-                                v-model="form.status"
-                                required
-                            >
-                                <option v-for="option in statuses" :key="option.value" :value="option.value">
-                                    {{ option.label }}
-                                </option>
-                            </select>
+                    <!-- Asset Items Section -->
+                    <div class="bg-white shadow-xl rounded-2xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">Asset Items</h3>
+                            <button type="button" @click="addAssetItem" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add Item
+                            </button>
                         </div>
-                        <div>
-                            <InputLabel for="original_value" value="Original Value" />
-                            <input
-                                id="original_value"
-                                type="number"
-                                class="mt-1 block w-full"
-                                v-model="form.original_value"
-                                required
-                            />
+
+                        <div v-if="form.asset_items.length === 0" class="text-center py-8 text-gray-500">
+                            <p>No asset items added yet. Click "Add Item" to start.</p>
                         </div>
-                        <div>
-                            <InputLabel for="fund_source" value="Fund Source" />
-                            <Multiselect
-                                id="fund_source"
-                                v-model="form.fund_source"
-                                :options="fundSourceOptions"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                :allow-empty="true"
-                                placeholder="Select Fund Source"
-                                track-by="id"
-                                label="name"
-                                @select="handleFundSourceSelect"
-                            >
-                                <template v-slot:option="{ option }">
-                                    <div
-                                        :class="{
-                                            'add-new-option': option.isAddNew,
-                                        }"
-                                    >
-                                        <span
-                                            v-if="option.isAddNew"
-                                            class="text-indigo-600 font-medium"
-                                            >+ Add New Fund Source</span
-                                        >
-                                        <span v-else>{{ option.name }}</span>
-                                    </div>
-                                </template>
-                            </Multiselect>
+
+                        <div v-else class="space-y-3">
+                            <!-- Asset Items Table -->
+                            <table class="min-w-full divide-y divide-gray-200 table-fixed">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">#</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Asset Tag</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Asset Name</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Serial Number</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Category</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Type</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Assignee</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Value</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="(item, index) in form.asset_items" :key="index" class="hover:bg-gray-50">
+                                        <!-- Item Number -->
+                                        <td class="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 w-16">
+                                            {{ index + 1 }}
+                                        </td>
+
+                                        <!-- Asset Tag -->
+                                        <td class="px-3 py-3 whitespace-nowrap w-32">
+                                            <input :id="`asset_tag_${index}`" type="text" class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="e.g., INV-000123" v-model="item.asset_tag" required />
+                                        </td>
+
+                                        <!-- Asset Name -->
+                                        <td class="px-3 py-3 whitespace-nowrap w-40">
+                                            <input :id="`asset_name_${index}`" type="text" class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="e.g., Dell Latitude 7420" v-model="item.asset_name" required />
+                                        </td>
+
+                                        <!-- Serial Number -->
+                                        <td class="px-3 py-3 whitespace-nowrap w-32">
+                                            <input :id="`serial_number_${index}`" type="text" class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Manufacturer SN" v-model="item.serial_number" required />
+                                        </td>
+
+                                        <!-- Category -->
+                                        <td class="px-3 py-3 whitespace-nowrap w-32">
+                                            <Multiselect
+                                                v-model="item.asset_category"
+                                                :options="categoryOptions"
+                                                :searchable="true"
+                                                :close-on-select="true"
+                                                :show-labels="false"
+                                                :allow-empty="true"
+                                                placeholder="Select Category"
+                                                track-by="id"
+                                                label="name"
+                                                class="text-sm"
+                                                @select="(selected) => handleItemCategorySelect(selected, index)"
+                                            >
+                                                <template v-slot:option="{ option }">
+                                                    <div :class="{ 'add-new-option': option.isAddNew }">
+                                                        <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Category</span>
+                                                        <span v-else>{{ option.name }}</span>
+                                                    </div>
+                                                </template>
+                                            </Multiselect>
+                                        </td>
+
+                                        <!-- Type -->
+                                        <td class="px-3 py-3 whitespace-nowrap w-32">
+                                            <Multiselect
+                                                v-model="item.asset_type"
+                                                :options="getFilteredTypeOptions(item.asset_category)"
+                                                :searchable="true"
+                                                :close-on-select="true"
+                                                :show-labels="false"
+                                                :allow-empty="true"
+                                                placeholder="Select Type"
+                                                track-by="id"
+                                                label="name"
+                                                :disabled="!item.asset_category"
+                                                class="text-sm"
+                                                @select="(selected) => handleItemTypeSelect(selected, index)"
+                                            >
+                                                <template v-slot:option="{ option }">
+                                                    <div :class="{ 'add-new-option': option.isAddNew }">
+                                                        <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Type</span>
+                                                        <span v-else>{{ option.name }}</span>
+                                                    </div>
+                                                </template>
+                                            </Multiselect>
+                                        </td>
+
+                                        <!-- Assignee -->
+                                        <td class="px-3 py-3 whitespace-nowrap w-32">
+                                            <Multiselect
+                                                v-model="item.assignee"
+                                                :options="assigneeOptions"
+                                                :searchable="true"
+                                                :close-on-select="true"
+                                                :show-labels="false"
+                                                :allow-empty="true"
+                                                placeholder="Select Assignee"
+                                                track-by="id"
+                                                label="name"
+                                                class="text-sm"
+                                                @select="(selected) => handleItemAssigneeSelect(selected, index)"
+                                                @clear="() => handleItemAssigneeClear(index)"
+                                            />
+                                        </td>
+
+                                        <!-- Original Value -->
+                                        <td class="px-3 py-3 whitespace-nowrap w-24">
+                                            <input :id="`original_value_${index}`" type="number" step="0.01" class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="0.00" v-model="item.original_value" required />
+                                        </td>
+
+                                        <!-- Action -->
+                                        <td class="px-3 py-3 whitespace-nowrap text-center w-20">
+                                            <button type="button" @click="removeAssetItem(index)" class="text-red-600 hover:text-red-800 p-1" :disabled="form.asset_items.length === 1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    <!-- Warranty, maintenance, and document uploads moved to Asset/Show.vue -->
-                    <div class="flex items-center justify-end mt-6">
-                        <Link
-                            :href="route('assets.index')"
-                            :disabled="processing"
-                            >Exit</Link
-                        >
-                        <PrimaryButton class="ml-4" :disabled="processing">
-                            {{ processing ? "Saving..." : "Create Asset" }}
+
+                    <!-- Submit Section -->
+                    <div class="flex items-center justify-end space-x-4">
+                        <Link :href="route('assets.index')" class="px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200">
+                            Cancel
+                        </Link>
+                        <PrimaryButton type="submit" :disabled="processing || form.asset_items.length === 0">
+                            {{ processing ? "Creating..." : "Create Asset" }}
                         </PrimaryButton>
                     </div>
                 </form>
             </div>
         </div>
 
+        <!-- Modals for creating new entities -->
         <!-- New Location Modal -->
         <Modal :show="showLocationModal" @close="showLocationModal = false">
             <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">
-                    Add New Location
-                </h2>
+                <h2 class="text-lg font-medium text-gray-900">Add New Location</h2>
                 <div class="mt-6">
                     <InputLabel for="new_location" value="Location Name" />
-                    <input
-                        id="new_location"
-                        type="text"
-                        class="mt-1 block w-full"
-                        v-model="newLocation"
-                        required
-                    />
+                    <input id="new_location" type="text" class="mt-1 block w-full" v-model="newLocation" required />
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
-                    <SecondaryButton
-                        @click="showLocationModal = false"
-                        :disabled="isNewLocation"
-                        >Cancel
-                    </SecondaryButton>
-                    <PrimaryButton
-                        :disabled="isNewLocation"
-                        @click="createLocation"
-                        >{{
-                            isNewLocation ? "Waiting..." : "Create new location"
-                        }}</PrimaryButton
-                    >
+                    <SecondaryButton @click="showLocationModal = false" :disabled="isNewLocation">Cancel</SecondaryButton>
+                    <PrimaryButton :disabled="isNewLocation" @click="createLocation">{{ isNewLocation ? "Waiting..." : "Create new location" }}</PrimaryButton>
                 </div>
             </div>
         </Modal>
 
         <!-- New Sub-Location Modal -->
-        <Modal
-            :show="showSubLocationModal"
-            @close="showSubLocationModal = false"
-        >
+        <Modal :show="showSubLocationModal" @close="showSubLocationModal = false">
             <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">
-                    Add New Sub-Location
-                </h2>
+                <h2 class="text-lg font-medium text-gray-900">Add New Sub-Location</h2>
                 <div class="mt-6">
-                    <InputLabel
-                        for="new_sub_location"
-                        value="Sub-Location Name"
-                    />
-                    <input
-                        id="new_sub_location"
-                        type="text"
-                        class="mt-1 block w-full"
-                        v-model="newSubLocation"
-                        required
-                    />
+                    <InputLabel for="new_sub_location" value="Sub-Location Name" />
+                    <input id="new_sub_location" type="text" class="mt-1 block w-full" v-model="newSubLocation" required />
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
-                    <SecondaryButton
-                        @click="showSubLocationModal = false"
-                        :disabled="isNewLocation"
-                        >Cancel
-                    </SecondaryButton>
-                    <PrimaryButton
-                        :disabled="isNewLocation"
-                        @click="createSubLocation"
-                        >{{
-                            isNewLocation ? "Waiting..." : "Create Sub-Location"
-                        }}</PrimaryButton
-                    >
+                    <SecondaryButton @click="showSubLocationModal = false" :disabled="isNewLocation">Cancel</SecondaryButton>
+                    <PrimaryButton :disabled="isNewLocation" @click="createSubLocation">{{ isNewLocation ? "Waiting..." : "Create Sub-Location" }}</PrimaryButton>
                 </div>
             </div>
         </Modal>
@@ -1202,103 +1073,44 @@ function handleDocumentUpload(index, event) {
         <!-- New Category Modal -->
         <Modal :show="showCategoryModal" @close="showCategoryModal = false">
             <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">
-                    Add New Category
-                </h2>
+                <h2 class="text-lg font-medium text-gray-900">Add New Category</h2>
                 <div class="mt-6">
                     <InputLabel for="new_category" value="Category Name" />
-                    <input
-                        id="new_category"
-                        type="text"
-                        class="mt-1 block w-full"
-                        v-model="newCategory"
-                        required
-                    />
+                    <input id="new_category" type="text" class="mt-1 block w-full" v-model="newCategory" required />
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
-                    <SecondaryButton
-                        @click="showCategoryModal = false"
-                        :disabled="isNewCategory"
-                        >Cancel
-                    </SecondaryButton>
-                    <PrimaryButton
-                        :disabled="isNewCategory"
-                        @click="createCategory"
-                        >{{
-                            isNewCategory ? "Waiting..." : "Create Category"
-                        }}</PrimaryButton
-                    >
+                    <SecondaryButton @click="showCategoryModal = false" :disabled="isNewCategory">Cancel</SecondaryButton>
+                    <PrimaryButton :disabled="isNewCategory" @click="createCategory">{{ isNewCategory ? "Waiting..." : "Create Category" }}</PrimaryButton>
                 </div>
             </div>
         </Modal>
 
-        <!-- New Category Modal -->
+        <!-- New Region Modal -->
         <Modal :show="showRegionModal" @close="showRegionModal = false">
             <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">
-                    Add New Region
-                </h2>
+                <h2 class="text-lg font-medium text-gray-900">Add New Region</h2>
                 <div class="mt-6">
                     <InputLabel for="new_region" value="Region Name" />
-                    <input
-                        id="new_region"
-                        type="text"
-                        class="mt-1 block w-full"
-                        v-model="newRegion"
-                        required
-                    />
+                    <input id="new_region" type="text" class="mt-1 block w-full" v-model="newRegion" required />
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
-                    <SecondaryButton
-                        @click="showRegionModal = false"
-                        :disabled="isNewRegion"
-                        >Cancel
-                    </SecondaryButton>
-                    <PrimaryButton
-                        :disabled="isNewRegion"
-                        @click="createRegion"
-                        >{{
-                            isNewRegion ? "Waiting..." : "Create Region"
-                        }}</PrimaryButton
-                    >
+                    <SecondaryButton @click="showRegionModal = false" :disabled="isNewRegion">Cancel</SecondaryButton>
+                    <PrimaryButton :disabled="isNewRegion" @click="createRegion">{{ isNewRegion ? "Waiting..." : "Create Region" }}</PrimaryButton>
                 </div>
             </div>
         </Modal>
 
-        <!-- New Category Modal -->
+        <!-- New Fund Source Modal -->
         <Modal :show="showFundSourceModal" @close="showFundSourceModal = false">
             <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">
-                    Add New Fund Source
-                </h2>
+                <h2 class="text-lg font-medium text-gray-900">Add New Fund Source</h2>
                 <div class="mt-6">
-                    <InputLabel
-                        for="new_fund_source"
-                        value="Fund Source Name"
-                    />
-                    <input
-                        id="new_fund_source"
-                        type="text"
-                        class="mt-1 block w-full"
-                        v-model="newFundSource"
-                        required
-                    />
+                    <InputLabel for="new_fund_source" value="Fund Source Name" />
+                    <input id="new_fund_source" type="text" class="mt-1 block w-full" v-model="newFundSource" required />
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
-                    <SecondaryButton
-                        @click="showFundSourceModal = false"
-                        :disabled="isNewFundSource"
-                        >Exit
-                    </SecondaryButton>
-                    <PrimaryButton
-                        :disabled="isNewFundSource"
-                        @click="createFundSource"
-                        >{{
-                            isNewFundSource
-                                ? "Waiting..."
-                                : "Create Fund Source"
-                        }}</PrimaryButton
-                    >
+                    <SecondaryButton @click="showFundSourceModal = false" :disabled="isNewFundSource">Cancel</SecondaryButton>
+                    <PrimaryButton :disabled="isNewFundSource" @click="createFundSource">{{ isNewFundSource ? "Waiting..." : "Create Fund Source" }}</PrimaryButton>
                 </div>
             </div>
         </Modal>
@@ -1314,6 +1126,37 @@ function handleDocumentUpload(index, event) {
                 <div class="mt-6 flex justify-end space-x-3">
                     <SecondaryButton @click="showTypeModal = false" :disabled="isNewType">Cancel</SecondaryButton>
                     <PrimaryButton :disabled="isNewType" @click="createType">{{ isNewType ? 'Waiting...' : 'Create Type' }}</PrimaryButton>
+                </div>
+            </div>
+        </Modal>
+
+        <!-- New Assignee Modal -->
+        <Modal :show="showAssigneeModal" @close="showAssigneeModal = false">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">Add New Assignee</h2>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <InputLabel for="new_assignee_name" value="Full Name" />
+                        <input id="new_assignee_name" name="new_assignee_name" type="text" class="mt-1 block w-full" placeholder="e.g., John Doe" :required="showAssigneeModal" v-model="newAssignee.name" />
+                    </div>
+                    <div>
+                        <InputLabel for="new_assignee_email" value="Email (optional)" />
+                        <input id="new_assignee_email" type="email" class="mt-1 block w-full" placeholder="name@example.com" v-model="newAssignee.email" />
+                    </div>
+                    <div>
+                        <InputLabel for="new_assignee_phone" value="Phone" />
+                        <input id="new_assignee_phone" name="new_assignee_phone" type="text" class="mt-1 block w-full" placeholder="e.g., +1 555 123 4567" :required="showAssigneeModal" v-model="newAssignee.phone" />
+                    </div>
+                    <div>
+                        <InputLabel for="new_assignee_department" value="Department" />
+                        <input id="new_assignee_department" name="new_assignee_department" type="text" class="mt-1 block w-full" placeholder="e.g., IT" :required="showAssigneeModal" v-model="newAssignee.department" />
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <SecondaryButton @click="showAssigneeModal = false" :disabled="isSavingAssignee">Cancel</SecondaryButton>
+                    <PrimaryButton @click="createAssignee" :disabled="isSavingAssignee">
+                        {{ isSavingAssignee ? 'Saving...' : 'Save' }}
+                    </PrimaryButton>
                 </div>
             </div>
         </Modal>

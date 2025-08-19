@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\AssetHistory;
 
 class AssetItem extends Model
 {
@@ -13,383 +15,257 @@ class AssetItem extends Model
 
     protected $fillable = [
         'asset_id',
-        'asset_number', // Sequential 4-digit number
-        
-        // AssetItem specific fields
-        'item_name',
-        'description',
-        'serial_number', // Moved here - belongs to asset_items
-        'model_number',
-        'manufacturer',
-        'quantity',
-        'unit_of_measure',
-        'unit_cost',
-        'total_cost',
-        'condition',
-        'location_details',
-        'expiry_date',
-        'is_active',
-        'notes',
-        
-        // Fields from Asset model (excluding acquisition_date, fund_source_id, and serial_number)
-        'uuid',
-        'tag_no',
         'asset_tag',
+        'asset_name',
+        'serial_number',
         'asset_category_id',
-        'type_id',
-        'serial_no',
-        'item_description',
-        'person_assigned',
-        'asset_location_id',
-        'assigned_to',
-        'region_id',
-        'sub_location_id',
-        'has_warranty',
-        'has_documents',
-        'asset_warranty_start',
-        'asset_warranty_end',
-        'warranty_start',
-        'warranty_months',
-        'maintenance_interval_months',
-        'last_maintenance_at',
-        'purchase_date',
-        'cost',
-        'supplier',
-        'transfer_date',
+        'asset_type_id',
+        'assignee_id',
         'status',
         'original_value',
-        'submitted_for_approval',
-        'submitted_at',
-        'submitted_by',
-        'sub_location',
-        'metadata',
     ];
 
     protected $casts = [
-        // AssetItem specific casts
-        'quantity' => 'decimal:2',
-        'unit_cost' => 'decimal:2',
-        'total_cost' => 'decimal:2',
-        'expiry_date' => 'date',
-        'is_active' => 'boolean',
-        
-        // Asset model casts
-        'asset_warranty_start' => 'date',
-        'asset_warranty_end' => 'date',
-        'warranty_start' => 'date',
-        'purchase_date' => 'date',
-        'transfer_date' => 'date',
-        'last_maintenance_at' => 'date',
-        'cost' => 'decimal:2',
         'original_value' => 'decimal:2',
-        'submitted_at' => 'datetime',
-        'has_warranty' => 'boolean',
-        'has_documents' => 'boolean',
-        'submitted_for_approval' => 'boolean',
-        'metadata' => 'array',
     ];
 
-    /**
-     * Get the asset that owns this item.
-     */
+    // Relationships
     public function asset(): BelongsTo
     {
         return $this->belongsTo(Asset::class);
     }
 
-    /**
-     * Get the asset category for this item.
-     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(AssetCategory::class, 'asset_category_id');
     }
 
-    /**
-     * Get the asset type for this item.
-     */
     public function type(): BelongsTo
     {
-        return $this->belongsTo(AssetType::class, 'type_id');
+        return $this->belongsTo(AssetType::class, 'asset_type_id');
     }
 
-    /**
-     * Get the asset location for this item.
-     */
-    public function assetLocation(): BelongsTo
+    public function assignee(): BelongsTo
     {
-        return $this->belongsTo(AssetLocation::class, 'asset_location_id');
+        return $this->belongsTo(Assignee::class, 'assignee_id');
     }
 
-    /**
-     * Get the sub location for this item.
-     */
-    public function subLocation(): BelongsTo
+    public function maintenance(): HasMany
     {
-        return $this->belongsTo(SubLocation::class, 'sub_location_id');
+        return $this->hasMany(AssetMaintenance::class);
     }
 
-    /**
-     * Get the region for this item.
-     */
-    public function region(): BelongsTo
+    public function depreciation(): HasMany
     {
-        return $this->belongsTo(Region::class, 'region_id');
+        return $this->hasMany(AssetDepreciation::class);
     }
 
-    /**
-     * Get the user assigned to this item.
-     */
-    public function assignedTo(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'assigned_to');
-    }
+    // Constants
+    const STATUS_ACTIVE = 'active';
+    const STATUS_INACTIVE = 'inactive';
+    const STATUS_MAINTENANCE = 'maintenance';
+    const STATUS_RETIRED = 'retired';
+    const STATUS_DISPOSED = 'disposed';
 
-    /**
-     * Get the user who submitted this item.
-     */
-    public function submittedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'submitted_by');
-    }
-
-    /**
-     * Get the condition options for asset items.
-     */
-    public static function getConditions(): array
-    {
-        return [
-            'good' => 'Good',
-            'fair' => 'Fair',
-            'poor' => 'Poor',
-            'damaged' => 'Damaged',
-        ];
-    }
-
-    /**
-     * Get the status options for asset items.
-     */
     public static function getStatuses(): array
     {
         return [
-            'active' => 'Active',
-            'in_transfer_process' => 'In Transfer Process',
-            'in_use' => 'In Use',
-            'maintenance' => 'Maintenance',
-            'retired' => 'Retired',
-            'disposed' => 'Disposed',
-            'pending_approval' => 'Pending Approval',
+            self::STATUS_ACTIVE => 'Active',
+            self::STATUS_INACTIVE => 'Inactive',
+            self::STATUS_MAINTENANCE => 'Maintenance',
+            self::STATUS_RETIRED => 'Retired',
+            self::STATUS_DISPOSED => 'Disposed',
         ];
     }
 
-    /**
-     * Calculate total cost based on quantity and unit cost.
-     */
-    public function calculateTotalCost(): void
+    // Helper methods
+    public function getAssetNumber(): string
     {
-        if ($this->quantity && $this->unit_cost) {
-            $this->total_cost = $this->quantity * $this->unit_cost;
-        }
+        return $this->asset->asset_number ?? 'Unknown';
     }
 
-    /**
-     * Check if the item is expired.
-     */
-    public function isExpired(): bool
+    public function getAssetLocation(): string
     {
-        if (!$this->expiry_date) {
-            return false;
-        }
-        
-        return $this->expiry_date->isPast();
+        return $this->asset->assetLocation->name ?? 'Unknown';
     }
 
-    /**
-     * Check if the item is expiring soon (within 30 days).
-     */
-    public function isExpiringSoon(int $days = 30): bool
+    public function getSubLocation(): string
     {
-        if (!$this->expiry_date) {
-            return false;
-        }
-        
-        return $this->expiry_date->diffInDays(now()) <= $days;
+        return $this->asset->subLocation->name ?? 'Unknown';
     }
 
-    /**
-     * Check if the item has warranty.
-     */
-    public function hasWarranty(): bool
+    public function getRegion(): string
     {
-        if (!$this->has_warranty) {
-            return false;
-        }
-
-        if ($this->asset_warranty_end && $this->asset_warranty_end->isPast()) {
-            return false;
-        }
-
-        return true;
+        return $this->asset->region->name ?? 'Unknown';
     }
 
-    /**
-     * Check if the item needs maintenance.
-     */
+    public function getFundSource(): string
+    {
+        return $this->asset->fundSource->name ?? 'Unknown';
+    }
+
+    public function getAcquisitionDate(): string
+    {
+        return $this->asset->acquisition_date?->format('Y-m-d') ?? 'Unknown';
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
+
     public function needsMaintenance(): bool
     {
-        if (!$this->maintenance_interval_months || $this->maintenance_interval_months <= 0) {
-            return false;
+        return $this->status === self::STATUS_MAINTENANCE;
+    }
+
+    public function getCurrentValue(): float
+    {
+        $depreciation = $this->depreciation()->latest()->first();
+        return $depreciation ? $depreciation->current_value : $this->original_value;
+    }
+
+    public function getDepreciationAmount(): float
+    {
+        $depreciation = $this->depreciation()->latest()->first();
+        return $depreciation ? $depreciation->accumulated_depreciation : 0;
+    }
+
+    public function getMaintenanceHistory()
+    {
+        return $this->maintenance()->orderBy('created_at', 'desc')->get();
+    }
+
+    public function getUpcomingMaintenance()
+    {
+        return $this->maintenance()
+            ->where('status', 'scheduled')
+            ->where('scheduled_date', '>=', now())
+            ->orderBy('scheduled_date')
+            ->get();
+    }
+
+    public function getCompletedMaintenance()
+    {
+        return $this->maintenance()
+            ->where('status', 'completed')
+            ->orderBy('completed_date', 'desc')
+            ->get();
+    }
+
+    public function scheduleMaintenance($type, $description, $scheduledDate, $cost = null)
+    {
+        return $this->maintenance()->create([
+            'maintenance_type' => $type,
+            'description' => $description,
+            'scheduled_date' => $scheduledDate,
+            'cost' => $cost,
+            'status' => 'scheduled',
+        ]);
+    }
+
+    public function completeMaintenance($maintenanceId, $notes = null)
+    {
+        $maintenance = $this->maintenance()->find($maintenanceId);
+        if ($maintenance) {
+            $maintenance->update([
+                'status' => 'completed',
+                'completed_date' => now(),
+                'notes' => $notes,
+            ]);
+        }
+        return $maintenance;
+    }
+
+    public function calculateDepreciation($method = 'straight_line', $usefulLifeYears = 5, $salvageValue = 0)
+    {
+        $depreciation = $this->depreciation()->create([
+            'original_value' => $this->original_value,
+            'salvage_value' => $salvageValue,
+            'useful_life_years' => $usefulLifeYears,
+            'depreciation_method' => $method,
+            'current_value' => $this->original_value,
+            'accumulated_depreciation' => 0,
+            'depreciation_start_date' => now(),
+            'last_calculated_date' => now(),
+        ]);
+
+        // Calculate initial depreciation rate
+        switch ($method) {
+            case 'straight_line':
+                $rate = ($this->original_value - $salvageValue) / $usefulLifeYears;
+                break;
+            case 'declining_balance':
+                $rate = ($this->original_value - $salvageValue) * 0.2; // 20% declining balance
+                break;
+            default:
+                $rate = ($this->original_value - $salvageValue) / $usefulLifeYears;
         }
 
-        if (!$this->last_maintenance_at) {
-            return true;
-        }
+        $depreciation->update([
+            'depreciation_rate' => $rate,
+        ]);
 
-        $nextMaintenance = $this->last_maintenance_at->addMonths($this->maintenance_interval_months);
-        return $nextMaintenance->isPast();
+        return $depreciation;
     }
 
     /**
-     * Generate the next sequential asset number.
-     * Maintains 4-digit format (0001-9999) then expands to 5+ digits (10000, 10001, etc.)
+     * Create a history record for this asset item
      */
-    public static function generateNextAssetNumber(): string
+    public function createHistory(array $data): AssetHistory
     {
-        $lastAssetItem = self::orderBy('asset_number', 'desc')->first();
-        
-        if (!$lastAssetItem || !$lastAssetItem->asset_number) {
-            return '0001';
-        }
-        
-        $lastNumber = (int) $lastAssetItem->asset_number;
-        $nextNumber = $lastNumber + 1;
-        
-        // For numbers 1-9999, maintain 4-digit format with leading zeros
-        if ($nextNumber <= 9999) {
-            return str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
-        }
-        
-        // For numbers 10000 and above, return as-is (no padding needed)
-        return (string) $nextNumber;
+        return AssetHistory::create([
+            'asset_id' => $this->asset_id,
+            'action' => $data['action'] ?? 'unknown',
+            'action_type' => $data['action_type'] ?? 'general',
+            'old_value' => $data['old_value'] ?? null,
+            'new_value' => $data['new_value'] ?? null,
+            'notes' => $data['notes'] ?? '',
+            'performed_by' => $data['performed_by'] ?? auth()->id(),
+            'performed_at' => $data['performed_at'] ?? now(),
+            'approval_id' => $data['approval_id'] ?? null,
+            'assignee_id' => $data['assignee_id'] ?? null,
+        ]);
     }
 
-    /**
-     * Get the next available asset number without creating a record.
-     */
-    public static function getNextAssetNumber(): string
-    {
-        return self::generateNextAssetNumber();
-    }
-
-    /**
-     * Get the formatted asset number with proper padding for display.
-     * Always shows 4+ digits for consistency.
-     */
-    public function getFormattedAssetNumber(): string
-    {
-        $number = (int) $this->asset_number;
-        
-        // For numbers 1-9999, maintain 4-digit format
-        if ($number <= 9999) {
-            return str_pad($number, 4, '0', STR_PAD_LEFT);
-        }
-        
-        // For numbers 10000+, return as-is
-        return (string) $number;
-    }
-
-    /**
-     * Get the current asset number as an integer.
-     */
-    public function getAssetNumberAsInteger(): int
-    {
-        return (int) $this->asset_number;
-    }
-
-    /**
-     * Check if the asset number is in the 4-digit range (0001-9999).
-     */
-    public function isFourDigitAssetNumber(): bool
-    {
-        $number = (int) $this->asset_number;
-        return $number >= 1 && $number <= 9999;
-    }
-
-    /**
-     * Get the total count of asset items for reference.
-     */
-    public static function getTotalAssetItemCount(): int
-    {
-        return self::count();
-    }
-
-    /**
-     * Boot method to automatically generate asset_number if not provided.
-     */
-    protected static function boot()
-    {
-        parent::boot();
-        
-        static::creating(function ($assetItem) {
-            if (empty($assetItem->asset_number)) {
-                $assetItem->asset_number = self::generateNextAssetNumber();
-            }
-        });
-    }
-
-    /**
-     * Scope to get only active items.
-     */
+    // Scopes
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        return $query->where('status', self::STATUS_ACTIVE);
     }
 
-    /**
-     * Scope to get items by condition.
-     */
-    public function scopeByCondition($query, $condition)
-    {
-        return $query->where('condition', $condition);
-    }
-
-    /**
-     * Scope to get items by status.
-     */
     public function scopeByStatus($query, $status)
     {
         return $query->where('status', $status);
     }
 
-    /**
-     * Scope to get items expiring soon.
-     */
-    public function scopeExpiringSoon($query, $days = 30)
+    public function scopeByCategory($query, $categoryId)
     {
-        return $query->where('expiry_date', '<=', now()->addDays($days))
-                    ->where('expiry_date', '>', now());
+        return $query->where('asset_category_id', $categoryId);
     }
 
-    /**
-     * Scope to get items that need maintenance.
-     */
+    public function scopeByType($query, $typeId)
+    {
+        return $query->where('asset_type_id', $typeId);
+    }
+
+    public function scopeByAssignee($query, $assigneeId)
+    {
+        return $query->where('assignee_id', $assigneeId);
+    }
+
     public function scopeNeedsMaintenance($query)
     {
-        return $query->where(function ($q) {
-            $q->whereNull('last_maintenance_at')
-              ->orWhereRaw('DATE_ADD(last_maintenance_at, INTERVAL maintenance_interval_months MONTH) <= ?', [now()]);
-        });
+        return $query->where('status', self::STATUS_MAINTENANCE);
     }
 
-    /**
-     * Scope to get items with warranty.
-     */
-    public function scopeWithWarranty($query)
+    public function scopeByAsset($query, $assetId)
     {
-        return $query->where('has_warranty', true)
-                    ->where(function ($q) {
-                        $q->whereNull('asset_warranty_end')
-                          ->orWhere('asset_warranty_end', '>', now());
-                    });
+        return $query->where('asset_id', $assetId);
+    }
+
+    public function scopeByValueRange($query, $minValue, $maxValue)
+    {
+        return $query->whereBetween('original_value', [$minValue, $maxValue]);
     }
 }

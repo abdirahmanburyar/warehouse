@@ -124,36 +124,6 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     // Permissions API endpoint
     Route::get('/api/permissions', [\App\Http\Controllers\PermissionController::class, 'index'])->name('api.permissions.index');
     
-    // User Management Routes
-    Route::prefix('users')->group(function () {
-        Route::get('/', [UserController::class, 'index'])->name('users.index');
-        Route::get('/create', [UserController::class, 'create'])->name('users.create');
-        Route::post('/', [UserController::class, 'store'])->name('users.store');
-        Route::get('/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
-        Route::put('/{user}', [UserController::class, 'update'])->name('users.update');
-        Route::delete('/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-        Route::post('/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
-        Route::post('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
-        Route::post('/{user}/assign-permissions', [UserController::class, 'assignPermissions'])->name('users.assign-permissions');
-        Route::get('/{user}/permissions', [UserController::class, 'getUserPermissions'])->name('users.permissions');
-    });
-
-    // Logistic Company Management Routes
-    Route::prefix('logistics')->group(function () {
-        Route::get('/companies', [LogisticCompanyController::class, 'index'])->name('logistics.companies.index');
-        Route::post('/companies', [LogisticCompanyController::class, 'store'])->name('logistics.companies.store');
-        Route::delete('/companies/{company}', [LogisticCompanyController::class, 'destroy'])->name('logistics.companies.destroy');
-        Route::put('/companies/{company}/toggle-status', [LogisticCompanyController::class, 'toggleStatus'])->name('logistics.companies.toggle-status');
-    });
-
-    // Driver Management Routes
-    Route::prefix('drivers')->group(function () {
-        Route::get('/', [DriverController::class, 'index'])->name('drivers.index');
-        Route::post('/', [DriverController::class, 'store'])->name('drivers.store');
-        Route::delete('/{driver}', [DriverController::class, 'destroy'])->name('drivers.destroy');
-        Route::put('/{driver}/toggle-status', [DriverController::class, 'toggleStatus'])->name('drivers.toggle-status');
-    });
-
     // Role Management Routes
     Route::middleware(PermissionMiddleware::class . ':role.view')->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports');
@@ -430,22 +400,13 @@ Route::controller(LocationController::class)
     // Reorder Level Management Routes
     Route::prefix('reorder-levels')->group(function () {
         Route::get('/', [ReorderLevelController::class, 'index'])->name('reorder-levels.index');
-        Route::get('/create', [ReorderLevelController::class, 'create'])
-            ->name('reorder-levels.create');
-        Route::post('/', [ReorderLevelController::class, 'store'])
-            ->name('reorder-levels.store');
-        Route::get('/{reorderLevel}/edit', [ReorderLevelController::class, 'edit'])
-            ->name('reorder-levels.edit');
-        Route::put('/{reorderLevel}', [ReorderLevelController::class, 'update'])
-            ->name('reorder-levels.update');
-        Route::delete('/{reorderLevel}', [ReorderLevelController::class, 'destroy'])
-            ->name('reorder-levels.destroy');
-        
-        // Import routes
-        Route::post('/import', [ReorderLevelController::class, 'importExcel'])
-            ->name('reorder-levels.import');
-        Route::get('/import/format', [ReorderLevelController::class, 'getImportFormat'])
-            ->name('reorder-levels.import.format');
+        Route::get('/create', [ReorderLevelController::class, 'create'])->name('reorder-levels.create');
+        Route::post('/', [ReorderLevelController::class, 'store'])->name('reorder-levels.store');
+        Route::get('/{reorderLevel}/edit', [ReorderLevelController::class, 'edit'])->name('reorder-levels.edit');
+        Route::put('/{reorderLevel}', [ReorderLevelController::class, 'update'])->name('reorder-levels.update');
+        Route::delete('/{reorderLevel}', [ReorderLevelController::class, 'destroy'])->name('reorder-levels.destroy');
+        Route::post('/import', [ReorderLevelController::class, 'importExcel'])->name('reorder-levels.import');
+        Route::get('/import/format', [ReorderLevelController::class, 'getImportFormat'])->name('reorder-levels.import.format');
     });
 
     // Order Management Routes
@@ -661,7 +622,62 @@ Route::controller(LocationController::class)
             Route::get('/{asset}/history', 'getAssetHistory')->name('assets.history');
             Route::get('/history', 'getAllAssetHistory')->name('assets.history.index');
             Route::get('/{asset}/debug-approval', 'debugApprovalWorkflow')->name('assets.debug-approval');
+            
+            // New simple approval routes
+            Route::post('/{asset}/approve-simple', 'approve')->name('assets.approve-simple');
+            Route::post('/{asset}/reject-simple', 'reject')->name('assets.reject-simple');
+            Route::post('/bulk-approve', 'bulkApprove')->name('assets.bulk-approve');
         });
+
+    // Asset Documents Routes
+    Route::prefix('asset-documents')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AssetDocumentController::class, 'index'])->name('asset.documents.index');
+        Route::get('/create', [\App\Http\Controllers\AssetDocumentController::class, 'create'])->name('asset.documents.create');
+        Route::post('/', [\App\Http\Controllers\AssetDocumentController::class, 'store'])->name('asset.documents.store');
+        Route::get('/{document}/edit', [\App\Http\Controllers\AssetDocumentController::class, 'edit'])->name('asset.documents.edit');
+        Route::put('/{document}', [\App\Http\Controllers\AssetDocumentController::class, 'update'])->name('asset.documents.update');
+        Route::delete('/{document}', [\App\Http\Controllers\AssetDocumentController::class, 'destroy'])->name('asset.documents.destroy');
+        Route::get('/{document}/download', [\App\Http\Controllers\AssetDocumentController::class, 'download'])->name('asset.documents.download');
+    });
+
+    // Asset Maintenance Routes
+    Route::prefix('asset-maintenance')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AssetMaintenanceController::class, 'index'])->name('asset.maintenance.index');
+        Route::get('/create', [\App\Http\Controllers\AssetMaintenanceController::class, 'create'])->name('asset.maintenance.create');
+        Route::post('/', [\App\Http\Controllers\AssetMaintenanceController::class, 'store'])->name('asset.maintenance.store');
+        Route::get('/{maintenance}/edit', [\App\Http\Controllers\AssetMaintenanceController::class, 'edit'])->name('asset.maintenance.edit');
+        Route::put('/{maintenance}', [\App\Http\Controllers\AssetMaintenanceController::class, 'update'])->name('asset.maintenance.update');
+        Route::delete('/{maintenance}', [\App\Http\Controllers\AssetMaintenanceController::class, 'destroy'])->name('asset.maintenance.destroy');
+        Route::post('/{maintenance}/mark-in-progress', [\App\Http\Controllers\AssetMaintenanceController::class, 'markInProgress'])->name('asset.maintenance.mark-in-progress');
+        Route::post('/{maintenance}/mark-completed', [\App\Http\Controllers\AssetMaintenanceController::class, 'markCompleted'])->name('asset.maintenance.mark-completed');
+        Route::post('/{maintenance}/cancel', [\App\Http\Controllers\AssetMaintenanceController::class, 'cancel'])->name('asset.maintenance.cancel');
+        Route::post('/{maintenance}/reschedule', [\App\Http\Controllers\AssetMaintenanceController::class, 'reschedule'])->name('asset.maintenance.reschedule');
+    });
+
+    // Asset Depreciation Routes
+    Route::prefix('asset-depreciation')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AssetDepreciationController::class, 'index'])->name('asset.depreciation.index');
+        Route::get('/create', [\App\Http\Controllers\AssetDepreciationController::class, 'create'])->name('asset.depreciation.create');
+        Route::post('/', [\App\Http\Controllers\AssetDepreciationController::class, 'store'])->name('asset.depreciation.store');
+        Route::get('/{depreciation}/edit', [\App\Http\Controllers\AssetDepreciationController::class, 'edit'])->name('asset.depreciation.edit');
+        Route::put('/{depreciation}', [\App\Http\Controllers\AssetDepreciationController::class, 'update'])->name('asset.depreciation.update');
+        Route::delete('/{depreciation}', [\App\Http\Controllers\AssetDepreciationController::class, 'destroy'])->name('asset.depreciation.destroy');
+        Route::post('/{depreciation}/recalculate', [\App\Http\Controllers\AssetDepreciationController::class, 'recalculate'])->name('asset.depreciation.recalculate');
+        Route::post('/bulk-recalculate', [\App\Http\Controllers\AssetDepreciationController::class, 'bulkRecalculate'])->name('asset.depreciation.bulk-recalculate');
+    });
+
+    // Asset History Routes
+    Route::prefix('asset-history')->controller(\App\Http\Controllers\AssetHistoryController::class)->group(function(){
+        Route::get('/', 'index')->name('asset.history.index');
+        Route::get('/create', 'create')->name('asset.history.create');
+        Route::post('/', 'store')->name('asset.history.store');
+        Route::get('/{history}/edit', 'edit')->name('asset.history.edit');
+        Route::put('/{history}', 'update')->name('asset.history.update');
+        Route::delete('/{history}', 'destroy')->name('asset.history.destroy');
+        Route::get('/{history}', 'show')->name('asset.history.show');
+        Route::get('/asset/{asset}/history', 'assetHistory')->name('asset.history.asset');
+        Route::get('/asset-item/{assetItem}/history', 'assetItemHistory')->name('asset.history.asset-item');
+    });
 
     // Assignees API (minimal for inline creation)
     Route::post('assets-management/assignees', [\App\Http\Controllers\AssigneeController::class, 'store'])->name('assets.assignees.store');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
+use App\Models\AssetItem;
 use App\Models\SubLocation;
 use App\Models\AssetLocation;
 use App\Models\Region;
@@ -12,9 +13,11 @@ use App\Models\AssetCategory;
 use App\Models\AssetType;
 use App\Models\CustodyHistory;
 use App\Models\FundSource;
-use App\Models\AssetAttachment;
-use App\Models\AssetApproval;
+use App\Models\AssetDocument;
+use App\Models\AssetMaintenance;
+use App\Models\AssetDepreciation;
 use App\Http\Resources\AssetResource;
+use App\Http\Resources\AssetItemResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -26,90 +29,118 @@ class AssetController extends Controller
 {
     public function index(Request $request)
     {
-        $assets = Asset::query();
+        $assetItems = AssetItem::query();
 
         if($request->filled('search')){
-            $assets->whereLike('asset_tag', '%'.$request->search.'%')   
-                ->orWhereLike('name', '%'.$request->search.'%')
-                ->orWhereLike('serial_number', '%'.$request->search.'%')
-                ->orWhereHas('fundSource', function($query) use ($request){
-                    $query->where('name', 'like', '%'.$request->search.'%');
-                });
+            $assetItems->where(function($query) use ($request) {
+                $query->whereLike('asset_tag', '%'.$request->search.'%')   
+                    ->orWhereLike('asset_name', '%'.$request->search.'%')
+                    ->orWhereLike('serial_number', '%'.$request->search.'%')
+                    ->orWhereHas('asset.fundSource', function($q) use ($request){
+                        $q->where('name', 'like', '%'.$request->search.'%');
+                    });
+            });
         }
 
         if($request->filled('region_id')){
-            $assets->where('region_id', $request->region_id);
+            $assetItems->whereHas('asset', function($query) use ($request) {
+                $query->where('region_id', $request->region_id);
+            });
         }
 
         if($request->filled('location_id')){
-            $assets->where('asset_location_id', $request->location_id);
+            $assetItems->whereHas('asset', function($query) use ($request) {
+                $query->where('asset_location_id', $request->location_id);
+            });
         }
 
         if($request->filled('sub_location_ids') && is_array($request->sub_location_ids)){
-            $assets->whereIn('sub_location_id', $request->sub_location_ids);
+            $assetItems->whereHas('asset', function($query) use ($request) {
+                $query->whereIn('sub_location_id', $request->sub_location_ids);
+            });
         } elseif($request->filled('sub_location_id')){
-            $assets->where('sub_location_id', $request->sub_location_id);
+            $assetItems->whereHas('asset', function($query) use ($request) {
+                $query->where('sub_location_id', $request->sub_location_id);
+            });
         }
 
         if($request->filled('fund_source_id')){
-            $assets->where('fund_source_id', $request->fund_source_id);
+            $assetItems->whereHas('asset', function($query) use ($request) {
+                $query->where('fund_source_id', $request->fund_source_id);
+            });
         }
 
         // Status filter
         if ($request->filled('status')) {
-            $assets->where('status', $request->status);
+            $assetItems->where('status', $request->status);
         }
 
         // New filters
         if ($request->filled('category_id')) {
-            $assets->where('asset_category_id', $request->category_id);
+            $assetItems->where('asset_category_id', $request->category_id);
         }
         if ($request->filled('type_id')) {
-            $assets->where('type_id', $request->type_id);
+            $assetItems->where('asset_type_id', $request->type_id);
         }
         if ($request->filled('assignee_id')) {
-            $assets->where('assignee_id', $request->assignee_id);
+            $assetItems->where('assignee_id', $request->assignee_id);
         }
         if ($request->filled('acquisition_from') || $request->filled('acquisition_to')) {
             $from = $request->input('acquisition_from');
             $to = $request->input('acquisition_to');
             if ($from && $to) {
-                $assets->whereBetween('acquisition_date', [$from, $to]);
+                $assetItems->whereHas('asset', function($query) use ($from, $to) {
+                    $query->whereBetween('acquisition_date', [$from, $to]);
+                });
             } elseif ($from) {
-                $assets->whereDate('acquisition_date', '>=', $from);
+                $assetItems->whereHas('asset', function($query) use ($from) {
+                    $query->whereDate('acquisition_date', '>=', $from);
+                });
             } elseif ($to) {
-                $assets->whereDate('acquisition_date', '<=', $to);
+                $assetItems->whereHas('asset', function($query) use ($to) {
+                    $query->whereDate('acquisition_date', '<=', $to);
+                });
             }
         }
         if ($request->filled('created_from') || $request->filled('created_to')) {
             $from = $request->input('created_from');
             $to = $request->input('created_to');
             if ($from && $to) {
-                $assets->whereBetween('created_at', [$from, $to]);
+                $assetItems->whereBetween('created_at', [$from, $to]);
             } elseif ($from) {
-                $assets->whereDate('created_at', '>=', $from);
+                $assetItems->whereDate('created_at', '>=', $from);
             } elseif ($to) {
-                $assets->whereDate('created_at', '<=', $to);
+                $assetItems->whereDate('created_at', '<=', $to);
             }
         }
     
-        $assets->orderBy('created_at', 'desc');
+        $assetItems->orderBy('created_at', 'desc');
 
-        $assets = $assets->with('category:id,name','type:id,name','assetLocation:id,name', 'subLocation:id,name', 'assignee:id,name','fundSource','region:id,name')
+        $assetItems = $assetItems->with([
+            'asset:id,asset_number,acquisition_date,fund_source_id,region_id,asset_location_id,sub_location_id',
+            'asset.fundSource:id,name',
+            'asset.region:id,name',
+            'asset.assetLocation:id,name',
+            'asset.subLocation:id,name',
+            'category:id,name',
+            'type:id,name',
+            'assignee:id,name'
+        ])
             ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
 
-        $assets->setPath(url()->current()); // Force Laravel to use full URLs
+        $assetItems->setPath(url()->current()); // Force Laravel to use full URLs
 
-        $count = Asset::count();
+        $count = AssetItem::count();
 
         $locations = AssetLocation::with('subLocations')->get();
         $categories = AssetCategory::select('id','name')->get();
         $types = AssetType::select('id','name','asset_category_id')->get();
         $assignees = Assignee::select('id','name')->get();
+        
         return inertia('Assets/Index', [
             'locations' => $locations,
-            'assets' => AssetResource::collection($assets),
+            'assets' => AssetItemResource::collection($assetItems),
             'filters' => $request->only('page','per_page','search','region_id','location_id','sub_location_id','fund_source_id','category_id','type_id','assignee_id','acquisition_from','acquisition_to','created_from','created_to','status'),
             'assetsCount' => $count,
             'regions' => Region::get(),
@@ -136,10 +167,15 @@ class AssetController extends Controller
                     if (is_object($document['file']) && method_exists($document['file'], 'getClientOriginalName')) {
                         $fileName = time() . '_' . $document['file']->getClientOriginalName();
                         $path = $document['file']->storeAs("assets/{$asset->id}", $fileName, 'public');
-                        // Create attachment record
-                        $asset->attachments()->create([
-                            'type' => $document['type'],
-                            'file' => "storage/{$path}"
+                        
+                        // Create document record
+                        $asset->documents()->create([
+                            'document_type' => $document['type'],
+                            'file_path' => $path,
+                            'file_name' => $document['file']->getClientOriginalName(),
+                            'mime_type' => $document['file']->getMimeType(),
+                            'file_size' => $document['file']->getSize(),
+                            'description' => $document['description'] ?? null,
                         ]);
                     }
                 }
@@ -154,12 +190,13 @@ class AssetController extends Controller
     public function deleteDocument(Request $request, $id)
     {
         try {
-            $document = AssetAttachment::findOrFail($id);
+            $document = AssetDocument::findOrFail($id);
 
             // Delete the physical file first (if it exists)
-            if ($document->file) {
-                if (file_exists(public_path($document->file))) {
-                    @unlink($document->file);
+            if ($document->file_path) {
+                $fullPath = storage_path('app/public/' . $document->file_path);
+                if (file_exists($fullPath)) {
+                    @unlink($fullPath);
                 }
             }
 
@@ -174,25 +211,44 @@ class AssetController extends Controller
 
     public function show(Request $request, $id)
     {
-        $asset = Asset::with('category:id,name', 'assetLocation:id,name', 'subLocation:id,name', 'history', 'attachments', 'fundSource', 'submittedBy')
-            ->findOrFail($id);
+        $assetItem = AssetItem::with([
+            'asset:id,asset_number,acquisition_date,fund_source_id,region_id,asset_location_id,sub_location_id',
+            'asset.fundSource:id,name',
+            'asset.region:id,name',
+            'asset.assetLocation:id,name',
+            'asset.subLocation:id,name',
+            'category:id,name',
+            'type:id,name',
+            'assignee:id,name',
+            'maintenance',
+            'depreciation'
+        ])->findOrFail($id);
 
         return inertia('Assets/Show', [
-            'asset' => $asset,
+            'assetItem' => $assetItem,
         ]);
     }
 
-
     public function getAssets(Request $request)
     {
-        $query = Asset::query()
-            ->with('category:id,name', 'assetLocation:id,name', 'subLocation:id,name', 'history');
+        $query = AssetItem::query()
+            ->with([
+                'asset:id,asset_number,acquisition_date,fund_source_id,region_id,asset_location_id,sub_location_id',
+                'asset.fundSource:id,name',
+                'asset.region:id,name',
+                'asset.assetLocation:id,name',
+                'asset.subLocation:id,name',
+                'category:id,name',
+                'type:id,name'
+            ]);
 
         // Apply location filter if provided
         if ($request->has('locations')) {
             $locations = $request->locations;
             if (!empty($locations)) {
-                $query->whereIn('asset_location_id', $locations);
+                $query->whereHas('asset', function($q) use ($locations) {
+                    $q->whereIn('asset_location_id', $locations);
+                });
             }
         }
 
@@ -200,17 +256,80 @@ class AssetController extends Controller
         if ($request->has('sub_locations')) {
             $subLocations = $request->sub_locations;
             if (!empty($subLocations)) {
-                $query->whereIn('sub_location_id', $subLocations);
+                $query->whereHas('asset', function($q) use ($subLocations) {
+                    $q->whereIn('sub_location_id', $subLocations);
+                });
             }
         }
 
-        $assets = $query->latest()->get();
+        // Apply region filter if provided
+        if ($request->has('regions')) {
+            $regions = $request->regions;
+            if (!empty($regions)) {
+                $query->whereHas('asset', function($q) use ($regions) {
+                    $q->whereIn('region_id', $regions);
+                });
+            }
+        }
+
+        // Apply fund source filter if provided
+        if ($request->has('fund_sources')) {
+            $fundSources = $request->fund_sources;
+            if (!empty($fundSources)) {
+                $query->whereHas('asset', function($q) use ($fundSources) {
+                    $q->whereIn('fund_source_id', $fundSources);
+                });
+            }
+        }
+
+        // Apply category filter if provided
+        if ($request->has('categories')) {
+            $categories = $request->categories;
+            if (!empty($categories)) {
+                $query->whereIn('asset_category_id', $categories);
+            }
+        }
+
+        // Apply type filter if provided
+        if ($request->has('types')) {
+            $types = $request->types;
+            if (!empty($types)) {
+                $query->whereIn('asset_type_id', $types);
+            }
+        }
+
+        // Apply status filter if provided
+        if ($request->has('statuses')) {
+            $statuses = $request->statuses;
+            if (!empty($statuses)) {
+                $query->whereIn('status', $statuses);
+            }
+        }
+
+        // Apply assignee filter if provided
+        if ($request->has('assignees')) {
+            $assignees = $request->assignees;
+            if (!empty($assignees)) {
+                $query->whereIn('assignee_id', $assignees);
+            }
+        }
+
+        // Apply search filter if provided
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('asset_name', 'like', "%{$search}%")
+                  ->orWhere('asset_tag', 'like', "%{$search}%")
+                  ->orWhere('serial_number', 'like', "%{$search}%")
+                  ->orWhereHas('asset.fundSource', function($subQ) use ($search) {
+                      $subQ->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $assets = $query->get();
+
         return response()->json($assets);
-        $locations = AssetLocation::with('subLocations')->get();
-        return Inertia::render('Assets/Index', [
-            'assets' => $assets,
-            "locations" => $locations
-        ]);
     }
 
     public function storeCategory(Request $request){
@@ -332,179 +451,133 @@ class AssetController extends Controller
     {
         try {
             return DB::transaction(function() use ($request){
-                // Validate the request
-                $validated = $request->validate([
-                    'asset_tag' => 'required|string|max:255',
-                    'asset_category_id' => 'required',
-                'region_id' => 'required',
-                'fund_source_id' => 'required',
-                'asset_location_id' => 'required',
-                'sub_location_id' => 'required',
-                'serial_number' => 'required|string|max:255|unique:assets,serial_number,' . $request->id,
-                'item_description' => 'nullable|string',
-                'person_assigned' => 'nullable|string',
-                'acquisition_date' => 'required|date',
-                'status' => 'required|string|in:active,in_use,maintenance,retired,disposed',
-                'original_value' => 'required|numeric|min:0',
-                'has_warranty' => 'required|in:0,1,true,false',
-                'has_documents' => 'required|in:0,1,true,false',
-                'asset_warranty_start' => 'nullable|date|required_if:has_warranty,1',
-                'asset_warranty_end' => 'nullable|date|required_if:has_warranty,1|after_or_equal:asset_warranty_start',
-                // New optional fields
-                'tag_no' => 'nullable|string|unique:assets,tag_no',
-                'name' => 'nullable|string|max:255',
-                'type_id' => 'nullable|exists:asset_types,id',
-                'assigned_to' => 'nullable|exists:users,id',
-                'assignee_id' => 'nullable|exists:assignees,id',
-                'assignee_name' => 'nullable|string|max:255',
-                'assignee_email' => 'nullable|email',
-                'assignee_phone' => 'nullable|string|max:50',
-                'assignee_department' => 'nullable|string|max:100',
-                'serial_no' => 'nullable|string|max:255',
-                'purchase_date' => 'nullable|date',
-                'cost' => 'nullable|numeric',
-                'supplier' => 'nullable|string|max:255',
-                'warranty_months' => 'nullable|integer|min:0',
-                'maintenance_interval_months' => 'nullable|integer|min:0',
-                'last_maintenance_at' => 'nullable|date',
-                'documents' => 'array|required_if:has_documents,1',
-                'documents.*.type' => 'required_if:has_documents,1|string',
-                'documents.*.file' => 'nullable'
-            ]);
-            
-            // Convert string boolean values to actual booleans
-            $hasWarranty = filter_var($request->has_warranty, FILTER_VALIDATE_BOOLEAN);
-            $hasDocuments = filter_var($request->has_documents, FILTER_VALIDATE_BOOLEAN);
-            
-            // Keep a snapshot if updating to capture history changes later
-            $existingAsset = null;
-            if ($request->id) {
-                $existingAsset = Asset::find($request->id);
-            }
-
-            // Create asset data array with the correct IDs
-            // Use provided assignee or create a new one if details provided
-            $assigneeId = null;
-            // If a valid assignee_id provided and exists, use it
-            if ($request->filled('assignee_id')) {
-                $assigneeId = optional(\App\Models\Assignee::find($request->assignee_id))->id;
-            }
-            if (!$assigneeId && ($request->assignee_name)) {
-                $assignee = Assignee::create([
-                    'name' => $request->assignee_name,
-                    'email' => $request->assignee_email,
-                    'phone' => $request->assignee_phone,
-                    'department' => $request->assignee_department,
+                // Validate the main asset data
+                $validatedAsset = $request->validate([
+                    'asset_number' => 'nullable|string|unique:assets,asset_number',
+                    'acquisition_date' => 'required|date',
+                    'fund_source_id' => 'required|exists:fund_sources,id',
+                    'region_id' => 'required|exists:regions,id',
+                    'asset_location_id' => 'required|exists:asset_locations,id',
+                    'sub_location_id' => 'required|exists:sub_locations,id',
                 ]);
-                $assigneeId = $assignee->id;
-            }
 
-            $assetData = [
-                'tag_no' => $request->tag_no,
-                'name' => $request->name,
-                'asset_tag' => $request->asset_tag,
-                'asset_category_id' => $request->asset_category_id,
-                'type_id' => $request->type_id,
-                'serial_number' => $request->serial_number,
-                'serial_no' => $request->serial_no,
-                'item_description' => $request->item_description,
-                'person_assigned' => $request->person_assigned
-                    ?: optional(User::find($request->assigned_to))->name
-                    ?: optional(Assignee::find($assigneeId))->name,
-                'asset_location_id' => $request->asset_location_id,
-                'sub_location_id' => $request->sub_location_id,
-                'assigned_to' => $request->assigned_to,
-                'assignee_id' => $assigneeId,
-                'fund_source_id' => $request->fund_source_id,
-                'region_id' => $request->region_id,
-                'acquisition_date' => $request->acquisition_date,
-                'purchase_date' => $request->purchase_date,
-                'cost' => $request->cost,
-                'supplier' => $request->supplier,
-                'status' => $request->status,
-                'original_value' => $request->original_value,
-                'has_warranty' => $hasWarranty,
-                'has_documents' => $hasDocuments,
-                'asset_warranty_start' => $hasWarranty ? $request->asset_warranty_start : null,
-                'asset_warranty_end' => $hasWarranty ? $request->asset_warranty_end : null,
-                'warranty_months' => $request->warranty_months,
-                'maintenance_interval_months' => $request->maintenance_interval_months,
-                'last_maintenance_at' => $request->last_maintenance_at,
-            ];
-            
-            // Create or update the asset
-            $asset = Asset::updateOrCreate(
-                ['id' => $request->id],
-                $assetData
-            );
+                // Validate asset items array
+                $request->validate([
+                    'asset_items' => 'required|string', // This comes as JSON string from FormData
+                ]);
 
-            // Capture asset history (create or update)
-            if (!$existingAsset) {
-                // New asset: record initial status and custody if any
-                if (!empty($asset->status)) {
-                    $asset->createStatusChangeHistory(null, $asset->status, 'Asset created');
+                // Parse the JSON asset_items string
+                $assetItemsData = json_decode($request->asset_items, true);
+                
+                if (!is_array($assetItemsData) || empty($assetItemsData)) {
+                    throw new \Exception('Invalid asset items data');
                 }
-                if (!empty($asset->assignee_id)) {
-                    $newAssigneeName = optional(\App\Models\Assignee::find($asset->assignee_id))->name;
-                    $asset->createCustodyChangeHistory(null, $newAssigneeName, 'Initial custody');
-                } elseif (!empty($asset->person_assigned)) {
-                    $asset->createCustodyChangeHistory(null, $asset->person_assigned, 'Initial custody');
-                }
-            } else {
-                // Updated asset: compare and record changes
-                if ($existingAsset->status !== $asset->status) {
-                    $asset->createStatusChangeHistory($existingAsset->status, $asset->status, 'Status updated');
-                }
-                if ($existingAsset->assignee_id !== $asset->assignee_id) {
-                    $oldAssigneeName = optional(\App\Models\Assignee::find($existingAsset->assignee_id))->name;
-                    $newAssigneeName = optional(\App\Models\Assignee::find($asset->assignee_id))->name;
-                    $asset->createCustodyChangeHistory($oldAssigneeName, $newAssigneeName, 'Custody updated');
-                } elseif ($existingAsset->person_assigned !== $asset->person_assigned) {
-                    $asset->createCustodyChangeHistory($existingAsset->person_assigned, $asset->person_assigned, 'Custody updated');
-                }
-            }
 
-            // If this is a new asset (not an update), create automatic approvals
-            if (!$request->id) {
-                $asset->createAutomaticApprovals();
-            }
-            
-            // Handle document attachments if has_documents is true
-            if ($hasDocuments && !empty($request->documents)) {
-                foreach ($request->documents as $document) {
-                    if (!empty($document['type']) && !empty($document['file'])) {
-                        // Handle file upload
-                        if (is_object($document['file']) && method_exists($document['file'], 'getClientOriginalName')) {
-                            $fileName = time() . '_' . $document['file']->getClientOriginalName();
-                            
-                            // Create documents directory if it doesn't exist
-                            $documentPath = public_path('documents');
-                            if (!file_exists($documentPath)) {
-                                mkdir($documentPath, 0755, true);
-                            }
-                            
-                            // Move the file to the public directory
-                            $document['file']->move($documentPath, $fileName);
-                            $filePath = 'documents/' . $fileName;
-                            
-                            // Create attachment record
-                            $asset->attachments()->create([
-                                'type' => $document['type'],
-                                'file' => $filePath
-                            ]);
-                        }
+                // Validate each asset item
+                foreach ($assetItemsData as $index => $itemData) {
+                    if (empty($itemData['asset_tag']) || empty($itemData['asset_name']) || empty($itemData['serial_number']) || 
+                        empty($itemData['asset_category_id']) || empty($itemData['asset_type_id']) || 
+                        !isset($itemData['original_value']) || $itemData['original_value'] < 0) {
+                        throw new \Exception("Invalid data for asset item #" . ($index + 1));
+                    }
+                    
+                    // Validate foreign key relationships
+                    if (!AssetCategory::find($itemData['asset_category_id'])) {
+                        throw new \Exception("Invalid category for asset item #" . ($index + 1));
+                    }
+                    
+                    if (!AssetType::find($itemData['asset_type_id'])) {
+                        throw new \Exception("Invalid type for asset item #" . ($index + 1));
+                    }
+                    
+                    if (!empty($itemData['assignee_id']) && !Assignee::find($itemData['assignee_id'])) {
+                        throw new \Exception("Invalid assignee for asset item #" . ($index + 1));
                     }
                 }
-            }
-    
-            return response()->json([
-                'message' => $request->id ? 'Asset updated successfully' : 'Asset created successfully',
-                'asset' => $asset
-            ], 200);
-        });
-        } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
+
+                // Generate asset number if not provided
+                if (empty($validatedAsset['asset_number'])) {
+                    $validatedAsset['asset_number'] = $this->generateAssetNumber();
+                }
+
+                // Set default status for the asset
+                $validatedAsset['status'] = 'pending_approval';
+                $validatedAsset['submitted_by'] = auth()->id();
+                $validatedAsset['submitted_at'] = now();
+
+                // Create the main asset record
+                $asset = Asset::create($validatedAsset);
+
+                // Create asset items
+                $assetItems = [];
+                foreach ($assetItemsData as $itemData) {
+                    $assetItem = AssetItem::create([
+                        'asset_id' => $asset->id,
+                        'asset_tag' => $itemData['asset_tag'],
+                        'asset_name' => $itemData['asset_name'],
+                        'serial_number' => $itemData['serial_number'],
+                        'asset_category_id' => $itemData['asset_category_id'],
+                        'asset_type_id' => $itemData['asset_type_id'],
+                        'assignee_id' => $itemData['assignee_id'],
+                        'status' => 'pending_approval', // Default status for new items
+                        'original_value' => $itemData['original_value'],
+                    ]);
+
+                    $assetItems[] = $assetItem;
+                }
+
+                // Create asset history record for creation
+                $asset->createHistory([
+                    'action' => 'asset_created',
+                    'action_type' => 'creation',
+                    'notes' => 'Asset created with ' . count($assetItems) . ' items',
+                    'performed_by' => auth()->id(),
+                    'performed_at' => now(),
+                ]);
+
+                // Create history for each asset item
+                foreach ($assetItems as $item) {
+                    $item->createHistory([
+                        'action' => 'item_created',
+                        'action_type' => 'creation',
+                        'notes' => 'Asset item created',
+                        'performed_by' => auth()->id(),
+                        'performed_at' => now(),
+                    ]);
+                }
+
+                return redirect()->route('assets.index')
+                    ->with('success', 'Asset created successfully with ' . count($assetItems) . ' items. Pending approval.');
+            });
+        } catch (\Exception $e) {
+            return back()->withInput()
+                ->withErrors(['error' => 'Failed to create asset: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Generate a unique asset number
+     */
+    private function generateAssetNumber()
+    {
+        $prefix = 'AST';
+        $year = date('Y');
+        $month = date('m');
+        
+        // Get the last asset number for this month
+        $lastAsset = Asset::where('asset_number', 'like', $prefix . $year . $month . '%')
+            ->orderBy('asset_number', 'desc')
+            ->first();
+        
+        if ($lastAsset) {
+            // Extract the sequence number and increment
+            $lastSequence = (int) substr($lastAsset->asset_number, -4);
+            $newSequence = $lastSequence + 1;
+        } else {
+            $newSequence = 1;
+        }
+        
+        return $prefix . $year . $month . str_pad($newSequence, 4, '0', STR_PAD_LEFT);
     }
 
     public function edit(Asset $asset)
@@ -1488,15 +1561,18 @@ class AssetController extends Controller
      */
     public function approvalsIndex(Request $request)
     {
-        $query = AssetApproval::with(['approvable', 'approver', 'reviewer', 'creator'])
-            ->where('approvable_type', Asset::class);
+        $query = Asset::with(['assetItems.category', 'assetItems.type', 'assetItems.assignee', 'fundSource', 'region', 'assetLocation', 'subLocation'])
+            ->where('status', 'pending_approval');
 
         // Apply filters
         if ($request->filled('search')) {
-            $query->whereHas('approvable', function($q) use ($request) {
-                $q->where('asset_tag', 'like', '%' . $request->search . '%')
-                  ->orWhere('serial_number', 'like', '%' . $request->search . '%')
-                  ->orWhere('item_description', 'like', '%' . $request->search . '%');
+            $query->where(function($q) use ($request) {
+                $q->where('asset_number', 'like', '%' . $request->search . '%')
+                  ->orWhereHas('assetItems', function($itemQuery) use ($request) {
+                      $itemQuery->where('asset_tag', 'like', '%' . $request->search . '%')
+                               ->orWhere('asset_name', 'like', '%' . $request->search . '%')
+                               ->orWhere('serial_number', 'like', '%' . $request->search . '%');
+                  });
             });
         }
 
@@ -1504,20 +1580,11 @@ class AssetController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Only items that need approval by default
-        if ($request->boolean('for_approval', true)) {
-            $query->whereIn('status', ['pending', 'reviewed']);
-        }
-
-
-
         $approvals = $query->orderBy('created_at', 'desc')->paginate(10);
 
         // Get counts
-        $pendingCount = AssetApproval::where('approvable_type', Asset::class)
-            ->where('status', 'pending')->count();
-        $approvedCount = AssetApproval::where('approvable_type', Asset::class)
-            ->where('status', 'approved')->count();
+        $pendingCount = Asset::where('status', 'pending_approval')->count();
+        $approvedCount = Asset::where('status', 'approved')->count();
 
         return Inertia::render('Assets/Approvals', [
             'approvals' => $approvals,
@@ -1525,5 +1592,137 @@ class AssetController extends Controller
             'pendingCount' => $pendingCount,
             'approvedCount' => $approvedCount,
         ]);
+    }
+
+    /**
+     * Approve an asset (simple approval for new structure)
+     */
+    public function approve(Asset $asset)
+    {
+        try {
+            if ($asset->status !== 'pending_approval') {
+                return back()->withErrors(['error' => 'Asset is not pending approval']);
+            }
+
+            $asset->update([
+                'status' => 'approved',
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+            ]);
+
+            // Update all asset items to approved status
+            $asset->assetItems()->update([
+                'status' => 'in_use'
+            ]);
+
+            // Create history records
+            $asset->createHistory([
+                'action' => 'asset_approved',
+                'action_type' => 'approval',
+                'notes' => 'Asset approved by ' . auth()->user()->name,
+                'performed_by' => auth()->id(),
+                'performed_at' => now(),
+            ]);
+
+            foreach ($asset->assetItems as $item) {
+                $item->createHistory([
+                    'action' => 'item_approved',
+                    'action_type' => 'approval',
+                    'notes' => 'Asset item approved',
+                    'performed_by' => auth()->id(),
+                    'performed_at' => now(),
+                ]);
+            }
+
+            return back()->with('success', 'Asset approved successfully');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Failed to approve asset: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Reject an asset (simple rejection for new structure)
+     */
+    public function reject(Request $request, Asset $asset)
+    {
+        try {
+            if ($asset->status !== 'pending_approval') {
+                return back()->withErrors(['error' => 'Asset is not pending approval']);
+            }
+
+            $request->validate([
+                'rejection_reason' => 'required|string|max:500'
+            ]);
+
+            $asset->update([
+                'status' => 'rejected',
+                'rejected_by' => auth()->id(),
+                'rejected_at' => now(),
+                'rejection_reason' => $request->rejection_reason,
+            ]);
+
+            // Update all asset items to rejected status
+            $asset->assetItems()->update([
+                'status' => 'pending_approval'
+            ]);
+
+            // Create history records
+            $asset->createHistory([
+                'action' => 'asset_rejected',
+                'action_type' => 'rejection',
+                'notes' => 'Asset rejected: ' . $request->rejection_reason,
+                'performed_by' => auth()->id(),
+                'performed_at' => now(),
+            ]);
+
+            foreach ($asset->assetItems as $item) {
+                $item->createHistory([
+                    'action' => 'item_rejected',
+                    'action_type' => 'rejection',
+                    'notes' => 'Asset item rejected',
+                    'performed_by' => auth()->id(),
+                    'performed_at' => now(),
+                ]);
+            }
+
+            return back()->with('success', 'Asset rejected successfully');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Failed to reject asset: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Bulk approve multiple assets
+     */
+    public function bulkApprove(Request $request)
+    {
+        try {
+            $request->validate([
+                'asset_ids' => 'required|array',
+                'asset_ids.*' => 'exists:assets,id'
+            ]);
+
+            $approvedCount = 0;
+            foreach ($request->asset_ids as $assetId) {
+                $asset = Asset::find($assetId);
+                if ($asset && $asset->status === 'pending_approval') {
+                    $asset->update([
+                        'status' => 'approved',
+                        'approved_by' => auth()->id(),
+                        'approved_at' => now(),
+                    ]);
+
+                    $asset->assetItems()->update([
+                        'status' => 'in_use'
+                    ]);
+
+                    $approvedCount++;
+                }
+            }
+
+            return back()->with('success', "{$approvedCount} assets approved successfully");
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Failed to bulk approve assets: ' . $e->getMessage()]);
+        }
     }
 }

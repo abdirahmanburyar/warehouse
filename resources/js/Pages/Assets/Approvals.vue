@@ -1,7 +1,7 @@
 <template>
     <AuthenticatedLayout
         title="Asset Approvals"
-        description="Manage asset approval requests"
+        description="Review and approve pending asset requests"
         img="/assets/images/approval-header.png"
     >
         <div class="space-y-6">
@@ -47,7 +47,7 @@
                             <input
                                 v-model="filters.search"
                                 type="text"
-                                placeholder="Search by asset tag, serial number..."
+                                placeholder="Search by asset number, tag, serial number..."
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                         </div>
@@ -67,7 +67,6 @@
                             <input id="for_approval" type="checkbox" v-model="filters.for_approval" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
                             <label for="for_approval" class="ml-2 block text-sm text-gray-700">Only items that need approval</label>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -94,304 +93,312 @@
                                 <button @click="bulkApprove" :disabled="selected.length===0" class="ml-2 px-3 py-1.5 text-sm rounded bg-green-600 text-white disabled:opacity-50">Bulk Approve</button>
                             </div>
                         </div>
-                        <div v-for="approval in props.approvals.data" :key="approval.id" 
+                        
+                        <div v-for="asset in props.approvals.data" :key="asset.id" 
                              class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                            <div class="flex items-start justify-between">
+                            
+                            <!-- Asset Header -->
+                            <div class="flex items-start justify-between mb-4">
                                 <div class="flex-1">
-                                    <div class="flex items-center space-x-4 mb-4">
+                                    <div class="flex items-center space-x-4">
                                         <div class="flex-shrink-0">
-                                            <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-indigo-600">
-                                                    <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27z"/>
+                                            <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                                 </svg>
                                             </div>
                                         </div>
-                                        <div class="flex-1">
-                                            <div class="flex items-center mb-1">
-                                                <input type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded mr-2" :value="approval" v-model="selected" />
-                                                <h3 class="text-lg font-semibold text-gray-900">
-                                                    {{ approval.approvable?.asset_tag || 'Unknown Asset' }}
-                                                </h3>
+                                        <div>
+                                            <h3 class="text-lg font-medium text-gray-900">Asset #{{ asset.asset_number }}</h3>
+                                            <div class="text-sm text-gray-500 space-x-4">
+                                                <span>Acquired: {{ formatDate(asset.acquisition_date) }}</span>
+                                                <span>Fund Source: {{ asset.fundSource?.name || 'N/A' }}</span>
+                                                <span>Region: {{ asset.region?.name || 'N/A' }}</span>
                                             </div>
-                                            <p class="text-sm text-gray-500">
-                                                {{ approval.approvable?.serial_number || 'N/A' }} • {{ approval.approvable?.item_description || 'No description' }}
-                                            </p>
-                                        </div>
-                                        <div class="text-right">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                                                  :class="{
-                                                      'bg-yellow-100 text-yellow-800': approval.status === 'pending',
-                                                      'bg-blue-100 text-blue-800': approval.status === 'reviewed',
-                                                      'bg-green-100 text-green-800': approval.status === 'approved',
-                                                      'bg-red-100 text-red-800': approval.status === 'rejected'
-                                                  }">
-                                                {{ approval.status }}
-                                            </span>
+                                            <div class="text-sm text-gray-500 space-x-4">
+                                                <span>Location: {{ asset.assetLocation?.name || 'N/A' }}</span>
+                                                <span v-if="asset.subLocation">Sub: {{ asset.subLocation.name }}</span>
+                                            </div>
                                         </div>
                                     </div>
-
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                        <div>
-                                            <dt class="text-sm font-medium text-gray-500">Role</dt>
-                                            <dd class="text-sm text-gray-900">{{ approval.role?.name || 'N/A' }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt class="text-sm font-medium text-gray-500">Action</dt>
-                                            <dd class="text-sm text-gray-900">{{ approval.action }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt class="text-sm font-medium text-gray-500">Sequence</dt>
-                                            <dd class="text-sm text-gray-900">{{ approval.sequence }}</dd>
-                                        </div>
-                                    </div>
-
-                                    <div v-if="approval.notes" class="mb-4">
-                                        <dt class="text-sm font-medium text-gray-500">Notes</dt>
-                                        <dd class="text-sm text-gray-900">{{ approval.notes }}</dd>
-                                    </div>
-
-                                    <div class="flex items-center justify-between text-sm text-gray-500">
-                                        <div>
-                                            Created by {{ approval.creator?.name || 'Unknown' }} on {{ formatDate(approval.created_at) }}
-                                        </div>
-                                        <div v-if="approval.reviewed_at">
-                                            Reviewed on {{ formatDate(approval.reviewed_at) }}
-                                            <span v-if="approval.reviewer">by {{ approval.reviewer?.name || 'Unknown' }}</span>
-                                        </div>
-                                        <div v-if="approval.approved_at">
-                                            {{ approval.status === 'approved' ? 'Approved' : 'Rejected' }} on {{ formatDate(approval.approved_at) }}
-                                            <span v-if="approval.approver">by {{ approval.approver?.name || 'Unknown' }}</span>
-                                        </div>
-                                    </div>
-                                    
-
                                 </div>
+                                
+                                <!-- Asset Status Badge -->
+                                <div class="flex-shrink-0">
+                                    <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full"
+                                          :class="getStatusBadgeClass(asset.status)">
+                                        {{ formatStatus(asset.status) }}
+                                    </span>
+                                </div>
+                            </div>
 
-                                <!-- Action Buttons: Approve / Reject only -->
-                                <div v-if="canApprove(approval) || canReject(approval)" class="ml-6 flex flex-col space-y-2">
-                                    <button
-                                        v-if="canApprove(approval)"
-                                        @click="showApprovalModal(approval, 'approve')"
-                                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-2">
-                                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            <!-- Asset Items -->
+                            <div class="mb-4">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Asset Items ({{ asset.assetItems?.length || 0 }})</h4>
+                                <div class="space-y-2">
+                                    <div v-for="item in asset.assetItems" :key="item.id" 
+                                         class="bg-gray-50 rounded-lg p-3 border-l-4 border-indigo-200">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <div class="flex items-center space-x-4">
+                                                    <span class="text-sm font-medium text-gray-900">{{ item.asset_tag }}</span>
+                                                    <span class="text-sm text-gray-600">{{ item.asset_name }}</span>
+                                                    <span class="text-sm text-gray-500">SN: {{ item.serial_number }}</span>
+                                                </div>
+                                                <div class="text-xs text-gray-500 mt-1">
+                                                    <span>Category: {{ item.category?.name || 'N/A' }}</span>
+                                                    <span class="mx-2">•</span>
+                                                    <span>Type: {{ item.type?.name || 'N/A' }}</span>
+                                                    <span class="mx-2">•</span>
+                                                    <span>Value: ${{ item.original_value || '0.00' }}</span>
+                                                    <span v-if="item.assignee" class="mx-2">•</span>
+                                                    <span v-if="item.assignee">Assignee: {{ item.assignee.name }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="flex-shrink-0">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                                                      :class="getItemStatusBadgeClass(item.status)">
+                                                    {{ formatItemStatus(item.status) }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Approval Actions -->
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                                <div class="flex items-center space-x-4">
+                                    <input type="checkbox" :value="asset.id" v-model="selected" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                                    <span class="text-sm text-gray-500">Select for bulk action</span>
+                                </div>
+                                
+                                <div class="flex items-center space-x-2">
+                                    <button v-if="asset.status === 'pending_approval'"
+                                            @click="approveAsset(asset.id)"
+                                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                         </svg>
                                         Approve
                                     </button>
-                                    <button
-                                        v-if="canReject(approval)"
-                                        @click="showApprovalModal(approval, 'reject')"
-                                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-2">
-                                            <path d="M6 18L18 6M6 6l12 12"/>
+                                    
+                                    <button v-if="asset.status === 'pending_approval'"
+                                            @click="showRejectModal(asset)"
+                                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                         </svg>
                                         Reject
                                     </button>
+                                    
+                                    <Link :href="route('assets.show', asset.id)"
+                                          class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        View Details
+                                    </Link>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Pagination -->
-                <div v-if="props.approvals.data && props.approvals.data.length > 0" class="bg-gray-50 px-6 py-3 border-t border-gray-200">
-                    <div class="flex items-center justify-end">
-                        <TailwindPagination
-                            :data="props.approvals"
-                            @pagination-change-page="getResults"
-                            :limit="2"
-                        />
-                    </div>
+            <!-- Pagination -->
+            <div v-if="props.approvals.links && props.approvals.links.length > 3" class="bg-white shadow-xl rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-t border-gray-200">
+                    <Pagination :links="props.approvals.links" />
                 </div>
             </div>
         </div>
 
-        <!-- Approval Modal -->
-        <div v-if="showModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                <div class="mt-3">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        {{ modalAction === 'approve' ? 'Approve' : 'Reject' }} Asset
-                    </h3>
-                    <div class="mb-4">
-                        <p class="text-sm text-gray-600 mb-2">
-                            {{ selectedApproval?.approvable?.asset_tag || 'Unknown Asset' }} - {{ selectedApproval?.approvable?.serial_number || 'N/A' }}
-                        </p>
-                        <label for="approval-notes" class="block text-sm font-medium text-gray-700 mb-2">
-                            Notes (Optional)
-                        </label>
-                        <textarea
-                            id="approval-notes"
-                            v-model="approvalNotes"
-                            rows="3"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Add any notes about your decision..."
-                        ></textarea>
-                    </div>
-                    <div class="flex justify-end space-x-3">
-                        <button
-                            @click="closeModal"
-                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            v-if="modalAction === 'approve'"
-                            @click="processApproval"
-                            class="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                            :disabled="processing"
-                        >
-                            Approve
-                        </button>
-                        <button
-                            v-else
-                            @click="processApproval"
-                            class="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                            :disabled="processing"
-                        >
-                            Reject
-                        </button>
-                    </div>
+        <!-- Reject Modal -->
+        <Modal :show="showRejectModalFlag" @close="closeRejectModal">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Reject Asset Request</h2>
+                <div class="mb-4">
+                    <label for="rejection_reason" class="block text-sm font-medium text-gray-700 mb-2">Rejection Reason</label>
+                    <textarea
+                        id="rejection_reason"
+                        v-model="rejectionReason"
+                        rows="4"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                        placeholder="Please provide a reason for rejection..."
+                        required
+                    ></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <SecondaryButton @click="closeRejectModal">Cancel</SecondaryButton>
+                    <PrimaryButton @click="rejectAsset" :disabled="!rejectionReason.trim()" class="bg-red-600 hover:bg-red-700">
+                        Reject Asset
+                    </PrimaryButton>
                 </div>
             </div>
-        </div>
+        </Modal>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { Head, Link, router, usePage } from '@inertiajs/vue3'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { TailwindPagination } from 'laravel-vue-pagination'
-import Swal from 'sweetalert2'
-import moment from 'moment'
-import { ref } from 'vue'
-import axios from 'axios'
+import { ref, computed, onMounted } from 'vue';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Link, router } from '@inertiajs/vue3';
+import Modal from '@/Components/Modal.vue';
+import PrimaryButton from '@/Components/PrimaryButton.vue';
+import SecondaryButton from '@/Components/SecondaryButton.vue';
+import Pagination from '@/Components/Pagination.vue';
+import { useToast } from 'vue-toastification';
 
-const page = usePage()
+const toast = useToast();
 
 const props = defineProps({
     approvals: Object,
-    pendingCount: Number,
-    approvedCount: Number
-})
+    loading: Boolean,
+});
 
-const loading = ref(false)
-const filters = ref({ search: '', status: '', for_approval: true })
-const selectedApproval = ref(null)
-const showModal = ref(false)
-const modalAction = ref('')
-const approvalNotes = ref('')
-const processing = ref(false)
-const selected = ref([])
+const filters = ref({
+    search: '',
+    status: '',
+    for_approval: true,
+});
 
-function canApprove(approval) {
-    // Disallow approving when asset status is in_use, maintenance, or retired
-    const status = approval.approvable?.status
-    const disallowed = ['in_use', 'maintenance', 'retired']
-    if (status && disallowed.includes(status)) return false
+const selected = ref([]);
+const showRejectModalFlag = ref(false);
+const rejectionReason = ref('');
+const assetToReject = ref(null);
 
-    // Direct approval: approval step pending or reviewed review-step
-    return (
-        (approval.action === 'approve' && approval.status === 'pending') ||
-        (approval.action === 'review' && approval.status === 'reviewed')
-    ) && page.props.auth.can.asset_approve
-}
+const pendingCount = computed(() => {
+    return props.approvals?.data?.filter(asset => asset.status === 'pending_approval').length || 0;
+});
 
-function canReject(approval) {
-    return (
-        (approval.action === 'approve' && approval.status === 'pending') ||
-        (approval.action === 'review' && approval.status === 'reviewed')
-    ) && page.props.auth.can.asset_reject
-}
+const approvedCount = computed(() => {
+    return props.approvals?.data?.filter(asset => asset.status === 'approved').length || 0;
+});
 
-function showApprovalModal(approval, action) {
-    selectedApproval.value = approval
-    modalAction.value = action
-    approvalNotes.value = ''
-    showModal.value = true
-}
-
-function closeModal() {
-    showModal.value = false
-    selectedApproval.value = null
-    modalAction.value = ''
-    approvalNotes.value = ''
-}
-
-async function processApproval() {
-    if (!selectedApproval.value) return
-
-    processing.value = true
-    try {
-        const response = await axios.post(route('assets.approve', selectedApproval.value.approvable.id), {
-            action: modalAction.value,
-            notes: approvalNotes.value
-        })
-
-        Swal.fire({
-            icon: 'success',
-            title: 'Success!',
-            text: response.data.message,
-            showConfirmButton: false,
-            timer: 1500
-        }).then(() => {
-            closeModal()
-            router.reload()
-        })
-    } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.response?.data || 'Failed to process approval',
-            showConfirmButton: false,
-            timer: 1500
-        })
-    } finally {
-        processing.value = false
-    }
-}
-
-function formatDate(date) {
-    if (!date) return '-'
-    return moment(date).format('DD/MM/YYYY HH:mm')
-}
-
-function getResults(pageNum) {
-    router.get(route('assets.approvals.index'), {
-        ...filters.value,
-        page: pageNum
-    }, {
-        preserveState: true,
-        preserveScroll: true,
-    })
-}
-
-function toggleSelectionAll(event) {
+const toggleSelectionAll = (event) => {
     if (event.target.checked) {
-        selected.value = props.approvals.data.slice()
+        selected.value = props.approvals.data.map(asset => asset.id);
     } else {
-        selected.value = []
+        selected.value = [];
     }
-}
+};
 
-async function bulkApprove() {
-    if (selected.value.length === 0) return
-    const approvals = selected.value
-    selected.value = []
-
-    for (const approval of approvals) {
-        try {
-            await axios.post(route('assets.approve', approval.approvable.id), {
-                action: 'approve',
-                notes: 'Bulk approval'
-            })
-        } catch (e) {
-            // continue; show a toast for the first error only
-        }
+const bulkApprove = async () => {
+    if (selected.value.length === 0) {
+        toast.warning('Please select assets to approve');
+        return;
     }
 
-    router.reload()
-}
+    try {
+        await router.post(route('assets.bulk-approve'), {
+            asset_ids: selected.value
+        });
+        
+        toast.success(`${selected.value.length} assets approved successfully`);
+        selected.value = [];
+    } catch (error) {
+        toast.error('Failed to approve assets');
+    }
+};
+
+const approveAsset = async (assetId) => {
+    try {
+        await router.post(route('assets.approve-simple', assetId));
+        toast.success('Asset approved successfully');
+    } catch (error) {
+        toast.error('Failed to approve asset');
+    }
+};
+
+const showRejectModal = (asset) => {
+    assetToReject.value = asset;
+    showRejectModalFlag.value = true;
+};
+
+const closeRejectModal = () => {
+    showRejectModalFlag.value = false;
+    rejectionReason.value = '';
+    assetToReject.value = null;
+};
+
+const rejectAsset = async () => {
+    if (!assetToReject.value || !rejectionReason.value.trim()) {
+        toast.error('Please provide a rejection reason');
+        return;
+    }
+
+    try {
+        await router.post(route('assets.reject-simple', assetToReject.value.id), {
+            rejection_reason: rejectionReason.value
+        });
+        
+        toast.success('Asset rejected successfully');
+        closeRejectModal();
+    } catch (error) {
+        toast.error('Failed to reject asset');
+    }
+};
+
+const getStatusBadgeClass = (status) => {
+    const classes = {
+        'pending_approval': 'bg-yellow-100 text-yellow-800',
+        'approved': 'bg-green-100 text-green-800',
+        'rejected': 'bg-red-100 text-red-800',
+        'in_use': 'bg-blue-100 text-blue-800',
+        'maintenance': 'bg-orange-100 text-orange-800',
+        'retired': 'bg-gray-100 text-gray-800',
+        'disposed': 'bg-red-100 text-red-800',
+    };
+    return classes[status] || 'bg-gray-100 text-gray-800';
+};
+
+const getItemStatusBadgeClass = (status) => {
+    const classes = {
+        'pending_approval': 'bg-yellow-100 text-yellow-800',
+        'in_use': 'bg-green-100 text-green-800',
+        'maintenance': 'bg-orange-100 text-orange-800',
+        'retired': 'bg-gray-100 text-gray-800',
+        'disposed': 'bg-red-100 text-red-800',
+    };
+    return classes[status] || 'bg-gray-100 text-gray-800';
+};
+
+const formatStatus = (status) => {
+    const statusMap = {
+        'pending_approval': 'Pending Approval',
+        'approved': 'Approved',
+        'rejected': 'Rejected',
+        'in_use': 'In Use',
+        'maintenance': 'Maintenance',
+        'retired': 'Retired',
+        'disposed': 'Disposed',
+    };
+    return statusMap[status] || status;
+};
+
+const formatItemStatus = (status) => {
+    const statusMap = {
+        'pending_approval': 'Pending',
+        'in_use': 'In Use',
+        'maintenance': 'Maintenance',
+        'retired': 'Retired',
+        'disposed': 'Disposed',
+    };
+    return statusMap[status] || status;
+};
+
+const formatDate = (date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
+};
+
+onMounted(() => {
+    // Initialize filters if needed
+});
 </script> 
