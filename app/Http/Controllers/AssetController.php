@@ -1498,12 +1498,12 @@ class AssetController extends Controller
     public function getAllAssetHistory(Request $request)
     {
         try {
-            $query = AssetHistory::with(['asset', 'performer', 'approval'])
+            $query = AssetHistory::with(['assetItem', 'performer', 'approval'])
                 ->orderBy('performed_at', 'desc');
 
             // Apply filters
             if ($request->filled('asset_id')) {
-                $query->where('asset_id', $request->asset_id);
+                $query->where('asset_item_id', $request->asset_id);
             }
 
             if ($request->filled('action_type')) {

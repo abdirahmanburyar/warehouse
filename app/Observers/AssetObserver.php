@@ -19,15 +19,14 @@ class AssetObserver
      */
     public function created(Asset $asset): void
     {
-        // If controller already created initial history, skip
-        if ($asset->assetHistory()->exists()) {
-            return;
-        }
-        // Record initial status
+        // Record initial status for all asset items
         if (!empty($asset->status)) {
-            $asset->createStatusChangeHistory(null, $asset->status, 'Asset created');
+            $asset->createHistory([
+                'action' => 'asset_created',
+                'action_type' => 'creation',
+                'notes' => 'Asset created'
+            ]);
         }
-
     }
 
     /**
@@ -40,36 +39,26 @@ class AssetObserver
 
         // Status change
         if ($asset->wasChanged('status')) {
-            $recent = AssetHistory::where('asset_id', $asset->id)
+            // Get asset item IDs to check for recent history
+            $assetItemIds = $asset->assetItems()->pluck('id');
+            
+            $recent = AssetHistory::whereIn('asset_item_id', $assetItemIds)
                 ->where('action', 'status_changed')
                 ->where('action_type', 'status_change')
                 ->where('performed_at', '>=', $now->copy()->subMinute())
                 ->where('new_value->status', $asset->status)
                 ->exists();
             if (!$recent) {
-                $asset->createStatusChangeHistory($asset->getOriginal('status'), $asset->status, 'Status updated');
+                $asset->createHistory([
+                    'action' => 'status_changed',
+                    'action_type' => 'status_change',
+                    'old_value' => ['status' => $asset->getOriginal('status')],
+                    'new_value' => ['status' => $asset->status],
+                    'notes' => 'Status updated'
+                ]);
             }
         }
 
-
-
-        // Classification changes (region/location/sub-location/category/type/fund source)
-        $oldValues = [];
-        $newValues = [];
-
-        if ($asset->wasChanged('region_id')) {
-            $oldId = $asset->getOriginal('region_id');
-            $newId = $asset->region_id;
-            $oldValues['region'] = ['id' => $oldId, 'name' => optional(Region::find($oldId))->name];
-            $newValues['region'] = ['id' => $newId, 'name' => optional(Region::find($newId))->name];
-        }
-
-        if ($asset->wasChanged('asset_location_id')) {
-            $oldId = $asset->getOriginal('asset_location_id');
-            $newId = $asset->asset_location_id;
-            $oldValues['asset_location'] = ['id' => $oldId, 'name' => optional(AssetLocation::find($oldId))->name];
-            $newValues['asset_location'] = ['id' => $newId, 'name' => optional(AssetLocation::find($newId))->name];
-        }
 
         if ($asset->wasChanged('sub_location_id')) {
             $oldId = $asset->getOriginal('sub_location_id');

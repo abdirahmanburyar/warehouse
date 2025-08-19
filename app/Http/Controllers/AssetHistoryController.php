@@ -12,17 +12,17 @@ class AssetHistoryController extends Controller
 {
     public function index(Request $request)
     {
-        $history = AssetHistory::with(['asset', 'performer', 'assignee'])
+        $history = AssetHistory::with(['assetItem', 'performer', 'assignee'])
             ->when($request->filled('search'), function ($query) use ($request) {
-                $query->whereHas('asset', function ($q) use ($request) {
-                    $q->where('asset_number', 'like', '%' . $request->search . '%');
+                $query->whereHas('assetItem', function ($q) use ($request) {
+                    $q->where('asset_tag', 'like', '%' . $request->search . '%');
                 });
             })
             ->when($request->filled('action_type'), function ($query) use ($request) {
                 $query->where('action_type', $request->action_type);
             })
             ->when($request->filled('asset_id'), function ($query) use ($request) {
-                $query->where('asset_id', $request->asset_id);
+                $query->where('asset_item_id', $request->asset_id);
             })
             ->when($request->filled('performed_by'), function ($query) use ($request) {
                 $query->where('performed_by', $request->performed_by);
@@ -53,7 +53,7 @@ class AssetHistoryController extends Controller
 
     public function show(AssetHistory $history)
     {
-        $history->load(['asset', 'performer', 'assignee', 'approval']);
+        $history->load(['assetItem', 'performer', 'assignee', 'approval']);
         
         return Inertia::render('AssetHistory/Show', [
             'history' => $history,
@@ -62,8 +62,11 @@ class AssetHistoryController extends Controller
 
     public function assetHistory(Asset $asset)
     {
-        $history = AssetHistory::with(['performer', 'assignee', 'approval'])
-            ->where('asset_id', $asset->id)
+        // Get asset item IDs for this asset
+        $assetItemIds = $asset->assetItems()->pluck('id');
+        
+        $history = AssetHistory::with(['assetItem', 'performer', 'assignee', 'approval'])
+            ->whereIn('asset_item_id', $assetItemIds)
             ->orderBy('performed_at', 'desc')
             ->paginate(15);
 
@@ -75,8 +78,8 @@ class AssetHistoryController extends Controller
 
     public function assetItemHistory(AssetItem $assetItem)
     {
-        $history = AssetHistory::with(['performer', 'assignee', 'approval'])
-            ->where('asset_id', $assetItem->asset_id)
+        $history = AssetHistory::with(['assetItem', 'performer', 'assignee', 'approval'])
+            ->where('asset_item_id', $assetItem->id)
             ->orderBy('performed_at', 'desc')
             ->paginate(15);
 
@@ -114,7 +117,7 @@ class AssetHistoryController extends Controller
         ]);
 
         $history = AssetHistory::create([
-            'asset_id' => $request->asset_id,
+            'asset_item_id' => $request->asset_id,
             'action' => $request->action,
             'action_type' => $request->action_type,
             'old_value' => $request->old_value,
@@ -131,7 +134,7 @@ class AssetHistoryController extends Controller
 
     public function edit(AssetHistory $history)
     {
-        $history->load(['asset']);
+        $history->load(['assetItem']);
         
         return Inertia::render('AssetHistory/Edit', [
             'history' => $history,
@@ -160,7 +163,7 @@ class AssetHistoryController extends Controller
         ]);
 
         $history->update([
-            'asset_id' => $request->asset_id,
+            'asset_item_id' => $request->asset_id,
             'action' => $request->action,
             'action_type' => $request->action_type,
             'old_value' => $request->old_value,
