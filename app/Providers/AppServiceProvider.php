@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\Vite;
 use App\Observers\AssetObserver;
-use App\Observers\AssetItemObserver;
+
 use App\Models\Asset;
 use App\Models\AssetItem;
 use Illuminate\Support\ServiceProvider;
@@ -31,7 +31,6 @@ class AppServiceProvider extends ServiceProvider
         $this->registerBladeDirectives();
         Vite::prefetch(concurrency: 3);
         Asset::observe(AssetObserver::class);
-        AssetItem::observe(AssetItemObserver::class);
     }
 
     /**

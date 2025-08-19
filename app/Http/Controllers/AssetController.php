@@ -36,11 +36,11 @@ class AssetController extends Controller
             $assetItems->where(function($query) use ($request) {
                 $query->whereLike('asset_tag', '%'.$request->search.'%')   
                     ->orWhereLike('asset_name', '%'.$request->search.'%')
-                    ->orWhereLike('serial_number', '%'.$request->search.'%')
+                ->orWhereLike('serial_number', '%'.$request->search.'%')
                     ->orWhereHas('asset.fundSource', function($q) use ($request){
                         $q->where('name', 'like', '%'.$request->search.'%');
                     });
-            });
+                });
         }
 
         if($request->filled('region_id')){
@@ -455,7 +455,7 @@ class AssetController extends Controller
                 // Validate the main asset data
                 $validatedAsset = $request->validate([
                     'asset_number' => 'nullable|string|unique:assets,asset_number',
-                    'acquisition_date' => 'required|date',
+                'acquisition_date' => 'required|date',
                     'fund_source_id' => 'required|exists:fund_sources,id',
                     'region_id' => 'required|exists:regions,id',
                     'asset_location_id' => 'required|exists:asset_locations,id',

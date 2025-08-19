@@ -252,17 +252,17 @@ const form = ref({
     sub_location_id: "",
     asset_items: [
         {
-            asset_tag: "",
+    asset_tag: "",
             asset_name: "",
             serial_number: "",
-            asset_category_id: null,
-            asset_category: null,
+    asset_category_id: null,
+    asset_category: null,
             asset_type_id: null,
             asset_type: null,
-            assignee_id: null,
+    assignee_id: null,
             assignee: null,
             status: "pending_approval",
-            original_value: "",
+    original_value: "",
         },
     ],
 });
@@ -739,14 +739,14 @@ const submit = async () => {
         isSubmitting.value = false;
         
         if (response.data.success) {
-            Swal.fire({
-                title: "Success!",
+        Swal.fire({
+            title: "Success!",
                 text: response.data.message,
-                icon: "success",
-                confirmButtonText: "OK",
-            }).then(() => {
-                router.get(route("assets.index"));
-            });
+            icon: "success",
+            confirmButtonText: "OK",
+        }).then(() => {
+            router.get(route("assets.index"));
+        });
         } else {
             toast.error(response.data.message || "Asset creation failed");
         }
@@ -776,27 +776,27 @@ const submit = async () => {
                     <div class="bg-white shadow-xl rounded-2xl p-6">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">Asset Information</h3>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
                                 <InputLabel for="asset_number" value="Asset Number" />
                                 <input id="asset_number" type="text" class="mt-1 block w-full" placeholder="e.g., ASSET-2025-001" v-model="form.asset_number" required />
-                            </div>
-                            <div>
+                        </div>
+                        <div>
                                 <InputLabel for="acquisition_date" value="Acquisition Date" />
                                 <input id="acquisition_date" type="date" class="mt-1 block w-full" v-model="form.acquisition_date" required />
-                            </div>
-                            <div>
+                        </div>
+                        <div>
                                 <InputLabel for="fund_source" value="Fund Source" />
-                                <Multiselect
+                                    <Multiselect
                                     id="fund_source"
                                     v-model="form.fund_source"
                                     :options="fundSourceOptions"
-                                    :close-on-select="true"
-                                    :show-labels="false"
-                                    :allow-empty="true"
+                                        :close-on-select="true"
+                                        :show-labels="false"
+                                        :allow-empty="true"
                                     placeholder="Select Fund Source"
-                                    track-by="id"
-                                    label="name"
+                                        track-by="id"
+                                        label="name"
                                     @select="handleFundSourceSelect"
                                 >
                                     <template v-slot:option="{ option }">
@@ -810,83 +810,83 @@ const submit = async () => {
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                            <div>
-                                <InputLabel for="region" value="Region" />
+                        <div>
+                            <InputLabel for="region" value="Region" />
+                            <Multiselect
+                                v-model="form.region"
+                                :options="regionOptions"
+                                :searchable="true"
+                                :close-on-select="true"
+                                :show-labels="false"
+                                :allow-empty="true"
+                                placeholder="Select Region"
+                                track-by="id"
+                                label="name"
+                                @select="handleRegionSelect"
+                            >
+                                <template v-slot:option="{ option }">
+                                        <div :class="{ 'add-new-option': option.isAddNew }">
+                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Region</span>
+                                        <span v-else>{{ option.name }}</span>
+                                    </div>
+                                </template>
+                            </Multiselect>
+                        </div>
+                        
+                        <div>
+                            <InputLabel for="location" value="Location" />
+                            <div class="w-full">
                                 <Multiselect
-                                    v-model="form.region"
-                                    :options="regionOptions"
+                                    v-model="form.asset_location"
+                                    :options="locationOptions"
                                     :searchable="true"
                                     :close-on-select="true"
                                     :show-labels="false"
                                     :allow-empty="true"
-                                    placeholder="Select Region"
+                                    placeholder="Select Location"
                                     track-by="id"
                                     label="name"
-                                    @select="handleRegionSelect"
+                                    @select="handleLocationSelect"
                                 >
                                     <template v-slot:option="{ option }">
                                         <div :class="{ 'add-new-option': option.isAddNew }">
-                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Region</span>
+                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Location</span>
                                             <span v-else>{{ option.name }}</span>
                                         </div>
                                     </template>
                                 </Multiselect>
                             </div>
-                            
-                            <div>
-                                <InputLabel for="location" value="Location" />
-                                <div class="w-full">
-                                    <Multiselect
-                                        v-model="form.asset_location"
-                                        :options="locationOptions"
-                                        :searchable="true"
-                                        :close-on-select="true"
-                                        :show-labels="false"
-                                        :allow-empty="true"
-                                        placeholder="Select Location"
-                                        track-by="id"
-                                        label="name"
-                                        @select="handleLocationSelect"
-                                    >
-                                        <template v-slot:option="{ option }">
-                                            <div :class="{ 'add-new-option': option.isAddNew }">
-                                                <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Location</span>
-                                                <span v-else>{{ option.name }}</span>
-                                            </div>
-                                        </template>
-                                    </Multiselect>
-                                </div>
-                            </div>
-                            <div>
-                                <InputLabel for="sub_location" value="Sub Location" />
-                                <div class="w-full">
-                                    <Multiselect
-                                        v-model="form.sub_location"
-                                        :options="[
-                                            ...subLocations,
-                                            {
-                                                id: 'new',
-                                                name: '+ Add New Sub-location',
-                                                isAddNew: true,
-                                            },
-                                        ]"
-                                        :searchable="true"
-                                        :close-on-select="true"
-                                        :show-labels="false"
-                                        :allow-empty="true"
-                                        placeholder="Select Sub-location"
-                                        track-by="id"
-                                        label="name"
-                                        :disabled="!form.asset_location_id"
-                                        @select="handleSubLocationSelect"
-                                    >
-                                        <template v-slot:option="{ option }">
-                                            <div :class="{ 'add-new-option': option.isAddNew }">
-                                                <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Sub-location</span>
-                                                <span v-else>{{ option.name }}</span>
-                                            </div>
-                                        </template>
-                                    </Multiselect>
+                        </div>
+                        <div>
+                            <InputLabel for="sub_location" value="Sub Location" />
+                            <div class="w-full">
+                                <Multiselect
+                                    v-model="form.sub_location"
+                                    :options="[
+                                        ...subLocations,
+                                        {
+                                            id: 'new',
+                                            name: '+ Add New Sub-location',
+                                            isAddNew: true,
+                                        },
+                                    ]"
+                                    :searchable="true"
+                                    :close-on-select="true"
+                                    :show-labels="false"
+                                    :allow-empty="true"
+                                    placeholder="Select Sub-location"
+                                    track-by="id"
+                                    label="name"
+                                    :disabled="!form.asset_location_id"
+                                    @select="handleSubLocationSelect"
+                                >
+                                    <template v-slot:option="{ option }">
+                                        <div :class="{ 'add-new-option': option.isAddNew }">
+                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Sub-location</span>
+                                            <span v-else>{{ option.name }}</span>
+                                        </div>
+                                    </template>
+                                </Multiselect>
                                 </div>
                             </div>
                         </div>
@@ -948,20 +948,20 @@ const submit = async () => {
 
                                         <!-- Category -->
                                         <td class="px-3 py-3 whitespace-nowrap w-32">
-                                            <Multiselect
+                            <Multiselect
                                                 v-model="item.asset_category"
                                                 :options="categoryOptions"
                                                 :searchable="true"
-                                                :close-on-select="true"
-                                                :show-labels="false"
-                                                :allow-empty="true"
+                                :close-on-select="true"
+                                :show-labels="false"
+                                :allow-empty="true"
                                                 placeholder="Select Category"
-                                                track-by="id"
-                                                label="name"
+                                track-by="id"
+                                label="name"
                                                 class="text-sm"
                                                 @select="(selected) => handleItemCategorySelect(selected, index)"
-                                            >
-                                                <template v-slot:option="{ option }">
+                            >
+                                <template v-slot:option="{ option }">
                                                     <div :class="{ 'add-new-option': option.isAddNew }">
                                                         <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Category</span>
                                                         <span v-else>{{ option.name }}</span>
@@ -989,10 +989,10 @@ const submit = async () => {
                                                 <template v-slot:option="{ option }">
                                                     <div :class="{ 'add-new-option': option.isAddNew }">
                                                         <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Type</span>
-                                                        <span v-else>{{ option.name }}</span>
-                                                    </div>
-                                                </template>
-                                            </Multiselect>
+                                        <span v-else>{{ option.name }}</span>
+                                    </div>
+                                </template>
+                            </Multiselect>
                                         </td>
 
                                         <!-- Assignee -->
