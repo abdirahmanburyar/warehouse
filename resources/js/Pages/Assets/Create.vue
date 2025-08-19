@@ -773,10 +773,10 @@ const submit = async () => {
 
                 <form @submit.prevent="submit" novalidate class="space-y-6">
                     <!-- Asset Information Section -->
-                    <div class="bg-white shadow-xl rounded-2xl p-6">
+                    <div class="bg-white p-2">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">Asset Information</h3>
                         
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <div>
                                 <InputLabel for="asset_number" value="Asset Number" />
                                 <input id="asset_number" type="text" class="mt-1 block w-full" placeholder="e.g., ASSET-2025-001" v-model="form.asset_number" required />
@@ -809,7 +809,7 @@ const submit = async () => {
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-4">
                         <div>
                             <InputLabel for="region" value="Region" />
                             <Multiselect
@@ -893,7 +893,7 @@ const submit = async () => {
                     </div>
 
                     <!-- Asset Items Section -->
-                    <div class="bg-white shadow-xl rounded-2xl p-6">
+                    <div class="bg-white p-2">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-semibold text-gray-800">Asset Items</h3>
                             <button type="button" @click="addAssetItem" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
@@ -910,10 +910,9 @@ const submit = async () => {
 
                         <div v-else class="space-y-3">
                             <!-- Asset Items Table -->
-                            <table class="min-w-full divide-y divide-gray-200 table-fixed">
+                            <table class="divide-y divide-gray-200 w-full">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">#</th>
                                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Asset Tag</th>
                                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Asset Name</th>
                                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Serial Number</th>
@@ -926,10 +925,6 @@ const submit = async () => {
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <tr v-for="(item, index) in form.asset_items" :key="index" class="hover:bg-gray-50">
-                                        <!-- Item Number -->
-                                        <td class="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 w-16">
-                                            {{ index + 1 }}
-                                        </td>
 
                                         <!-- Asset Tag -->
                                         <td class="px-3 py-3 whitespace-nowrap w-32">
