@@ -42,11 +42,6 @@ class Asset extends Model
         return $this->hasMany(AssetItem::class);
     }
 
-    public function histories(): HasMany
-    {
-        return $this->hasMany(AssetHistory::class);
-    }
-
     public function documents(): HasMany
     {
         return $this->hasMany(AssetDocument::class);
@@ -141,22 +136,13 @@ class Asset extends Model
     }
 
     /**
-     * Create a history record for this asset
+     * Create a history record for all associated asset items
      */
-    public function createHistory(array $data): AssetHistory
+    public function createHistory(array $data): void
     {
-        return AssetHistory::create([
-            'asset_id' => $this->id,
-            'action' => $data['action'] ?? 'unknown',
-            'action_type' => $data['action_type'] ?? 'general',
-            'old_value' => $data['old_value'] ?? null,
-            'new_value' => $data['new_value'] ?? null,
-            'notes' => $data['notes'] ?? '',
-            'performed_by' => $data['performed_by'] ?? auth()->id(),
-            'performed_at' => $data['performed_at'] ?? now(),
-            'approval_id' => $data['approval_id'] ?? null,
-            'assignee_id' => $data['assignee_id'] ?? null,
-        ]);
+        foreach ($this->assetItems as $assetItem) {
+            $assetItem->createHistory($data);
+        }
     }
 
     protected static function boot()

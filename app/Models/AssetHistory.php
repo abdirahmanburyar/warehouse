@@ -10,7 +10,7 @@ class AssetHistory extends Model
     use HasFactory;
 
     protected $fillable = [
-        'asset_id',
+        'asset_item_id',
         'action',
         'action_type', // 'status_change', 'transfer', 'retirement', 'approval'
         'old_value',
@@ -29,11 +29,11 @@ class AssetHistory extends Model
     ];
 
     /**
-     * Get the asset that this history belongs to.
+     * Get the asset item that this history belongs to.
      */
-    public function asset()
+    public function assetItem()
     {
-        return $this->belongsTo(Asset::class);
+        return $this->belongsTo(AssetItem::class);
     }
 
     /**

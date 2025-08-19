@@ -156,15 +156,15 @@
 
                                     <!-- Asset Info -->
                                     <div class="mb-2">
-                                        <Link
-                                            :href="route('assets.show', record.asset.id)"
-                                            class="text-sm font-medium text-blue-600 hover:text-blue-800"
-                                        >
-                                            {{ record.asset?.asset_tag || 'Unknown Asset' }}
-                                        </Link>
-                                        <span class="text-sm text-gray-500 ml-2">
-                                            {{ record.asset?.serial_number || 'No Serial' }}
-                                        </span>
+                                                                                 <Link
+                                             :href="route('assets.show', record.asset_item.asset.id)"
+                                             class="text-sm font-medium text-blue-600 hover:text-blue-800"
+                                         >
+                                             {{ record.asset_item?.asset_tag || 'Unknown Asset' }}
+                                         </Link>
+                                         <span class="text-sm text-gray-500 ml-2">
+                                             {{ record.asset_item?.serial_number || 'No Serial' }}
+                                         </span>
                                     </div>
 
                                     <!-- Performer Info -->

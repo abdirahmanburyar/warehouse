@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('asset_histories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('asset_id')->constrained('assets')->onDelete('cascade');
+            $table->foreignId('asset_item_id')->constrained('asset_items')->onDelete('cascade');
             $table->string('action');
             $table->string('action_type')->nullable(); // 'status_change', 'transfer', 'retirement', 'approval'
             $table->json('old_value')->nullable();

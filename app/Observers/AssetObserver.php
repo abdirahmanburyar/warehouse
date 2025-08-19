@@ -99,18 +99,6 @@ class AssetObserver
             $newValues['fund_source'] = ['id' => $newId, 'name' => optional(FundSource::find($newId))->name];
         }
 
-        if (!empty($oldValues) || !empty($newValues)) {
-            // Create a single classification change history entry
-            AssetHistory::create([
-                'asset_id' => $asset->id,
-                'action' => 'classification_changed',
-                'action_type' => 'classification',
-                'old_value' => $oldValues ?: null,
-                'new_value' => $newValues ?: null,
-                'notes' => 'Classification details updated',
-                'performed_by' => auth()->id(),
-                'performed_at' => $now,
-            ]);
-        }
+
     }
 }

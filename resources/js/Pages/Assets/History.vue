@@ -148,7 +148,7 @@
                             <tr v-for="record in history.data" :key="record.id" class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-medium text-gray-900">
-                                        {{ record.asset?.asset_number || 'N/A' }}
+                                        {{ record.asset_item?.asset_tag || 'N/A' }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">

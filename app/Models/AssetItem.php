@@ -50,6 +50,11 @@ class AssetItem extends Model
         return $this->belongsTo(Assignee::class, 'assignee_id');
     }
 
+    public function assetHistory(): HasMany
+    {
+        return $this->hasMany(AssetHistory::class);
+    }
+
     public function maintenance(): HasMany
     {
         return $this->hasMany(AssetMaintenance::class);
@@ -215,7 +220,7 @@ class AssetItem extends Model
     public function createHistory(array $data): AssetHistory
     {
         return AssetHistory::create([
-            'asset_id' => $this->asset_id,
+            'asset_item_id' => $this->id,
             'action' => $data['action'] ?? 'unknown',
             'action_type' => $data['action_type'] ?? 'general',
             'old_value' => $data['old_value'] ?? null,
