@@ -7,11 +7,26 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 
 class Asset extends Model
 {
     use HasFactory, SoftDeletes;
+
+    // Status constants
+    const STATUS_DRAFT = 'draft';
+    const STATUS_PENDING_APPROVAL = 'pending_approval';
+    const STATUS_REVIEWED = 'reviewed';
+    const STATUS_APPROVED = 'approved';
+    const STATUS_REJECTED = 'rejected';
+    const STATUS_IN_USE = 'in_use';
+    const STATUS_ACTIVE = 'active';
+    const STATUS_MAINTENANCE = 'maintenance';
+    const STATUS_RETIRED = 'retired';
+    const STATUS_DISPOSED = 'disposed';
+    const STATUS_IN_TRANSFER_PROCESS = 'in_transfer_process';
 
     protected $fillable = [
         'asset_number',
@@ -71,10 +86,129 @@ class Asset extends Model
         return $this->belongsTo(User::class, 'submitted_by');
     }
 
+    public function approvals(): HasMany
+    {
+        return $this->morphMany(AssetApproval::class, 'approvable');
+    }
+
     // Helper methods
     public function getTotalItemCount(): int
     {
         return $this->assetItems()->count();
+    }
+
+    /**
+     * Get the status of the asset based on approval workflow
+     */
+    public function getStatusAttribute()
+    {
+        // Check if asset is disposed
+        if ($this->deleted_at) {
+            return self::STATUS_DISPOSED;
+        }
+        
+        // Check if asset is rejected
+        if ($this->rejected_at) {
+            return self::STATUS_REJECTED;
+        }
+        
+        // Check if asset is approved
+        if ($this->approved_at) {
+            return self::STATUS_APPROVED;
+        }
+        
+        // Check if asset is reviewed
+        if ($this->reviewed_at) {
+            return self::STATUS_REVIEWED;
+        }
+        
+        // Check if asset is submitted for approval
+        if ($this->submitted_at) {
+            return self::STATUS_PENDING_APPROVAL;
+        }
+        
+        // Default status
+        return self::STATUS_DRAFT;
+    }
+
+    /**
+     * Set the status of the asset by updating the appropriate fields
+     */
+    public function setStatus($status)
+    {
+        switch ($status) {
+            case self::STATUS_PENDING_APPROVAL:
+                $this->update([
+                    'submitted_at' => now(),
+                    'submitted_by' => Auth::id(),
+                    'reviewed_at' => null,
+                    'approved_at' => null,
+                    'rejected_at' => null,
+                    'rejection_reason' => null,
+                ]);
+                break;
+                
+            case self::STATUS_REVIEWED:
+                $this->update([
+                    'reviewed_at' => now(),
+                    'reviewed_by' => Auth::id(),
+                ]);
+                break;
+                
+            case self::STATUS_APPROVED:
+                $this->update([
+                    'approved_at' => now(),
+                    'approved_by' => Auth::id(),
+                    'rejected_at' => null,
+                    'rejection_reason' => null,
+                ]);
+                break;
+                
+            case self::STATUS_REJECTED:
+                $this->update([
+                    'rejected_at' => now(),
+                    'rejected_by' => Auth::id(),
+                ]);
+                break;
+                
+            case self::STATUS_IN_USE:
+            case self::STATUS_ACTIVE:
+                // These statuses are typically set through other workflows
+                // For now, we'll just ensure the asset is approved
+                if (!$this->approved_at) {
+                    $this->update([
+                        'approved_at' => now(),
+                        'approved_by' => Auth::id(),
+                    ]);
+                }
+                break;
+        }
+    }
+
+    /**
+     * Scope for pending approval assets
+     */
+    public function scopePendingApproval($query)
+    {
+        return $query->whereNotNull('submitted_at')
+                    ->whereNull('approved_at')
+                    ->whereNull('rejected_at');
+    }
+
+    /**
+     * Scope for approved assets
+     */
+    public function scopeApproved($query)
+    {
+        return $query->whereNotNull('approved_at');
+    }
+
+    /**
+     * Scope for rejected assets
+     */
+    public function scopeRejected($query)
+    {
+        return $query->whereNotNull('rejected_at');
     }
 
     public function getActiveItemCount(): int

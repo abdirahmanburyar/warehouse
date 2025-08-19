@@ -1543,7 +1543,7 @@ class AssetController extends Controller
     public function approvalsIndex(Request $request)
     {
         $query = Asset::with(['assetItems.category', 'assetItems.type', 'assetItems.assignee', 'fundSource', 'region', 'assetLocation', 'subLocation'])
-            ->where('status', 'pending_approval')
+            ->pendingApproval()
             ->whereHas('assetItems', function($itemQuery) {
                 // Only show assets that have items that are not approved/in_use
                 $itemQuery->whereNotIn('status', ['in_use', 'approved']);
@@ -1562,17 +1562,23 @@ class AssetController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'pending') {
+                $query->pendingApproval();
+            } elseif ($request->status === 'approved') {
+                $query->approved();
+            } elseif ($request->status === 'rejected') {
+                $query->rejected();
+            }
         }
 
         $approvals = $query->orderBy('created_at', 'desc')->paginate(10);
 
         // Get counts
-        $pendingCount = Asset::where('status', 'pending_approval')
+        $pendingCount = Asset::pendingApproval()
             ->whereHas('assetItems', function($itemQuery) {
                 $itemQuery->whereNotIn('status', ['in_use', 'approved']);
             })->count();
-        $approvedCount = Asset::where('status', 'approved')->count();
+        $approvedCount = Asset::approved()->count();
 
         return Inertia::render('Assets/Approvals', [
             'approvals' => $approvals,
@@ -1593,7 +1599,6 @@ class AssetController extends Controller
             }
 
             $asset->update([
-                'status' => 'approved',
                 'approved_by' => auth()->id(),
                 'approved_at' => now(),
             ]);
@@ -1643,7 +1648,6 @@ class AssetController extends Controller
             ]);
 
             $asset->update([
-                'status' => 'rejected',
                 'rejected_by' => auth()->id(),
                 'rejected_at' => now(),
                 'rejection_reason' => $request->rejection_reason,
@@ -1695,7 +1699,6 @@ class AssetController extends Controller
                 $asset = Asset::find($assetId);
                 if ($asset && $asset->status === 'pending_approval') {
                     $asset->update([
-                        'status' => 'approved',
                         'approved_by' => auth()->id(),
                         'approved_at' => now(),
                     ]);
