@@ -1542,49 +1542,16 @@ class AssetController extends Controller
      */
     public function approvalsIndex(Request $request)
     {
-        $query = Asset::with(['assetItems.category', 'assetItems.type', 'assetItems.assignee', 'fundSource', 'region', 'assetLocation', 'subLocation'])
-            ->pendingApproval()
-            ->whereHas('assetItems', function($itemQuery) {
-                // Only show assets that have items that are not approved/in_use
-                $itemQuery->whereNotIn('status', ['in_use', 'approved']);
-            });
+        $assets = Asset::where('approved_by', null)->pluck('asset_number')->toArray();
 
-        // Apply filters
-        if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('asset_number', 'like', '%' . $request->search . '%')
-                  ->orWhereHas('assetItems', function($itemQuery) use ($request) {
-                      $itemQuery->where('asset_tag', 'like', '%' . $request->search . '%')
-                               ->orWhere('asset_name', 'like', '%' . $request->search . '%')
-                               ->orWhere('serial_number', 'like', '%' . $request->search . '%');
-                  });
-            });
-        }
-
-        if ($request->filled('status')) {
-            if ($request->status === 'pending') {
-                $query->pendingApproval();
-            } elseif ($request->status === 'approved') {
-                $query->approved();
-            } elseif ($request->status === 'rejected') {
-                $query->rejected();
-            }
-        }
-
-        $approvals = $query->orderBy('created_at', 'desc')->paginate(10);
-
-        // Get counts
-        $pendingCount = Asset::pendingApproval()
-            ->whereHas('assetItems', function($itemQuery) {
-                $itemQuery->whereNotIn('status', ['in_use', 'approved']);
-            })->count();
-        $approvedCount = Asset::approved()->count();
+        $assetItem = Asset::where('asset_number', $request->selectedAsset)
+        ->with('assetItems.category', 'assetItems.type', 'assetItems.assignee', 'fundSource', 'region', 'assetLocation', 'subLocation')
+        ->first();
 
         return Inertia::render('Assets/Approvals', [
-            'approvals' => $approvals,
-            'filters' => $request->only('search', 'status'),
-            'pendingCount' => $pendingCount,
-            'approvedCount' => $approvedCount,
+            'assets' => $assets,
+            'assetItem' => $assetItem,
+            'filters' => $request->only('selectedAsset'),
         ]);
     }
 
@@ -1680,6 +1647,67 @@ class AssetController extends Controller
             return back()->with('success', 'Asset rejected successfully');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Failed to reject asset: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Review an asset (mark as reviewed)
+     */
+    public function review(Asset $asset)
+    {
+        try {
+            if ($asset->status !== 'pending_approval') {
+                return back()->withErrors(['error' => 'Asset is not pending approval']);
+            }
+
+            $asset->update([
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
+            ]);
+
+            // Create history record
+            $asset->createHistory([
+                'action' => 'asset_reviewed',
+                'action_type' => 'review',
+                'notes' => 'Asset reviewed by ' . auth()->user()->name,
+                'performed_by' => auth()->id(),
+                'performed_at' => now(),
+            ]);
+
+            return back()->with('success', 'Asset reviewed successfully');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Failed to review asset: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Restore a rejected asset back to pending approval
+     */
+    public function restore(Asset $asset)
+    {
+        try {
+            if ($asset->status !== 'rejected') {
+                return back()->withErrors(['error' => 'Asset is not rejected']);
+            }
+
+            $asset->update([
+                'rejected_by' => null,
+                'rejected_at' => null,
+                'rejection_reason' => null,
+            ]);
+
+            // Create history record
+            $asset->createHistory([
+                'action' => 'asset_restored',
+                'action_type' => 'restore',
+                'notes' => 'Asset restored by ' . auth()->user()->name,
+                'performed_by' => auth()->id(),
+                'performed_at' => now(),
+            ]);
+
+            return back()->with('success', 'Asset restored successfully');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Failed to restore asset: ' . $e->getMessage()]);
         }
     }
 

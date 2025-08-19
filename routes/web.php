@@ -626,6 +626,8 @@ Route::controller(LocationController::class)
             // New simple approval routes
             Route::post('/{asset}/approve-simple', 'approve')->name('assets.approve-simple');
             Route::post('/{asset}/reject-simple', 'reject')->name('assets.reject-simple');
+            Route::post('/{asset}/review', 'review')->name('assets.review');
+            Route::post('/{asset}/restore', 'restore')->name('assets.restore');
             Route::post('/bulk-approve', 'bulkApprove')->name('assets.bulk-approve');
         });
 
