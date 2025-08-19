@@ -26,7 +26,11 @@
                             <div class="flex items-center space-x-4">
                                 <div class="text-center">
                                     <div class="text-2xl font-bold text-white">{{ pendingCount }}</div>
-                                    <div class="text-purple-100 text-sm">Pending</div>
+                                    <div class="text-purple-100 text-sm">Pending Assets</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-white">{{ totalNonApprovedItems }}</div>
+                                    <div class="text-purple-100 text-sm">Items to Approve</div>
                                 </div>
                                 <div class="text-center">
                                     <div class="text-2xl font-bold text-white">{{ approvedCount }}</div>
@@ -65,7 +69,7 @@
                         </div>
                         <div class="flex items-center mt-6">
                             <input id="for_approval" type="checkbox" v-model="filters.for_approval" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
-                            <label for="for_approval" class="ml-2 block text-sm text-gray-700">Only items that need approval</label>
+                            <label for="for_approval" class="ml-2 block text-sm text-gray-700">Only assets with items that need approval</label>
                         </div>
                     </div>
                 </div>
@@ -134,9 +138,12 @@
 
                             <!-- Asset Items -->
                             <div class="mb-4">
-                                <h4 class="text-sm font-medium text-gray-700 mb-2">Asset Items ({{ asset.assetItems?.length || 0 }})</h4>
-                                <div class="space-y-2">
-                                    <div v-for="item in asset.assetItems" :key="item.id" 
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Asset Items ({{ getNonApprovedItemsCount(asset.assetItems) }})</h4>
+                                <div v-if="getNonApprovedItemsCount(asset.assetItems) === 0" class="text-center py-4 text-gray-500">
+                                    <p>All asset items are already approved</p>
+                                </div>
+                                <div v-else class="space-y-2">
+                                    <div v-for="item in getNonApprovedItems(asset.assetItems)" :key="item.id" 
                                          class="bg-gray-50 rounded-lg p-3 border-l-4 border-indigo-200">
                                         <div class="flex items-center justify-between">
                                             <div class="flex-1">
@@ -277,6 +284,14 @@ const approvedCount = computed(() => {
     return props.approvals?.data?.filter(asset => asset.status === 'approved').length || 0;
 });
 
+// Total count of non-approved items across all assets
+const totalNonApprovedItems = computed(() => {
+    if (!props.approvals?.data) return 0;
+    return props.approvals.data.reduce((total, asset) => {
+        return total + getNonApprovedItemsCount(asset.assetItems);
+    }, 0);
+});
+
 const toggleSelectionAll = (event) => {
     if (event.target.checked) {
         selected.value = props.approvals.data.map(asset => asset.id);
@@ -396,6 +411,17 @@ const formatDate = (date) => {
         month: 'short',
         day: 'numeric',
     });
+};
+
+// Helper function to get non-approved asset items
+const getNonApprovedItems = (assetItems) => {
+    if (!assetItems || !Array.isArray(assetItems)) return [];
+    return assetItems.filter(item => item.status !== 'in_use' && item.status !== 'approved');
+};
+
+// Helper function to get count of non-approved asset items
+const getNonApprovedItemsCount = (assetItems) => {
+    return getNonApprovedItems(assetItems).length;
 };
 
 onMounted(() => {

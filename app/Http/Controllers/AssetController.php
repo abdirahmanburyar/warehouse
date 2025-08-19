@@ -1543,7 +1543,11 @@ class AssetController extends Controller
     public function approvalsIndex(Request $request)
     {
         $query = Asset::with(['assetItems.category', 'assetItems.type', 'assetItems.assignee', 'fundSource', 'region', 'assetLocation', 'subLocation'])
-            ->where('status', 'pending_approval');
+            ->where('status', 'pending_approval')
+            ->whereHas('assetItems', function($itemQuery) {
+                // Only show assets that have items that are not approved/in_use
+                $itemQuery->whereNotIn('status', ['in_use', 'approved']);
+            });
 
         // Apply filters
         if ($request->filled('search')) {
@@ -1564,7 +1568,10 @@ class AssetController extends Controller
         $approvals = $query->orderBy('created_at', 'desc')->paginate(10);
 
         // Get counts
-        $pendingCount = Asset::where('status', 'pending_approval')->count();
+        $pendingCount = Asset::where('status', 'pending_approval')
+            ->whereHas('assetItems', function($itemQuery) {
+                $itemQuery->whereNotIn('status', ['in_use', 'approved']);
+            })->count();
         $approvedCount = Asset::where('status', 'approved')->count();
 
         return Inertia::render('Assets/Approvals', [
