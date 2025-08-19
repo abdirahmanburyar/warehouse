@@ -1438,8 +1438,11 @@ class AssetController extends Controller
     public function getAssetHistory(Request $request, Asset $asset)
     {
         try {
-            $query = $asset->assetHistory()
-                ->with(['performer', 'approval'])
+            // Get history from all asset items belonging to this asset
+            $assetItemIds = $asset->assetItems()->pluck('id');
+            
+            $query = AssetHistory::whereIn('asset_item_id', $assetItemIds)
+                ->with(['assetItem', 'performer', 'approval'])
                 ->orderBy('performed_at', 'desc');
 
             // Apply filters
@@ -1476,7 +1479,7 @@ class AssetController extends Controller
             $history = $query->paginate(10);
 
             // Get users for filter
-            $users = User::whereIn('id', $asset->assetHistory()->distinct('performed_by')->pluck('performed_by'))->get();
+            $users = User::whereIn('id', AssetHistory::whereIn('asset_item_id', $assetItemIds)->distinct('performed_by')->pluck('performed_by'))->get();
 
             return Inertia::render('Assets/History', [
                 'asset' => $asset->load(['category', 'assetLocation', 'subLocation']),

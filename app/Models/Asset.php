@@ -145,6 +145,23 @@ class Asset extends Model
         }
     }
 
+    /**
+     * Create a history record for all associated asset items (legacy method name)
+     */
+    public function createHistoryRecord(string $action, string $actionType, $oldValue = null, $newValue = null, string $notes = '', $approvalId = null): void
+    {
+        $data = [
+            'action' => $action,
+            'action_type' => $actionType,
+            'old_value' => $oldValue,
+            'new_value' => $newValue,
+            'notes' => $notes,
+            'approval_id' => $approvalId,
+        ];
+        
+        $this->createHistory($data);
+    }
+
     protected static function boot()
     {
         parent::boot();
