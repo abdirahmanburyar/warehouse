@@ -27,12 +27,7 @@ class AssetObserver
         if (!empty($asset->status)) {
             $asset->createStatusChangeHistory(null, $asset->status, 'Asset created');
         }
-        // Record initial custody if any
-        if (!empty($asset->assignee_id)) {
-            $asset->createCustodyChangeHistory(null, $asset->assignee_id, 'Initial custody');
-        } elseif (!empty($asset->person_assigned)) {
-            $asset->createCustodyChangeHistory(null, $asset->person_assigned, 'Initial custody');
-        }
+
     }
 
     /**
@@ -56,32 +51,7 @@ class AssetObserver
             }
         }
 
-        // Custody change via assignee
-        if ($asset->wasChanged('assignee_id')) {
-            $oldId = $asset->getOriginal('assignee_id');
-            $newId = $asset->assignee_id;
-            $recent = AssetHistory::where('asset_id', $asset->id)
-                ->where('action', 'custody_changed')
-                ->where('action_type', 'transfer')
-                ->where('performed_at', '>=', $now->copy()->subMinute())
-                ->where('new_value->assignee_id', $newId)
-                ->exists();
-            if (!$recent) {
-                $asset->createCustodyChangeHistory($oldId, $newId, 'Custody updated');
-            }
-        } elseif ($asset->wasChanged('person_assigned')) {
-            $oldName = $asset->getOriginal('person_assigned');
-            $newName = $asset->person_assigned;
-            $recent = AssetHistory::where('asset_id', $asset->id)
-                ->where('action', 'custody_changed')
-                ->where('action_type', 'transfer')
-                ->where('performed_at', '>=', $now->copy()->subMinute())
-                ->where('new_value->person_assigned', $newName)
-                ->exists();
-            if (!$recent) {
-                $asset->createCustodyChangeHistory($oldName, $newName, 'Custody updated');
-            }
-        }
+
 
         // Classification changes (region/location/sub-location/category/type/fund source)
         $oldValues = [];

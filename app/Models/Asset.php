@@ -42,6 +42,11 @@ class Asset extends Model
         return $this->hasMany(AssetItem::class);
     }
 
+    public function histories(): HasMany
+    {
+        return $this->hasMany(AssetHistory::class);
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(AssetDocument::class);

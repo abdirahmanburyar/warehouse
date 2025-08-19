@@ -132,7 +132,7 @@ class AssetHistory extends Model
             'retirement_approved' => 'Retirement Approved',
             'retirement_rejected' => 'Retirement Rejected',
             'status_changed' => 'Status Changed',
-            'custody_changed' => 'Custody Changed',
+    
         ];
 
         return $titles[$this->action] ?? ucfirst(str_replace('_', ' ', $this->action));

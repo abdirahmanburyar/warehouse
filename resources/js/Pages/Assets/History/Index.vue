@@ -245,7 +245,7 @@ function formatActionTitle(action, actionType) {
         'retirement_approved': 'Retirement Approved',
         'retirement_rejected': 'Retirement Rejected',
         'status_changed': 'Status Changed',
-        'custody_changed': 'Custody Changed',
+
     };
     return titles[action] || ucfirst(action.replace('_', ' '));
 }
