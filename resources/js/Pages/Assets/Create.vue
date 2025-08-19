@@ -719,41 +719,47 @@ const submit = async () => {
             }
         }
 
-        const formData = new FormData();
+        const requestData = {
+            asset_number: form.value.asset_number,
+            acquisition_date: form.value.acquisition_date,
+            fund_source_id: form.value.fund_source_id,
+            region_id: form.value.region_id,
+            asset_location_id: form.value.asset_location_id,
+            sub_location_id: form.value.sub_location_id || "",
+            asset_items: form.value.asset_items
+        };
 
-        // Asset data
-        formData.append("asset_number", form.value.asset_number);
-        formData.append("acquisition_date", form.value.acquisition_date);
-        formData.append("fund_source_id", form.value.fund_source_id);
-        formData.append("region_id", form.value.region_id);
-        formData.append("asset_location_id", form.value.asset_location_id);
-        formData.append("sub_location_id", form.value.sub_location_id || "");
-
-        // Asset items data
-        formData.append("asset_items", JSON.stringify(form.value.asset_items));
-
-        const response = await axios.post(route("assets.store"), formData, {
+        const response = await axios.post(route("assets.store"), requestData, {
             headers: {
-                "Content-Type": "multipart/form-data",
+                "Content-Type": "application/json",
             },
         });
 
         processing.value = false;
         isSubmitting.value = false;
         
-        Swal.fire({
-            title: "Success!",
-            text: "Asset created successfully",
-            icon: "success",
-            confirmButtonText: "OK",
-        }).then(() => {
-            router.get(route("assets.index"));
-        });
+        if (response.data.success) {
+            Swal.fire({
+                title: "Success!",
+                text: response.data.message,
+                icon: "success",
+                confirmButtonText: "OK",
+            }).then(() => {
+                router.get(route("assets.index"));
+            });
+        } else {
+            toast.error(response.data.message || "Asset creation failed");
+        }
     } catch (error) {
         processing.value = false;
         isSubmitting.value = false;
         console.error("Error creating asset:", error);
-        toast.error(error.response?.data || "Error creating asset");
+        
+        if (error.response?.data?.message) {
+            toast.error(error.response.data.message);
+        } else {
+            toast.error("Error creating asset");
+        }
     }
 };
 </script>

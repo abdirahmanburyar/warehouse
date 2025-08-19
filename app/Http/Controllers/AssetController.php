@@ -463,38 +463,19 @@ class AssetController extends Controller
 
                 // Validate asset items array
                 $request->validate([
-                    'asset_items' => 'required|string', // This comes as JSON string from FormData
+                    'asset_items' => 'required|array|min:1',
+                    'asset_items.*.asset_tag' => 'required|string|max:255',
+                    'asset_items.*.asset_name' => 'required|string|max:255',
+                    'asset_items.*.serial_number' => 'required|string|max:255',
+                    'asset_items.*.asset_category_id' => 'required|exists:asset_categories,id',
+                    'asset_items.*.asset_type_id' => 'required|exists:asset_types,id',
+                    'asset_items.*.assignee_id' => 'nullable|exists:assignees,id',
+                    'asset_items.*.original_value' => 'required|numeric|min:0',
                 ]);
 
-                // Parse the JSON asset_items string
-                $assetItemsData = json_decode($request->asset_items, true);
+                // Get asset items data directly
+                $assetItemsData = $request->asset_items;
                 
-                if (!is_array($assetItemsData) || empty($assetItemsData)) {
-                    throw new \Exception('Invalid asset items data');
-                }
-
-                // Validate each asset item
-                foreach ($assetItemsData as $index => $itemData) {
-                    if (empty($itemData['asset_tag']) || empty($itemData['asset_name']) || empty($itemData['serial_number']) || 
-                        empty($itemData['asset_category_id']) || empty($itemData['asset_type_id']) || 
-                        !isset($itemData['original_value']) || $itemData['original_value'] < 0) {
-                        throw new \Exception("Invalid data for asset item #" . ($index + 1));
-                    }
-                    
-                    // Validate foreign key relationships
-                    if (!AssetCategory::find($itemData['asset_category_id'])) {
-                        throw new \Exception("Invalid category for asset item #" . ($index + 1));
-                    }
-                    
-                    if (!AssetType::find($itemData['asset_type_id'])) {
-                        throw new \Exception("Invalid type for asset item #" . ($index + 1));
-                    }
-                    
-                    if (!empty($itemData['assignee_id']) && !Assignee::find($itemData['assignee_id'])) {
-                        throw new \Exception("Invalid assignee for asset item #" . ($index + 1));
-                    }
-                }
-
                 // Generate asset number if not provided
                 if (empty($validatedAsset['asset_number'])) {
                     $validatedAsset['asset_number'] = $this->generateAssetNumber();
@@ -546,12 +527,18 @@ class AssetController extends Controller
                     ]);
                 }
 
-                return redirect()->route('assets.index')
-                    ->with('success', 'Asset created successfully with ' . count($assetItems) . ' items. Pending approval.');
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Asset created successfully with ' . count($assetItems) . ' items. Pending approval.',
+                    'asset' => $asset->load('assetItems'),
+                    'redirect_url' => route('assets.index')
+                ]);
             });
         } catch (\Exception $e) {
-            return back()->withInput()
-                ->withErrors(['error' => 'Failed to create asset: ' . $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create asset: ' . $e->getMessage()
+            ], 422);
         }
     }
 
