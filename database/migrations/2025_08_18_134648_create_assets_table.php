@@ -22,15 +22,15 @@ return new class extends Migration
 
             // approvals
             $table->foreignId('submitted_by')->constrained('users');
-            $table->date('submitted_at')->nullable();
+            $table->date('submitted_at');
 
-            $table->foreignId('reviewed_by')->constrained('users');
+            $table->foreignId('reviewed_by')->constrained('users')->nullable();
             $table->date('reviewed_at')->nullable();
 
-            $table->foreignId('approved_by')->constrained('users');
+            $table->foreignId('approved_by')->constrained('users')->nullable();
             $table->date('approved_at')->nullable();
 
-            $table->foreignId('rejected_by')->constrained('users');
+            $table->foreignId('rejected_by')->constrained('users')->nullable();
             $table->date('rejected_at')->nullable();
 
             $table->text('rejection_reason')->nullable();
