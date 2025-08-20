@@ -68,39 +68,6 @@ class InventoryController extends Controller
             $productQuery->whereHas('dosage', fn($q) => $q->where('name', $request->dosage));
         }
 
-        if ($request->filled('status')) {
-            if ($request->status === 'reorder_level') {
-                // Filter products that need reorder (total quantity <= 70% of reorder level)
-                $productQuery->whereRaw('(
-                    SELECT COALESCE(SUM(ii.quantity), 0) 
-                    FROM inventories i 
-                    LEFT JOIN inventory_items ii ON i.id = ii.inventory_id 
-                    WHERE i.product_id = products.id
-                ) <= (COALESCE(reorder_levels.reorder_level, (reorder_levels.amc * NULLIF(reorder_levels.lead_time, 0)), ROUND(COALESCE(reorder_levels.amc, 0) * 6)) * 0.7)');
-            } elseif ($request->status === 'low_stock') {
-                // Filter products that are low stock (total quantity > 0 but <= reorder level)
-                $productQuery->whereRaw('(
-                    SELECT COALESCE(SUM(ii.quantity), 0) 
-                    FROM inventories i 
-                    LEFT JOIN inventory_items ii ON i.id = ii.inventory_id 
-                    WHERE i.product_id = products.id
-                ) > 0 AND (
-                    SELECT COALESCE(SUM(ii.quantity), 0) 
-                    FROM inventories i 
-                    LEFT JOIN inventory_items ii ON i.id = ii.inventory_id 
-                    WHERE i.product_id = products.id
-                ) <= (COALESCE(reorder_levels.reorder_level, (reorder_levels.amc * NULLIF(reorder_levels.lead_time, 0)), ROUND(COALESCE(reorder_levels.amc, 0) * 6)))');
-            } elseif ($request->status === 'out_of_stock') {
-                // Filter products that are out of stock (total quantity = 0)
-                $productQuery->whereRaw('(
-                    SELECT COALESCE(SUM(ii.quantity), 0) 
-                    FROM inventories i 
-                    LEFT JOIN inventory_items ii ON i.id = ii.inventory_id 
-                    WHERE i.product_id = products.id
-                ) = 0');
-            }
-        }
-
         $perPage = $request->input('per_page', 25);
         $page = $request->input('page', 1);
         $productsPaginator = $productQuery->paginate($perPage, ['products.*', 'reorder_levels.amc', 'reorder_levels.reorder_level'], 'page', $page)
@@ -156,10 +123,46 @@ class InventoryController extends Controller
             }
         }
 
+        // Apply status filters to the merged data
+        if ($request->filled('status')) {
+            \Log::info('Applying status filter: ' . $request->status . ' to ' . $merged->count() . ' items');
+            
+            $merged = $merged->filter(function ($inventory) use ($request) {
+                $totalQuantity = $inventory->items->sum('quantity');
+                $reorderLevel = (float) ($inventory->reorder_level ?? 0);
+                
+                switch ($request->status) {
+                    case 'reorder_level':
+                        // Items that need reorder (total quantity <= 70% of reorder level)
+                        $result = $reorderLevel > 0 && $totalQuantity <= ($reorderLevel * 0.7);
+                        \Log::info("Product {$inventory->product->name}: Qty={$totalQuantity}, ReorderLevel={$reorderLevel}, NeedsReorder={$result}");
+                        return $result;
+                    
+                    case 'low_stock':
+                        // Items that are low stock (total quantity > 0 but <= reorder level)
+                        $result = $totalQuantity > 0 && $totalQuantity <= $reorderLevel;
+                        \Log::info("Product {$inventory->product->name}: Qty={$totalQuantity}, ReorderLevel={$reorderLevel}, LowStock={$result}");
+                        return $result;
+                    
+                    case 'out_of_stock':
+                        // Items that are out of stock (total quantity = 0)
+                        $result = $totalQuantity === 0;
+                        \Log::info("Product {$inventory->product->name}: Qty={$totalQuantity}, OutOfStock={$result}");
+                        return $result;
+                    
+                    default:
+                        return true;
+                }
+            });
+            
+            \Log::info('After status filtering: ' . $merged->count() . ' items remain');
+        }
+
         // Build paginator compatible with the frontend
+        $filteredCount = $merged->count();
         $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
             $merged->values(),
-            $productsPaginator->total(),
+            $filteredCount,
             $productsPaginator->perPage(),
             $productsPaginator->currentPage(),
             ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]

@@ -117,6 +117,8 @@ const applyFilters = () => {
     if (per_page.value) query.per_page = per_page.value;
     if (props.filters.page) query.page = props.filters.page;
 
+    console.log('Applying filters:', query);
+
     router.get(route("inventories.index"), query, {
         preserveState: true,
         preserveScroll: true,
