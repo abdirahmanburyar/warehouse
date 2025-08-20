@@ -68,6 +68,26 @@ class InventoryController extends Controller
             $productQuery->whereHas('dosage', fn($q) => $q->where('name', $request->dosage));
         }
 
+        if ($request->filled('status')) {
+            if ($request->status === 'reorder_level') {
+                // Filter products that need reorder (total quantity <= 70% of reorder level)
+                $productQuery->whereRaw('(
+                    SELECT COALESCE(SUM(ii.quantity), 0) 
+                    FROM inventories i 
+                    LEFT JOIN inventory_items ii ON i.id = ii.inventory_id 
+                    WHERE i.product_id = products.id
+                ) <= (COALESCE(reorder_levels.reorder_level, (reorder_levels.amc * NULLIF(reorder_levels.lead_time, 0)), ROUND(COALESCE(reorder_levels.amc, 0) * 6)) * 0.7)');
+            } elseif ($request->status === 'out_of_stock') {
+                // Filter products that are out of stock (total quantity = 0)
+                $productQuery->whereRaw('(
+                    SELECT COALESCE(SUM(ii.quantity), 0) 
+                    FROM inventories i 
+                    LEFT JOIN inventory_items ii ON i.id = ii.inventory_id 
+                    WHERE i.product_id = products.id
+                ) = 0');
+            }
+        }
+
         $perPage = $request->input('per_page', 25);
         $page = $request->input('page', 1);
         $productsPaginator = $productQuery->paginate($perPage, ['products.*', 'reorder_levels.amc', 'reorder_levels.reorder_level'], 'page', $page)
@@ -140,7 +160,7 @@ class InventoryController extends Controller
             'inventoryStatusCounts' => collect($statusCounts)->map(fn($count, $status) => ['status' => $status, 'count' => $count]),
             'products'   => Product::select('id', 'name')->get(),
             'warehouses' => Warehouse::pluck('name')->toArray(),
-            'filters'    => $request->only(['search', 'product_id', 'category', 'dosage', 'per_page', 'page']),
+            'filters'    => $request->only(['search', 'product_id', 'category', 'dosage', 'status', 'per_page', 'page']),
             'category'   => Category::pluck('name')->toArray(),
             'dosage'     => Dosage::pluck('name')->toArray(),
             'locations'  => Location::pluck('location')->toArray(),
