@@ -3,6 +3,18 @@
         <Head title="Two-Factor Authentication" />
 
         <div class="bg-white p-4">
+            <!-- Logout Button -->
+            <div class="flex justify-end mb-4">
+                <button 
+                    type="button" 
+                    class="text-sm text-red-600 hover:text-red-800 underline cursor-pointer font-medium"
+                    @click="logout"
+                    :disabled="loggingOut"
+                >
+                    {{ loggingOut ? 'Logging out...' : 'Logout' }}
+                </button>
+            </div>
+
             <div class="mb-4 text-sm text-gray-600">
                 Please enter the 6-digit verification code sent to your email address.
             </div>
@@ -51,7 +63,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -69,6 +81,7 @@ const form = useForm({
 });
 
 const resending = ref(false);
+const loggingOut = ref(false);
 
 const submit = () => {
     form.post(route('two-factor.verify'), {
@@ -94,5 +107,16 @@ const resendCode = async () => {
         .finally(() => {
             resending.value = false;
         });
+};
+
+const logout = async () => {
+    loggingOut.value = true;
+    
+    try {
+        await router.post(route('logout'));
+    } catch (error) {
+        ToastService.error('Logout failed. Please try again.');
+        loggingOut.value = false;
+    }
 };
 </script>
