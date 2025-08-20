@@ -669,25 +669,36 @@ const hasActiveFilters = computed(() => {
                 <div class="lg:col-span-1">
                     <div class="sticky top-0 z-10 shadow-sm">
                         <div class="space-y-4">
-                            <div class="flex items-center rounded-xl bg-blue-50 p-1 shadow">
-                                <img src="/assets/images/reorder_status.png" class="w-[40px] h-[40px]" alt="Reorder Items" />
-                                <div class="ml-4 flex flex-col">
-                                    <span class="text-sm font-bold text-blue-600">{{ reorderItemsCount }}</span>
-                                    <span class="ml-2 text-xs text-blue-600">Reorder Items</span>
+                            <!-- Reorder Items Card -->
+                            <div class="flex items-center rounded-xl bg-gradient-to-r from-blue-50 to-blue-100 p-4 shadow-lg border border-blue-200">
+                                <div class="flex-shrink-0">
+                                    <img src="/assets/images/reorder_status.png" class="w-[50px] h-[50px] drop-shadow-sm" alt="Reorder Items" />
+                                </div>
+                                <div class="ml-4 flex flex-col flex-1">
+                                    <span class="text-2xl font-bold text-blue-700">{{ reorderItemsCount }}</span>
+                                    <span class="text-xs font-medium text-blue-600">Reorder Items</span>
                                 </div>
                             </div>
-                            <div class="flex items-center rounded-xl bg-orange-50 p-1 shadow">
-                                <img src="/assets/images/low_stock.png" class="w-[40px] h-[40px]" alt="Low Stock" />
-                                <div class="ml-4 flex flex-col">
-                                    <span class="text-sm font-bold text-orange-600">{{ lowStockCount }}</span>
-                                    <span class="ml-2 text-xs text-orange-600">Low Stock</span>
+
+                            <!-- Low Stock Card -->
+                            <div class="flex items-center rounded-xl bg-gradient-to-r from-orange-50 to-orange-100 p-4 shadow-lg border border-orange-200">
+                                <div class="flex-shrink-0">
+                                    <img src="/assets/images/low_stock.png" class="w-[50px] h-[50px] drop-shadow-sm" alt="Low Stock" />
+                                </div>
+                                <div class="ml-4 flex flex-col flex-1">
+                                    <span class="text-2xl font-bold text-orange-700">{{ lowStockCount }}</span>
+                                    <span class="text-xs font-medium text-orange-600">Low Stock</span>
                                 </div>
                             </div>
-                            <div class="flex items-center rounded-xl bg-red-50 p-1 shadow">
-                                <img src="/assets/images/out_stock.png" class="w-[40px] h-[40px]" alt="Out of Stock" />
-                                <div class="ml-4 flex flex-col">
-                                    <span class="text-sm font-bold text-red-600">{{ outOfStockCount }}</span>
-                                    <span class="ml-2 text-xs text-red-600">Out of Stock</span>
+
+                            <!-- Out of Stock Card -->
+                            <div class="flex items-center rounded-xl bg-gradient-to-r from-red-50 to-red-100 p-4 shadow-lg border border-red-200">
+                                <div class="flex-shrink-0">
+                                    <img src="/assets/images/out_of_stock.png" class="w-[50px] h-[50px] drop-shadow-sm" alt="Out of Stock" />
+                                </div>
+                                <div class="ml-4 flex flex-col flex-1">
+                                    <span class="text-2xl font-bold text-red-700">{{ outOfStockCount }}</span>
+                                    <span class="text-xs font-medium text-red-600">Out of Stock</span>
                                 </div>
                             </div>
                         </div>
