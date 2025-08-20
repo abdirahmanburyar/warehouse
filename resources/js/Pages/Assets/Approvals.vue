@@ -13,8 +13,8 @@
                     :show-labels="false"
                     :close-on-select="true"
                 />
-            </div>
-        </div>
+                            </div>
+                        </div>
 
         <!-- Asset Details and Approval Interface -->
         <div v-if="props.assetItem" class="space-y-6">
@@ -30,40 +30,40 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                         </svg>
                         <span class="text-sm text-gray-600">Asset #{{ props.assetItem.asset_number }}</span>
-                    </div>
+                                </div>
                     <div class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         <span class="text-sm text-gray-600">Acquired: {{ formatDate(props.assetItem.acquisition_date) }}</span>
-                    </div>
+                                </div>
                     <div class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                         <span class="text-sm text-gray-600">Location: {{ props.assetItem.region?.name || 'N/A' }} - {{ props.assetItem.asset_location?.name || 'N/A' }} - {{ props.assetItem.sub_location?.name || 'N/A' }}</span>
-                    </div>
+                                </div>
                     <div class="flex items-center">
                         <span class="text-sm text-gray-600">Status: {{ formatAssetStatus(props.assetItem.status) }}</span>
-                    </div>
                 </div>
+            </div>
 
                 <!-- Asset Metadata -->
-                <div>
+                        <div>
                     <div class="bg-gray-50 rounded-lg p-4 space-y-2">
                         <h2 class="text-xs font-medium text-gray-900">
                             Asset Information
                         </h2>
                         <div class="grid grid-cols-3 gap-4">
-                            <div>
+                        <div>
                                 <p class="text-xs font-medium text-gray-500">
                                     Fund Source
                                 </p>
                                 <p class="text-xs text-gray-900">
                                     {{ props.assetItem.fund_source?.name || 'N/A' }}
                                 </p>
-                            </div>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -102,17 +102,17 @@
                                     <td class="px-3 py-3 text-xs text-gray-900">${{ item.original_value || '0.00' }}</td>
                                     <td class="px-3 py-3 text-xs text-gray-900">{{ item.assignee?.name || 'N/A' }}</td>
                                     <td class="px-3 py-3 text-xs text-gray-900">
-                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                                              :class="getItemStatusBadgeClass(item.status)">
-                                            {{ formatItemStatus(item.status) }}
-                                        </span>
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                                                      :class="getItemStatusBadgeClass(item.status)">
+                                                    {{ formatItemStatus(item.status) }}
+                                                </span>
                                     </td>
                                 </tr>
                             </template>
                         </tbody>
                     </table>
-                </div>
-            </div>
+                                </div>
+                            </div>
 
             <!-- Asset Status Actions -->
             <div class="mt-8 mb-6 bg-white rounded-lg shadow-sm">
@@ -155,8 +155,8 @@
                             </div>
                             <div v-if="props.assetItem?.status === 'pending_approval' && $page.props.auth.can?.asset_review"
                                 class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
-                        </div>
-
+                                </div>
+                                
                         <!-- Approve button -->
                         <div class="relative">
                             <div class="flex flex-col">
@@ -175,7 +175,7 @@
                                     <svg v-if="isType['is_approve']" class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
+                                        </svg>
                                     <template v-else>
                                         <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
                                         <span class="text-sm font-bold text-white">{{
@@ -184,7 +184,7 @@
                                                 : isType["is_approve"] ? "Please Wait..." : "Approve"
                                         }}</span>
                                     </template>
-                                </button>
+                                    </button>
                                 <span v-show="props.assetItem?.approved_at" class="text-sm text-gray-600">
                                     On {{ formatDate(props.assetItem?.approved_at) }}
                                 </span>
@@ -214,7 +214,7 @@
                                     <svg v-if="isType['is_reject']" class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
+                                        </svg>
                                     <template v-else>
                                         <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
                                         <span class="text-sm font-bold text-white">{{
@@ -223,7 +223,7 @@
                                                 : isType["is_reject"] ? "Please Wait..." : "Reject"
                                         }}</span>
                                     </template>
-                                </button>
+                                    </button>
                                 <span v-show="props.assetItem?.rejected_at" class="text-sm text-gray-600">
                                     On {{ formatDate(props.assetItem?.rejected_at) }}
                                 </span>
@@ -251,13 +251,13 @@
                                     <svg v-if="isRestoring" class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
+                                        </svg>
                                     <template v-else>
                                         <img src="/assets/images/restore.jpg" class="w-5 h-5 mr-2" alt="Restore" />
                                         <span class="text-sm font-bold text-white">{{ isRestoring ? "Restoring..." : "Restore Asset" }}</span>
                                     </template>
                                 </button>
-                            </div>
+                                </div>
                             <div v-if="props.assetItem?.status === 'rejected' && $page.props.auth.can?.asset_approve"
                                 class="absolute -top-2 -right-2 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
                         </div>
@@ -370,7 +370,7 @@ const changeStatus = async (assetId, newStatus, type) => {
                 
                 // Reload the page to show updated status
                 router.get(route('assets.approvals.index'), { asset: props.assetItem?.asset_number });
-            } catch (error) {
+    } catch (error) {
                 toast.error(`Failed to update asset status to ${newStatus}`);
             } finally {
                 // Reset loading state
@@ -396,12 +396,12 @@ const restoreAsset = async (assetId, newStatus, type) => {
                 await router.post(route('assets.restore', assetId));
                 toast.success('Asset restored successfully');
                 router.get(route('assets.approvals.index'), { asset: props.assetItem?.asset_number });
-            } catch (error) {
+    } catch (error) {
                 toast.error('Failed to restore asset');
             } finally {
                 isRestoring.value = false;
             }
-        }
+    }
     });
 };
 
@@ -487,3 +487,5 @@ const getNonApprovedItemsCount = (assetItems) => {
     return getNonApprovedItems(assetItems).length;
 };
 </script>
+
+

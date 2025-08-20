@@ -1939,6 +1939,11 @@ const assetStatsCards = computed(() => [
         gradient: 'linear-gradient(135deg, #d1d5db 0%, #f3f4f6 100%)'
     }
 ]);
+
+// Helper function to navigate to a task
+const navigateToTask = (route) => {
+    router.visit(route);
+};
 </script>
 
 <template>
@@ -2625,6 +2630,91 @@ const assetStatsCards = computed(() => [
                 </div>
             </div>
         </div>
+
+        <!-- Tasks and Alerts Section -->
+        <div class="mt-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold text-gray-900">Tasks & Alerts</h2>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-500">Priority:</span>
+                            <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">High</span>
+                            <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">Medium</span>
+                            <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Low</span>
+                        </div>
+                    </div>
+
+                    <!-- Tasks Grid -->
+                    <div v-if="props.dashboardData?.tasks && props.dashboardData.tasks.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div v-for="task in props.dashboardData.tasks" :key="task.id" 
+                             class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                             @click="navigateToTask(task.route)">
+                            
+                            <!-- Task Header -->
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center space-x-3">
+                                    <!-- Priority Indicator -->
+                                    <div class="w-3 h-3 rounded-full" 
+                                         :class="{
+                                             'bg-red-500': task.priority === 'high',
+                                             'bg-orange-500': task.priority === 'medium',
+                                             'bg-blue-500': task.priority === 'low'
+                                         }"></div>
+                                    
+                                    <!-- Category Badge -->
+                                    <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
+                                          :class="{
+                                              'bg-yellow-100 text-yellow-800': task.category === 'Orders',
+                                              'bg-blue-100 text-blue-800': task.category === 'Assets',
+                                              'bg-green-100 text-green-800': task.category === 'Inventory',
+                                              'bg-purple-100 text-purple-800': task.category === 'Transfers'
+                                          }">
+                                        {{ task.category }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Count Badge -->
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                      :class="{
+                                          'bg-red-100 text-red-800': task.priority === 'high',
+                                          'bg-orange-100 text-orange-800': task.priority === 'medium',
+                                          'bg-blue-100 text-blue-800': task.priority === 'low'
+                                      }">
+                                    {{ task.count }}
+                                </span>
+                            </div>
+
+                            <!-- Task Content -->
+                            <div class="space-y-2">
+                                <h3 class="font-medium text-gray-900">{{ task.title }}</h3>
+                                <p class="text-sm text-gray-600">{{ task.description }}</p>
+                                
+                                <!-- Action Button -->
+                                <div class="flex items-center justify-between pt-2">
+                                    <span class="text-xs text-gray-500 capitalize">{{ task.type }}</span>
+                                    <button class="text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                                        View Details →
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- No Tasks State -->
+                    <div v-else class="text-center py-12">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">All Caught Up!</h3>
+                        <p class="text-gray-500">No pending tasks or alerts at the moment.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </AuthenticatedLayout>
 </template>
 

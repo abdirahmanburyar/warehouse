@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Category;
 use App\Models\Dosage;
 use App\Models\Inventory;
+use App\Models\ReorderLevel;
 use App\Models\Supply;
 use App\Models\SupplyItem;
 use App\Models\SubCategory;
@@ -120,5 +121,13 @@ class Product extends Model
 
     public function facilityInventories(){
         return $this->hasMany(FacilityInventory::class);
+    }
+
+    /**
+     * Get the reorder level for this product.
+     */
+    public function reorderLevel()
+    {
+        return $this->hasOne(ReorderLevel::class);
     }
 }

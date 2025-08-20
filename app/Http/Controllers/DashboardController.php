@@ -18,9 +18,11 @@ use App\Models\Order;
 use App\Models\Supplier;
 use App\Models\InventoryReport;
 use App\Models\Category;
-use Carbon\Carbon;
+use App\Models\Asset;
+use App\Models\InventoryItem;
 use App\Models\IssueQuantityReport;
 use App\Models\FacilityMonthlyReport;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
@@ -242,7 +244,8 @@ class DashboardController extends Controller
             'dashboardData' => [
                 'summary' => $facilityTypes,
                 'order_stats' => [],
-                'tasks' => [],
+                'tasks' => $this->generateDashboardTasks(),
+
                 'recommended_actions' => [],
                 'product_status' => []
             ],
@@ -962,4 +965,311 @@ class DashboardController extends Controller
             'border' => $borderColors
         ];
     }
+
+    private function generateDashboardTasks()
+    {
+        $tasks = [];
+        
+        // 1. ORDER WORKFLOW TASKS - Next Stage Actions
+        
+        // Orders waiting for review (pending -> reviewed)
+        $ordersPendingReview = Order::where('status', 'pending')->count();
+        if ($ordersPendingReview > 0) {
+            $tasks[] = [
+                'id' => 'orders_pending_review',
+                'type' => 'workflow',
+                'title' => 'Orders Awaiting Review',
+                'description' => "{$ordersPendingReview} orders ready to move to review stage",
+                'count' => $ordersPendingReview,
+                'priority' => 'high',
+                'icon' => 'clipboard-check',
+                'color' => 'yellow',
+                'route' => route('orders.index', ['status' => 'pending']),
+                'category' => 'Orders',
+                'current_stage' => 'Pending',
+                'next_stage' => 'Review'
+            ];
+        }
+
+        // Orders waiting for approval (reviewed -> approved)
+        $ordersPendingApproval = Order::where('status', 'reviewed')->count();
+        if ($ordersPendingApproval > 0) {
+            $tasks[] = [
+                'id' => 'orders_pending_approval',
+                'type' => 'workflow',
+                'title' => 'Orders Ready for Approval',
+                'description' => "{$ordersPendingApproval} reviewed orders waiting for final approval",
+                'count' => $ordersPendingApproval,
+                'priority' => 'high',
+                'icon' => 'check-circle',
+                'color' => 'green',
+                'route' => route('orders.index', ['status' => 'reviewed']),
+                'category' => 'Orders',
+                'current_stage' => 'Reviewed',
+                'next_stage' => 'Approve'
+            ];
+        }
+
+        // Orders ready for processing (approved -> in_process)
+        $ordersReadyForProcessing = Order::where('status', 'approved')->count();
+        if ($ordersReadyForProcessing > 0) {
+            $tasks[] = [
+                'id' => 'orders_ready_processing',
+                'type' => 'workflow',
+                'title' => 'Orders Ready for Processing',
+                'description' => "{$ordersReadyForProcessing} approved orders ready to start processing",
+                'count' => $ordersReadyForProcessing,
+                'priority' => 'medium',
+                'icon' => 'cog',
+                'color' => 'blue',
+                'route' => route('orders.index', ['status' => 'approved']),
+                'category' => 'Orders',
+                'current_stage' => 'Approved',
+                'next_stage' => 'Process'
+            ];
+        }
+
+        // Orders ready for dispatch (in_process -> dispatched)
+        $ordersReadyForDispatch = Order::where('status', 'in_process')->count();
+        if ($ordersReadyForDispatch > 0) {
+            $tasks[] = [
+                'id' => 'orders_ready_dispatch',
+                'type' => 'workflow',
+                'title' => 'Orders Ready for Dispatch',
+                'description' => "{$ordersReadyForDispatch} processed orders ready for dispatch",
+                'count' => $ordersReadyForDispatch,
+                'priority' => 'medium',
+                'icon' => 'truck',
+                'color' => 'blue',
+                'route' => route('orders.index', ['status' => 'in_process']),
+                'category' => 'Orders',
+                'current_stage' => 'In Process',
+                'next_stage' => 'Dispatch'
+            ];
+        }
+
+        // 2. ASSET WORKFLOW TASKS - Next Stage Actions
+        
+        // Assets waiting for review (pending_approval -> reviewed)
+        $assetsPendingReview = \App\Models\Asset::pendingApproval()->count();
+        if ($assetsPendingReview > 0) {
+            $tasks[] = [
+                'id' => 'assets_pending_review',
+                'type' => 'workflow',
+                'title' => 'Assets Awaiting Review',
+                'description' => "{$assetsPendingReview} assets ready to move to review stage",
+                'count' => $assetsPendingReview,
+                'priority' => 'high',
+                'icon' => 'cube',
+                'color' => 'yellow',
+                'route' => route('assets.approvals.index'),
+                'category' => 'Assets',
+                'current_stage' => 'Pending Approval',
+                'next_stage' => 'Review'
+            ];
+        }
+
+        // Assets waiting for approval (reviewed -> approved)
+        $assetsPendingApproval = \App\Models\Asset::whereNotNull('reviewed_at')->whereNull('approved_at')->whereNull('rejected_at')->count();
+        if ($assetsPendingApproval > 0) {
+            $tasks[] = [
+                'id' => 'assets_pending_approval',
+                'type' => 'workflow',
+                'title' => 'Assets Ready for Approval',
+                'description' => "{$assetsPendingApproval} reviewed assets waiting for final approval",
+                'count' => $assetsPendingApproval,
+                'priority' => 'high',
+                'icon' => 'check-circle',
+                'color' => 'green',
+                'route' => route('assets.approvals.index'),
+                'category' => 'Assets',
+                'current_stage' => 'Reviewed',
+                'next_stage' => 'Approve'
+            ];
+        }
+
+        // 3. TRANSFER WORKFLOW TASKS - Next Stage Actions
+        
+        // Transfers waiting for approval (pending -> approved)
+        $transfersPendingApproval = Transfer::where('status', 'pending')->count();
+        if ($transfersPendingApproval > 0) {
+            $tasks[] = [
+                'id' => 'transfers_pending_approval',
+                'type' => 'workflow',
+                'title' => 'Transfers Awaiting Approval',
+                'description' => "{$transfersPendingApproval} transfers ready for approval",
+                'count' => $transfersPendingApproval,
+                'priority' => 'medium',
+                'icon' => 'truck',
+                'color' => 'blue',
+                'route' => route('transfers.index', ['status' => 'pending']),
+                'category' => 'Transfers',
+                'current_stage' => 'Pending',
+                'next_stage' => 'Approve'
+            ];
+        }
+
+        // Transfers ready for dispatch (approved -> dispatched)
+        $transfersReadyForDispatch = Transfer::where('status', 'approved')->count();
+        if ($transfersReadyForDispatch > 0) {
+            $tasks[] = [
+                'id' => 'transfers_ready_dispatch',
+                'type' => 'workflow',
+                'title' => 'Transfers Ready for Dispatch',
+                'description' => "{$transfersReadyForDispatch} approved transfers ready for dispatch",
+                'count' => $transfersReadyForDispatch,
+                'priority' => 'medium',
+                'icon' => 'truck',
+                'color' => 'green',
+                'route' => route('transfers.index', ['status' => 'approved']),
+                'category' => 'Transfers',
+                'current_stage' => 'Approved',
+                'next_stage' => 'Dispatch'
+            ];
+        }
+
+        // 4. INVENTORY WORKFLOW TASKS - Next Stage Actions
+        
+        // Low stock items that need reordering
+        $lowStockItems = \App\Models\InventoryItem::where('quantity', '>', 0)
+            ->whereHas('inventory.product.reorderLevel', function($query) {
+                $query->whereRaw('inventory_items.quantity <= (reorder_levels.reorder_level * 0.7)');
+            })
+            ->count();
+        
+        if ($lowStockItems > 0) {
+            $tasks[] = [
+                'id' => 'low_stock_reorder',
+                'type' => 'workflow',
+                'title' => 'Low Stock - Reorder Needed',
+                'description' => "{$lowStockItems} items need immediate reordering",
+                'count' => $lowStockItems,
+                'priority' => 'high',
+                'icon' => 'exclamation-triangle',
+                'color' => 'orange',
+                'route' => route('inventories.index', ['status' => 'low_stock']),
+                'category' => 'Inventory',
+                'current_stage' => 'Low Stock',
+                'next_stage' => 'Reorder'
+            ];
+        }
+
+        // Out of stock items that need urgent attention
+        $outOfStockItems = \App\Models\InventoryItem::where('quantity', 0)->count();
+        if ($outOfStockItems > 0) {
+            $tasks[] = [
+                'id' => 'out_of_stock_urgent',
+                'type' => 'workflow',
+                'title' => 'Out of Stock - Urgent Action',
+                'description' => "{$outOfStockItems} items completely out of stock",
+                'count' => $outOfStockItems,
+                'priority' => 'high',
+                'icon' => 'x-circle',
+                'color' => 'red',
+                'route' => route('inventories.index', ['status' => 'out_of_stock']),
+                'category' => 'Inventory',
+                'current_stage' => 'Out of Stock',
+                'next_stage' => 'Restock'
+            ];
+        }
+
+        // 5. PURCHASE ORDER WORKFLOW TASKS
+        
+        // Purchase orders ready for packing
+        $posReadyForPacking = PurchaseOrder::where('status', 'approved')
+            ->whereDoesntHave('packingLists')
+            ->count();
+        
+        if ($posReadyForPacking > 0) {
+            $tasks[] = [
+                'id' => 'pos_ready_packing',
+                'type' => 'workflow',
+                'title' => 'POs Ready for Packing',
+                'description' => "{$posReadyForPacking} approved POs need packing lists",
+                'count' => $posReadyForPacking,
+                'priority' => 'medium',
+                'icon' => 'archive-box',
+                'color' => 'blue',
+                'route' => route('purchase-orders.index', ['status' => 'approved']),
+                'category' => 'Purchase Orders',
+                'current_stage' => 'Approved',
+                'next_stage' => 'Create Packing List'
+            ];
+        }
+
+        // 6. LMIS REPORTS WORKFLOW TASKS
+        
+        // LMIS reports awaiting review
+        $lmisReportsPendingReview = \App\Models\FacilityMonthlyReport::where('status', 'submitted')->count();
+        if ($lmisReportsPendingReview > 0) {
+            $tasks[] = [
+                'id' => 'lmis_reports_review',
+                'type' => 'report',
+                'title' => 'LMIS Reports Awaiting Review',
+                'description' => "{$lmisReportsPendingReview} LMIS reports submitted and waiting for review",
+                'count' => $lmisReportsPendingReview,
+                'priority' => 'medium',
+                'icon' => 'clipboard-check',
+                'color' => 'yellow',
+                'route' => route('reports.facilities-list'),
+                'category' => 'Reports',
+                'current_stage' => 'Submitted',
+                'next_stage' => 'Review'
+            ];
+        }
+
+        // LMIS reports awaiting approval
+        $lmisReportsPendingApproval = \App\Models\FacilityMonthlyReport::where('status', 'reviewed')->count();
+        if ($lmisReportsPendingApproval > 0) {
+            $tasks[] = [
+                'id' => 'lmis_reports_approval',
+                'type' => 'report',
+                'title' => 'LMIS Reports Awaiting Approval',
+                'description' => "{$lmisReportsPendingApproval} LMIS reports reviewed and waiting for approval",
+                'count' => $lmisReportsPendingApproval,
+                'priority' => 'medium',
+                'icon' => 'check-circle',
+                'color' => 'green',
+                'route' => route('reports.facilities-list'),
+                'category' => 'Reports',
+                'current_stage' => 'Reviewed',
+                'next_stage' => 'Approve'
+            ];
+        }
+
+        // LMIS reports pending submission
+        $lmisReportsPendingSubmission = \App\Models\Facility::whereDoesntHave('monthlyReports', function($query) {
+            $query->where('report_period', now()->format('Y-m'));
+        })->count();
+        
+        if ($lmisReportsPendingSubmission > 0) {
+            $tasks[] = [
+                'id' => 'lmis_reports_submission',
+                'type' => 'report',
+                'title' => 'LMIS Reports Pending Submission',
+                'description' => "{$lmisReportsPendingSubmission} facilities haven't submitted this month's LMIS report",
+                'count' => $lmisReportsPendingSubmission,
+                'priority' => 'high',
+                'icon' => 'document-text',
+                'color' => 'red',
+                'route' => route('reports.facilities-list'),
+                'category' => 'Reports',
+                'current_stage' => 'Not Submitted',
+                'next_stage' => 'Submit Report'
+            ];
+        }
+
+        // Sort tasks by priority (high, medium, low) and then by count
+        usort($tasks, function($a, $b) {
+            $priorityOrder = ['high' => 3, 'medium' => 2, 'low' => 1];
+            if ($priorityOrder[$a['priority']] !== $priorityOrder[$b['priority']]) {
+                return $priorityOrder[$b['priority']] - $priorityOrder[$a['priority']];
+            }
+            return $b['count'] - $a['count'];
+        });
+
+        return $tasks;
+    }
+
+
 }
