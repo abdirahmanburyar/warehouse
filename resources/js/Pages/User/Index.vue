@@ -21,7 +21,7 @@
                     </div>
                     <div class="mt-6 sm:mt-0">
                         <Link
-                            :href="route('users.create')"
+                            :href="route('settings.users.create')"
                             class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150"
                         >
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,7 +227,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 <div class="flex items-center justify-center space-x-2">
                                     <Link 
-                                        :href="route('users.edit', user.id)"
+                                        :href="route('settings.users.edit', user.id)"
                                         class="inline-flex items-center p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
                                         title="Edit User"
                                     >
@@ -259,7 +259,7 @@
                 <p class="mt-1 text-sm text-gray-500">Get started by creating a new user.</p>
                 <div class="mt-6">
                     <Link
-                        :href="route('users.create')"
+                                                    :href="route('settings.users.create')"
                         class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
                     >
                         <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -363,7 +363,7 @@ const applyFilters = () => {
         params.page = props.filters.page;
     }
 
-    router.get(route('users.index'), params, {
+            router.get(route('settings.users.index'), params, {
         preserveState: true,
         preserveScroll: true,
         only: ['users', 'roles', 'warehouses', 'facilities'],
@@ -400,7 +400,7 @@ const toggleUserStatus = async (user, newStatus) => {
     try {
         processing.value = true;
         
-        const response = await axios.post(route('users.toggle-status'), {
+        const response = await axios.post(route('settings.users.toggle-status'), {
             user_id: user.id,
             is_active: newStatus
         });

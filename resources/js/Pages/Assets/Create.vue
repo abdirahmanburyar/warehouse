@@ -252,17 +252,17 @@ const form = ref({
     sub_location_id: "",
     asset_items: [
         {
-    asset_tag: "",
+            asset_tag: "",
             asset_name: "",
             serial_number: "",
-    asset_category_id: null,
-    asset_category: null,
+            asset_category_id: null,
+            asset_category: null,
             asset_type_id: null,
             asset_type: null,
-    assignee_id: null,
+            assignee_id: null,
             assignee: null,
             status: "pending_approval",
-    original_value: "",
+            original_value: "",
         },
     ],
 });
@@ -520,7 +520,7 @@ const createCategory = async () => {
 
         form.value.asset_category = newCategoryData;
         form.value.asset_category_id = newCategoryData.id;
-        
+
         newCategory.value = "";
         showCategoryModal.value = false;
 
@@ -737,16 +737,16 @@ const submit = async () => {
 
         processing.value = false;
         isSubmitting.value = false;
-        
+
         if (response.data.success) {
-        Swal.fire({
-            title: "Success!",
+            Swal.fire({
+                title: "Success!",
                 text: response.data.message,
-            icon: "success",
-            confirmButtonText: "OK",
-        }).then(() => {
-            router.get(route("assets.index"));
-        });
+                icon: "success",
+                confirmButtonText: "OK",
+            }).then(() => {
+                router.get(route("assets.index"));
+            });
         } else {
             toast.error(response.data.message || "Asset creation failed");
         }
@@ -754,7 +754,7 @@ const submit = async () => {
         processing.value = false;
         isSubmitting.value = false;
         console.error("Error creating asset:", error);
-        
+
         if (error.response?.data?.message) {
             toast.error(error.response.data.message);
         } else {
@@ -765,7 +765,9 @@ const submit = async () => {
 </script>
 
 <template>
-    <AuthenticatedLayout title="Assets management" description="Create new asset with multiple items" img="/assets/images/asset-header.png">
+    <AuthenticatedLayout title="Assets management" description="Create new asset with multiple items"
+        img="/assets/images/asset-header.png">
+
         <Head title="Create Asset" />
         <div class="mb-[80px]">
             <div class="p-6 text-gray-900">
@@ -775,33 +777,28 @@ const submit = async () => {
                     <!-- Asset Information Section -->
                     <div class="bg-white p-2">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">Asset Information</h3>
-                        
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            <div>
                                 <InputLabel for="asset_number" value="Asset Number" />
-                                <input id="asset_number" type="text" class="mt-1 block w-full" placeholder="e.g., ASSET-2025-001" v-model="form.asset_number" required />
-                        </div>
-                        <div>
+                                <input id="asset_number" type="text" class="mt-1 block w-full"
+                                    placeholder="e.g., ASSET-2025-001" v-model="form.asset_number" required />
+                            </div>
+                            <div>
                                 <InputLabel for="acquisition_date" value="Acquisition Date" />
-                                <input id="acquisition_date" type="date" class="mt-1 block w-full" v-model="form.acquisition_date" required />
-                        </div>
-                        <div>
+                                <input id="acquisition_date" type="date" class="mt-1 block w-full"
+                                    v-model="form.acquisition_date" required />
+                            </div>
+                            <div>
                                 <InputLabel for="fund_source" value="Fund Source" />
-                                    <Multiselect
-                                    id="fund_source"
-                                    v-model="form.fund_source"
-                                    :options="fundSourceOptions"
-                                        :close-on-select="true"
-                                        :show-labels="false"
-                                        :allow-empty="true"
-                                    placeholder="Select Fund Source"
-                                        track-by="id"
-                                        label="name"
-                                    @select="handleFundSourceSelect"
-                                >
+                                <Multiselect id="fund_source" v-model="form.fund_source" :options="fundSourceOptions"
+                                    :close-on-select="true" :show-labels="false" :allow-empty="true"
+                                    placeholder="Select Fund Source" track-by="id" label="name"
+                                    @select="handleFundSourceSelect">
                                     <template v-slot:option="{ option }">
                                         <div :class="{ 'add-new-option': option.isAddNew }">
-                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Fund Source</span>
+                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New
+                                                Fund Source</span>
                                             <span v-else>{{ option.name }}</span>
                                         </div>
                                     </template>
@@ -810,83 +807,59 @@ const submit = async () => {
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-4">
-                        <div>
-                            <InputLabel for="region" value="Region" />
-                            <Multiselect
-                                v-model="form.region"
-                                :options="regionOptions"
-                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                :allow-empty="true"
-                                placeholder="Select Region"
-                                track-by="id"
-                                label="name"
-                                @select="handleRegionSelect"
-                            >
-                                <template v-slot:option="{ option }">
-                                        <div :class="{ 'add-new-option': option.isAddNew }">
-                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Region</span>
-                                        <span v-else>{{ option.name }}</span>
-                                    </div>
-                                </template>
-                            </Multiselect>
-                        </div>
-                        
-                        <div>
-                            <InputLabel for="location" value="Location" />
-                            <div class="w-full">
-                                <Multiselect
-                                    v-model="form.asset_location"
-                                    :options="locationOptions"
-                                    :searchable="true"
-                                    :close-on-select="true"
-                                    :show-labels="false"
-                                    :allow-empty="true"
-                                    placeholder="Select Location"
-                                    track-by="id"
-                                    label="name"
-                                    @select="handleLocationSelect"
-                                >
+                            <div>
+                                <InputLabel for="region" value="Region" />
+                                <Multiselect v-model="form.region" :options="regionOptions" :searchable="true"
+                                    :close-on-select="true" :show-labels="false" :allow-empty="true"
+                                    placeholder="Select Region" track-by="id" label="name" @select="handleRegionSelect">
                                     <template v-slot:option="{ option }">
                                         <div :class="{ 'add-new-option': option.isAddNew }">
-                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Location</span>
+                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New
+                                                Region</span>
                                             <span v-else>{{ option.name }}</span>
                                         </div>
                                     </template>
                                 </Multiselect>
                             </div>
-                        </div>
-                        <div>
-                            <InputLabel for="sub_location" value="Sub Location" />
-                            <div class="w-full">
-                                <Multiselect
-                                    v-model="form.sub_location"
-                                    :options="[
+
+                            <div>
+                                <InputLabel for="location" value="Location" />
+                                <div class="w-full">
+                                    <Multiselect v-model="form.asset_location" :options="locationOptions"
+                                        :searchable="true" :close-on-select="true" :show-labels="false"
+                                        :allow-empty="true" placeholder="Select Location" track-by="id" label="name"
+                                        @select="handleLocationSelect">
+                                        <template v-slot:option="{ option }">
+                                            <div :class="{ 'add-new-option': option.isAddNew }">
+                                                <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add
+                                                    New Location</span>
+                                                <span v-else>{{ option.name }}</span>
+                                            </div>
+                                        </template>
+                                    </Multiselect>
+                                </div>
+                            </div>
+                            <div>
+                                <InputLabel for="sub_location" value="Sub Location" />
+                                <div class="w-full">
+                                    <Multiselect v-model="form.sub_location" :options="[
                                         ...subLocations,
                                         {
                                             id: 'new',
                                             name: '+ Add New Sub-location',
                                             isAddNew: true,
                                         },
-                                    ]"
-                                    :searchable="true"
-                                    :close-on-select="true"
-                                    :show-labels="false"
-                                    :allow-empty="true"
-                                    placeholder="Select Sub-location"
-                                    track-by="id"
-                                    label="name"
-                                    :disabled="!form.asset_location_id"
-                                    @select="handleSubLocationSelect"
-                                >
-                                    <template v-slot:option="{ option }">
-                                        <div :class="{ 'add-new-option': option.isAddNew }">
-                                            <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Sub-location</span>
-                                            <span v-else>{{ option.name }}</span>
-                                        </div>
-                                    </template>
-                                </Multiselect>
+                                    ]" :searchable="true" :close-on-select="true" :show-labels="false"
+                                        :allow-empty="true" placeholder="Select Sub-location" track-by="id" label="name"
+                                        :disabled="!form.asset_location_id" @select="handleSubLocationSelect">
+                                        <template v-slot:option="{ option }">
+                                            <div :class="{ 'add-new-option': option.isAddNew }">
+                                                <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add
+                                                    New Sub-location</span>
+                                                <span v-else>{{ option.name }}</span>
+                                            </div>
+                                        </template>
+                                    </Multiselect>
                                 </div>
                             </div>
                         </div>
@@ -896,9 +869,12 @@ const submit = async () => {
                     <div class="bg-white p-2">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-semibold text-gray-800">Asset Items</h3>
-                            <button type="button" @click="addAssetItem" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            <button type="button" @click="addAssetItem"
+                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v16m8-8H4" />
                                 </svg>
                                 Add Item
                             </button>
@@ -913,14 +889,31 @@ const submit = async () => {
                             <table class="divide-y divide-gray-200 w-full">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Asset Tag</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Asset Name</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Serial Number</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Category</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Type</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Assignee</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Value</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Action</th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                                            Asset Tag</th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                                            Asset Name</th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                                            Serial Number</th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                                            Category</th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                                            Type
+                                        </th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                                            Assignee</th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                                            Value</th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                                            Action</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -928,37 +921,38 @@ const submit = async () => {
 
                                         <!-- Asset Tag -->
                                         <td class="px-3 py-3 whitespace-nowrap w-32">
-                                            <input :id="`asset_tag_${index}`" type="text" class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="e.g., INV-000123" v-model="item.asset_tag" required />
+                                            <input :id="`asset_tag_${index}`" type="text"
+                                                class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                placeholder="e.g., INV-000123" v-model="item.asset_tag" required />
                                         </td>
 
                                         <!-- Asset Name -->
                                         <td class="px-3 py-3 whitespace-nowrap w-40">
-                                            <input :id="`asset_name_${index}`" type="text" class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="e.g., Dell Latitude 7420" v-model="item.asset_name" required />
+                                            <input :id="`asset_name_${index}`" type="text"
+                                                class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                placeholder="e.g., Dell Latitude 7420" v-model="item.asset_name"
+                                                required />
                                         </td>
 
                                         <!-- Serial Number -->
                                         <td class="px-3 py-3 whitespace-nowrap w-32">
-                                            <input :id="`serial_number_${index}`" type="text" class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Manufacturer SN" v-model="item.serial_number" required />
+                                            <input :id="`serial_number_${index}`" type="text"
+                                                class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                placeholder="Manufacturer SN" v-model="item.serial_number" required />
                                         </td>
 
                                         <!-- Category -->
                                         <td class="px-3 py-3 whitespace-nowrap w-32">
-                            <Multiselect
-                                                v-model="item.asset_category"
-                                                :options="categoryOptions"
-                                                :searchable="true"
-                                :close-on-select="true"
-                                :show-labels="false"
-                                :allow-empty="true"
-                                                placeholder="Select Category"
-                                track-by="id"
-                                label="name"
-                                                class="text-sm"
-                                                @select="(selected) => handleItemCategorySelect(selected, index)"
-                            >
-                                <template v-slot:option="{ option }">
+                                            <Multiselect v-model="item.asset_category" :options="categoryOptions"
+                                                :searchable="true" :close-on-select="true" :show-labels="false"
+                                                :allow-empty="true" placeholder="Select Category" track-by="id"
+                                                label="name" class="text-sm"
+                                                @select="(selected) => handleItemCategorySelect(selected, index)">
+                                                <template v-slot:option="{ option }">
                                                     <div :class="{ 'add-new-option': option.isAddNew }">
-                                                        <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Category</span>
+                                                        <span v-if="option.isAddNew"
+                                                            class="text-indigo-600 font-medium">+ Add New
+                                                            Category</span>
                                                         <span v-else>{{ option.name }}</span>
                                                     </div>
                                                 </template>
@@ -967,57 +961,49 @@ const submit = async () => {
 
                                         <!-- Type -->
                                         <td class="px-3 py-3 whitespace-nowrap w-32">
-                                            <Multiselect
-                                                v-model="item.asset_type"
+                                            <Multiselect v-model="item.asset_type"
                                                 :options="getFilteredTypeOptions(item.asset_category)"
-                                                :searchable="true"
-                                                :close-on-select="true"
-                                                :show-labels="false"
-                                                :allow-empty="true"
-                                                placeholder="Select Type"
-                                                track-by="id"
-                                                label="name"
-                                                :disabled="!item.asset_category"
-                                                class="text-sm"
-                                                @select="(selected) => handleItemTypeSelect(selected, index)"
-                                            >
+                                                :searchable="true" :close-on-select="true" :show-labels="false"
+                                                :allow-empty="true" placeholder="Select Type" track-by="id" label="name"
+                                                :disabled="!item.asset_category" class="text-sm"
+                                                @select="(selected) => handleItemTypeSelect(selected, index)">
                                                 <template v-slot:option="{ option }">
                                                     <div :class="{ 'add-new-option': option.isAddNew }">
-                                                        <span v-if="option.isAddNew" class="text-indigo-600 font-medium">+ Add New Type</span>
-                                        <span v-else>{{ option.name }}</span>
-                                    </div>
-                                </template>
-                            </Multiselect>
+                                                        <span v-if="option.isAddNew"
+                                                            class="text-indigo-600 font-medium">+ Add New Type</span>
+                                                        <span v-else>{{ option.name }}</span>
+                                                    </div>
+                                                </template>
+                                            </Multiselect>
                                         </td>
 
                                         <!-- Assignee -->
                                         <td class="px-3 py-3 whitespace-nowrap w-32">
-                                            <Multiselect
-                                                v-model="item.assignee"
-                                                :options="assigneeOptions"
-                                                :searchable="true"
-                                                :close-on-select="true"
-                                                :show-labels="false"
-                                                :allow-empty="true"
-                                                placeholder="Select Assignee"
-                                                track-by="id"
-                                                label="name"
-                                                class="text-sm"
+                                            <Multiselect v-model="item.assignee" :options="assigneeOptions"
+                                                :searchable="true" :close-on-select="true" :show-labels="false"
+                                                :allow-empty="true" placeholder="Select Assignee" track-by="id"
+                                                label="name" class="text-sm"
                                                 @select="(selected) => handleItemAssigneeSelect(selected, index)"
-                                                @clear="() => handleItemAssigneeClear(index)"
-                                            />
+                                                @clear="() => handleItemAssigneeClear(index)" />
                                         </td>
 
                                         <!-- Original Value -->
                                         <td class="px-3 py-3 whitespace-nowrap w-24">
-                                            <input :id="`original_value_${index}`" type="number" step="0.01" class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="0.00" v-model="item.original_value" required />
+                                            <input :id="`original_value_${index}`" type="number" step="0.01"
+                                                class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                placeholder="0.00" v-model="item.original_value" required />
                                         </td>
 
                                         <!-- Action -->
                                         <td class="px-3 py-3 whitespace-nowrap text-center w-20">
-                                            <button type="button" @click="removeAssetItem(index)" class="text-red-600 hover:text-red-800 p-1" :disabled="form.asset_items.length === 1">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            <button type="button" @click="removeAssetItem(index)"
+                                                class="text-red-600 hover:text-red-800 p-1"
+                                                :disabled="form.asset_items.length === 1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                 </svg>
                                             </button>
                                         </td>
@@ -1029,8 +1015,9 @@ const submit = async () => {
 
                     <!-- Submit Section -->
                     <div class="flex items-center justify-end space-x-4">
-                        <Link :href="route('assets.index')" class="px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200">
-                            Cancel
+                        <Link :href="route('assets.index')"
+                            class="px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200">
+                        Cancel
                         </Link>
                         <PrimaryButton type="submit" :disabled="processing || form.asset_items.length === 0">
                             {{ processing ? "Creating..." : "Create Asset" }}
@@ -1050,8 +1037,10 @@ const submit = async () => {
                     <input id="new_location" type="text" class="mt-1 block w-full" v-model="newLocation" required />
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
-                    <SecondaryButton @click="showLocationModal = false" :disabled="isNewLocation">Cancel</SecondaryButton>
-                    <PrimaryButton :disabled="isNewLocation" @click="createLocation">{{ isNewLocation ? "Waiting..." : "Create new location" }}</PrimaryButton>
+                    <SecondaryButton @click="showLocationModal = false" :disabled="isNewLocation">Cancel
+                    </SecondaryButton>
+                    <PrimaryButton :disabled="isNewLocation" @click="createLocation">{{ isNewLocation ? "Waiting..." :
+                        "Create new location" }}</PrimaryButton>
                 </div>
             </div>
         </Modal>
@@ -1062,11 +1051,15 @@ const submit = async () => {
                 <h2 class="text-lg font-medium text-gray-900">Add New Sub-Location</h2>
                 <div class="mt-6">
                     <InputLabel for="new_sub_location" value="Sub-Location Name" />
-                    <input id="new_sub_location" type="text" class="mt-1 block w-full" v-model="newSubLocation" required />
+                    <input id="new_sub_location" type="text" class="mt-1 block w-full" v-model="newSubLocation"
+                        required />
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
-                    <SecondaryButton @click="showSubLocationModal = false" :disabled="isNewLocation">Cancel</SecondaryButton>
-                    <PrimaryButton :disabled="isNewLocation" @click="createSubLocation">{{ isNewLocation ? "Waiting..." : "Create Sub-Location" }}</PrimaryButton>
+                    <SecondaryButton @click="showSubLocationModal = false" :disabled="isNewLocation">Cancel
+                    </SecondaryButton>
+                    <PrimaryButton :disabled="isNewLocation" @click="createSubLocation">{{ isNewLocation ? "Waiting..."
+                        :
+                        "Create Sub-Location" }}</PrimaryButton>
                 </div>
             </div>
         </Modal>
@@ -1080,7 +1073,8 @@ const submit = async () => {
                     <input id="new_category" type="text" class="mt-1 block w-full" v-model="newCategory" required />
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
-                    <SecondaryButton @click="showCategoryModal = false" :disabled="isNewCategory">Cancel</SecondaryButton>
+                    <SecondaryButton @click="showCategoryModal = false" :disabled="isNewCategory">Cancel
+                    </SecondaryButton>
                     <PrimaryButton :disabled="isNewCategory" @click="createCategory">{{ isNewCategory ? "Waiting..." : "Create Category" }}</PrimaryButton>
                 </div>
             </div>
@@ -1107,15 +1101,19 @@ const submit = async () => {
                 <h2 class="text-lg font-medium text-gray-900">Add New Fund Source</h2>
                 <div class="mt-6">
                     <InputLabel for="new_fund_source" value="Fund Source Name" />
-                    <input id="new_fund_source" type="text" class="mt-1 block w-full" v-model="newFundSource" required />
+                    <input id="new_fund_source" type="text" class="mt-1 block w-full" v-model="newFundSource"
+                        required />
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
-                    <SecondaryButton @click="showFundSourceModal = false" :disabled="isNewFundSource">Cancel</SecondaryButton>
-                    <PrimaryButton :disabled="isNewFundSource" @click="createFundSource">{{ isNewFundSource ? "Waiting..." : "Create Fund Source" }}</PrimaryButton>
+                    <SecondaryButton @click="showFundSourceModal = false" :disabled="isNewFundSource">Cancel
+                    </SecondaryButton>
+                    <PrimaryButton :disabled="isNewFundSource" @click="createFundSource">{{ isNewFundSource ?
+                        "Waiting..." :
+                        "Create Fund Source" }}</PrimaryButton>
                 </div>
             </div>
         </Modal>
-        
+
         <!-- New Type Modal -->
         <Modal :show="showTypeModal" @close="showTypeModal = false">
             <div class="p-6">
@@ -1126,7 +1124,9 @@ const submit = async () => {
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
                     <SecondaryButton @click="showTypeModal = false" :disabled="isNewType">Cancel</SecondaryButton>
-                    <PrimaryButton :disabled="isNewType" @click="createType">{{ isNewType ? 'Waiting...' : 'Create Type' }}</PrimaryButton>
+                    <PrimaryButton :disabled="isNewType" @click="createType">{{ isNewType ? 'Waiting...' : 'Create Type'
+                        }}
+                    </PrimaryButton>
                 </div>
             </div>
         </Modal>
@@ -1138,23 +1138,30 @@ const submit = async () => {
                 <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <InputLabel for="new_assignee_name" value="Full Name" />
-                        <input id="new_assignee_name" name="new_assignee_name" type="text" class="mt-1 block w-full" placeholder="e.g., John Doe" :required="showAssigneeModal" v-model="newAssignee.name" />
+                        <input id="new_assignee_name" name="new_assignee_name" type="text" class="mt-1 block w-full"
+                            placeholder="e.g., John Doe" :required="showAssigneeModal" v-model="newAssignee.name" />
                     </div>
                     <div>
                         <InputLabel for="new_assignee_email" value="Email (optional)" />
-                        <input id="new_assignee_email" type="email" class="mt-1 block w-full" placeholder="name@example.com" v-model="newAssignee.email" />
+                        <input id="new_assignee_email" type="email" class="mt-1 block w-full"
+                            placeholder="name@example.com" v-model="newAssignee.email" />
                     </div>
                     <div>
                         <InputLabel for="new_assignee_phone" value="Phone" />
-                        <input id="new_assignee_phone" name="new_assignee_phone" type="text" class="mt-1 block w-full" placeholder="e.g., +1 555 123 4567" :required="showAssigneeModal" v-model="newAssignee.phone" />
+                        <input id="new_assignee_phone" name="new_assignee_phone" type="text" class="mt-1 block w-full"
+                            placeholder="e.g., +1 555 123 4567" :required="showAssigneeModal"
+                            v-model="newAssignee.phone" />
                     </div>
                     <div>
                         <InputLabel for="new_assignee_department" value="Department" />
-                        <input id="new_assignee_department" name="new_assignee_department" type="text" class="mt-1 block w-full" placeholder="e.g., IT" :required="showAssigneeModal" v-model="newAssignee.department" />
+                        <input id="new_assignee_department" name="new_assignee_department" type="text"
+                            class="mt-1 block w-full" placeholder="e.g., IT" :required="showAssigneeModal"
+                            v-model="newAssignee.department" />
                     </div>
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
-                    <SecondaryButton @click="showAssigneeModal = false" :disabled="isSavingAssignee">Cancel</SecondaryButton>
+                    <SecondaryButton @click="showAssigneeModal = false" :disabled="isSavingAssignee">Cancel
+                    </SecondaryButton>
                     <PrimaryButton @click="createAssignee" :disabled="isSavingAssignee">
                         {{ isSavingAssignee ? 'Saving...' : 'Save' }}
                     </PrimaryButton>
