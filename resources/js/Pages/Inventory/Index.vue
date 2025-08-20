@@ -683,7 +683,7 @@ const hasActiveFilters = computed(() => {
                             <!-- Low Stock Card -->
                             <div class="flex items-center rounded-xl bg-gradient-to-r from-orange-50 to-orange-100 p-4 shadow-lg border border-orange-200">
                                 <div class="flex-shrink-0">
-                                    <img src="/assets/images/low_stock.png" class="w-[50px] h-[50px] drop-shadow-sm" alt="Low Stock" />
+                                    <img src="/assets/images/low_stock.png" class="w-[50px] h-[50px]" alt="Low Stock" />
                                 </div>
                                 <div class="ml-4 flex flex-col flex-1">
                                     <span class="text-2xl font-bold text-orange-700">{{ lowStockCount }}</span>
