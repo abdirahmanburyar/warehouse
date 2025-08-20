@@ -37,13 +37,13 @@ console.log('Inventory status counts:', props.inventoryStatusCounts);
 const toast = useToast();
 
 // Search and filter states
-const search = ref(props.filters.search);
-const location = ref(props.filters.location);
-const dosage = ref(props.filters.dosage);
-const category = ref(props.filters.category);
-const warehouse = ref(props.filters.warehouse);
-const status = ref(props.filters.status);
-const per_page = ref(props.filters.per_page || 25);
+const search = ref(props.filters?.search || '');
+const location = ref(props.filters?.location || '');
+const dosage = ref(props.filters?.dosage || '');
+const category = ref(props.filters?.category || '');
+const warehouse = ref(props.filters?.warehouse || '');
+const status = ref(props.filters?.status || '');
+const per_page = ref(props.filters?.per_page || 25);
 const loadedLocation = ref([]);
 const isLoading = ref(false);
 
@@ -116,7 +116,7 @@ const applyFilters = () => {
 
     // Always include per_page in query if it exists
     if (per_page.value) query.per_page = per_page.value;
-    if (props.filters.page) query.page = props.filters.page;
+    if (props.filters?.page) query.page = props.filters.page;
 
     console.log('Applying filters:', query);
     
@@ -155,7 +155,7 @@ watch(
         () => dosage.value,
         () => category.value,
         () => status.value,
-        () => props.filters.page,
+        () => props.filters?.page,
     ],
     () => {
         applyFilters();
@@ -427,7 +427,9 @@ const reorderItemsCount = computed(() => {
 });
 
 function getResults(page = 1) {
-    props.filters.page = page;
+    if (props.filters) {
+        props.filters.page = page;
+    }
 }
 
 const clearFilters = () => {
@@ -517,7 +519,7 @@ const hasActiveFilters = computed(() => {
                         </svg>
                         {{ isLoading ? 'Clearing...' : 'Clear Filters' }}
                     </button>
-                    <select v-model="per_page" class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-3" @change="props.filters.page = 1">
+                    <select v-model="per_page" class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-3" @change="() => { if (props.filters) props.filters.page = 1; }">
                         <option value="25">25 per page</option>
                         <option value="50">50 per page</option>
                         <option value="100">100 per page</option>

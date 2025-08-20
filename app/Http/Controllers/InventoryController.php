@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\Dosage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use App\Events\InventoryEvent;
@@ -18,7 +19,6 @@ use App\Models\IssueQuantityReport;
 use App\Models\IssueQuantityItem;
 use App\Models\ReorderLevel;
 use App\Events\InventoryUpdated;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\UploadInventory;
@@ -32,177 +32,199 @@ class InventoryController extends Controller
 	public function index(Request $request)
 	{
         try {
-        // Product-first pagination so products with zero or no items still appear
-        $productQuery = Product::query()
-            ->select('products.id', 'products.name', 'products.category_id', 'products.dosage_id')
-            ->with(['category:id,name', 'dosage:id,name'])
-            ->leftJoin('reorder_levels', 'products.id', '=', 'reorder_levels.product_id')
-            ->addSelect(DB::raw('COALESCE(reorder_levels.amc, 0) as amc'))
-            ->addSelect(DB::raw('COALESCE(reorder_levels.reorder_level, (reorder_levels.amc * NULLIF(reorder_levels.lead_time, 0)), ROUND(COALESCE(reorder_levels.amc, 0) * 6)) as reorder_level'));
+            // Product-first pagination so products with zero or no items still appear
+            $productQuery = Product::query()
+                ->select('products.id', 'products.name', 'products.category_id', 'products.dosage_id')
+                ->with(['category:id,name', 'dosage:id,name'])
+                ->leftJoin('reorder_levels', 'products.id', '=', 'reorder_levels.product_id')
+                ->addSelect(DB::raw('COALESCE(reorder_levels.amc, 0) as amc'))
+                ->addSelect(DB::raw('COALESCE(reorder_levels.reorder_level, (reorder_levels.amc * NULLIF(reorder_levels.lead_time, 0)), ROUND(COALESCE(reorder_levels.amc, 0) * 6)) as reorder_level'));
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $productQuery->where(function($q) use ($search) {
-                $q->where('products.name', 'like', "%{$search}%")
-                  ->orWhereExists(function($sub) use ($search) {
-                      $sub->from('inventories')
-                          ->join('inventory_items', 'inventories.id', '=', 'inventory_items.inventory_id')
-                          ->whereColumn('inventories.product_id', 'products.id')
-                          ->where(function($w) use ($search){
-                              $w->where('inventory_items.barcode', 'like', "%{$search}%")
-                                ->orWhere('inventory_items.batch_number', 'like', "%{$search}%");
-                          });
-                  });
-            });
-        }
-
-        if ($request->filled('product_id')) {
-            $productQuery->where('products.id', $request->product_id);
-        }
-
-        if ($request->filled('category')) {
-            $productQuery->whereHas('category', fn($q) => $q->where('name', $request->category));
-        }
-
-        if ($request->filled('dosage')) {
-            $productQuery->whereHas('dosage', fn($q) => $q->where('name', $request->dosage));
-        }
-
-        $perPage = $request->input('per_page', 25);
-        $page = $request->input('page', 1);
-        $productsPaginator = $productQuery->paginate($perPage, ['products.*', 'reorder_levels.amc', 'reorder_levels.reorder_level'], 'page', $page)
-            ->withQueryString();
-        $productsPaginator->setPath(url()->current());
-
-        $productIds = collect($productsPaginator->items())->pluck('id')->all();
-
-        // Load existing inventories (and items) for products on this page
-        $existingInventories = Inventory::query()
-            ->with([
-                'items.warehouse:id,name',
-                'product:id,name,category_id,dosage_id',
-                'product.category:id,name',
-                'product.dosage:id,name'
-            ])
-            ->whereIn('product_id', $productIds)
-            ->get()
-            ->groupBy('product_id');
-
-        // Merge: ensure every product has at least one row
-        $merged = collect();
-        foreach ($productsPaginator->items() as $product) {
-            $amc = (float) ($product->amc ?? 0);
-            $reorderLevel = (float) ($product->reorder_level ?? round($amc * 6));
-
-            if (isset($existingInventories[$product->id]) && $existingInventories[$product->id]->isNotEmpty()) {
-                $inventory = $existingInventories[$product->id]->first();
-                $inventory->setAttribute('amc', $amc);
-                $inventory->setAttribute('reorder_level', $reorderLevel);
-                $inventory->setRelation('product', $inventory->product->loadMissing('category:id,name', 'dosage:id,name'));
-                $merged->push($inventory);
-            } else {
-                $placeholder = new Inventory();
-                $placeholder->setAttribute('id', -$product->id); // synthetic id to keep rows unique
-                $placeholder->setAttribute('product_id', $product->id);
-                $placeholder->setAttribute('amc', $amc);
-                $placeholder->setAttribute('reorder_level', $reorderLevel);
-                $placeholder->setRelation('product', $product);
-
-                $item = new InventoryItem();
-                $item->setAttribute('id', -$product->id);
-                $item->setAttribute('product_id', $product->id);
-                $item->setAttribute('quantity', 0);
-                $item->setAttribute('batch_number', null);
-                $item->setAttribute('barcode', null);
-                $item->setAttribute('location', null);
-                $item->setAttribute('expiry_date', null);
-                $item->setRelation('warehouse', null);
-
-                $placeholder->setRelation('items', collect([$item]));
-                $merged->push($placeholder);
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $productQuery->where(function($q) use ($search) {
+                    $q->where('products.name', 'like', "%{$search}%")
+                      ->orWhereExists(function($sub) use ($search) {
+                          $sub->from('inventories')
+                              ->join('inventory_items', 'inventories.id', '=', 'inventory_items.inventory_id')
+                              ->whereColumn('inventories.product_id', 'products.id')
+                              ->where(function($w) use ($search){
+                                  $w->where('inventory_items.barcode', 'like', "%{$search}%")
+                                    ->orWhere('inventory_items.batch_number', 'like', "%{$search}%");
+                              });
+                      });
+                });
             }
-        }
 
-        // Apply status filters to the merged data
-        if ($request->filled('status')) {
-            \Log::info('Applying status filter: ' . $request->status . ' to ' . $merged->count() . ' items');
-            
-            $merged = $merged->filter(function ($inventory) use ($request) {
-                $totalQuantity = $inventory->items->sum('quantity');
-                $reorderLevel = (float) ($inventory->reorder_level ?? 0);
-                
-                switch ($request->status) {
-                    case 'reorder_level':
-                        // Items that need reorder (total quantity <= 70% of reorder level)
-                        $result = $reorderLevel > 0 && $totalQuantity <= ($reorderLevel * 0.7);
-                        \Log::info("Product {$inventory->product->name}: Qty={$totalQuantity}, ReorderLevel={$reorderLevel}, NeedsReorder={$result}");
-                        return $result;
-                    
-                    case 'low_stock':
-                        // Items that are low stock (total quantity > 0 but <= reorder level)
-                        $result = $totalQuantity > 0 && $totalQuantity <= $reorderLevel;
-                        \Log::info("Product {$inventory->product->name}: Qty={$totalQuantity}, ReorderLevel={$reorderLevel}, LowStock={$result}");
-                        return $result;
-                    
-                    case 'out_of_stock':
-                        // Items that are out of stock (total quantity = 0)
-                        $result = $totalQuantity === 0;
-                        \Log::info("Product {$inventory->product->name}: Qty={$totalQuantity}, OutOfStock={$result}");
-                        return $result;
-                    
-                    default:
-                        return true;
+            if ($request->filled('product_id')) {
+                $productQuery->where('products.id', $request->product_id);
+            }
+
+            if ($request->filled('category')) {
+                $productQuery->whereHas('category', fn($q) => $q->where('name', $request->category));
+            }
+
+            if ($request->filled('dosage')) {
+                $productQuery->whereHas('dosage', fn($q) => $q->where('name', $request->dosage));
+            }
+
+            $perPage = $request->input('per_page', 25);
+            $page = $request->input('page', 1);
+            $productsPaginator = $productQuery->paginate($perPage, ['products.*', 'reorder_levels.amc', 'reorder_levels.reorder_level'], 'page', $page)
+                ->withQueryString();
+            $productsPaginator->setPath(url()->current());
+
+            $productIds = collect($productsPaginator->items())->pluck('id')->all();
+
+            // Load existing inventories (and items) for products on this page
+            $existingInventories = Inventory::query()
+                ->with([
+                    'items.warehouse:id,name',
+                    'product:id,name,category_id,dosage_id',
+                    'product.category:id,name',
+                    'product.dosage:id,name'
+                ])
+                ->whereIn('product_id', $productIds)
+                ->get()
+                ->groupBy('product_id');
+
+            // Merge: ensure every product has at least one row
+            $merged = collect();
+            foreach ($productsPaginator->items() as $product) {
+                $amc = (float) ($product->amc ?? 0);
+                $reorderLevel = (float) ($product->reorder_level ?? round($amc * 6));
+
+                if (isset($existingInventories[$product->id]) && $existingInventories[$product->id]->isNotEmpty()) {
+                    $inventory = $existingInventories[$product->id]->first();
+                    $inventory->setAttribute('amc', $amc);
+                    $inventory->setAttribute('reorder_level', $reorderLevel);
+                    $inventory->setRelation('product', $inventory->product->loadMissing('category:id,name', 'dosage:id,name'));
+                    $merged->push($inventory);
+                } else {
+                    $placeholder = new Inventory();
+                    $placeholder->setAttribute('id', -$product->id); // synthetic id to keep rows unique
+                    $placeholder->setAttribute('product_id', $product->id);
+                    $placeholder->setAttribute('amc', $amc);
+                    $placeholder->setAttribute('reorder_level', $reorderLevel);
+                    $placeholder->setRelation('product', $product);
+
+                    $item = new InventoryItem();
+                    $item->setAttribute('id', -$product->id);
+                    $item->setAttribute('product_id', $product->id);
+                    $item->setAttribute('quantity', 0);
+                    $item->setAttribute('batch_number', null);
+                    $item->setAttribute('barcode', null);
+                    $item->setAttribute('location', null);
+                    $item->setAttribute('expiry_date', null);
+                    $item->setRelation('warehouse', null);
+
+                    $placeholder->setRelation('items', collect([$item]));
+                    $merged->push($placeholder);
                 }
-            });
+            }
+
+            // Apply status filters to the merged data
+            if ($request->filled('status')) {
+                try {
+                    logger()->info('Applying status filter: ' . $request->status . ' to ' . $merged->count() . ' items');
+                    
+                    $merged = $merged->filter(function ($inventory) use ($request) {
+                        try {
+                            $totalQuantity = $inventory->items->sum('quantity');
+                            $reorderLevel = (float) ($inventory->reorder_level ?? 0);
+                            
+                            switch ($request->status) {
+                                case 'reorder_level':
+                                    // Items that need reorder (total quantity <= 70% of reorder level)
+                                    $result = $reorderLevel > 0 && $totalQuantity <= ($reorderLevel * 0.7);
+                                    logger()->info("Product {$inventory->product->name}: Qty={$totalQuantity}, ReorderLevel={$reorderLevel}, NeedsReorder={$result}");
+                                    return $result;
+                                
+                                case 'low_stock':
+                                    // Items that are low stock (total quantity > 0 but <= reorder level)
+                                    $result = $totalQuantity > 0 && $totalQuantity <= $reorderLevel;
+                                    logger()->info("Product {$inventory->product->name}: Qty={$totalQuantity}, ReorderLevel={$reorderLevel}, LowStock={$result}");
+                                    return $result;
+                                
+                                case 'out_of_stock':
+                                    // Items that are out of stock (total quantity = 0)
+                                    $result = $totalQuantity === 0;
+                                    logger()->info("Product {$inventory->product->name}: Qty={$totalQuantity}, OutOfStock={$result}");
+                                    return $result;
+                                
+                                default:
+                                    return true;
+                            }
+                        } catch (\Exception $e) {
+                            logger()->error('Error filtering inventory item: ' . $e->getMessage());
+                            return false;
+                        }
+                    });
+                    
+                    logger()->info('After status filtering: ' . $merged->count() . ' items remain');
+                } catch (\Exception $e) {
+                    logger()->error('Error applying status filter: ' . $e->getMessage());
+                    // If filtering fails, return all items
+                    $merged = $merged;
+                }
+            }
+
+            // Build paginator compatible with the frontend
+            $filteredCount = $merged->count();
             
-            \Log::info('After status filtering: ' . $merged->count() . ' items remain');
-        }
+            // Ensure we always have a valid response structure
+            if ($filteredCount === 0) {
+                // Create an empty paginator when no results
+                $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
+                    collect([]),
+                    0,
+                    $perPage,
+                    $page,
+                    ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
+                );
+            } else {
+                $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $merged->values(),
+                    $filteredCount,
+                    $productsPaginator->perPage(),
+                    $productsPaginator->currentPage(),
+                    ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
+                );
+            }
 
-        // Build paginator compatible with the frontend
-        $filteredCount = $merged->count();
-        
-        // Ensure we always have a valid response structure
-        if ($filteredCount === 0) {
-            // Create an empty paginator when no results
-            $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
-                collect([]),
-                0,
-                $perPage,
-                $page,
-                ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
-            );
-        } else {
-            $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
-                $merged->values(),
-                $filteredCount,
-                $productsPaginator->perPage(),
-                $productsPaginator->currentPage(),
-                ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
-            );
-        }
+            // Calculate status counts independently of pagination
+            $statusCounts = $this->calculateInventoryStatusCounts($request);
 
-        // Calculate status counts independently of pagination
-        $statusCounts = $this->calculateInventoryStatusCounts($request);
+            logger()->info('Final response - inventories count: ' . $inventories->count() . ', total: ' . $inventories->total() . ', status filter: ' . ($request->status ?? 'none'));
 
-        \Log::info('Final response - inventories count: ' . $inventories->count() . ', total: ' . $inventories->total() . ', status filter: ' . ($request->status ?? 'none'));
-
-        return Inertia::render('Inventory/Index', [
-            'inventories' => InventoryResource::collection($inventories),
-            'inventoryStatusCounts' => collect($statusCounts)->map(fn($count, $status) => ['status' => $status, 'count' => $count]),
-            'products'   => Product::select('id', 'name')->get(),
-            'warehouses' => Warehouse::pluck('name')->toArray(),
-            'filters'    => $request->only(['search', 'product_id', 'category', 'dosage', 'status', 'per_page', 'page']),
-            'category'   => Category::pluck('name')->toArray(),
-            'dosage'     => Dosage::pluck('name')->toArray(),
-            'locations'  => Location::pluck('location')->toArray(),
-            'errors'     => null,
-        ]);
+            return Inertia::render('Inventory/Index', [
+                'inventories' => InventoryResource::collection($inventories),
+                'inventoryStatusCounts' => collect($statusCounts)->map(fn($count, $status) => ['status' => $status, 'count' => $count]),
+                'products'   => Product::select('id', 'name')->get(),
+                'warehouses' => Warehouse::pluck('name')->toArray(),
+                'filters'    => $request->only(['search', 'product_id', 'category', 'dosage', 'status', 'per_page', 'page']),
+                'category'   => Category::pluck('name')->toArray(),
+                'dosage'     => Dosage::pluck('name')->toArray(),
+                'locations'  => Location::pluck('location')->toArray(),
+                'errors'     => null,
+            ]);
         } catch (\Throwable $th) {
-			logger()->error('[PUSHER-DEBUG] Error in index method: ' . $th->getMessage());
-			return Inertia::render('Inventory/Index', [
-				'errors' => $th->getMessage(),
-			]);
-		}
+        	logger()->error('[INVENTORY-ERROR] Error in index method: ' . $th->getMessage());
+            logger()->error('[INVENTORY-ERROR] Stack trace: ' . $th->getTraceAsString());
+            
+            // Return a safe fallback response
+            return Inertia::render('Inventory/Index', [
+                'inventories' => new \Illuminate\Pagination\LengthAwarePaginator(collect([]), 0, 25, 1),
+                'inventoryStatusCounts' => collect([]),
+                'products'   => collect([]),
+                'warehouses' => [],
+                'filters'    => $request->only(['search', 'product_id', 'category', 'dosage', 'status', 'per_page', 'page']),
+                'category'   => [],
+                'dosage'     => [],
+                'locations'  => [],
+                'errors'     => 'An error occurred while loading inventory data. Please try again.',
+            ]);
+        }
 	}
 
 	/**
