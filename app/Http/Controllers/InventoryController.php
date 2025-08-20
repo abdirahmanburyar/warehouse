@@ -77,6 +77,19 @@ class InventoryController extends Controller
                     LEFT JOIN inventory_items ii ON i.id = ii.inventory_id 
                     WHERE i.product_id = products.id
                 ) <= (COALESCE(reorder_levels.reorder_level, (reorder_levels.amc * NULLIF(reorder_levels.lead_time, 0)), ROUND(COALESCE(reorder_levels.amc, 0) * 6)) * 0.7)');
+            } elseif ($request->status === 'low_stock') {
+                // Filter products that are low stock (total quantity > 0 but <= reorder level)
+                $productQuery->whereRaw('(
+                    SELECT COALESCE(SUM(ii.quantity), 0) 
+                    FROM inventories i 
+                    LEFT JOIN inventory_items ii ON i.id = ii.inventory_id 
+                    WHERE i.product_id = products.id
+                ) > 0 AND (
+                    SELECT COALESCE(SUM(ii.quantity), 0) 
+                    FROM inventories i 
+                    LEFT JOIN inventory_items ii ON i.id = ii.inventory_id 
+                    WHERE i.product_id = products.id
+                ) <= (COALESCE(reorder_levels.reorder_level, (reorder_levels.amc * NULLIF(reorder_levels.lead_time, 0)), ROUND(COALESCE(reorder_levels.amc, 0) * 6)))');
             } elseif ($request->status === 'out_of_stock') {
                 // Filter products that are out of stock (total quantity = 0)
                 $productQuery->whereRaw('(

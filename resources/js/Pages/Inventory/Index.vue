@@ -486,6 +486,7 @@ const hasActiveFilters = computed(() => {
                         <select v-model="status" class="w-full rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2">
                             <option value="">All Status</option>
                             <option value="reorder_level">Reorder Level</option>
+                            <option value="low_stock">Low Stock</option>
                             <option value="out_of_stock">Out of Stock</option>
                         </select>
                     </div>
@@ -524,7 +525,7 @@ const hasActiveFilters = computed(() => {
                             <button @click="dosage = null" class="ml-1 text-purple-600 hover:text-purple-800">×</button>
                         </span>
                         <span v-if="status" class="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
-                            Status: {{ status === 'reorder_level' ? 'Reorder Level' : 'Out of Stock' }}
+                            Status: {{ status === 'reorder_level' ? 'Reorder Level' : status === 'low_stock' ? 'Low Stock' : 'Out of Stock' }}
                             <button @click="status = ''" class="ml-1 text-orange-600 hover:text-orange-800">×</button>
                         </span>
                     </div>
