@@ -785,8 +785,8 @@ class DashboardController extends Controller
         // Define the main categories we want to track
         $mainCategories = ['Furniture', 'IT', 'Medical equipment', 'Vehicles'];
         
-        // Get all assets with their categories
-        $assets = \App\Models\Asset::with('category')->get();
+        // Get all assets with their asset items and categories
+        $assets = \App\Models\Asset::with(['assetItems.category'])->get();
         
         // Initialize counts
         $categoryCounts = [
@@ -806,34 +806,41 @@ class DashboardController extends Controller
         
         // Count assets by category and status
         foreach ($assets as $asset) {
-            $categoryName = $asset->category ? $asset->category->name : 'Unknown';
-            
-            // Check if it matches any of our main categories (case-insensitive)
-            $matched = false;
-            foreach ($mainCategories as $mainCategory) {
-                if (stripos($categoryName, $mainCategory) !== false) {
-                    $categoryCounts[$mainCategory]++;
-                    $matched = true;
-                    break;
+            // Count by asset items categories
+            foreach ($asset->assetItems as $assetItem) {
+                $categoryName = $assetItem->category ? $assetItem->category->name : 'Unknown';
+                
+                // Check if it matches any of our main categories (case-insensitive)
+                $matched = false;
+                foreach ($mainCategories as $mainCategory) {
+                    if (stripos($categoryName, $mainCategory) !== false) {
+                        $categoryCounts[$mainCategory]++;
+                        $matched = true;
+                        break;
+                    }
+                }
+                
+                // If no match found, count as "Others"
+                if (!$matched) {
+                    $categoryCounts['Others']++;
                 }
             }
             
-            // If no match found, count as "Others"
-            if (!$matched) {
-                $categoryCounts['Others']++;
-            }
-            
-            // Count by status
-            switch ($asset->status) {
-                case 'in_use':
-                    $statusCounts['In Use']++;
-                    break;
-                case 'maintenance':
-                    $statusCounts['Maintenance']++;
-                    break;
-                case 'disposed':
-                    $statusCounts['Disposed']++;
-                    break;
+            // Count by status (using asset items status)
+            foreach ($asset->assetItems as $assetItem) {
+                switch ($assetItem->status) {
+                    case 'in_use':
+                    case 'active':
+                        $statusCounts['In Use']++;
+                        break;
+                    case 'maintenance':
+                        $statusCounts['Maintenance']++;
+                        break;
+                    case 'disposed':
+                    case 'retired':
+                        $statusCounts['Disposed']++;
+                        break;
+                }
             }
         }
         

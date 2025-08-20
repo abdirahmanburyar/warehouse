@@ -20,6 +20,8 @@ return new class extends Migration
                 $table->foreignId('asset_location_id')->constrained('asset_locations');
                 $table->foreignId('sub_location_id')->constrained('sub_locations');
 
+                $table->string('status')->default('pending_approval');
+
                 // approvals
                 $table->foreignId('submitted_by')->constrained('users');
                 $table->timestamp('submitted_at');

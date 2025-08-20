@@ -44,6 +44,9 @@
                         </svg>
                         <span class="text-sm text-gray-600">Location: {{ props.assetItem.region?.name || 'N/A' }} - {{ props.assetItem.asset_location?.name || 'N/A' }} - {{ props.assetItem.sub_location?.name || 'N/A' }}</span>
                     </div>
+                    <div class="flex items-center">
+                        <span class="text-sm text-gray-600">Status: {{ formatAssetStatus(props.assetItem.status) }}</span>
+                    </div>
                 </div>
 
                 <!-- Asset Metadata -->
@@ -112,159 +115,156 @@
             </div>
 
             <!-- Asset Status Actions -->
-            <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4 text-center">
-                        Asset Status Actions
-                    </h3>
-                    <div class="flex items-start mb-6">
-                        <!-- Status Action Buttons -->
-                        <div class="flex flex-wrap items-center justify-center gap-4 px-1 py-2">
-                            <!-- Review button - Only show when reviewed_by is null and user has asset_review permission -->
-                            <div class="relative" v-if="!props.assetItem?.reviewed_by && $page.props.auth.user.can?.asset_review">
-                                <div class="flex flex-col">
-                                    <button @click="changeStatus(props.assetItem.id, 'reviewed', 'is_reviewing')" 
-                                            :disabled="isType['is_reviewing']"
-                                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] bg-yellow-500 hover:bg-yellow-600">
-                                        <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
-                                        <span class="text-sm font-bold text-white">{{
-                                            isType["is_reviewing"] ? "Please Wait..." : "Review"
-                                        }}</span>
-                                    </button>
-                                </div>
-                                <div class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+            <div class="mt-8 mb-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 text-center">
+                    Asset Status Actions
+                </h3>
+                <div class="flex items-start mb-6">
+                    <!-- Status Action Buttons -->
+                    <div class="flex flex-wrap items-center justify-center gap-4 px-1 py-2">
+                        <!-- Review button -->
+                        <div class="relative">
+                            <div class="flex flex-col">
+                                <button @click="changeStatus(props.assetItem.id, 'reviewed', 'is_reviewing')" 
+                                        :disabled="isType['is_reviewing'] || 
+                                                    props.assetItem?.status !== 'pending_approval' || 
+                                                    !$page.props.auth.can?.asset_review"
+                                        :class="[
+                                            props.assetItem?.status === 'pending_approval' && $page.props.auth.can?.asset_review
+                                                ? 'bg-yellow-500 hover:bg-yellow-600'
+                                                : props.assetItem?.status === 'reviewed'
+                                                ? 'bg-green-500'
+                                                : 'bg-gray-300 cursor-not-allowed',
+                                        ]" 
+                                        class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
+                                    <span class="text-sm font-bold text-white">{{
+                                        props.assetItem?.status === 'reviewed'
+                                            ? "Reviewed"
+                                            : isType["is_reviewing"]
+                                                ? "Please Wait..."
+                                                : "Review"
+                                    }}</span>
+                                </button>
+                                <span v-show="props.assetItem?.reviewed_at" class="text-sm text-gray-600">
+                                    On {{ formatDate(props.assetItem?.reviewed_at) }}
+                                </span>
+                                <span v-show="props.assetItem?.reviewed_by" class="text-sm text-gray-600">
+                                    By {{ props.assetItem?.reviewed_by?.name }}
+                                </span>
                             </div>
-
-                            <!-- Approve button - Only show when user has asset_approve permission -->
-                            <div class="relative" v-if="$page.props.auth.user.can?.asset_approve && props.assetItem.status !== 'rejected'">
-                                <div class="flex flex-col">
-                                    <button @click="changeStatus(props.assetItem.id, 'approved', 'is_approve')" 
-                                            :disabled="isType['is_approve'] || props.assetItem.status !== 'reviewed'"
-                                            :class="[
-                                                props.assetItem.status === 'reviewed'
-                                                    ? 'bg-yellow-500 hover:bg-yellow-600'
-                                                    : props.assetItem.status === 'approved'
-                                                    ? 'bg-green-500'
-                                                    : 'bg-gray-300 cursor-not-allowed',
-                                            ]" 
-                                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
-                                        <svg v-if="isType['is_approve'] && props.assetItem.status === 'reviewed'" class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <template v-else>
-                                            <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
-                                            <span class="text-sm font-bold text-white">{{
-                                                props.assetItem.status === 'approved'
-                                                    ? "Approved"
-                                                    : isType["is_approve"] ? "Please Wait..." : "Approve"
-                                            }}</span>
-                                        </template>
-                                    </button>
-                                    <span v-show="props.assetItem?.approved_at" class="text-sm text-gray-600">
-                                        On {{ formatDate(props.assetItem?.approved_at) }}
-                                    </span>
-                                    <span v-show="props.assetItem?.approved_by" class="text-sm text-gray-600">
-                                        By {{ props.assetItem?.approved_by?.name }}
-                                    </span>
-                                </div>
-                                <div v-if="props.assetItem.status === 'reviewed'"
-                                    class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
-                            </div>
-
-                            <!-- Reject button - Positioned next to approve, show when user has asset_approve permission -->
-                            <div class="relative" v-if="$page.props.auth.can?.asset_approve && (props.assetItem.status === 'pending_approval' || props.assetItem.status === 'reviewed')">
-                                <div class="flex flex-col">
-                                    <button @click="showRejectModal()" 
-                                            :disabled="isType['is_reject']"
-                                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] bg-red-500 hover:bg-red-600">
-                                        <svg v-if="isType['is_reject']" class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <template v-else>
-                                            <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
-                                            <span class="text-sm font-bold text-white">{{
-                                                props.assetItem.status === 'rejected'
-                                                    ? "Rejected"
-                                                    : isType["is_reject"] ? "Please Wait..." : "Reject"
-                                            }}</span>
-                                        </template>
-                                    </button>
-                                    <span v-show="props.assetItem?.rejected_at" class="text-sm text-gray-600">
-                                        On {{ formatDate(props.assetItem?.rejected_at) }}
-                                    </span>
-                                    <span v-show="props.assetItem?.rejected_by" class="text-sm text-gray-600">
-                                        By {{ props.assetItem?.rejected_by?.name }}
-                                    </span>
-                                </div>
-                                <div v-if="props.assetItem.status === 'pending_approval' || props.assetItem.status === 'reviewed'"
-                                    class="absolute -top-2 -right-2 w-4 h-4 bg-red-400 rounded-full animate-pulse"></div>
-                            </div>
-
-                            <!-- Restore button - Show when user has asset_approve permission and asset is rejected -->
-                            <div class="relative" v-if="$page.props.auth.can?.asset_approve && props.assetItem.status === 'rejected'">
-                                <div class="flex flex-col">
-                                    <button @click="restoreAsset(props.assetItem.id, 'pending_approval', 'is_restore')" 
-                                            :disabled="isRestoring"
-                                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] bg-green-500">
-                                        <svg v-if="isRestoring" class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <template v-else>
-                                            <img src="/assets/images/restore.jpg" class="w-5 h-5 mr-2" alt="Restore" />
-                                            <span class="text-sm font-bold text-white">{{ isRestoring ? "Restoring..." : "Restore Asset" }}</span>
-                                        </template>
-                                    </button>
-                                </div>
-                                <div v-if="props.assetItem.status === 'rejected'"
-                                    class="absolute -top-2 -right-2 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
-                            </div>
+                            <div v-if="props.assetItem?.status === 'pending_approval' && $page.props.auth.can?.asset_review"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
-                    </div>
 
-                    <!-- Status Information Display -->
-                    <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-                        <h4 class="text-sm font-medium text-gray-700 mb-3">Current Status Information</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                            <!-- Review Status -->
-                            <div v-if="props.assetItem?.reviewed_at">
-                                <span class="text-gray-500">Reviewed:</span>
-                                <div class="text-gray-900">{{ formatDate(props.assetItem.reviewed_at) }}</div>
-                                <div class="text-gray-600">By {{ props.assetItem.reviewed_by?.name || 'N/A' }}</div>
+                        <!-- Approve button -->
+                        <div class="relative">
+                            <div class="flex flex-col">
+                                <button @click="changeStatus(props.assetItem.id, 'approved', 'is_approve')" 
+                                        :disabled="isType['is_approve'] || 
+                                                    props.assetItem?.status !== 'reviewed' || 
+                                                    !$page.props.auth.can?.asset_approve"
+                                        :class="[
+                                            props.assetItem?.status === 'reviewed' && $page.props.auth.can?.asset_approve
+                                                ? 'bg-yellow-500 hover:bg-yellow-600'
+                                                : props.assetItem?.status === 'approved'
+                                                ? 'bg-green-500'
+                                                : 'bg-gray-300 cursor-not-allowed',
+                                        ]" 
+                                        class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    <svg v-if="isType['is_approve']" class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <template v-else>
+                                        <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
+                                        <span class="text-sm font-bold text-white">{{
+                                            props.assetItem?.status === 'approved'
+                                                ? "Approved"
+                                                : isType["is_approve"] ? "Please Wait..." : "Approve"
+                                        }}</span>
+                                    </template>
+                                </button>
+                                <span v-show="props.assetItem?.approved_at" class="text-sm text-gray-600">
+                                    On {{ formatDate(props.assetItem?.approved_at) }}
+                                </span>
+                                <span v-show="props.assetItem?.approved_by" class="text-sm text-gray-600">
+                                    By {{ props.assetItem?.approved_by?.name }}
+                                </span>
                             </div>
-                            <div v-else>
-                                <span class="text-gray-500">Review Status:</span>
-                                <div class="text-yellow-600 font-medium">Pending Review</div>
-                            </div>
+                            <div v-if="props.assetItem?.status === 'reviewed' && $page.props.auth.can?.asset_approve"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+                        </div>
 
-                            <!-- Approval Status -->
-                            <div v-if="props.assetItem?.approved_at">
-                                <span class="text-gray-500">Approved:</span>
-                                <div class="text-gray-900">{{ formatDate(props.assetItem.approved_at) }}</div>
-                                <div class="text-gray-600">By {{ props.assetItem.approved_by?.name || 'N/A' }}</div>
+                        <!-- Reject button -->
+                        <div class="relative">
+                            <div class="flex flex-col">
+                                <button @click="showRejectModal()" 
+                                        :disabled="isType['is_reject'] || 
+                                                    props.assetItem?.status !== 'reviewed' || 
+                                                    !$page.props.auth.can?.asset_approve"
+                                        :class="[
+                                            props.assetItem?.status === 'reviewed' && $page.props.auth.can?.asset_approve
+                                                ? 'bg-red-500 hover:bg-red-600'
+                                                : props.assetItem?.status === 'rejected'
+                                                ? 'bg-red-500'
+                                                : 'bg-gray-300 cursor-not-allowed',
+                                        ]" 
+                                        class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    <svg v-if="isType['is_reject']" class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <template v-else>
+                                        <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
+                                        <span class="text-sm font-bold text-white">{{
+                                            props.assetItem?.status === 'rejected'
+                                                ? "Rejected"
+                                                : isType["is_reject"] ? "Please Wait..." : "Reject"
+                                        }}</span>
+                                    </template>
+                                </button>
+                                <span v-show="props.assetItem?.rejected_at" class="text-sm text-gray-600">
+                                    On {{ formatDate(props.assetItem?.rejected_at) }}
+                                </span>
+                                <span v-show="props.assetItem?.rejected_by" class="text-sm text-gray-600">
+                                    By {{ props.assetItem?.rejected_by?.name }}
+                                </span>
                             </div>
-                            <div v-else-if="props.assetItem?.rejected_at">
-                                <span class="text-gray-500">Rejected:</span>
-                                <div class="text-gray-900">{{ formatDate(props.assetItem.rejected_at) }}</div>
-                                <div class="text-gray-600">By {{ props.assetItem.rejected_by?.name || 'N/A' }}</div>
-                                <div class="text-gray-600 text-xs mt-1">{{ props.assetItem.rejection_reason }}</div>
-                            </div>
-                            <div v-else>
-                                <span class="text-gray-500">Approval Status:</span>
-                                <div class="text-yellow-600 font-medium">Pending Approval</div>
-                            </div>
+                            <div v-if="props.assetItem?.status === 'reviewed' && $page.props.auth.can?.asset_approve"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-red-400 rounded-full animate-pulse"></div>
+                        </div>
 
-                            <!-- Current Status -->
-                            <div>
-                                <span class="text-gray-500">Current Status:</span>
-                                <div class="text-gray-900 font-medium">{{ formatAssetStatus(props.assetItem.status) }}</div>
+                        <!-- Restore button -->
+                        <div class="relative">
+                            <div class="flex flex-col">
+                                <button @click="restoreAsset(props.assetItem.id, 'pending_approval', 'is_restore')" 
+                                        :disabled="isRestoring || 
+                                                    props.assetItem?.status !== 'rejected' || 
+                                                    !$page.props.auth.can?.asset_approve"
+                                        :class="[
+                                            props.assetItem?.status === 'rejected' && $page.props.auth.can?.asset_approve
+                                                ? 'bg-green-500 hover:bg-green-600'
+                                                : 'bg-gray-300 cursor-not-allowed',
+                                        ]" 
+                                        class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    <svg v-if="isRestoring" class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <template v-else>
+                                        <img src="/assets/images/restore.jpg" class="w-5 h-5 mr-2" alt="Restore" />
+                                        <span class="text-sm font-bold text-white">{{ isRestoring ? "Restoring..." : "Restore Asset" }}</span>
+                                    </template>
+                                </button>
                             </div>
+                            <div v-if="props.assetItem?.status === 'rejected' && $page.props.auth.can?.asset_approve"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
 
         <!-- Reject Modal -->
@@ -339,10 +339,9 @@ function handleSelectAsset() {
 
 watch([
     () => props.filters.selectedAsset,
-    (newVal) => {
-        handleSelectAsset();
-    }
-])
+], (newVal) => {
+    handleSelectAsset();
+})
 
 const changeStatus = async (assetId, newStatus, type) => {
     console.log(assetId, newStatus, type);
