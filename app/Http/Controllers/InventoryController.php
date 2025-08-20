@@ -160,16 +160,31 @@ class InventoryController extends Controller
 
         // Build paginator compatible with the frontend
         $filteredCount = $merged->count();
-        $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
-            $merged->values(),
-            $filteredCount,
-            $productsPaginator->perPage(),
-            $productsPaginator->currentPage(),
-            ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
-        );
+        
+        // Ensure we always have a valid response structure
+        if ($filteredCount === 0) {
+            // Create an empty paginator when no results
+            $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
+                collect([]),
+                0,
+                $perPage,
+                $page,
+                ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
+            );
+        } else {
+            $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
+                $merged->values(),
+                $filteredCount,
+                $productsPaginator->perPage(),
+                $productsPaginator->currentPage(),
+                ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
+            );
+        }
 
         // Calculate status counts independently of pagination
         $statusCounts = $this->calculateInventoryStatusCounts($request);
+
+        \Log::info('Final response - inventories count: ' . $inventories->count() . ', total: ' . $inventories->total() . ', status filter: ' . ($request->status ?? 'none'));
 
         return Inertia::render('Inventory/Index', [
             'inventories' => InventoryResource::collection($inventories),

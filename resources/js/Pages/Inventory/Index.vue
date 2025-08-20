@@ -45,6 +45,7 @@ const warehouse = ref(props.filters.warehouse);
 const status = ref(props.filters.status);
 const per_page = ref(props.filters.per_page || 25);
 const loadedLocation = ref([]);
+const isLoading = ref(false);
 
 // Modal states
 const showLegend = ref(false);
@@ -118,6 +119,8 @@ const applyFilters = () => {
     if (props.filters.page) query.page = props.filters.page;
 
     console.log('Applying filters:', query);
+    
+    isLoading.value = true;
 
     router.get(route("inventories.index"), query, {
         preserveState: true,
@@ -131,6 +134,14 @@ const applyFilters = () => {
             "dosage",
             "category",
         ],
+        onFinish: () => {
+            isLoading.value = false;
+        },
+        onError: (errors) => {
+            isLoading.value = false;
+            console.error('Filter error:', errors);
+            toast.error('Failed to apply filters');
+        }
     });
 };
 
@@ -186,11 +197,13 @@ const updateLocation = async () => {
 
         if (response.data.success) {
             // Update the item location in the local state
-            const inventoryIndex = props.inventories.data.findIndex(inv => inv.id === editingItem.value.inventory.id);
-            if (inventoryIndex !== -1) {
-                const itemIndex = props.inventories.data[inventoryIndex].items.findIndex(item => item.id === editingItem.value.id);
-                if (itemIndex !== -1) {
-                    props.inventories.data[inventoryIndex].items[itemIndex].location = newLocation.value.trim();
+            if (props.inventories && props.inventories.data) {
+                const inventoryIndex = props.inventories.data.findIndex(inv => inv.id === editingItem.value.inventory.id);
+                if (inventoryIndex !== -1) {
+                    const itemIndex = props.inventories.data[inventoryIndex].items.findIndex(item => item.id === editingItem.value.id);
+                    if (itemIndex !== -1) {
+                        props.inventories.data[inventoryIndex].items[itemIndex].location = newLocation.value.trim();
+                    }
                 }
             }
             toast.success("Location updated successfully");
@@ -485,7 +498,7 @@ const hasActiveFilters = computed(() => {
                         <Multiselect v-model="dosage" :options="props.dosage" :searchable="true" :close-on-select="true" :show-labels="false" placeholder="Select a dosage form" :allow-empty="true" class="multiselect--with-icon w-full" />
                     </div>
                     <div class="col-span-1 min-w-0">
-                        <select v-model="status" class="w-full rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2">
+                        <select v-model="status" :disabled="isLoading" class="w-full rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2" :class="{ 'opacity-50 cursor-not-allowed': isLoading }">
                             <option value="">All Status</option>
                             <option value="reorder_level">Reorder Level</option>
                             <option value="low_stock">Low Stock</option>
@@ -494,11 +507,15 @@ const hasActiveFilters = computed(() => {
                     </div>
                 </div>
                 <div class="flex justify-end items-center gap-4 mt-3">
-                    <button @click="clearFilters" class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg flex items-center gap-2 hover:bg-gray-200 transition-colors border border-gray-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <button @click="clearFilters" :disabled="isLoading" class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg flex items-center gap-2 hover:bg-gray-200 transition-colors border border-gray-300" :class="{ 'opacity-50 cursor-not-allowed': isLoading }">
+                        <svg v-if="!isLoading" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                        Clear Filters
+                        <svg v-else class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {{ isLoading ? 'Clearing...' : 'Clear Filters' }}
                     </button>
                     <select v-model="per_page" class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-3" @change="props.filters.page = 1">
                         <option value="25">25 per page</option>
@@ -556,12 +573,25 @@ const hasActiveFilters = computed(() => {
                             </tr>
                         </thead>
                         <tbody>
-                            <template v-if="props.inventories.data.length === 0">
+                            <template v-if="isLoading">
+                                <tr>
+                                    <td colspan="10" class="text-center py-8 text-gray-500 bg-gray-50">
+                                        <div class="flex flex-col items-center justify-center gap-2">
+                                            <svg class="animate-spin h-10 w-10 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span>Applying filters...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                            <template v-else-if="!props.inventories || !props.inventories.data || props.inventories.data.length === 0">
                                 <tr>
                                     <td colspan="10" class="text-center py-8 text-gray-500 bg-gray-50">
                                         <div class="flex flex-col items-center justify-center gap-2">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 118 0v2m-4 4a4 4 0 01-4-4H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-2a4 4 0 01-4 4z" /></svg>
-                                            <span>No inventory data found.</span>
+                                            <span>{{ !props.inventories ? 'Loading...' : 'No inventory data found.' }}</span>
                                         </div>
                                     </td>
                                 </tr>
@@ -621,9 +651,11 @@ const hasActiveFilters = computed(() => {
 
                     <div class="mt-2 flex justify-between">
                         <div class="flex items-center gap-2">
-                            <span class="text-sm text-gray-500">Showing {{ props.inventories.meta.from }} to {{ props.inventories.meta.to }} of {{ props.inventories.meta.total }} items</span>
+                            <span v-if="props.inventories && props.inventories.meta" class="text-sm text-gray-500">Showing {{ props.inventories.meta.from }} to {{ props.inventories.meta.to }} of {{ props.inventories.meta.total }} items</span>
+                            <span v-else class="text-sm text-gray-500">No items to display</span>
                         </div>
                         <TailwindPagination
+                            v-if="props.inventories"
                             :data="props.inventories"
                             @pagination-change-page="getResults"
                             :limit="2"
