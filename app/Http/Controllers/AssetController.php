@@ -735,10 +735,25 @@ class AssetController extends Controller
     public function transferAsset(Request $request, Asset $asset)
     {
         try {
+            // Check if asset exists and is accessible
+            if (!$asset) {
+                return response()->json(['error' => 'Asset not found'], 404);
+            }
+
             $request->validate([
                 'assignee_id' => 'required|exists:assignees,id',
                 'transfer_date' => 'required|date',
                 'assignment_notes' => 'nullable|string',
+                'region_id' => 'nullable|exists:regions,id',
+                'asset_location_id' => 'nullable|exists:asset_locations,id',
+                'sub_location_id' => 'nullable|exists:sub_locations,id',
+            ]);
+
+            // Update the asset's location and assignee
+            $asset->update([
+                'region_id' => $request->region_id,
+                'asset_location_id' => $request->asset_location_id,
+                'sub_location_id' => $request->sub_location_id,
             ]);
 
             // Update the asset's assignee
@@ -760,10 +775,16 @@ class AssetController extends Controller
 
             return response()->json([
                 'message' => 'Asset transferred successfully',
-                'asset' => $asset->fresh(['assetItems.assignee'])
+                'asset' => $asset->fresh(['assetItems.assignee', 'region', 'assetLocation', 'subLocation'])
             ], 200);
         } catch (\Throwable $th) {
-            return response()->json(['error' => $th->getMessage()], 500);
+            \Log::error('Asset transfer failed: ' . $th->getMessage(), [
+                'asset_id' => $asset->id ?? 'unknown',
+                'request_data' => $request->all(),
+                'user_id' => auth()->id(),
+                'trace' => $th->getTraceAsString()
+            ]);
+            return response()->json(['error' => 'Transfer failed: ' . $th->getMessage()], 500);
         }
     }
 }

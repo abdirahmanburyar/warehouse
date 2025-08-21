@@ -629,12 +629,58 @@
                                         <div class="mt-2">
                                             <p class="text-sm text-gray-500">
                                                 Transfer asset <strong>{{ selectedAsset?.asset_tag }}</strong> to a new
-                                                assignee.
+                                                location and assignee.
                                             </p>
                                             <div class="mt-4 space-y-4">
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700">Region</label>
+                                                        <Multiselect 
+                                                            v-model="transferData.region" 
+                                                            :options="regionOptions"
+                                                            :searchable="true" 
+                                                            :close-on-select="true" 
+                                                            :show-labels="false"
+                                                            :allow-empty="true" 
+                                                            placeholder="Select Region" 
+                                                            track-by="id" 
+                                                            label="name" 
+                                                            :open-direction="'bottom'"
+                                                            @select="onRegionSelect" />
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700">Asset Location</label>
+                                                        <Multiselect 
+                                                            v-model="transferData.asset_location" 
+                                                            :options="locationOptions"
+                                                            :searchable="true" 
+                                                            :close-on-select="true" 
+                                                            :show-labels="false"
+                                                            :allow-empty="true" 
+                                                            placeholder="Select Location" 
+                                                            track-by="id" 
+                                                            label="name" 
+                                                            :open-direction="'bottom'"
+                                                            @select="onLocationSelect" />
+                                                    </div>
+                                                </div>
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700">New
-                                                        Assignee</label>
+                                                    <label class="block text-sm font-medium text-gray-700">Sub Location</label>
+                                                    <Multiselect 
+                                                        v-model="transferData.sub_location" 
+                                                        :options="subLocationOptions"
+                                                        :searchable="true" 
+                                                        :close-on-select="true" 
+                                                        :show-labels="false"
+                                                        :allow-empty="true" 
+                                                        placeholder="Select Sub Location" 
+                                                        track-by="id" 
+                                                        label="name" 
+                                                        :open-direction="'bottom'"
+                                                        :disabled="!transferData.asset_location" />
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">New Assignee</label>
                                                     <Multiselect 
                                                         v-model="transferData.assignee" 
                                                         :options="assigneeOptions"
@@ -645,18 +691,17 @@
                                                         placeholder="Select Assignee" 
                                                         track-by="id" 
                                                         label="name" 
+                                                        :open-direction="'bottom'"
                                                         @select="onAssigneeSelect"
                                                         @clear="onAssigneeClear" />
                                                 </div>
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700">Transfer
-                                                        Date</label>
+                                                    <label class="block text-sm font-medium text-gray-700">Transfer Date</label>
                                                     <input v-model="transferData.transfer_date" type="date"
-                                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:ring-indigo-500 focus:border-indigo-500" />
                                                 </div>
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700">Notes
-                                                        (Optional)</label>
+                                                    <label class="block text-sm font-medium text-gray-700">Notes (Optional)</label>
                                                     <textarea v-model="transferData.assignment_notes" rows="3"
                                                         class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                                         placeholder="Add any notes about the transfer"></textarea>
@@ -668,7 +713,7 @@
                             </div>
                             <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                                 <button type="button" @click="transferAsset"
-                                    :disabled="!transferData.assignee || !transferData.transfer_date || transferring"
+                                    :disabled="!transferData.assignee || !transferData.transfer_date || !transferData.asset_location || transferring"
                                     class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
                                     <svg v-if="transferring" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                                         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1047,6 +1092,9 @@ const showTransferModal = ref(false);
 const selectedAsset = ref(null);
 const transferData = reactive({
     asset_id: null,
+    region: null,
+    asset_location: null,
+    sub_location: null,
     assignee: null,
     transfer_date: "",
     assignment_notes: "",
@@ -1069,8 +1117,27 @@ const isSavingAssignee = ref(false);
 const transferring = ref(false);
 
 function openTransferModal(asset) {
+    console.log('Opening transfer modal for asset:', asset);
+    console.log('Asset ID:', asset?.id);
+    console.log('Asset data:', asset);
+    
+    if (!asset || !asset.id) {
+        toast.error('Invalid asset data. Please try again.');
+        return;
+    }
+    
+    // Check if the asset exists in the current assets list
+    const assetExists = props.assets.data.some(a => a.id === asset.id);
+    if (!assetExists) {
+        toast.error('Asset not found in current list. Please refresh the page and try again.');
+        return;
+    }
+    
     selectedAsset.value = asset;
     transferData.asset_id = asset.id;
+    transferData.region = null;
+    transferData.asset_location = null;
+    transferData.sub_location = null;
     transferData.assignee = null;
     transferData.transfer_date = "";
     transferData.assignment_notes = "";
@@ -1092,6 +1159,41 @@ const onAssigneeSelect = (opt) => {
 
 const onAssigneeClear = () => {
     transferData.assignee = null;
+};
+
+const onRegionSelect = (opt) => {
+    if (!opt) return;
+    transferData.region = opt;
+    // Reset location and sub-location when region changes
+    transferData.asset_location = null;
+    transferData.sub_location = null;
+};
+
+const onLocationSelect = (opt) => {
+    if (!opt) return;
+    transferData.asset_location = opt;
+    // Reset sub-location when location changes
+    transferData.sub_location = null;
+    // Load sub-locations for the selected location
+    if (opt.id) {
+        loadSubLocationsForTransfer(opt.id);
+    }
+};
+
+const loadSubLocationsForTransfer = async (locationId) => {
+    if (!locationId) {
+        subLocationOptions.value = [];
+        return;
+    }
+    try {
+        const response = await axios.get(
+            route("assets.locations.sub-locations", locationId)
+        );
+        subLocationOptions.value = response.data;
+    } catch (error) {
+        console.error('Error loading sub-locations:', error);
+        subLocationOptions.value = [];
+    }
 };
 
 const createAssignee = async (e) => {
@@ -1297,16 +1399,27 @@ async function onLocationChange(selected) {
 
 // Asset transfer
 async function transferAsset() {
-    if (!transferData.assignee || !transferData.transfer_date) {
-        toast.error("Assignee and transfer date are required.");
+    if (!transferData.assignee || !transferData.transfer_date || !transferData.asset_location) {
+        toast.error("Assignee, transfer date, and asset location are required.");
         return;
     }
+    
+    if (!selectedAsset.value || !selectedAsset.value.id) {
+        toast.error("No asset selected for transfer.");
+        return;
+    }
+    
     transferring.value = true;
     try {
         console.log('Transferring asset with data:', transferData);
+        console.log('Selected asset:', selectedAsset.value);
+        console.log('Asset ID being sent:', selectedAsset.value.id);
         
         const response = await axios.post(route('assets.transfer', selectedAsset.value.id), {
             assignee_id: transferData.assignee.id,
+            region_id: transferData.region?.id,
+            asset_location_id: transferData.asset_location?.id,
+            sub_location_id: transferData.sub_location?.id,
             transfer_date: transferData.transfer_date,
             assignment_notes: transferData.assignment_notes,
             assignee_name: transferData.assignee.name,
