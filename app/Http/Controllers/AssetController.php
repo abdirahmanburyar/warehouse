@@ -766,6 +766,7 @@ class AssetController extends Controller
                 'assignee_id' => 'required|exists:assignees,id',
                 'transfer_date' => 'required|date',
                 'assignment_notes' => 'nullable|string',
+                'update_asset_location' => 'nullable|boolean',
                 'region_id' => 'nullable|exists:regions,id',
                 'asset_location_id' => 'nullable|exists:asset_locations,id',
                 'sub_location_id' => 'nullable|exists:sub_locations,id',
@@ -773,33 +774,72 @@ class AssetController extends Controller
 
             logger()->info('Validation passed, updating asset');
 
-            // Update the asset's location and assignee
-            $asset->update([
-                'region_id' => $request->region_id,
-                'asset_location_id' => $request->asset_location_id,
-                'sub_location_id' => $request->sub_location_id,
-            ]);
+            // For asset transfers, we typically don't want to change the asset's location
+            // as it affects all asset items under that asset. Instead, we only update
+            // the specific asset item's assignee and status.
+            
+            // Only update asset location if explicitly requested (for bulk transfers)
+            if ($request->has('update_asset_location') && $request->update_asset_location) {
+                logger()->info('Updating asset with location data:', [
+                    'asset_id' => $asset->id,
+                    'region_id' => $request->region_id,
+                    'asset_location_id' => $request->asset_location_id,
+                    'sub_location_id' => $request->sub_location_id,
+                ]);
+                
+                $asset->update([
+                    'region_id' => $request->region_id,
+                    'asset_location_id' => $request->asset_location_id,
+                    'sub_location_id' => $request->sub_location_id,
+                ]);
+            } else {
+                logger()->info('Skipping asset location update - only updating asset item assignee');
+            }
 
-            logger()->info('Asset updated, updating asset items');
+            logger()->info('Asset updated, updating specific asset item');
 
-            // Update the asset's assignee
-            $asset->assetItems()->update([
-                'assignee_id' => $request->assignee_id,
-                'status' => 'in_use',
+            // Update only the specific asset item that was transferred
+            // Since we're transferring a specific asset item, we need to find it
+            $assetItems = $asset->assetItems()->get();
+            logger()->info('All asset items for this asset:', [
+                'asset_id' => $asset->id,
+                'asset_items_count' => $assetItems->count(),
+                'asset_items' => $assetItems->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'assignee_id' => $item->assignee_id,
+                        'status' => $item->status
+                    ];
+                })->toArray()
             ]);
+            
+            $assetItem = $assetItems->first();
+            logger()->info('Selected asset item for update:', ['asset_item_id' => $assetItem->id ?? 'null', 'asset_id' => $asset->id]);
+            
+            if ($assetItem) {
+                $assetItem->update([
+                    'assignee_id' => $request->assignee_id,
+                    'status' => 'in_use',
+                ]);
+                logger()->info('Asset item updated successfully');
+            } else {
+                logger()->warning('No asset item found for asset', ['asset_id' => $asset->id]);
+            }
 
             logger()->info('Asset items updated, creating history');
 
-            // Create transfer history record
-            $asset->createHistory([
-                'action' => 'asset_transferred',
-                'action_type' => 'transfer',
-                'notes' => 'Asset transferred to ' . $request->assignee_name . ' on ' . $request->transfer_date . 
-                           ($request->assignment_notes ? ' - Notes: ' . $request->assignment_notes : ''),
-                'performed_by' => auth()->id(),
-                'performed_at' => now(),
-                'assignee_id' => $request->assignee_id,
-            ]);
+            // Create transfer history record for the specific asset item
+            if ($assetItem) {
+                $assetItem->createHistory([
+                    'action' => 'asset_transferred',
+                    'action_type' => 'transfer',
+                    'notes' => 'Asset transferred to ' . $request->assignee_name . ' on ' . $request->transfer_date . 
+                               ($request->assignment_notes ? ' - Notes: ' . $request->assignment_notes : ''),
+                    'performed_by' => auth()->id(),
+                    'performed_at' => now(),
+                    'assignee_id' => $request->assignee_id,
+                ]);
+            }
 
             logger()->info('History created, returning success');
 
