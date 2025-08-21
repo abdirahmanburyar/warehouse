@@ -552,11 +552,12 @@
                                                 </Link>
                                                 
                                                 <Link :href="route('assets.history.index', { asset: asset.asset_id || asset.asset?.id })"
-                                                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                                    title="View asset-level history (all asset items)">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-green-600">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v2.25h-2.25a.75.75 0 000 1.5h2.25v2.25a.75.75 0 001.5 0v-2.25h2.25a.75.75 0 000-1.5h-2.25v-2.25z" clip-rule="evenodd" />
                                                     </svg>
-                                                    History
+                                                    Asset History
                                                 </Link>
                                                 
                                                 <div class="border-t border-gray-100"></div>

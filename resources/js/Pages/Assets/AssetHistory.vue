@@ -222,11 +222,20 @@
                                     <p class="text-sm text-gray-500">{{ item.serial_number || 'No Serial Number' }}</p>
                                 </div>
                             </div>
-                            <div class="text-right">
-                                <span :class="getStatusClass(item.status)" class="px-3 py-1 text-sm font-semibold rounded-full">
-                                    {{ formatStatus(item.status) }}
-                                </span>
-                                <p class="text-xs text-gray-500 mt-1">Current Status</p>
+                            <div class="flex items-center space-x-3">
+                                <div class="text-right">
+                                    <span :class="getStatusClass(item.status)" class="px-3 py-1 text-sm font-semibold rounded-full">
+                                        {{ formatStatus(item.status) }}
+                                    </span>
+                                    <p class="text-xs text-gray-500 mt-1">Current Status</p>
+                                </div>
+                                <Link :href="route('assets.items.history.index', item.id)"
+                                    class="inline-flex items-center px-3 py-2 border border-blue-300 text-sm font-medium rounded-md shadow-sm text-blue-700 bg-white hover:bg-blue-50 transition-colors">
+                                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+                                    </svg>
+                                    View Individual History
+                                </Link>
                             </div>
                         </div>
 

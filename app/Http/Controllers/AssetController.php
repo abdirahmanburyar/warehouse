@@ -898,4 +898,44 @@ class AssetController extends Controller
             return back()->withErrors(['error' => 'Failed to load asset history: ' . $th->getMessage()]);
         }
     }
+
+    /**
+     * Show the history of a specific asset item.
+     */
+    public function showAssetItemHistory(AssetItem $assetItem)
+    {
+        try {
+            // Get the asset item with its relationships and history
+            $assetItemWithHistory = $assetItem->load([
+                'assignee',
+                'category',
+                'type',
+                'assetHistory' => function ($query) {
+                    $query->orderBy('performed_at', 'desc');
+                },
+                'asset.region',
+                'asset.assetLocation',
+                'asset.subLocation',
+                'asset.fundSource'
+            ]);
+
+            // Get the asset for context
+            $asset = $assetItem->asset;
+
+            return Inertia::render('Assets/AssetItemHistory', [
+                'asset' => $asset,
+                'assetItem' => $assetItemWithHistory,
+                'pageTitle' => 'Asset Item History',
+                'pageDescription' => 'View detailed history for asset item: ' . $assetItem->asset_tag
+            ]);
+        } catch (\Throwable $th) {
+            logger()->error('Failed to show asset item history: ' . $th->getMessage(), [
+                'asset_item_id' => $assetItem->id ?? 'unknown',
+                'user_id' => auth()->id(),
+                'trace' => $th->getTraceAsString()
+            ]);
+            
+            return back()->withErrors(['error' => 'Failed to load asset item history: ' . $th->getMessage()]);
+        }
+    }
 }
