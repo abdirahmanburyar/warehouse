@@ -18,6 +18,7 @@ import moment from 'moment';
 
 const props = defineProps({
     asset: { type: Object, required: true },
+    assetItem: { type: Object, required: false, default: null },
     locations: { type: Array, required: true, default: () => [] },
     categories: { type: Array, required: true, default: () => [] },
     types: { type: Array, required: false, default: () => [] },
@@ -57,7 +58,7 @@ watch(() => props.types, (list) => {
 }, { immediate: true, deep: true });
 
 const filteredTypeOptions = computed(() => {
-    const categoryId = form.value.category_id;
+    const categoryId = form.value.asset_category_id || form.value.category?.id;
     if (!categoryId) return [{ id: 'new', name: '+ Add New Type', isAddNew: true }];
     const base = typeOptions.value.filter(t => !t.isAddNew && (!t.asset_category_id || t.asset_category_id === categoryId));
     return [...base, { id: 'new', name: '+ Add New Type', isAddNew: true }];
@@ -80,14 +81,16 @@ const assigneeOptions = computed(() => [
 const onAssigneeSelect = (opt) => {
     if (!opt) return;
     if (opt.isAddNew) { showAssigneeModal.value = true; return; }
-    // Mutually exclusive: prefer saved assignee_id; clear assigned_user for consistency
+    // Set assignee data
     form.value.assignee_id = opt.id;
+    form.value.assignee = { id: opt.id, name: opt.name };
     form.value.assigned_user = { id: opt.id, name: opt.name };
     form.value.assigned_to = '';
 };
 
 const onAssigneeClear = () => {
     form.value.assignee_id = null;
+    form.value.assignee = null;
     form.value.assigned_to = '';
     form.value.assigned_user = null;
 };
@@ -105,8 +108,9 @@ const createAssignee = async (e) => {
         });
         // Append to local list and select it
         assigneesList.value = [...assigneesList.value, data];
-        form.value.assigned_user = { id: data.id, name: data.name };
+        form.value.assignee = { id: data.id, name: data.name };
         form.value.assignee_id = data.id;
+        form.value.assigned_user = { id: data.id, name: data.name };
         form.value.assigned_to = '';
         newAssignee.value = { name: '', email: '', phone: '', department: '' };
         showAssigneeModal.value = false;
@@ -127,9 +131,36 @@ const toDateInputValue = (value) => {
 const form = ref({});
 
 onMounted(() => {
+    // Merge asset and assetItem data into the form
     form.value = {
-        ...props.asset
+        // Asset-level fields
+        ...props.asset,
+        
+        // AssetItem-level fields (if assetItem exists)
+        ...(props.assetItem && {
+            asset_tag: props.assetItem.asset_tag,
+            asset_name: props.assetItem.asset_name,
+            serial_number: props.assetItem.serial_number,
+            original_value: props.assetItem.original_value,
+            status: props.assetItem.status,
+            assignee_id: props.assetItem.assignee_id,
+            asset_category_id: props.assetItem.asset_category_id,
+            asset_type_id: props.assetItem.asset_type_id,
+            
+            // Relationships
+            category: props.assetItem.category,
+            type: props.assetItem.type,
+            assignee: props.assetItem.assignee,
+        }),
+        
+        // Map some fields to match the form expectations
+        name: props.assetItem?.asset_name || props.asset?.name,
+        tag_no: props.assetItem?.asset_tag || props.asset?.tag_no,
     };
+    
+    console.log('Form initialized with:', form.value);
+    console.log('Asset data:', props.asset);
+    console.log('AssetItem data:', props.assetItem);
 });
 
 // Keep type cleared when category cleared
@@ -159,9 +190,13 @@ const statuses = ref([
 
 // Normalize status in case asset has a value not allowed for editing
 const allowedStatusValues = computed(() => statuses.value.map(s => s.value));
-if (!allowedStatusValues.value.includes(form.value.status)) {
-    form.value.status = 'active';
-}
+
+// Watch for form initialization to normalize status
+watch(() => form.value.status, (newStatus) => {
+    if (newStatus && !allowedStatusValues.value.includes(newStatus)) {
+        form.value.status = 'active';
+    }
+});
 
 // Modals + new entries
 const showLocationModal = ref(false);
@@ -186,15 +221,25 @@ const isNewType = ref(false);
 const selectedLocationForSub = ref(null);
 
 const handleCategorySelect = (selected) => {
-    if (!selected) { form.value.category_id = null; form.value.category = null; return; }
+    if (!selected) { 
+        form.value.asset_category_id = null; 
+        form.value.category = null; 
+        return; 
+    }
     if (selected.isAddNew) { showCategoryModal.value = true; return; }
-    form.value.category_id = selected.id; form.value.category = selected;
+    form.value.asset_category_id = selected.id; 
+    form.value.category = selected;
 };
 
 const handleTypeSelect = (selected) => {
-    if (!selected) { form.value.type_id = null; form.value.type = null; return; }
+    if (!selected) { 
+        form.value.asset_type_id = null; 
+        form.value.type = null; 
+        return; 
+    }
     if (selected.isAddNew) { showTypeModal.value = true; return; }
-    form.value.type_id = selected.id; form.value.type = selected;
+    form.value.asset_type_id = selected.id; 
+    form.value.type = selected;
 };
 
 // Create a new Type from the modal
@@ -216,7 +261,7 @@ const createType = async () => {
             { id: 'new', name: '+ Add New Type', isAddNew: true },
         ];
         form.value.type = newTypeData;
-        form.value.type_id = newTypeData.id;
+        form.value.asset_type_id = newTypeData.id;
         newType.value = '';
         showTypeModal.value = false;
         toast.success('Type created successfully');
@@ -228,27 +273,54 @@ const createType = async () => {
 };
 
 const handleRegionSelect = (selected) => {
-    if (!selected) { form.value.region_id = null; form.value.region = null; return; }
+    if (!selected) { 
+        form.value.region_id = null; 
+        form.value.region = null; 
+        return; 
+    }
     if (selected.isAddNew) { showRegionModal.value = true; return; }
-    form.value.region_id = selected.id; form.value.region = selected;
+    form.value.region_id = selected.id; 
+    form.value.region = selected;
 };
 
 const handleFundSourceSelect = (selected) => {
-    if (!selected) { form.value.fund_source_id = null; form.value.fund_source = null; return; }
+    if (!selected) { 
+        form.value.fund_source_id = null; 
+        form.value.fund_source = null; 
+        return; 
+    }
     if (selected.isAddNew) { showFundSourceModal.value = true; return; }
-    form.value.fund_source_id = selected.id; form.value.fund_source = selected;
+    form.value.fund_source_id = selected.id; 
+    form.value.fund_source = selected;
 };
 
 const handleLocationSelect = (selected) => {
-    if (!selected) { form.value.asset_location_id = null; form.value.asset_location = null; form.value.sub_location = null; form.value.sub_location_id = null; subLocations.value = []; return; }
+    if (!selected) { 
+        form.value.asset_location_id = null; 
+        form.value.asset_location = null; 
+        form.value.sub_location = null; 
+        form.value.sub_location_id = null; 
+        subLocations.value = []; 
+        return; 
+    }
     if (selected.isAddNew) { showLocationModal.value = true; return; }
-    form.value.asset_location_id = selected.id; form.value.asset_location = selected; selectedLocationForSub.value = selected.id; form.value.sub_location = null; form.value.sub_location_id = null; loadSubLocations(selected.id);
+    form.value.asset_location_id = selected.id; 
+    form.value.asset_location = selected; 
+    selectedLocationForSub.value = selected.id; 
+    form.value.sub_location = null; 
+    form.value.sub_location_id = null; 
+    loadSubLocations(selected.id);
 };
 
 const handleSubLocationSelect = (selected) => {
-    if (!selected) { form.value.sub_location_id = null; form.value.sub_location = null; return; }
+    if (!selected) { 
+        form.value.sub_location_id = null; 
+        form.value.sub_location = null; 
+        return; 
+    }
     if (selected.isAddNew) { showSubLocationModal.value = true; return; }
-    form.value.sub_location_id = selected.id; form.value.sub_location = selected;
+    form.value.sub_location_id = selected.id; 
+    form.value.sub_location = selected;
 };
 
 const createLocation = async () => {
@@ -257,8 +329,13 @@ const createLocation = async () => {
     try {
         const { data } = await axios.post(route('assets.locations.store'), { name: newLocation.value });
         locationOptions.value = [...locationOptions.value.filter(l => !l.isAddNew), data, { id: 'new', name: '+ Add New Location', isAddNew: true }];
-        form.value.asset_location = data; form.value.asset_location_id = data.id; selectedLocationForSub.value = data.id;
-        newLocation.value = ''; showLocationModal.value = false; await loadSubLocations(data.id); toast.success('Location created successfully');
+        form.value.asset_location = data; 
+        form.value.asset_location_id = data.id; 
+        selectedLocationForSub.value = data.id;
+        newLocation.value = ''; 
+        showLocationModal.value = false; 
+        await loadSubLocations(data.id); 
+        toast.success('Location created successfully');
     } catch (e) { toast.error(e.response?.data || 'Error creating location'); } finally { isNewLocation.value = false; }
 };
 
@@ -266,7 +343,12 @@ const createSubLocation = async () => {
     if (!newSubLocation.value || !selectedLocationForSub.value) { toast.error('Please enter a sub-location name and select a location'); return; }
     try {
         const { data } = await axios.post(route('assets.locations.sub-locations.store'), { name: newSubLocation.value, asset_location_id: selectedLocationForSub.value });
-        subLocations.value = [...subLocations.value, data]; form.value.sub_location = data; form.value.sub_location_id = data.id; newSubLocation.value = ''; showSubLocationModal.value = false; toast.success('Sub-location created successfully');
+        subLocations.value = [...subLocations.value, data]; 
+        form.value.sub_location = data; 
+        form.value.sub_location_id = data.id; 
+        newSubLocation.value = ''; 
+        showSubLocationModal.value = false; 
+        toast.success('Sub-location created successfully');
     } catch (e) { toast.error(e.response?.data || 'Error creating sub-location'); }
 };
 
@@ -276,7 +358,11 @@ const createCategory = async () => {
     try {
         const { data } = await axios.post(route('assets.categories.store'), { name: newCategory.value });
         categoryOptions.value = [...categoryOptions.value.filter(c => !c.isAddNew), data, { id: 'new', name: '+ Add New Category', isAddNew: true }];
-        form.value.category = data; form.value.asset_category_id = data.id; newCategory.value = ''; showCategoryModal.value = false; toast.success('Category created successfully');
+        form.value.category = data; 
+        form.value.asset_category_id = data.id; 
+        newCategory.value = ''; 
+        showCategoryModal.value = false; 
+        toast.success('Category created successfully');
     } catch (e) { toast.error(e.response?.data || 'Error creating category'); } finally { isNewCategory.value = false; }
 };
 
@@ -286,7 +372,11 @@ const createFundSource = async () => {
     try {
         const { data } = await axios.post(route('assets.fund-sources.store'), { name: newFundSource.value });
         fundSourceOptions.value = [...fundSourceOptions.value.filter(f => !f.isAddNew), data, { id: 'new', name: '+ Add New Fund Source', isAddNew: true }];
-        form.value.fund_source = data; form.value.fund_source_id = data.id; newFundSource.value = ''; showFundSourceModal.value = false; toast.success('Fund Source created successfully');
+        form.value.fund_source = data; 
+        form.value.fund_source_id = data.id; 
+        newFundSource.value = ''; 
+        showFundSourceModal.value = false; 
+        toast.success('Fund Source created successfully');
     } catch (e) { toast.error(e.response?.data || 'Error creating fund source'); } finally { isNewFundSource.value = false; }
 };
 
@@ -296,25 +386,53 @@ const createRegion = async () => {
     try {
         const { data } = await axios.post(route('assets.regions.store'), { name: newRegion.value });
         regionOptions.value = [...regionOptions.value.filter(r => !r.isAddNew), data, { id: 'new', name: '+ Add New Region', isAddNew: true }];
-        form.value.region = data; form.value.region_id = data.id; newRegion.value = ''; showRegionModal.value = false; toast.success('Region created successfully');
+        form.value.region = data; 
+        form.value.region_id = data.id; 
+        newRegion.value = ''; 
+        showRegionModal.value = false; 
+        toast.success('Region created successfully');
     } catch (e) { toast.error(e.response?.data || 'Error creating region'); } finally { isNewRegion.value = false; }
 };
 
 const submit = async () => {
     processing.value = true;
-    await axios.put(route('assets.update', props.asset.id), form.value)
+    
+    // Prepare the data in the format the backend expects
+    const updateData = {
+        // Asset-level fields
+        region_id: form.value.region_id,
+        asset_location_id: form.value.asset_location_id,
+        sub_location_id: form.value.sub_location_id,
+        fund_source_id: form.value.fund_source_id,
+        acquisition_date: form.value.acquisition_date,
+        
+        // AssetItem-level fields
+        asset_item_data: {
+            asset_tag: form.value.asset_tag,
+            asset_category_id: form.value.asset_category_id,
+            asset_type_id: form.value.asset_type_id,
+            asset_name: form.value.asset_name,
+            serial_number: form.value.serial_number,
+            original_value: form.value.original_value,
+            status: form.value.status,
+            assignee_id: form.value.assignee_id,
+        }
+    };
+    
+    console.log('Submitting update data:', updateData);
+    
+    await axios.put(route('assets.update', props.asset.id), updateData)
     .then(response => {
         console.log(response);
-            processing.value = false;
+        processing.value = false;
         Swal.fire({ title: 'Success!', text: 'Asset updated successfully', icon: 'success', confirmButtonText: 'OK' })
             .then(() => router.get(route('assets.index')));
     })
     .catch(error => {
         console.log(error);
-            processing.value = false;
-            toast.error(error.response?.data || 'Error updating asset');
+        processing.value = false;
+        toast.error(error.response?.data || 'Error updating asset');
     });
-
 };
 </script>
 
