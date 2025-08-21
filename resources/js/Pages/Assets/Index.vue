@@ -629,12 +629,12 @@
                                         <div class="mt-2">
                                             <p class="text-sm text-gray-500">
                                                 Transfer asset <strong>{{ selectedAsset?.asset_tag }}</strong> to a new
-                                                location and assignee.
+                                                location, region, and assignee.
                                             </p>
                                             <div class="mt-4 space-y-4">
                                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div>
-                                                        <label class="block text-sm font-medium text-gray-700">Region</label>
+                                                        <label class="block text-sm font-medium text-gray-700">Region (Optional)</label>
                                                         <Multiselect 
                                                             v-model="transferData.region" 
                                                             :options="regionOptions"
@@ -649,7 +649,7 @@
                                                             @select="onRegionSelect" />
                                                     </div>
                                                     <div>
-                                                        <label class="block text-sm font-medium text-gray-700">Asset Location</label>
+                                                        <label class="block text-sm font-medium text-gray-700">Asset Location (Required)</label>
                                                         <Multiselect 
                                                             v-model="transferData.asset_location" 
                                                             :options="locationOptions"
@@ -665,10 +665,10 @@
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700">Sub Location</label>
+                                                    <label class="block text-sm font-medium text-gray-700">Sub Location (Depends on Location)</label>
                                                     <Multiselect 
                                                         v-model="transferData.sub_location" 
-                                                        :options="subLocationOptions"
+                                                        :options="filteredSubLocationOptions"
                                                         :searchable="true" 
                                                         :close-on-select="true" 
                                                         :show-labels="false"
@@ -1164,9 +1164,8 @@ const onAssigneeClear = () => {
 const onRegionSelect = (opt) => {
     if (!opt) return;
     transferData.region = opt;
-    // Reset location and sub-location when region changes
-    transferData.asset_location = null;
-    transferData.sub_location = null;
+    // Note: Locations are not dependent on regions in this system
+    // They can be selected independently
 };
 
 const onLocationSelect = (opt) => {
@@ -1180,6 +1179,8 @@ const onLocationSelect = (opt) => {
     }
 };
 
+
+
 const loadSubLocationsForTransfer = async (locationId) => {
     if (!locationId) {
         subLocationOptions.value = [];
@@ -1190,6 +1191,11 @@ const loadSubLocationsForTransfer = async (locationId) => {
             route("assets.locations.sub-locations", locationId)
         );
         subLocationOptions.value = response.data;
+        
+        // If only one sub-location available, auto-select it
+        if (response.data.length === 1) {
+            transferData.sub_location = response.data[0];
+        }
     } catch (error) {
         console.error('Error loading sub-locations:', error);
         subLocationOptions.value = [];
@@ -1280,6 +1286,16 @@ const regionFilter = ref(null);
 const locationFilter = ref(null);
 const subLocationFilter = ref(null);
 const subLocationOptions = ref([]);
+
+// Sub-location options: filtered by selected location
+const filteredSubLocationOptions = computed(() => {
+    if (!transferData.asset_location) {
+        return [];
+    }
+    return subLocationOptions.value.filter(subLocation => 
+        subLocation.location_id === transferData.asset_location.id
+    );
+});
 const fundSourceFilter = ref(null);
 const categoryFilter = ref(null);
 const typeFilter = ref(null);
@@ -1369,7 +1385,7 @@ onMounted(async () => {
 
 const regionOptions = computed(() => props.regions || []);
 
-// Location options: show all locations, sub-location depends on selected location
+// Location options: show all locations (not filtered by region since they're independent)
 const locationOptions = computed(() => props.locations || []);
 
 // Clear dependent filters when region changes
