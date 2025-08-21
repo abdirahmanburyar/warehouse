@@ -864,30 +864,28 @@ class AssetController extends Controller
     public function showHistory(AssetItem $assetItem)
     {
         try {
-            // Get all asset items for this asset
-            $assetItem = $assetItem->with([
+            // Get the asset item with its relationships and history
+            $assetItemWithHistory = $assetItem->load([
                 'assignee',
                 'category',
                 'type',
-                'asset.assetCategory',
-                'asset.assetType',
-                'asset.subLocation',
-                'asset.assetLocation',
-                'asset.region',
-                'asset.fundSource',
                 'assetHistory' => function ($query) {
                     $query->orderBy('performed_at', 'desc');
-                }
-            ])->first();
+                },
+                'asset.region',
+                'asset.assetLocation',
+                'asset.subLocation',
+                'asset.fundSource'
+            ]);
 
             return Inertia::render('Assets/AssetHistory', [
-                'assetItem' => $assetItem,
+                'assetItem' => $assetItemWithHistory,
                 'pageTitle' => 'Asset History',
-                'pageDescription' => 'View detailed history for asset: ' . $assetItem->asset->asset_number
+                'pageDescription' => 'View detailed history for asset item: ' . $assetItem->asset_tag
             ]);
         } catch (\Throwable $th) {
             logger()->error('Failed to show asset history: ' . $th->getMessage(), [
-                'asset_id' => $asset->id ?? 'unknown',
+                'asset_item_id' => $assetItem->id ?? 'unknown',
                 'user_id' => auth()->id(),
                 'trace' => $th->getTraceAsString()
             ]);

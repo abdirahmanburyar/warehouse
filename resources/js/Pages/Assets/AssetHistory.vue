@@ -49,14 +49,14 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-500">Asset Number</label>
-                        <p class="mt-1 text-sm text-gray-900">{{ asset?.asset_number || 'N/A' }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-500">Asset Tag</label>
-                        <p class="mt-1 text-sm text-gray-900">{{ asset?.asset_tag || 'N/A' }}</p>
-                    </div>
+                                         <div>
+                         <label class="block text-sm font-medium text-gray-500">Asset Number</label>
+                         <p class="mt-1 text-sm text-gray-900">{{ assetItem?.asset?.asset_number || 'N/A' }}</p>
+                     </div>
+                     <div>
+                         <label class="block text-sm font-medium text-gray-500">Asset Tag</label>
+                         <p class="mt-1 text-sm text-gray-900">{{ assetItem?.asset?.asset_tag || 'N/A' }}</p>
+                     </div>
                                          <div>
                          <label class="block text-sm font-medium text-gray-500">Category</label>
                          <p class="mt-1 text-sm text-gray-900">{{ assetItem?.category?.name || 'N/A' }}</p>
