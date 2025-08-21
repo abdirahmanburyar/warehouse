@@ -502,7 +502,18 @@ class AssetController extends Controller
         // Load all assets that have been submitted (including approved ones)
         // This allows us to show the full approval workflow history
         $assets = Asset::whereNotNull('submitted_at')
-                      ->pluck('asset_number')
+                      ->with(['region', 'assetLocation', 'subLocation'])
+                      ->get(['id', 'asset_number', 'acquisition_date'])
+                      ->map(function($asset) {
+                          return [
+                              'id' => $asset->id,
+                              'asset_number' => $asset->asset_number,
+                              'acquisition_date' => $asset->acquisition_date,
+                              'region_name' => $asset->region?->name,
+                              'location_name' => $asset->assetLocation?->name,
+                              'sub_location_name' => $asset->subLocation?->name,
+                          ];
+                      })
                       ->toArray();
 
         $assetItem = null;

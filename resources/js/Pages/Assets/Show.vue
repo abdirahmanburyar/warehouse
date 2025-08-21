@@ -29,6 +29,9 @@
                     :searchable="true"
                     :show-labels="false"
                     :close-on-select="true"
+                    track-by="id"
+                    label="asset_number"
+                    :custom-label="(asset) => `${asset.asset_number} - ${asset.region_name || 'N/A'}`"
                 />
             </div>
         </div>
@@ -263,8 +266,11 @@
 <script setup>
 import { ref, computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import Multiselect from 'vue-multiselect';
+import "vue-multiselect/dist/vue-multiselect.css";
+import "@/Components/multiselect.css";
+
 import moment from 'moment';
 
 const props = defineProps({
@@ -278,11 +284,33 @@ const props = defineProps({
     },
 });
 
+// Debug logging
+console.log('Show.vue props:', props);
+console.log('Assets array:', props.assets);
+
+// Test route generation
+try {
+    console.log('Test route generation:', route('assets.show', 1));
+} catch (error) {
+    console.error('Route generation error:', error);
+}
+
 const selectedAsset = ref(null);
 
 const handleSelectAsset = (asset) => {
-    // Navigate to the selected asset
-    window.location.href = route('assets.show', asset.id);
+    console.log('Selected asset:', asset);
+    if (asset && asset.id) {
+        try {
+            // Navigate to the selected asset using Inertia
+            router.visit(route('assets.show', asset.id));
+        } catch (error) {
+            console.error('Error navigating to asset:', error);
+            // Fallback to manual URL construction
+            router.visit(`/assets-management/${asset.id}`);
+        }
+    } else {
+        console.error('Invalid asset object:', asset);
+    }
 };
 
 const formatDate = (date) => {
