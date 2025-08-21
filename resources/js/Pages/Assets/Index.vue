@@ -39,10 +39,6 @@
                             Approvals
                             </Link>
 
-
-
-
-
                         </div>
                     </div>
                 </div>
@@ -219,10 +215,10 @@
                             </button>
                             <select v-model="per_page" @change="props.filters.page = 1; reloadAssets();"
                                 class="w-[140px] border border-gray-300 rounded-md py-2 px-3 text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="10">10 / page</option>
-                                <option value="25">25 / page</option>
-                                <option value="50">50 / page</option>
-                                <option value="100">100 / page</option>
+                                <option value="10">10 per page</option>
+                                <option value="25">25 per page</option>
+                                <option value="50">50 per page</option>
+                                <option value="100">100 per page</option>
                             </select>
                         </div>
                     </div>
@@ -551,7 +547,7 @@
                                                     Edit Asset
                                                 </Link>
                                                 
-                                                <Link :href="route('assets.history.index', { asset: asset.asset_id || asset.asset?.id })"
+                                                <Link :href="route('assets.history.index', { asset: asset.id })"
                                                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                                                     title="View asset-level history (all asset items)">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-green-600">
