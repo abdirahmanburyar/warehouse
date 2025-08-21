@@ -620,7 +620,7 @@
                         leave-from="opacity-100 translate-y-0 sm:scale-100"
                         leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
                         <div
-                            class="inline-block align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            class="inline-block align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
                             <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                                 <div class="sm:flex sm:items-start">
                                     <div
@@ -640,24 +640,11 @@
                                                     Transfer asset <strong>{{ selectedAsset?.asset_tag }}</strong> to a new
                                                     location, region, and assignee.
                                                 </p>
-                                                <div class="bg-gray-50 p-3 rounded-md">
-                                                    <p class="text-xs font-medium text-gray-600 mb-2">Current Assignment:</p>
-                                                    <div class="grid grid-cols-1 gap-1 text-xs">
-                                                        <div><span class="font-medium">Region:</span> {{ selectedAsset?.region?.name || 'Not assigned' }}</div>
-                                                        <div><span class="font-medium">Location:</span> {{ selectedAsset?.asset_location?.name || 'Not assigned' }}</div>
-                                                        <div><span class="font-medium">Sub-Location:</span> {{ selectedAsset?.sub_location?.name || 'Not assigned' }}</div>
-                                                        <div><span class="font-medium">Assignee:</span> {{ selectedAsset?.assignee?.name || 'Not assigned' }}</div>
-                                                    </div>
-                                                </div>
                                             </div>
                                             <div class="mt-4 space-y-4">
-                                                <div class="bg-blue-50 p-3 rounded-md mb-4">
-                                                    <p class="text-xs font-medium text-blue-600 mb-2">New Assignment:</p>
-                                                    <p class="text-xs text-blue-700">Select the new values below to complete the transfer.</p>
-                                                </div>
                                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div>
-                                                        <label class="block text-sm font-medium text-gray-700">New Region (Optional)</label>
+                                                        <label class="block text-sm font-medium text-gray-700 mb-1">New Region (Optional)</label>
                                                         <Multiselect 
                                                             v-model="transferData.region" 
                                                             :options="regionOptions"
@@ -672,7 +659,7 @@
                                                             @select="onRegionSelect" />
                                                     </div>
                                                     <div>
-                                                        <label class="block text-sm font-medium text-gray-700">New Asset Location (Required)</label>
+                                                        <label class="block text-sm font-medium text-gray-700 mb-1">New Asset Location (Required)</label>
                                                         <Multiselect 
                                                             v-model="transferData.asset_location" 
                                                             :options="locationOptions"
@@ -687,47 +674,53 @@
                                                             @select="onLocationSelect" />
                                                     </div>
                                                 </div>
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700">New Sub Location (Depends on Location)</label>
-                                                    <Multiselect 
-                                                        v-model="transferData.sub_location" 
-                                                        :options="filteredSubLocationOptions"
-                                                        :searchable="true" 
-                                                        :close-on-select="true" 
-                                                        :show-labels="false"
-                                                        :allow-empty="true" 
-                                                        placeholder="Select New Sub Location" 
-                                                        track-by="id" 
-                                                        label="name" 
-                                                        :open-direction="'bottom'"
-                                                        :disabled="!transferData.asset_location" />
+                                                
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 mb-1">New Sub Location (Depends on Location)</label>
+                                                        <Multiselect 
+                                                            v-model="transferData.sub_location" 
+                                                            :options="filteredSubLocationOptions"
+                                                            :searchable="true" 
+                                                            :close-on-select="true" 
+                                                            :show-labels="false"
+                                                            :allow-empty="true" 
+                                                            placeholder="Select New Sub Location" 
+                                                            track-by="id" 
+                                                            label="name" 
+                                                            :open-direction="'bottom'"
+                                                            :disabled="!transferData.asset_location" />
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 mb-1">New Assignee (Required)</label>
+                                                        <Multiselect 
+                                                            v-model="transferData.assignee" 
+                                                            :options="assigneeOptions"
+                                                            :searchable="true" 
+                                                            :close-on-select="true" 
+                                                            :show-labels="false"
+                                                            :allow-empty="true" 
+                                                            placeholder="Select New Assignee" 
+                                                            track-by="id" 
+                                                            label="name" 
+                                                            :open-direction="'bottom'"
+                                                            @select="onAssigneeSelect"
+                                                            @clear="onAssigneeClear" />
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700">New Assignee (Required)</label>
-                                                    <Multiselect 
-                                                        v-model="transferData.assignee" 
-                                                        :options="assigneeOptions"
-                                                        :searchable="true" 
-                                                        :close-on-select="true" 
-                                                        :show-labels="false"
-                                                        :allow-empty="true" 
-                                                        placeholder="Select New Assignee" 
-                                                        track-by="id" 
-                                                        label="name" 
-                                                        :open-direction="'bottom'"
-                                                        @select="onAssigneeSelect"
-                                                        @clear="onAssigneeClear" />
-                                                </div>
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700">Transfer Date</label>
-                                                    <input v-model="transferData.transfer_date" type="date"
-                                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:ring-indigo-500 focus:border-indigo-500" />
-                                                </div>
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700">Notes (Optional)</label>
-                                                    <textarea v-model="transferData.assignment_notes" rows="3"
-                                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                        placeholder="Add any notes about the transfer"></textarea>
+                                                
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 mb-1">Transfer Date</label>
+                                                        <input v-model="transferData.transfer_date" type="date"
+                                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:ring-indigo-500 focus:border-indigo-500" />
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                                                        <textarea v-model="transferData.assignment_notes" rows="2"
+                                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                            placeholder="Add any notes about the transfer"></textarea>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
