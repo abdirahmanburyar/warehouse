@@ -30,13 +30,13 @@
                             </svg>
                             Add Asset
                             </Link>
-                            <Link :href="route('assets.approvals.index')"
+                            <Link :href="route('assets.workflow.index')"
                                 class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                                 class="w-4 h-4 mr-2">
                                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            Approvals
+                            Workflow
                             </Link>
 
                         </div>

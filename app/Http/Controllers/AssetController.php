@@ -524,7 +524,7 @@ class AssetController extends Controller
                 ->first();
         }
 
-        return Inertia::render('Assets/Approvals', [
+        return Inertia::render('Assets/Show', [
             'assets' => $assets,
             'assetItem' => $assetItem,
             'filters' => $request->only('selectedAsset'),
@@ -855,6 +855,49 @@ class AssetController extends Controller
                 'trace' => $th->getTraceAsString()
             ]);
             return response()->json(['error' => 'Transfer failed: ' . $th->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Show the details of an asset.
+     */
+    public function show(Asset $asset)
+    {
+        try {
+            // Get the asset with its relationships
+            $assetWithRelations = $asset->load([
+                'region',
+                'assetLocation',
+                'subLocation',
+                'fundSource',
+                'submittedBy',
+                'reviewedBy',
+                'approvedBy',
+                'rejectedBy',
+                'assetItems.assignee',
+                'assetItems.category',
+                'assetItems.type'
+            ]);
+
+            // Get all assets for the dropdown
+            $allAssets = Asset::with(['region', 'assetLocation', 'subLocation'])
+                ->orderBy('asset_number')
+                ->get();
+
+            return Inertia::render('Assets/Show', [
+                'assetItem' => $assetWithRelations,
+                'assets' => $allAssets,
+                'pageTitle' => 'Asset Details',
+                'pageDescription' => 'View detailed information for asset: ' . $asset->asset_number
+            ]);
+        } catch (\Throwable $th) {
+            logger()->error('Failed to show asset: ' . $th->getMessage(), [
+                'asset_id' => $asset->id ?? 'unknown',
+                'user_id' => auth()->id(),
+                'trace' => $th->getTraceAsString()
+            ]);
+            
+            return back()->withErrors(['error' => 'Failed to load asset: ' . $th->getMessage()]);
         }
     }
 

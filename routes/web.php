@@ -599,8 +599,10 @@ Route::controller(LocationController::class)
             Route::get('/asset-items/{assetItem}/history', 'showHistory')->name('assets.history.index');
             Route::get('/asset-items/{assetItem}/detailed-history', 'showAssetItemHistory')->name('assets.items.history.index');
 
-            // Asset Approval Routes
+            // Asset Show Routes
             Route::get('/approvals', 'approvalsIndex')->name('assets.approvals.index');
+            Route::get('/workflow', 'approvalsIndex')->name('assets.workflow.index');
+            Route::get('/{asset}', 'show')->name('assets.show');
             Route::post('/{asset}/approve-simple', 'approve')->name('assets.approve-simple');
             Route::post('/{asset}/reject-simple', 'reject')->name('assets.reject-simple');
             Route::post('/{asset}/review', 'review')->name('assets.review');
