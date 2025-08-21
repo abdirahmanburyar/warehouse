@@ -38,55 +38,11 @@
                             </svg>
                             Approvals
                             </Link>
-                            <Link :href="route('asset.documents.index')"
-                                class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                class="w-4 h-4 mr-2">
-                                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-                            </svg>
-                            Documents
-                            </Link>
-                            <Link :href="route('asset.maintenance.index')"
-                                class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                class="w-4 h-4 mr-2">
-                                <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z" />
-                            </svg>
-                            Maintenance
-                            </Link>
-                            <Link :href="route('asset.depreciation.index')"
-                                class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                class="w-4 h-4 mr-2">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                            </svg>
-                            Depreciation
-                            </Link>
-                            <Link :href="route('asset.history.index')"
-                                class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                class="w-4 h-4 mr-2">
-                                <path d="M13 9h-2v2H9v2h2v2h2v-2h2V9h-2V7H9v2z" />
-                            </svg>
-                            History
-                            </Link>
-                            <button v-if="page.props.auth.can.asset_export" @click="exportToExcel"
-                                class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                    class="w-4 h-4 mr-2">
-                                    <path
-                                        d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-                                </svg>
-                                Export
-                            </button>
-                            <button v-if="page.props.auth.can.asset_bulk_import" @click="showImportModal = true"
-                                class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                    class="w-4 h-4 mr-2">
-                                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                                </svg>
-                                Import
-                            </button>
+
+
+
+
+
                         </div>
                     </div>
                 </div>
@@ -291,10 +247,11 @@
                 <div v-else class="relative bg-white/90 backdrop-blur-sm rounded-xl shadow-sm ring-1 ring-gray-200/70">
                     <table class="min-w-full table-fixed divide-y divide-gray-200">
                         <colgroup>
-                            <col style="width:34%" />
-                            <col style="width:20%" />
-                            <col style="width:16%" />
-                            <col style="width:14%" />
+                            <col style="width:30%" />
+                            <col style="width:18%" />
+                            <col style="width:12%" />
+                            <col style="width:12%" />
+                            <col style="width:12%" />
                             <col style="width:10%" />
                             <col style="width:6%" />
                         </colgroup>
@@ -305,7 +262,7 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
                                             <path fill-rule="evenodd" d="M4.25 2A2.25 2.25 0 002 4.25v11.5A2.25 2.25 0 004.25 18h11.5A2.25 2.25 0 0018 15.75V4.25A2.25 2.25 0 0015.75 2H4.25zM15 5.75a.75.75 0 00-1.5 0v8.5a.75.75 0 001.5 0v-8.5zm-8.5 6a.75.75 0 01.75-.75h5a.75.75 0 010 1.5h-5a.75.75 0 01-.75-.75zm0 2.5a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
                                         </svg>
-                                        <span>Asset Details</span>
+                                        <span>Asset Information</span>
                                     </div>
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
@@ -319,9 +276,25 @@
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
                                     <div class="flex items-center space-x-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 13.293A1 1 0 013 12.586V4z" clip-rule="evenodd" />
+                                        </svg>
+                                        <span>Category</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
+                                    <div class="flex items-center space-x-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                            <path fill-rule="evenodd" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M2.25 6.75h.008v.008H2.25V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM2.25 12h.008v.008H2.25V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM2.25 17.25h.008v.008H2.25v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" clip-rule="evenodd" />
+                                        </svg>
+                                        <span>Type</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
+                                    <div class="flex items-center space-x-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
                                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.236 4.53L8.107 10.5a.75.75 0 00-1.214 1.029l1.5 2.25a.75.75 0 001.214-.15l4-5.75z" clip-rule="evenodd" />
                                         </svg>
-                                        <span>Status</span>
+                                        <span>Asset Status</span>
                                     </div>
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
@@ -329,7 +302,7 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
                                             <path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clip-rule="evenodd" />
                                         </svg>
-                                        <span>Acquisition Date</span>
+                                        <span>Purchase Date</span>
                                     </div>
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-white capitalize tracking-wider border-r border-slate-600 last:border-r-0">
@@ -338,10 +311,10 @@
                                             <path d="M10.75 10.818v2.614A3.13 3.13 0 0011.888 13c.482-.315.612-.648.612-.875 0-.227-.13-.56-.612-.875a3.13 3.13 0 00-1.138-.432zM8.33 8.62c.053.055.115.11.184.164.208.16.46.284.736.363V6.603a2.45 2.45 0 00-.35.13c-.14.065-.27.143-.386.233-.377.292-.514.627-.514.909 0 .184.058.39.202.592.037.051.08.102.128.152z" />
                                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-6a.75.75 0 01.75.75v.316a3.78 3.78 0 011.653.713c.426.33.744.74.925 1.2a.75.75 0 01-1.395.55 1.35 1.35 0 00-.447-.563 2.187 2.187 0 00-.736-.363V9.3c.698.093 1.383.32 1.959.696.787.514 1.29 1.27 1.29 2.13 0 .86-.504 1.616-1.29 2.13-.576.377-1.261.603-1.959.696v.299a.75.75 0 11-1.5 0v-.3c-.697-.092-1.382-.318-1.958-.695C5.896 13.744 5.25 12.845 5.25 12.26c0-.686.647-1.484 1.342-1.997.576-.377 1.261-.603 1.958-.696V6.934a2.187 2.187 0 00-.736.363 1.35 1.35 0 00-.447.563.75.75 0 11-1.395-.55c.181-.46.499-.87.925-1.2A3.78 3.78 0 018.25 5.25V4.75A.75.75 0 0110 4z" clip-rule="evenodd" />
                                         </svg>
-                                        <span>Value & Source</span>
+                                        <span>Financial Details</span>
                                     </div>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider">
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider last:border-r-0">
                                     <div class="flex items-center space-x-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
                                             <path d="M10 3.75a2 2 0 10-4 0 2 2 0 004 0zM17.25 4.5a.75.75 0 000-1.5h-5.5a.75.75 0 000 1.5h5.5zM5 3.75a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75zM8.25 8a2 2 0 100-4 2 2 0 000 4zM17.25 7.5a.75.75 0 000-1.5h-5.5a.75.75 0 000 1.5h5.5zM5 6.75a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75zM8.25 12a2 2 0 100-4 2 2 0 000 4zM17.25 11.5a.75.75 0 000-1.5h-5.5a.75.75 0 000 1.5h5.5zM5 10.75a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75z" />
@@ -359,13 +332,9 @@
                                         <div class="ml-4 flex-1">
                                             <div class="flex flex-col">
                                                 <div class="text-sm font-semibold text-gray-900">
-                                                    <Link :href="route('assets.show', asset.id)"
-                                                        class="hover:text-indigo-600 transition-colors">
                                                     {{ asset.name || asset.asset_tag }}
-                                                    </Link>
                                                 </div>
                                                 <div v-if="asset.tag_no" class="text-xs text-gray-500">Tag: {{ asset.tag_no }}</div>
-                                                <div class="text-xs text-gray-500">Type: {{ asset.type?.name }}</div>
                                             </div>
                                 <div class="flex items-center space-x-3 mt-2 text-sm">
                                                 <span class="text-sm font-medium text-gray-600">S/N:</span>
@@ -428,6 +397,34 @@
                                 <td class="px-6 py-3 align-top border-r border-gray-100 last:border-r-0">
                                     <div class="space-y-2">
                                         <div class="flex items-center space-x-2">
+                                            <div class="p-2 bg-gradient-to-r from-purple-100 to-purple-200 rounded-lg shadow-sm">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-purple-600">
+                                                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 13.293A1 1 0 013 12.586V4z" clip-rule="evenodd" />
+                                                </svg>
+                                            </div>
+                                            <div class="text-sm font-semibold text-gray-900">
+                                                {{ asset.category?.name || 'N/A' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-3 align-top border-r border-gray-100">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="p-2 bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg shadow-sm">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-blue-600">
+                                                    <path fill-rule="evenodd" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M2.25 6.75h.008v.008H2.25V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM2.25 12h.008v.008H2.25V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM2.25 17.25h.008v.008H2.25v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" clip-rule="evenodd" />
+                                                </svg>
+                                            </div>
+                                            <div class="text-sm font-semibold text-gray-900">
+                                                {{ asset.type?.name || 'N/A' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-3 align-top border-r border-gray-100">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center space-x-2">
                                             <span :class="{
                                                 'bg-green-100 text-green-800': asset.status === 'active' || asset.status === 'in_use',
                                                 'bg-yellow-100 text-yellow-800': asset.status === 'pending_approval',
@@ -473,7 +470,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-3 align-top border-r border-gray-100 last:border-r-0">
+                                <td class="px-6 py-3 align-top border-r border-gray-100">
                                     <div class="space-y-2">
                                         <div class="flex items-center space-x-3">
                                             <div class="p-2 bg-gradient-to-r from-slate-100 to-slate-200 rounded-lg shadow-sm">
@@ -485,7 +482,7 @@
                                                 </svg>
                                             </div>
                                             <div class="text-sm font-semibold text-gray-900">
-                                                {{ asset.acquisition_date }}
+                                                {{ formatDate(asset.acquisition_date) }}
                                             </div>
                                         </div>
                                         <div v-if="getAssetAge(asset) > 0" class="flex items-center space-x-2 pl-9">
@@ -496,9 +493,9 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-5 border-r border-gray-100 last:border-r-0">
+                                <td class="px-6 py-5 border-r border-gray-100">
                                     <div class="space-y-3">
-                                        <div class="flex items-center space-x-3">
+                                        <div class="flex items-center space-x-0">
                                             <div class="p-2 bg-gradient-to-r from-emerald-100 to-emerald-200 rounded-lg shadow-sm">
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-emerald-600">
                                                     <path d="M10.75 10.818v2.614A3.13 3.13 0 0011.888 13c.482-.315.612-.648.612-.875 0-.227-.13-.56-.612-.875a3.13 3.13 0 00-1.138-.432zM8.33 8.62c.053.055.115.11.184.164.208.16.46.284.736.363V6.603a2.45 2.45 0 00-.35.13c-.14.065-.27.143-.386.233-.377.292-.514.627-.514.909 0 .184.058.39.202.592.037.051.08.102.128.152z" />
@@ -533,7 +530,7 @@
                                     
 
                                     <!-- Actions Dropdown Column -->
-                                    <td class="px-6 py-3 relative align-top">
+                                    <td class="px-6 py-3 relative align-top last:border-r-0">
                                         <div class="relative dropdown-container">
                                             <button @click.stop="toggleDropdown(asset.id)" 
                                                 class="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 text-gray-700 hover:text-gray-900 text-xs font-medium rounded-md border border-gray-200 transition-all duration-200 group-hover:shadow-sm">
@@ -545,14 +542,7 @@
                                             <!-- Dropdown Menu -->
                                             <div v-if="activeDropdown === asset.id" 
                                                 class="absolute right-0 z-10 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1">
-                                                <Link :href="route('assets.show', asset.id)"
-                                                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-indigo-600">
-                                                        <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
-                                                        <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A11.008 11.008 0 0110 1.5c4.257 0 7.893 2.66 9.336 6.41.147.381.147.804 0 1.186A11.008 11.008 0 0110 15.5c-4.257 0-7.893-2.66-9.336-6.91zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    View Asset
-                                                </Link>
+
                                                 <Link :href="route('assets.edit', asset.id)"
                                                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-gray-600">
@@ -560,99 +550,25 @@
                                                     </svg>
                                                     Edit Asset
                                                 </Link>
-                                                <button v-if="asset.status === 'active' || asset.status === 'in_use'"
-                                                    @click="openTransferModal(asset); closeDropdown()"
+                                                
+                                                <div class="border-t border-gray-100"></div>
+                                                
+                                                <button @click="openTransferModal(asset); closeDropdown()"
                                                     class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-blue-600">
                                                         <path fill-rule="evenodd" d="M13.2 2.24a.75.75 0 00.04 1.06L15.54 5H9.5a7 7 0 000 14h.75a.75.75 0 000-1.5H9.5A5.5 5.5 0 019.5 6.5h6.04l-2.3 1.7a.75.75 0 001.02 1.1l3.5-2.6a.75.75 0 000-1.2l-3.5-2.6a.75.75 0 00-1.06.04z" clip-rule="evenodd" />
                                                     </svg>
                                                     Transfer Asset
                                                 </button>
-                                                <template v-if="asset.status === 'pending_approval' && canReviewAsset(asset)">
-                                                    <div class="border-t border-gray-100"></div>
-                                                    <button @click="openApprovalModal(asset, 'review'); closeDropdown()"
-                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-blue-600">
-                                                            <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
-                                                            <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A11.008 11.008 0 0110 1.5c4.257 0 7.893 2.66 9.336 6.41.147.381.147.804 0 1.186A11.008 11.008 0 0110 15.5c-4.257 0-7.893-2.66-9.336-6.91zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                                                        </svg>
-                                                        Review Asset
-                                                    </button>
-                                                </template>
-                                                <template v-if="asset.status === 'pending_approval' && canApproveRejectAsset(asset)">
-                                                    <div class="border-t border-gray-100"></div>
-                                                    <button @click="openApprovalModal(asset, 'approve'); closeDropdown()"
-                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-green-600">
-                                                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
-                                                        </svg>
-                                                        Approve Asset
-                                                    </button>
-                                                    <button @click="openApprovalModal(asset, 'reject'); closeDropdown()"
-                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-red-600">
-                                                            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                                                        </svg>
-                                                        Reject Asset
-                                                    </button>
-                                                </template>
-                                                <template v-if="(asset.status === 'active' || asset.status === 'in_use') && canInitiateTransfer(asset)">
-                                                    <div class="border-t border-gray-100"></div>
-                                                    <button @click="openTransferModal(asset); closeDropdown()"
-                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-blue-600">
-                                                            <path fill-rule="evenodd" d="M13.2 2.24a.75.75 0 00.04 1.06L15.54 5H9.5a7 7 0 000 14h.75a.75.75 0 000-1.5H9.5A5.5 5.5 0 019.5 6.5h6.04l-2.3 1.7a.75.75 0 001.02 1.1l3.5-2.6a.75.75 0 000-1.2l-3.5-2.6a.75.75 0 00-1.06.04z" clip-rule="evenodd" />
-                                                        </svg>
-                                                        Transfer Asset
-                                                    </button>
-                                                </template>
-                                                <template v-if="(asset.status === 'active' || asset.status === 'in_use') && canInitiateRetirement(asset)">
-                                                    <div class="border-t border-gray-100"></div>
-                                                    <button @click="openRetirementModal(asset); closeDropdown()"
-                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-orange-600">
-                                                            <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 11-.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807c1.123 0 2.087-.816 2.285-1.917l.841-10.52.149.023a.75.75 0 11-.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
-                                                        </svg>
-                                                        Retire Asset
-                                                    </button>
-                                                </template>
-                                                <div class="border-t border-gray-100"></div>
-                                                <Link :href="route('assets.history', asset.id)"
+                                                
+                                                <button @click="openRetirementModal(asset); closeDropdown()"
                                                     class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-blue-600">
-                                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-orange-600">
+                                                        <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 11-.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807c1.123 0 2.087-.816 2.285-1.917l.841-10.52.149.023a.75.75 0 11-.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
                                                     </svg>
-                                                    View History
-                                                </Link>
-                                                <template v-if="asset.status === 'in_transfer_process' && canReviewTransfer(asset)">
-                                                    <div class="border-t border-gray-100"></div>
-                                                    <button @click="openTransferApprovalModal(asset, 'review'); closeDropdown()"
-                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-blue-600">
-                                                            <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
-                                                            <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A11.008 11.008 0 0110 1.5c4.257 0 7.893 2.66 9.336 6.41.147.381.147.804 0 1.186A11.008 11.008 0 0110 15.5c-4.257 0-7.893-2.66-9.336-6.91zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                                                        </svg>
-                                                        Review Transfer
-                                                    </button>
-                                                </template>
-                                                <template v-if="asset.status === 'in_transfer_process' && canApproveRejectTransfer(asset)">
-                                                    <div class="border-t border-gray-100"></div>
-                                                    <button @click="openTransferApprovalModal(asset, 'approve'); closeDropdown()"
-                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-green-600">
-                                                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
-                                                        </svg>
-                                                        Approve Transfer
-                                                    </button>
-                                                    <button @click="openTransferApprovalModal(asset, 'reject'); closeDropdown()"
-                                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-red-600">
-                                                            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                                                        </svg>
-                                                        Reject Transfer
-                                                    </button>
-                                                </template>
-                                            </div>
+                                                    Retire Asset
+                                                </button>
+                                                                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -674,80 +590,13 @@
             </div>
         </div>
 
-        <!-- Import Modal -->
-        <TransitionRoot as="template" :show="showImportModal">
-            <Dialog as="div" class="fixed z-50 inset-0 overflow-y-auto" @close="showImportModal = false">
-                <div class="flex items-center justify-center min-h-screen p-4 text-center">
-                    <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0"
-                        enter-to="opacity-100" leave="ease-in duration-200" leave-from="opacity-100"
-                        leave-to="opacity-0">
-                        <DialogOverlay class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
-                    </TransitionChild>
 
-                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-                    <TransitionChild as="template" enter="ease-out duration-300"
-                        enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                        enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-200"
-                        leave-from="opacity-100 translate-y-0 sm:scale-100"
-                        leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
-                        <div
-                            class="inline-block align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                <div class="sm:flex sm:items-start">
-                                    <div
-                                        class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                            class="w-6 h-6 text-blue-600">
-                                            <path
-                                                d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-                                        </svg>
-                                    </div>
-                                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                        <DialogTitle as="h3" class="text-lg leading-6 font-medium text-gray-900">
-                                            Import Assets
-                                        </DialogTitle>
-                                        <div class="mt-2">
-                                            <p class="text-sm text-gray-500">
-                                                Upload an Excel file to import assets. Make sure your file follows the
-                                                required format.
-                                            </p>
-                                            <div class="mt-4">
-                                                <input ref="fileInput" type="file" accept=".xlsx,.xls"
-                                                    @change="handleFileSelect"
-                                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                                <button type="button" @click="importAssets" :disabled="!selectedFile || importing"
-                                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
-                                    <svg v-if="importing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                            stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                        </path>
-                                    </svg>
-                                    {{ importing ? 'Importing...' : 'Import' }}
-                                </button>
-                                <button type="button" @click="showImportModal = false"
-                                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                                    Cancel
-                                </button>
-                            </div>
-                        </div>
-                    </TransitionChild>
-                </div>
-            </Dialog>
-        </TransitionRoot>
+
 
         <!-- Transfer Modal -->
         <TransitionRoot as="template" :show="showTransferModal">
-            <Dialog as="div" class="fixed z-50 inset-0 overflow-y-auto" @close="showTransferModal = false">
+            <Dialog as="div" :open="showTransferModal" class="fixed z-50 inset-0 overflow-y-auto" @close="showTransferModal = false">
                 <div class="flex items-center justify-center min-h-screen p-4 text-center">
                     <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0"
                         enter-to="opacity-100" leave="ease-in duration-200" leave-from="opacity-100"
@@ -780,15 +629,24 @@
                                         <div class="mt-2">
                                             <p class="text-sm text-gray-500">
                                                 Transfer asset <strong>{{ selectedAsset?.asset_tag }}</strong> to a new
-                                                custodian.
+                                                assignee.
                                             </p>
                                             <div class="mt-4 space-y-4">
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700">New
-                                                        Custodian</label>
-                                                    <input v-model="transferData.custodian" type="text"
-                                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                        placeholder="Enter custodian name" />
+                                                        Assignee</label>
+                                                    <Multiselect 
+                                                        v-model="transferData.assignee" 
+                                                        :options="assigneeOptions"
+                                                        :searchable="true" 
+                                                        :close-on-select="true" 
+                                                        :show-labels="false"
+                                                        :allow-empty="true" 
+                                                        placeholder="Select Assignee" 
+                                                        track-by="id" 
+                                                        label="name" 
+                                                        @select="onAssigneeSelect"
+                                                        @clear="onAssigneeClear" />
                                                 </div>
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700">Transfer
@@ -810,7 +668,7 @@
                             </div>
                             <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                                 <button type="button" @click="transferAsset"
-                                    :disabled="!transferData.custodian || !transferData.transfer_date || transferring"
+                                    :disabled="!transferData.assignee || !transferData.transfer_date || transferring"
                                     class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
                                     <svg v-if="transferring" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                                         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -833,9 +691,45 @@
             </Dialog>
         </TransitionRoot>
 
+        <!-- New Assignee Modal -->
+        <Modal :show="showAssigneeModal" @close="showAssigneeModal = false">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">Add New Assignee</h2>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <InputLabel for="new_assignee_name" value="Full Name" />
+                        <input id="new_assignee_name" name="new_assignee_name" type="text" class="mt-1 block w-full"
+                            placeholder="e.g., John Doe" required v-model="newAssignee.name" />
+                    </div>
+                    <div>
+                        <InputLabel for="new_assignee_email" value="Email (optional)" />
+                        <input id="new_assignee_email" type="email" class="mt-1 block w-full"
+                            placeholder="name@example.com" v-model="newAssignee.email" />
+                    </div>
+                    <div>
+                        <InputLabel for="new_assignee_phone" value="Phone (optional)" />
+                        <input id="new_assignee_phone" name="new_assignee_phone" type="text" class="mt-1 block w-full"
+                            placeholder="e.g., +1 555 123 4567" v-model="newAssignee.phone" />
+                    </div>
+                    <div>
+                        <InputLabel for="new_assignee_department" value="Department (optional)" />
+                        <input id="new_assignee_department" name="new_assignee_department" type="text"
+                            class="mt-1 block w-full" placeholder="e.g., IT" v-model="newAssignee.department" />
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <SecondaryButton @click="showAssigneeModal = false" :disabled="isSavingAssignee">Cancel
+                    </SecondaryButton>
+                    <PrimaryButton @click="createAssignee" :disabled="isSavingAssignee">
+                        {{ isSavingAssignee ? 'Saving...' : 'Save' }}
+                    </PrimaryButton>
+                </div>
+            </div>
+        </Modal>
+
         <!-- Approval Modal -->
         <TransitionRoot as="template" :show="showApprovalModal">
-            <Dialog as="div" class="fixed z-50 inset-0 overflow-y-auto" @close="showApprovalModal = false">
+            <Dialog as="div" :open="showApprovalModal" class="fixed z-50 inset-0 overflow-y-auto" @close="showApprovalModal = false">
                 <div class="flex items-center justify-center min-h-screen p-4 text-center">
                     <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0"
                         enter-to="opacity-100" leave="ease-in duration-200" leave-from="opacity-100"
@@ -913,7 +807,7 @@
 
         <!-- Transfer Approval Modal -->
         <TransitionRoot as="template" :show="showTransferApprovalModal">
-            <Dialog as="div" class="fixed z-50 inset-0 overflow-y-auto" @close="showTransferApprovalModal = false">
+            <Dialog as="div" :open="showTransferApprovalModal" class="fixed z-50 inset-0 overflow-y-auto" @close="showTransferApprovalModal = false">
                 <div class="flex items-center justify-center min-h-screen p-4 text-center">
                     <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0"
                         enter-to="opacity-100" leave="ease-in duration-200" leave-from="opacity-100"
@@ -991,7 +885,7 @@
 
         <!-- Retirement Modal -->
         <TransitionRoot as="template" :show="showRetirementModal">
-            <Dialog as="div" class="fixed z-50 inset-0 overflow-y-auto" @close="showRetirementModal = false">
+            <Dialog as="div" :open="showRetirementModal" class="fixed z-50 inset-0 overflow-y-auto" @close="showRetirementModal = false">
                 <div class="flex items-center justify-center min-h-screen p-4 text-center">
                     <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0"
                         enter-to="opacity-100" leave="ease-in duration-200" leave-from="opacity-100"
@@ -1085,6 +979,10 @@ import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
 import { reactive } from "vue";
+import InputLabel from "@/Components/InputLabel.vue";
+import PrimaryButton from "@/Components/PrimaryButton.vue";
+import SecondaryButton from "@/Components/SecondaryButton.vue";
+import Modal from "@/Components/Modal.vue";
 import {
     Dialog,
     DialogOverlay,
@@ -1111,7 +1009,6 @@ const formatStatus = (status) => {
 };
 
 const formatDate = (date) => {
-    console.log(date);
     if (!date) return '-';
     return moment(date).format('DD/MM/YYYY');
 };
@@ -1145,20 +1042,36 @@ const props = defineProps({
     },
 });
 
-const showImportModal = ref(false);
+
 const showTransferModal = ref(false);
 const selectedAsset = ref(null);
 const transferData = reactive({
     asset_id: null,
-    custodian: "",
+    assignee: null,
     transfer_date: "",
     assignment_notes: "",
 });
 
+// Assignee management
+const assigneesList = ref([]);
+watch(() => props.assignees, (list) => {
+    assigneesList.value = Array.isArray(list) ? [...list] : [];
+}, { immediate: true, deep: true });
+
+const assigneeOptions = computed(() => [
+    { id: 'new', name: '+ Add New Assignee', isAddNew: true },
+    ...assigneesList.value.map(a => ({ id: a.id, name: a.name }))
+]);
+
+const showAssigneeModal = ref(false);
+const newAssignee = ref({ name: '', email: '', phone: '', department: '' });
+const isSavingAssignee = ref(false);
+const transferring = ref(false);
+
 function openTransferModal(asset) {
     selectedAsset.value = asset;
     transferData.asset_id = asset.id;
-    transferData.custodian = asset.person_assigned || "";
+    transferData.assignee = null;
     transferData.transfer_date = "";
     transferData.assignment_notes = "";
     showTransferModal.value = true;
@@ -1167,6 +1080,49 @@ function openTransferModal(asset) {
 function closeTransferModal() {
     showTransferModal.value = false;
 }
+
+const onAssigneeSelect = (opt) => {
+    if (!opt) return;
+    if (opt.isAddNew) {
+        showAssigneeModal.value = true;
+        return;
+    }
+    transferData.assignee = opt;
+};
+
+const onAssigneeClear = () => {
+    transferData.assignee = null;
+};
+
+const createAssignee = async (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (!newAssignee.value.name) {
+        toast.error('Full name is required');
+        return;
+    }
+    isSavingAssignee.value = true;
+    try {
+        console.log('Creating assignee with data:', newAssignee.value);
+        const { data } = await axios.post(route('assets.assignees.store'), {
+            name: newAssignee.value.name,
+            email: newAssignee.value.email || null,
+            phone: newAssignee.value.phone || null,
+            department: newAssignee.value.department || null,
+        });
+        console.log('Assignee created successfully:', data);
+        assigneesList.value = [...assigneesList.value, data];
+        transferData.assignee = { id: data.id, name: data.name };
+        newAssignee.value = { name: '', email: '', phone: '', department: '' };
+        showAssigneeModal.value = false;
+        toast.success('Assignee created');
+    } catch (e) {
+        console.error('Error creating assignee:', e);
+        console.error('Error response:', e.response);
+        toast.error(e.response?.data || 'Failed to create assignee');
+    } finally {
+        isSavingAssignee.value = false;
+    }
+};
 
 
 
@@ -1341,31 +1297,39 @@ async function onLocationChange(selected) {
 
 // Asset transfer
 async function transferAsset() {
-    if (!transferData.custodian || !transferData.transfer_date) {
-        toast.error("Custodian and transfer date are required.");
+    if (!transferData.assignee || !transferData.transfer_date) {
+        toast.error("Assignee and transfer date are required.");
         return;
     }
-    loading.value = true;
+    transferring.value = true;
     try {
-        const response = await axios.post(
-            route("assets.transfer", { asset: transferData.asset_id }),
-            {
-                asset_id: transferData.asset_id,
-                custodian: transferData.custodian,
-                transfer_date: transferData.transfer_date,
-                assignment_notes: transferData.assignment_notes,
-            }
-        );
+        console.log('Transferring asset with data:', transferData);
+        
+        const response = await axios.post(route('assets.transfer', selectedAsset.value.id), {
+            assignee_id: transferData.assignee.id,
+            transfer_date: transferData.transfer_date,
+            assignment_notes: transferData.assignment_notes,
+            assignee_name: transferData.assignee.name,
+        });
+
+        console.log('Transfer response:', response.data);
+        
+        // Update the local asset data
         if (selectedAsset.value) {
-            selectedAsset.value.person_assigned = transferData.custodian;
+            selectedAsset.value.person_assigned = transferData.assignee.name;
             selectedAsset.value.transfer_date = transferData.transfer_date;
         }
+        
         toast.success("Asset transferred successfully!");
         closeTransferModal();
+        
+        // Reload the assets to reflect the changes
+        router.reload();
     } catch (error) {
-        toast.error(error.response?.data || "Transfer failed.");
+        console.error('Transfer error:', error);
+        toast.error(error.response?.data?.error || "Transfer failed.");
     } finally {
-        loading.value = false;
+        transferring.value = false;
     }
 }
 
@@ -1561,44 +1525,9 @@ const maintenanceAssets = computed(
 );
 
 
-const fileInput = ref(null);
-const selectedFile = ref(null);
-const importing = ref(false);
-const transferring = ref(false);
 
-const handleFileSelect = (event) => {
-    selectedFile.value = event.target.files[0];
-};
 
-const importAssets = async () => {
-    if (!selectedFile.value) {
-        toast.error("Please select a file to import.");
-        return;
-    }
-    const formData = new FormData();
-    formData.append("file", selectedFile.value);
-    importing.value = true;
-    try {
-        await axios.post(route("assets.import"), formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-        });
-        toast.success("Import started. You will be notified when complete.");
-        fileInput.value.value = ""; // reset input
-        showImportModal.value = false; // close modal after upload
-    } catch (error) {
-        toast.error(error.response?.data || "Import failed.");
-    } finally {
-        importing.value = false;
-    }
-};
 
-// Server-side export function
-const exportToExcel = () => {
-    const params = {};
-    if (selectedStatus?.value) params.status = [selectedStatus.value];
-    if (selectedLocation?.id) params.location_id = selectedLocation.id;
-    window.location.href = route('assets.export', params);
-};
 
 // Clear all filters
 const clearFilters = () => {
@@ -1727,11 +1656,7 @@ async function processTransferApproval() {
 
     processingApproval.value = true;
     try {
-    const response = await axios.post(route('assets.approve-transfer', selectedAsset.value.id), {
-            approval_id: transferApprovalData.approval_id,
-            action: transferApprovalData.action,
-            notes: transferApprovalData.notes
-        });
+
 
         toast.success(response.data.message);
         showTransferApprovalModal.value = false;
@@ -1751,10 +1676,7 @@ async function processRetirement() {
 
     processingApproval.value = true;
     try {
-        const response = await axios.post(route('assets.retire', selectedAsset.value.id), {
-            retirement_reason: retirementData.retirement_reason,
-            retirement_date: retirementData.retirement_date
-        });
+
 
         toast.success(response.data.message);
         showRetirementModal.value = false;
@@ -1835,3 +1757,10 @@ const isDuplicateSerialNumber = (asset) => {
     return duplicates.length > 0;
 };
 </script>
+
+<style scoped>
+.add-new-option {
+    color: #4f46e5;
+    font-weight: 500;
+}
+</style>

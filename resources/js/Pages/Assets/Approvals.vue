@@ -45,7 +45,7 @@
                         <span class="text-sm text-gray-600">Location: {{ props.assetItem.region?.name || 'N/A' }} - {{ props.assetItem.asset_location?.name || 'N/A' }} - {{ props.assetItem.sub_location?.name || 'N/A' }}</span>
                                 </div>
                     <div class="flex items-center">
-                        <span class="text-sm text-gray-600">Status: {{ formatAssetStatus(props.assetItem.status) }}</span>
+                        <span class="text-sm text-gray-600">Status: {{ formatAssetStatus(getAssetStatus(props.assetItem)) }}</span>
                 </div>
             </div>
 
@@ -87,9 +87,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-if="getNonApprovedItems(props.assetItem.asset_items).length === 0">
+                            <tr v-if="!props.assetItem?.asset_items || getNonApprovedItems(props.assetItem.asset_items).length === 0">
                                 <td colspan="8" class="px-3 py-3 text-center text-gray-500 border-b" style="border-bottom: 1px solid #B7C6E6;">
-                                    All asset items are already approved
+                                    {{ !props.assetItem?.asset_items ? 'No asset items found' : 'All asset items are already approved' }}
                                 </td>
                             </tr>
                             <template v-else v-for="item in getNonApprovedItems(props.assetItem.asset_items)" :key="item.id">
@@ -127,19 +127,19 @@
                             <div class="flex flex-col">
                                 <button @click="changeStatus(props.assetItem.id, 'reviewed', 'is_reviewing')" 
                                         :disabled="isType['is_reviewing'] || 
-                                                    props.assetItem?.status !== 'pending_approval' || 
+                                                    !canReviewAsset(props.assetItem) || 
                                                     !$page.props.auth.can?.asset_review"
                                         :class="[
-                                            props.assetItem?.status === 'pending_approval' && $page.props.auth.can?.asset_review
+                                            canReviewAsset(props.assetItem) && $page.props.auth.can?.asset_review
                                                 ? 'bg-yellow-500 hover:bg-yellow-600'
-                                                : props.assetItem?.status === 'reviewed'
+                                                : props.assetItem?.reviewed_at
                                                 ? 'bg-green-500'
                                                 : 'bg-gray-300 cursor-not-allowed',
                                         ]" 
                                         class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
                                     <span class="text-sm font-bold text-white">{{
-                                        props.assetItem?.status === 'reviewed'
+                                        props.assetItem?.reviewed_at
                                             ? "Reviewed"
                                             : isType["is_reviewing"]
                                                 ? "Please Wait..."
@@ -153,7 +153,7 @@
                                     By {{ props.assetItem?.reviewed_by?.name }}
                                 </span>
                             </div>
-                            <div v-if="props.assetItem?.status === 'pending_approval' && $page.props.auth.can?.asset_review"
+                            <div v-if="canReviewAsset(props.assetItem) && $page.props.auth.can?.asset_review"
                                 class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                                 </div>
                                 
@@ -162,12 +162,12 @@
                             <div class="flex flex-col">
                                 <button @click="changeStatus(props.assetItem.id, 'approved', 'is_approve')" 
                                         :disabled="isType['is_approve'] || 
-                                                    props.assetItem?.status !== 'reviewed' || 
+                                                    !canApproveAsset(props.assetItem) || 
                                                     !$page.props.auth.can?.asset_approve"
                                         :class="[
-                                            props.assetItem?.status === 'reviewed' && $page.props.auth.can?.asset_approve
+                                            canApproveAsset(props.assetItem) && $page.props.auth.can?.asset_approve
                                                 ? 'bg-yellow-500 hover:bg-yellow-600'
-                                                : props.assetItem?.status === 'approved'
+                                                : props.assetItem?.approved_at
                                                 ? 'bg-green-500'
                                                 : 'bg-gray-300 cursor-not-allowed',
                                         ]" 
@@ -179,7 +179,7 @@
                                     <template v-else>
                                         <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
                                         <span class="text-sm font-bold text-white">{{
-                                            props.assetItem?.status === 'approved'
+                                            props.assetItem?.approved_at
                                                 ? "Approved"
                                                 : isType["is_approve"] ? "Please Wait..." : "Approve"
                                         }}</span>
@@ -192,7 +192,7 @@
                                     By {{ props.assetItem?.approved_by?.name }}
                                 </span>
                             </div>
-                            <div v-if="props.assetItem?.status === 'reviewed' && $page.props.auth.can?.asset_approve"
+                            <div v-if="canApproveAsset(props.assetItem) && $page.props.auth.can?.asset_approve"
                                 class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
 
@@ -201,12 +201,12 @@
                             <div class="flex flex-col">
                                 <button @click="showRejectModal()" 
                                         :disabled="isType['is_reject'] || 
-                                                    props.assetItem?.status !== 'reviewed' || 
+                                                    !canRejectAsset(props.assetItem) || 
                                                     !$page.props.auth.can?.asset_approve"
                                         :class="[
-                                            props.assetItem?.status === 'reviewed' && $page.props.auth.can?.asset_approve
+                                            canRejectAsset(props.assetItem) && $page.props.auth.can?.asset_approve
                                                 ? 'bg-red-500 hover:bg-red-600'
-                                                : props.assetItem?.status === 'rejected'
+                                                : props.assetItem?.rejected_at
                                                 ? 'bg-red-500'
                                                 : 'bg-gray-300 cursor-not-allowed',
                                         ]" 
@@ -218,7 +218,7 @@
                                     <template v-else>
                                         <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
                                         <span class="text-sm font-bold text-white">{{
-                                            props.assetItem?.status === 'rejected'
+                                            props.assetItem?.rejected_at
                                                 ? "Rejected"
                                                 : isType["is_reject"] ? "Please Wait..." : "Reject"
                                         }}</span>
@@ -231,7 +231,7 @@
                                     By {{ props.assetItem?.rejected_by?.name }}
                                 </span>
                             </div>
-                            <div v-if="props.assetItem?.status === 'reviewed' && $page.props.auth.can?.asset_approve"
+                            <div v-if="canRejectAsset(props.assetItem) && $page.props.auth.can?.asset_approve"
                                 class="absolute -top-2 -right-2 w-4 h-4 bg-red-400 rounded-full animate-pulse"></div>
                         </div>
 
@@ -240,10 +240,10 @@
                             <div class="flex flex-col">
                                 <button @click="restoreAsset(props.assetItem.id, 'pending_approval', 'is_restore')" 
                                         :disabled="isRestoring || 
-                                                    props.assetItem?.status !== 'rejected' || 
+                                                    !canRestoreAsset(props.assetItem) || 
                                                     !$page.props.auth.can?.asset_approve"
                                         :class="[
-                                            props.assetItem?.status === 'rejected' && $page.props.auth.can?.asset_approve
+                                            canRestoreAsset(props.assetItem) && $page.props.auth.can?.asset_approve
                                                 ? 'bg-green-500 hover:bg-green-600'
                                                 : 'bg-gray-300 cursor-not-allowed',
                                         ]" 
@@ -258,7 +258,7 @@
                                     </template>
                                 </button>
                                 </div>
-                            <div v-if="props.assetItem?.status === 'rejected' && $page.props.auth.can?.asset_approve"
+                            <div v-if="canRestoreAsset(props.assetItem) && $page.props.auth.can?.asset_approve"
                                 class="absolute -top-2 -right-2 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
                         </div>
                     </div>
@@ -340,7 +340,9 @@ function handleSelectAsset() {
 watch([
     () => props.filters.selectedAsset,
 ], (newVal) => {
-    handleSelectAsset();
+    if (newVal !== selectedAsset.value) {
+        selectedAsset.value = newVal;
+    }
 })
 
 const changeStatus = async (assetId, newStatus, type) => {
@@ -369,7 +371,7 @@ const changeStatus = async (assetId, newStatus, type) => {
                 toast.success(`Asset status updated to ${newStatus}`);
                 
                 // Reload the page to show updated status
-                router.get(route('assets.approvals.index'), { asset: props.assetItem?.asset_number });
+                router.get(route('assets.approvals.index'), { selectedAsset: props.assetItem?.asset_number });
     } catch (error) {
                 toast.error(`Failed to update asset status to ${newStatus}`);
             } finally {
@@ -395,7 +397,7 @@ const restoreAsset = async (assetId, newStatus, type) => {
             try {
                 await router.post(route('assets.restore', assetId));
                 toast.success('Asset restored successfully');
-                router.get(route('assets.approvals.index'), { asset: props.assetItem?.asset_number });
+                router.get(route('assets.approvals.index'), { selectedAsset: props.assetItem?.asset_number });
     } catch (error) {
                 toast.error('Failed to restore asset');
             } finally {
@@ -427,7 +429,7 @@ const rejectAsset = async () => {
         
         toast.success('Asset rejected successfully');
         closeRejectModal();
-        router.get(route('assets.approvals.index'), { asset: props.assetItem?.asset_number });
+        router.get(route('assets.approvals.index'), { selectedAsset: props.assetItem?.asset_number });
     } catch (error) {
         toast.error('Failed to reject asset');
     }
@@ -485,6 +487,64 @@ const getNonApprovedItems = (assetItems) => {
 // Helper function to get count of non-approved asset items
 const getNonApprovedItemsCount = (assetItems) => {
     return getNonApprovedItems(assetItems).length;
+};
+
+// Helper functions for approval workflow
+const canReviewAsset = (asset) => {
+    if (!asset) return false;
+    // Can review if asset is submitted but not yet reviewed
+    return asset.submitted_at && !asset.reviewed_at && !asset.approved_at && !asset.rejected_at;
+};
+
+const canApproveAsset = (asset) => {
+    if (!asset) return false;
+    // Can approve if asset is reviewed but not yet approved
+    return asset.reviewed_at && !asset.approved_at && !asset.rejected_at;
+};
+
+const canRejectAsset = (asset) => {
+    if (!asset) return false;
+    // Can reject if asset is reviewed but not yet approved
+    return asset.reviewed_at && !asset.approved_at && !asset.rejected_at;
+};
+
+const canRestoreAsset = (asset) => {
+    if (!asset) return false;
+    // Can restore if asset is rejected
+    return asset.rejected_at;
+};
+
+// Helper function to get asset status based on timestamp fields
+const getAssetStatus = (asset) => {
+    if (!asset) return 'unknown';
+    
+    // Check if asset is disposed
+    if (asset.deleted_at) {
+        return 'disposed';
+    }
+    
+    // Check if asset is rejected
+    if (asset.rejected_at) {
+        return 'rejected';
+    }
+    
+    // Check if asset is approved
+    if (asset.approved_at) {
+        return 'approved';
+    }
+    
+    // Check if asset is reviewed
+    if (asset.reviewed_at) {
+        return 'reviewed';
+    }
+    
+    // Check if asset is submitted for approval
+    if (asset.submitted_at) {
+        return 'pending_approval';
+    }
+    
+    // Default status
+    return 'draft';
 };
 </script>
 

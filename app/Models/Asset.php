@@ -86,6 +86,21 @@ class Asset extends Model
         return $this->belongsTo(User::class, 'submitted_by');
     }
 
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function rejectedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
+    }
+
     public function approvals(): HasMany
     {
         return $this->morphMany(AssetApproval::class, 'approvable');

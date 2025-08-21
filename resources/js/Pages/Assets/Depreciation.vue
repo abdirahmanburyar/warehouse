@@ -17,12 +17,12 @@
                             </div>
                         </div>
                         <div class="mt-6 sm:mt-0">
-                            <Link :href="route('asset.depreciation.create')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-purple-700 bg-white hover:bg-purple-50 transition-colors">
+                            <button @click="showCreateModal = true" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-purple-700 bg-white hover:bg-purple-50 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-2">
                                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                                 </svg>
                                 Add Depreciation
-                            </Link>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -184,8 +184,8 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex space-x-2">
-                                        <Link :href="route('asset.depreciation.show', depreciation.id)" class="text-blue-600 hover:text-blue-900">View</Link>
-                                        <Link :href="route('asset.depreciation.edit', depreciation.id)" class="text-indigo-600 hover:text-indigo-900">Edit</Link>
+                                        <button @click="viewDepreciation(depreciation)" class="text-blue-600 hover:text-blue-900">View</button>
+                                        <button @click="editDepreciation(depreciation)" class="text-indigo-600 hover:text-indigo-900">Edit</button>
                                         <button @click="recalculateDepreciation(depreciation.id)" class="text-green-600 hover:text-green-900">Recalculate</button>
                                     </div>
                                 </td>
@@ -229,7 +229,7 @@ const debouncedSearch = debounce(() => {
 }, 300)
 
 const applyFilters = () => {
-    router.get(route('asset.depreciation.index'), filters.value, {
+            router.get('/api/depreciation', filters.value, {
         preserveState: true,
         preserveScroll: true,
     })
@@ -247,13 +247,13 @@ const clearFilters = () => {
 
 const recalculateDepreciation = (id) => {
     if (confirm('Recalculate depreciation for this asset?')) {
-        router.put(route('asset.depreciation.recalculate', id))
+        router.put(`/api/depreciation/${id}/recalculate`)
     }
 }
 
 const bulkRecalculate = () => {
     if (confirm('Recalculate depreciation for all assets? This may take a moment.')) {
-        router.post(route('asset.depreciation.bulk-recalculate'))
+        router.post('/api/depreciation/bulk-recalculate')
     }
 }
 

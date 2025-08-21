@@ -20,7 +20,7 @@
                             </div>
                         </div>
                         <div class="mt-6 sm:mt-0">
-                            <Link :href="route('asset.history.create')"
+                            <button @click="showCreateModal = true"
                                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-purple-700 bg-white hover:bg-purple-50 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                                     class="w-4 h-4 mr-2">
@@ -172,14 +172,12 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex space-x-2">
-                                        <Link :href="route('asset.history.show', record.id)"
-                                            class="text-purple-600 hover:text-purple-900">
+                                        <button @click="viewHistory(record)" class="text-purple-600 hover:text-purple-900">
                                             View
-                                        </Link>
-                                        <Link :href="route('asset.history.edit', record.id)"
-                                            class="text-indigo-600 hover:text-indigo-900">
+                                        </button>
+                                        <button @click="editHistory(record)" class="text-indigo-600 hover:text-indigo-900">
                                             Edit
-                                        </Link>
+                                        </button>
                                         <button
                                             @click="deleteRecord(record.id)"
                                             class="text-red-600 hover:text-red-900"
@@ -230,7 +228,7 @@ const debouncedSearch = debounce(() => {
 }, 300)
 
 const applyFilters = () => {
-    router.get(route('asset.history.index'), filters.value, {
+            router.get('/api/history', filters.value, {
         preserveState: true,
         preserveScroll: true,
     })
@@ -250,7 +248,7 @@ const clearFilters = () => {
 
 const deleteRecord = (id) => {
     if (confirm('Are you sure you want to delete this history record?')) {
-        router.delete(route('asset.history.destroy', id))
+        router.delete(`/api/history/${id}`)
     }
 }
 

@@ -573,15 +573,12 @@ Route::controller(LocationController::class)
         ->prefix('assets-management')
         ->group(function () {
             Route::get('/', 'index')->name('assets.index');
-            Route::get('/{id}/show', 'show')->name('assets.show');
-            Route::get('/get-assets', 'getAssets')->name('assets.get');
             Route::get('/create', 'create')->name('assets.create');
             Route::post('/store', 'store')->name('assets.store');
             Route::get('/{asset}/edit', 'edit')->name('assets.edit');
             Route::put('/{asset}', 'update')->name('assets.update');
             Route::delete('/{asset}', 'destroy')->name('assets.destroy');
-            Route::post('/store-source-fund', 'storeSourceFund')->name('assets.fundsource.store');
-            Route::post('/store-region', 'storeRegion')->name('assets.regions.store');
+            
             // Asset locations routes
             Route::get('/locations', 'locationIndex')->name('assets.locations.index');
             Route::get('/sub-locations', 'subLocationIndex')->name('assets.sub-locations.index');
@@ -590,40 +587,16 @@ Route::controller(LocationController::class)
             Route::post('/categories/store', 'storeCategory')->name('assets.categories.store');
             Route::post('/locations/store', 'storeAssetLocation')->name('assets.locations.store');
             Route::post('/fund-sources/store', 'storeFundSource')->name('assets.fund-sources.store');
+            Route::post('/regions/store', 'storeRegion')->name('assets.regions.store');
 
-            // asset transfer submission
-            Route::post('/assets/{asset}/transfer', 'transferAsset')->name('assets.transfer');
-            Route::post('/assets/retire', 'retireAsset')->name('assets.retire');
-            Route::post('/assets/import', 'import')->name('assets.import');
+            // Asset Assignee Routes
+            Route::post('/assignees/store', 'storeAssignee')->name('assets.assignees.store');
 
-            // upload assets excel file 
-            Route::post('/assets/import', 'import')->name('assets.import');
-
-            // export
-            Route::get('/assets/export', function(\Illuminate\Http\Request $request){
-                if (!auth()->user()->can('asset-export')) { abort(403); }
-                return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\AssetsExport($request->all()), 'assets.xlsx');
-            })->name('assets.export');
-
-            // Asset Document Upload Route
-            Route::post('/assets/documents/store', 'storeDocument')->name('assets.documents.store');
-
-            // Asset Document Delete Route
-            Route::get('/documents/{document}', 'deleteDocument')->name('assets.document.delete');
+            // Asset Transfer Routes
+            Route::post('/{asset}/transfer', 'transferAsset')->name('assets.transfer');
 
             // Asset Approval Routes
             Route::get('/approvals', 'approvalsIndex')->name('assets.approvals.index');
-            Route::post('/{asset}/submit-approval', 'submitForApproval')->name('assets.submit-approval');
-            Route::post('/{asset}/approve', 'approveAsset')->name('assets.approve');
-            Route::post('/{asset}/approve-transfer', 'approveTransfer')->name('assets.approve-transfer');
-            Route::post('/{asset}/approve-retirement', 'approveRetirement')->name('assets.approve-retirement');
-            Route::get('/pending-approvals', 'getPendingApprovals')->name('assets.pending-approvals');
-            Route::get('/{asset}/approval-history', 'getApprovalHistory')->name('assets.approval-history');
-            Route::get('/{asset}/history', 'getAssetHistory')->name('assets.history');
-            Route::get('/history', 'getAllAssetHistory')->name('assets.history.index');
-            Route::get('/{asset}/debug-approval', 'debugApprovalWorkflow')->name('assets.debug-approval');
-            
-            // New simple approval routes
             Route::post('/{asset}/approve-simple', 'approve')->name('assets.approve-simple');
             Route::post('/{asset}/reject-simple', 'reject')->name('assets.reject-simple');
             Route::post('/{asset}/review', 'review')->name('assets.review');
@@ -631,66 +604,9 @@ Route::controller(LocationController::class)
             Route::post('/bulk-approve', 'bulkApprove')->name('assets.bulk-approve');
         });
 
-    // Asset Documents Routes
-    Route::prefix('asset-documents')->group(function () {
-        Route::get('/', [\App\Http\Controllers\AssetDocumentController::class, 'index'])->name('asset.documents.index');
-        Route::get('/create', [\App\Http\Controllers\AssetDocumentController::class, 'create'])->name('asset.documents.create');
-        Route::post('/', [\App\Http\Controllers\AssetDocumentController::class, 'store'])->name('asset.documents.store');
-        Route::get('/{document}/edit', [\App\Http\Controllers\AssetDocumentController::class, 'edit'])->name('asset.documents.edit');
-        Route::put('/{document}', [\App\Http\Controllers\AssetDocumentController::class, 'update'])->name('asset.documents.update');
-        Route::delete('/{document}', [\App\Http\Controllers\AssetDocumentController::class, 'destroy'])->name('asset.documents.destroy');
-        Route::get('/{document}/download', [\App\Http\Controllers\AssetDocumentController::class, 'download'])->name('asset.documents.download');
-    });
 
-    // Asset Maintenance Routes
-    Route::prefix('asset-maintenance')->group(function () {
-        Route::get('/', [\App\Http\Controllers\AssetMaintenanceController::class, 'index'])->name('asset.maintenance.index');
-        Route::get('/create', [\App\Http\Controllers\AssetMaintenanceController::class, 'create'])->name('asset.maintenance.create');
-        Route::post('/', [\App\Http\Controllers\AssetMaintenanceController::class, 'store'])->name('asset.maintenance.store');
-        Route::get('/{maintenance}/edit', [\App\Http\Controllers\AssetMaintenanceController::class, 'edit'])->name('asset.maintenance.edit');
-        Route::put('/{maintenance}', [\App\Http\Controllers\AssetMaintenanceController::class, 'update'])->name('asset.maintenance.update');
-        Route::delete('/{maintenance}', [\App\Http\Controllers\AssetMaintenanceController::class, 'destroy'])->name('asset.maintenance.destroy');
-        Route::post('/{maintenance}/mark-in-progress', [\App\Http\Controllers\AssetMaintenanceController::class, 'markInProgress'])->name('asset.maintenance.mark-in-progress');
-        Route::post('/{maintenance}/mark-completed', [\App\Http\Controllers\AssetMaintenanceController::class, 'markCompleted'])->name('asset.maintenance.mark-completed');
-        Route::post('/{maintenance}/cancel', [\App\Http\Controllers\AssetMaintenanceController::class, 'cancel'])->name('asset.maintenance.cancel');
-        Route::post('/{maintenance}/reschedule', [\App\Http\Controllers\AssetMaintenanceController::class, 'reschedule'])->name('asset.maintenance.reschedule');
-    });
 
-    // Asset Depreciation Routes
-    Route::prefix('asset-depreciation')->group(function () {
-        Route::get('/', [\App\Http\Controllers\AssetDepreciationController::class, 'index'])->name('asset.depreciation.index');
-        Route::get('/create', [\App\Http\Controllers\AssetDepreciationController::class, 'create'])->name('asset.depreciation.create');
-        Route::post('/', [\App\Http\Controllers\AssetDepreciationController::class, 'store'])->name('asset.depreciation.store');
-        Route::get('/{depreciation}/edit', [\App\Http\Controllers\AssetDepreciationController::class, 'edit'])->name('asset.depreciation.edit');
-        Route::put('/{depreciation}', [\App\Http\Controllers\AssetDepreciationController::class, 'update'])->name('asset.depreciation.update');
-        Route::delete('/{depreciation}', [\App\Http\Controllers\AssetDepreciationController::class, 'destroy'])->name('asset.depreciation.destroy');
-        Route::post('/{depreciation}/recalculate', [\App\Http\Controllers\AssetDepreciationController::class, 'recalculate'])->name('asset.depreciation.recalculate');
-        Route::post('/bulk-recalculate', [\App\Http\Controllers\AssetDepreciationController::class, 'bulkRecalculate'])->name('asset.depreciation.bulk-recalculate');
-    });
 
-    // Asset History Routes
-    Route::prefix('asset-history')->controller(\App\Http\Controllers\AssetHistoryController::class)->group(function(){
-        Route::get('/', 'index')->name('asset.history.index');
-        Route::get('/create', 'create')->name('asset.history.create');
-        Route::post('/', 'store')->name('asset.history.store');
-        Route::get('/{history}/edit', 'edit')->name('asset.history.edit');
-        Route::put('/{history}', 'update')->name('asset.history.update');
-        Route::delete('/{history}', 'destroy')->name('asset.history.destroy');
-        Route::get('/{history}', 'show')->name('asset.history.show');
-        Route::get('/asset/{asset}/history', 'assetHistory')->name('asset.history.asset');
-        Route::get('/asset-item/{assetItem}/history', 'assetItemHistory')->name('asset.history.asset-item');
-    });
-
-    // Assignees API (minimal for inline creation)
-    Route::post('assets-management/assignees', [\App\Http\Controllers\AssigneeController::class, 'store'])->name('assets.assignees.store');
-
-    // Asset Types
-    Route::prefix('assets-management/types')->controller(\App\Http\Controllers\AssetTypeController::class)->group(function(){
-        Route::get('/', 'index')->name('assets.types.index');
-        Route::post('/', 'store')->name('assets.types.store');
-        Route::put('/{assetType}', 'update')->name('assets.types.update');
-        Route::delete('/{assetType}', 'destroy')->name('assets.types.destroy');
-    });
 
     // Inventory Management Routes
     Route::prefix('inventory')->group(function () {
