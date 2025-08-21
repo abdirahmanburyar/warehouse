@@ -735,6 +735,12 @@ class AssetController extends Controller
     public function transferAsset(Request $request, Asset $asset)
     {
         try {
+            \Log::info('Transfer request received', [
+                'asset_id' => $asset->id,
+                'request_data' => $request->all(),
+                'user_id' => auth()->id()
+            ]);
+
             // Check if asset exists and is accessible
             if (!$asset) {
                 return response()->json(['error' => 'Asset not found'], 404);
@@ -749,6 +755,8 @@ class AssetController extends Controller
                 'sub_location_id' => 'nullable|exists:sub_locations,id',
             ]);
 
+            \Log::info('Validation passed, updating asset');
+
             // Update the asset's location and assignee
             $asset->update([
                 'region_id' => $request->region_id,
@@ -756,11 +764,15 @@ class AssetController extends Controller
                 'sub_location_id' => $request->sub_location_id,
             ]);
 
+            \Log::info('Asset updated, updating asset items');
+
             // Update the asset's assignee
             $asset->assetItems()->update([
                 'assignee_id' => $request->assignee_id,
                 'status' => 'in_use',
             ]);
+
+            \Log::info('Asset items updated, creating history');
 
             // Create transfer history record
             $asset->createHistory([
@@ -772,6 +784,8 @@ class AssetController extends Controller
                 'performed_at' => now(),
                 'assignee_id' => $request->assignee_id,
             ]);
+
+            \Log::info('History created, returning success');
 
             return response()->json([
                 'message' => 'Asset transferred successfully',

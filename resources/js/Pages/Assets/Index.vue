@@ -1152,6 +1152,7 @@ function openTransferModal(asset) {
     transferData.asset_id = asset.id;
     
     // Populate with current asset values (old/current values)
+    console.log('AssetItem data:', asset);
     console.log('Asset region:', asset.region);
     console.log('Asset location:', asset.asset_location);
     console.log('Asset sub-location:', asset.sub_location);
@@ -1459,7 +1460,18 @@ async function transferAsset() {
         console.log('Selected asset:', selectedAsset.value);
         console.log('Asset ID being sent:', selectedAsset.value.id);
         
-        const response = await axios.post(route('assets.transfer', selectedAsset.value.id), {
+        const assetId = selectedAsset.value.asset_id || selectedAsset.value.asset?.id;
+        console.log('AssetItem ID:', selectedAsset.value.id);
+        console.log('Asset ID being sent:', assetId);
+        console.log('Route being called:', route('assets.transfer', assetId));
+        console.log('Full URL:', route('assets.transfer', assetId));
+        
+        if (!assetId) {
+            toast.error('Could not determine asset ID for transfer.');
+            return;
+        }
+        
+        const response = await axios.post(route('assets.transfer', assetId), {
             assignee_id: transferData.assignee.id,
             region_id: transferData.region?.id,
             asset_location_id: transferData.asset_location?.id,

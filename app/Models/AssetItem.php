@@ -226,7 +226,7 @@ class AssetItem extends Model
             'old_value' => $data['old_value'] ?? null,
             'new_value' => $data['new_value'] ?? null,
             'notes' => $data['notes'] ?? '',
-            'performed_by' => $data['performed_by'] ?? auth()->id(),
+            'performed_by' => $data['performed_by'] ?? null,
             'performed_at' => $data['performed_at'] ?? now(),
             'approval_id' => $data['approval_id'] ?? null,
             'assignee_id' => $data['assignee_id'] ?? null,

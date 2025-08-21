@@ -288,7 +288,7 @@ class Asset extends Model
      */
     public function createHistory(array $data): void
     {
-        foreach ($this->assetItems as $assetItem) {
+        foreach ($this->assetItems()->get() as $assetItem) {
             $assetItem->createHistory($data);
         }
     }
