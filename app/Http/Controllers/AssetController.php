@@ -735,7 +735,7 @@ class AssetController extends Controller
     public function transferAsset(Request $request, Asset $asset)
     {
         try {
-            \Log::info('Transfer request received', [
+            logger()->info('Transfer request received', [
                 'asset_id' => $asset->id,
                 'request_data' => $request->all(),
                 'user_id' => auth()->id()
@@ -755,7 +755,7 @@ class AssetController extends Controller
                 'sub_location_id' => 'nullable|exists:sub_locations,id',
             ]);
 
-            \Log::info('Validation passed, updating asset');
+            logger()->info('Validation passed, updating asset');
 
             // Update the asset's location and assignee
             $asset->update([
@@ -764,7 +764,7 @@ class AssetController extends Controller
                 'sub_location_id' => $request->sub_location_id,
             ]);
 
-            \Log::info('Asset updated, updating asset items');
+            logger()->info('Asset updated, updating asset items');
 
             // Update the asset's assignee
             $asset->assetItems()->update([
@@ -772,7 +772,7 @@ class AssetController extends Controller
                 'status' => 'in_use',
             ]);
 
-            \Log::info('Asset items updated, creating history');
+            logger()->info('Asset items updated, creating history');
 
             // Create transfer history record
             $asset->createHistory([
@@ -785,14 +785,14 @@ class AssetController extends Controller
                 'assignee_id' => $request->assignee_id,
             ]);
 
-            \Log::info('History created, returning success');
+            logger()->info('History created, returning success');
 
             return response()->json([
                 'message' => 'Asset transferred successfully',
                 'asset' => $asset->fresh(['assetItems.assignee', 'region', 'assetLocation', 'subLocation'])
             ], 200);
         } catch (\Throwable $th) {
-            \Log::error('Asset transfer failed: ' . $th->getMessage(), [
+            logger()->error('Asset transfer failed: ' . $th->getMessage(), [
                 'asset_id' => $asset->id ?? 'unknown',
                 'request_data' => $request->all(),
                 'user_id' => auth()->id(),
