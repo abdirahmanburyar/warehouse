@@ -156,11 +156,16 @@ onMounted(() => {
         // Map some fields to match the form expectations
         name: props.assetItem?.asset_name || props.asset?.name,
         tag_no: props.assetItem?.asset_tag || props.asset?.tag_no,
+        
+        // Format acquisition_date for HTML date input (YYYY-MM-DD)
+        acquisition_date: props.asset?.acquisition_date ? moment(props.asset.acquisition_date).format('YYYY-MM-DD') : '',
     };
     
     console.log('Form initialized with:', form.value);
     console.log('Asset data:', props.asset);
     console.log('AssetItem data:', props.assetItem);
+    console.log('Acquisition date (raw):', props.asset?.acquisition_date);
+    console.log('Acquisition date (formatted):', form.value.acquisition_date);
 });
 
 // Keep type cleared when category cleared
@@ -404,7 +409,7 @@ const submit = async () => {
         asset_location_id: form.value.asset_location_id,
         sub_location_id: form.value.sub_location_id,
         fund_source_id: form.value.fund_source_id,
-        acquisition_date: form.value.acquisition_date,
+        acquisition_date: form.value.acquisition_date, // Already in YYYY-MM-DD format from HTML input
         
         // AssetItem-level fields
         asset_item_data: {

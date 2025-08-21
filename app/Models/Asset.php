@@ -48,6 +48,10 @@ class Asset extends Model
 
     protected $casts = [
         'acquisition_date' => 'date',
+        'submitted_at' => 'datetime',
+        'reviewed_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
     ];
 
     // Relationships
