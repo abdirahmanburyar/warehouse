@@ -543,12 +543,20 @@
                                             <div v-if="activeDropdown === asset.id" 
                                                 class="absolute right-0 z-10 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1">
 
-                                                <Link :href="route('assets.edit', asset.id)"
+                                                <Link :href="route('assets.edit', asset.asset_id || asset.asset?.id)"
                                                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-gray-600">
                                                         <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
                                                     </svg>
                                                     Edit Asset
+                                                </Link>
+                                                
+                                                <Link :href="route('assets.history.index', { asset: asset.asset_id || asset.asset?.id })"
+                                                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-green-600">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v2.25h-2.25a.75.75 0 000 1.5h2.25v2.25a.75.75 0 001.5 0v-2.25h2.25a.75.75 0 000-1.5h-2.25v-2.25z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    History
                                                 </Link>
                                                 
                                                 <div class="border-t border-gray-100"></div>

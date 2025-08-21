@@ -292,17 +292,23 @@ class AssetController extends Controller
 
     public function edit(Asset $asset)
     {
-        // Use relationship names that the frontend expects (location instead of assetLocation)
-        $asset = Asset::with('category:id,name', 'assetLocation:id,name', 'subLocation:id,name', 'fundSource','type:id,name', 'region', 'assignee')
+        // Load the asset with its actual relationships
+        $asset = Asset::with(['region', 'assetLocation', 'subLocation', 'fundSource'])
             ->findOrFail($asset->id);
+            
+        // Get the first asset item for additional details
+        $assetItem = $asset->assetItems()->with(['category', 'type', 'assignee'])->first();
+        
         $locations = AssetLocation::orderBy('name')->get();
         $categories = AssetCategory::orderBy('name')->get();
         $fundSources = FundSource::orderBy('name')->get();
         $regions = Region::orderBy('name')->get();
         $types = AssetType::orderBy('name')->get();
         $assignees = Assignee::select('id','name')->orderBy('name')->get();
+        
         return Inertia::render('Assets/Edit', [
             'asset' => $asset,
+            'assetItem' => $assetItem,
             'locations' => $locations,
             'categories' => $categories,
             'fundSources' => $fundSources,
@@ -315,28 +321,37 @@ class AssetController extends Controller
     public function update(Request $request, Asset $asset)
     {
         try {
-            $validated = $request->validate([
-                'asset_tag' => 'required|string|max:255',
-                'asset_category_id' => 'required|exists:asset_categories,id',
-                'type_id' => 'nullable|exists:asset_types,id',
-                'tag_no' => 'nullable|string|max:255',
-                'name' => 'nullable|string|max:255',
-                'serial_number' => 'required|string|max:255|unique:assets,serial_number,' . $asset->id,
-                'serial_no' => 'nullable|string|max:255',
-                'item_description' => 'nullable|string',
-                'person_assigned' => 'nullable|string',
+            // Validate asset-level fields
+            $assetValidated = $request->validate([
+                'region_id' => 'required|exists:regions,id',
                 'asset_location_id' => 'required|exists:asset_locations,id',
                 'sub_location_id' => 'required|exists:sub_locations,id',
-                'region_id' => 'required|exists:regions,id',
                 'fund_source_id' => 'required|exists:fund_sources,id',
-                'assigned_to' => 'nullable|exists:users,id',
-                'assignee_id' => 'nullable|exists:assignees,id',
                 'acquisition_date' => 'required|date',
-                'status' => 'required|string|in:active,in_use,maintenance,retired,disposed',
-                'original_value' => 'required|numeric|min:0',
             ]);
 
-            $asset->update($validated);
+            // Update the asset
+            $asset->update($assetValidated);
+
+            // Validate and update asset item fields if provided
+            if ($request->has('asset_item_data')) {
+                $assetItemValidated = $request->validate([
+                    'asset_item_data.asset_tag' => 'required|string|max:255',
+                    'asset_item_data.asset_category_id' => 'required|exists:asset_categories,id',
+                    'asset_item_data.asset_type_id' => 'required|exists:asset_types,id',
+                    'asset_item_data.asset_name' => 'required|string|max:255',
+                    'asset_item_data.serial_number' => 'required|string|max:255',
+                    'asset_item_data.original_value' => 'required|numeric|min:0',
+                    'asset_item_data.status' => 'required|string|in:pending_approval,in_use,maintenance,retired,disposed',
+                    'asset_item_data.assignee_id' => 'nullable|exists:assignees,id',
+                ]);
+
+                // Update the first asset item
+                $assetItem = $asset->assetItems()->first();
+                if ($assetItem) {
+                    $assetItem->update($assetItemValidated['asset_item_data']);
+                }
+            }
 
             return response()->json('Updated', 200);
         } catch (\Throwable $th) {
@@ -800,6 +815,47 @@ class AssetController extends Controller
                 'trace' => $th->getTraceAsString()
             ]);
             return response()->json(['error' => 'Transfer failed: ' . $th->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Show the history of an asset.
+     */
+    public function showHistory(Asset $asset)
+    {
+        try {
+            // Get all asset items for this asset
+            $assetItems = $asset->assetItems()->with([
+                'assignee',
+                'category',
+                'type',
+                'assetHistory' => function ($query) {
+                    $query->orderBy('performed_at', 'desc');
+                }
+            ])->get();
+
+            // Get the asset with its relationships
+            $assetWithRelations = $asset->load([
+                'region',
+                'assetLocation',
+                'subLocation',
+                'fundSource'
+            ]);
+
+            return Inertia::render('Assets/AssetHistory', [
+                'asset' => $assetWithRelations,
+                'assetItems' => $assetItems,
+                'pageTitle' => 'Asset History',
+                'pageDescription' => 'View detailed history for asset: ' . $asset->asset_number
+            ]);
+        } catch (\Throwable $th) {
+            logger()->error('Failed to show asset history: ' . $th->getMessage(), [
+                'asset_id' => $asset->id ?? 'unknown',
+                'user_id' => auth()->id(),
+                'trace' => $th->getTraceAsString()
+            ]);
+            
+            return back()->withErrors(['error' => 'Failed to load asset history: ' . $th->getMessage()]);
         }
     }
 }
