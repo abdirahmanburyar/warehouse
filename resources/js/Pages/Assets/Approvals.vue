@@ -1,5 +1,22 @@
 <template>
-    <AuthenticatedLayout title="Approvals" :description="props.assetItem?.asset_number || 'Select an asset'">
+    <AuthenticatedLayout title="Asset Approvals & Workflow" :description="props.assetItem?.asset_number || 'Select an asset to view approval workflow'">
+        <!-- Page Description -->
+        <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        <strong>Asset Approvals & Workflow:</strong> This page displays all assets that have been submitted for approval, including their current approval stage. 
+                        You can view the complete approval workflow history for each asset, including submitted, reviewed, approved, and rejected items.
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <!-- Asset Selection -->
         <div class="mb-6">
             <div class="w-[300px]">
@@ -13,8 +30,8 @@
                     :show-labels="false"
                     :close-on-select="true"
                 />
-                            </div>
-                        </div>
+            </div>
+        </div>
 
         <!-- Asset Details and Approval Interface -->
         <div v-if="props.assetItem" class="space-y-6">
@@ -69,6 +86,140 @@
                 </div>
             </div>
 
+            <!-- Approval Workflow Status -->
+            <div class="bg-white rounded-lg shadow-sm mb-6">
+                <div class="px-6 py-4">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Approval Workflow Status</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <!-- Submitted Stage -->
+                        <div class="text-center p-3 rounded-lg" :class="props.assetItem?.submitted_at ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'">
+                            <div class="w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center" :class="props.assetItem?.submitted_at ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'">
+                                <svg v-if="props.assetItem?.submitted_at" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                <span v-else class="text-xs font-bold">1</span>
+                            </div>
+                            <div class="text-sm font-medium text-gray-900">Submitted</div>
+                            <div class="text-xs text-gray-500" v-if="props.assetItem?.submitted_at">
+                                {{ formatDate(props.assetItem.submitted_at) }}
+                            </div>
+                            <div class="text-xs text-gray-500" v-if="props.assetItem?.submitted_by">
+                                By {{ props.assetItem.submitted_by.name }}
+                            </div>
+                        </div>
+
+                        <!-- Reviewed Stage -->
+                        <div class="text-center p-3 rounded-lg" :class="props.assetItem?.reviewed_at ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'">
+                            <div class="w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center" :class="props.assetItem?.reviewed_at ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'">
+                                <svg v-if="props.assetItem?.reviewed_at" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                <span v-else class="text-xs font-bold">2</span>
+                            </div>
+                            <div class="text-sm font-medium text-gray-900">Reviewed</div>
+                            <div class="text-xs text-gray-500" v-if="props.assetItem?.reviewed_at">
+                                {{ formatDate(props.assetItem.reviewed_at) }}
+                            </div>
+                            <div class="text-xs text-gray-500" v-if="props.assetItem?.reviewed_by">
+                                By {{ props.assetItem.reviewed_by.name }}
+                            </div>
+                        </div>
+
+                        <!-- Approved Stage -->
+                        <div class="text-center p-3 rounded-lg" :class="props.assetItem?.approved_at ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'">
+                            <div class="w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center" :class="props.assetItem?.approved_at ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'">
+                                <svg v-if="props.assetItem?.approved_at" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                <span v-else class="text-xs font-bold">3</span>
+                            </div>
+                            <div class="text-sm font-medium text-gray-900">Approved</div>
+                            <div class="text-xs text-gray-500" v-if="props.assetItem?.approved_at">
+                                {{ formatDate(props.assetItem.approved_at) }}
+                            </div>
+                            <div class="text-xs text-gray-500" v-if="props.assetItem?.approved_by">
+                                By {{ props.assetItem.approved_by.name }}
+                            </div>
+                        </div>
+
+                        <!-- Final Status -->
+                        <div class="text-center p-3 rounded-lg" :class="getFinalStatusClass(props.assetItem)">
+                            <div class="w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center" :class="getFinalStatusIconClass(props.assetItem)">
+                                <svg v-if="props.assetItem?.rejected_at" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                                <svg v-else-if="props.assetItem?.approved_at" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                <span v-else class="text-xs font-bold">4</span>
+                            </div>
+                            <div class="text-sm font-medium text-gray-900">{{ getFinalStatusText(props.assetItem) }}</div>
+                            <div class="text-xs text-gray-500" v-if="props.assetItem?.rejected_at">
+                                {{ formatDate(props.assetItem.rejected_at) }}
+                            </div>
+                            <div class="text-xs text-gray-500" v-if="props.assetItem?.rejected_by">
+                                By {{ props.assetItem.rejected_by.name }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approval Details Summary -->
+            <div class="bg-white rounded-lg shadow-sm mb-6">
+                <div class="px-6 py-4">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Approval Details</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Submission Details -->
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <div class="text-xs font-medium text-gray-500 mb-1">Submission</div>
+                            <div class="text-sm font-semibold text-gray-900" v-if="props.assetItem?.submitted_at">
+                                {{ formatDate(props.assetItem.submitted_at) }}
+                            </div>
+                            <div class="text-sm text-gray-900" v-else>Not submitted</div>
+                            <div class="text-xs text-gray-600" v-if="props.assetItem?.submitted_by">
+                                By: {{ props.assetItem.submitted_by.name }}
+                            </div>
+                        </div>
+
+                        <!-- Review Details -->
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <div class="text-xs font-medium text-gray-500 mb-1">Review</div>
+                            <div class="text-sm font-semibold text-gray-900" v-if="props.assetItem?.reviewed_at">
+                                {{ formatDate(props.assetItem.reviewed_at) }}
+                            </div>
+                            <div class="text-sm text-gray-900" v-else>Not reviewed</div>
+                            <div class="text-xs text-gray-600" v-if="props.assetItem?.reviewed_by">
+                                By: {{ props.assetItem.reviewed_by.name }}
+                            </div>
+                        </div>
+
+                        <!-- Approval Details -->
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <div class="text-xs font-medium text-gray-500 mb-1">Approval</div>
+                            <div class="text-sm font-semibold text-gray-900" v-if="props.assetItem?.approved_at">
+                                {{ formatDate(props.assetItem.approved_at) }}
+                            </div>
+                            <div class="text-sm text-gray-900" v-else>Not approved</div>
+                            <div class="text-xs text-gray-600" v-if="props.assetItem?.approved_by">
+                                By: {{ props.assetItem.approved_by.name }}
+                            </div>
+                        </div>
+
+                        <!-- Current Status -->
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <div class="text-xs font-medium text-gray-500 mb-1">Current Status</div>
+                            <div class="text-sm font-semibold" :class="getStatusTextClass(props.assetItem)">
+                                {{ getCurrentApprovalStatus(props.assetItem).toUpperCase() }}
+                            </div>
+                            <div class="text-xs text-gray-600" v-if="props.assetItem?.rejected_at">
+                                Rejected on {{ formatDate(props.assetItem.rejected_at) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Asset Items Table -->
             <div class="bg-white">
                 <div class="px-6 py-4">
@@ -84,15 +235,16 @@
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Value</th>
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Assignee</th>
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Status</th>
+                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Approval Stage</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-if="!props.assetItem?.asset_items || getNonApprovedItems(props.assetItem.asset_items).length === 0">
-                                <td colspan="8" class="px-3 py-3 text-center text-gray-500 border-b" style="border-bottom: 1px solid #B7C6E6;">
-                                    {{ !props.assetItem?.asset_items ? 'No asset items found' : 'All asset items are already approved' }}
+                            <tr v-if="!props.assetItem?.asset_items || props.assetItem.asset_items.length === 0">
+                                <td colspan="9" class="px-3 py-3 text-center text-gray-500 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                                    {{ !props.assetItem?.asset_items ? 'No asset items found' : 'No asset items available' }}
                                 </td>
                             </tr>
-                            <template v-else v-for="item in getNonApprovedItems(props.assetItem.asset_items)" :key="item.id">
+                            <template v-else v-for="item in props.assetItem.asset_items" :key="item.id">
                                 <tr class="hover:bg-gray-50 transition-colors duration-150 border-b" style="border-bottom: 1px solid #F4F7FB;">
                                     <td class="px-3 py-3 text-xs text-gray-900">{{ item.asset_tag }}</td>
                                     <td class="px-3 py-3 text-xs text-gray-900">{{ item.serial_number }}</td>
@@ -106,6 +258,12 @@
                                                       :class="getItemStatusBadgeClass(item.status)">
                                                     {{ formatItemStatus(item.status) }}
                                                 </span>
+                                    </td>
+                                    <td class="px-3 py-3 text-xs text-gray-900">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                                              :class="getApprovalStageBadgeClass(props.assetItem)">
+                                            {{ getApprovalStage(props.assetItem) }}
+                                        </span>
                                     </td>
                                 </tr>
                             </template>
@@ -545,6 +703,151 @@ const getAssetStatus = (asset) => {
     
     // Default status
     return 'draft';
+};
+
+// Helper function to get approval stage for display
+const getApprovalStage = (asset) => {
+    if (!asset) return 'Unknown';
+    
+    if (asset.rejected_at) {
+        return 'Rejected';
+    }
+    
+    if (asset.approved_at) {
+        return 'Approved';
+    }
+    
+    if (asset.reviewed_at) {
+        return 'Reviewed';
+    }
+    
+    if (asset.submitted_at) {
+        return 'Pending Review';
+    }
+    
+    return 'Draft';
+};
+
+// Helper function to get approval stage badge styling
+const getApprovalStageBadgeClass = (asset) => {
+    if (!asset) return 'bg-gray-100 text-gray-800';
+    
+    if (asset.rejected_at) {
+        return 'bg-red-100 text-red-800';
+    }
+    
+    if (asset.approved_at) {
+        return 'bg-green-100 text-green-800';
+    }
+    
+    if (asset.reviewed_at) {
+        return 'bg-blue-100 text-blue-800';
+    }
+    
+    if (asset.submitted_at) {
+        return 'bg-yellow-100 text-yellow-800';
+    }
+    
+    return 'bg-gray-100 text-gray-800';
+};
+
+// Helper function to get final status class for workflow display
+const getFinalStatusClass = (asset) => {
+    if (!asset) return 'bg-gray-50 border border-gray-200';
+    
+    if (asset.rejected_at) {
+        return 'bg-red-50 border border-red-200';
+    }
+    
+    if (asset.approved_at) {
+        return 'bg-green-50 border border-green-200';
+    }
+    
+    return 'bg-gray-50 border border-gray-200';
+};
+
+// Helper function to get final status icon class for workflow display
+const getFinalStatusIconClass = (asset) => {
+    if (!asset) return 'bg-gray-400 text-white';
+    
+    if (asset.rejected_at) {
+        return 'bg-red-500 text-white';
+    }
+    
+    if (asset.approved_at) {
+        return 'bg-green-500 text-white';
+    }
+    
+    return 'bg-gray-400 text-white';
+};
+
+// Helper function to get final status text for workflow display
+const getFinalStatusText = (asset) => {
+    if (!asset) return 'Pending';
+    
+    if (asset.rejected_at) {
+        return 'Rejected';
+    }
+    
+    if (asset.approved_at) {
+        return 'Completed';
+    }
+    
+    return 'Pending';
+};
+
+// Approval status order for timeline progression
+const approvalStatusOrder = [
+    "submitted",
+    "reviewed", 
+    "approved",
+    "completed"
+];
+
+// Helper function to get current approval status for timeline
+const getCurrentApprovalStatus = (asset) => {
+    if (!asset) return 'submitted';
+    
+    if (asset.rejected_at) {
+        return 'rejected';
+    }
+    
+    if (asset.approved_at) {
+        return 'completed';
+    }
+    
+    if (asset.reviewed_at) {
+        return 'reviewed';
+    }
+    
+    if (asset.submitted_at) {
+        return 'submitted';
+    }
+    
+    return 'submitted';
+};
+
+// Helper function to get status text styling
+const getStatusTextClass = (asset) => {
+    if (!asset) return 'text-gray-900';
+    
+    if (asset.rejected_at) {
+        return 'text-red-600';
+    }
+    
+    if (asset.approved_at) {
+        return 'text-green-600';
+    }
+    
+    if (asset.reviewed_at) {
+        return 'text-blue-600';
+    }
+    
+    if (asset.submitted_at) {
+        return 'text-yellow-600';
+    }
+    
+    return 'text-gray-900';
 };
 </script>
 

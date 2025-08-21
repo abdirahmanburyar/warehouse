@@ -499,9 +499,9 @@ class AssetController extends Controller
      */
     public function approvalsIndex(Request $request)
     {
-        // Load assets that are in the approval workflow (submitted but not approved)
+        // Load all assets that have been submitted (including approved ones)
+        // This allows us to show the full approval workflow history
         $assets = Asset::whereNotNull('submitted_at')
-                      ->whereNull('approved_at')
                       ->pluck('asset_number')
                       ->toArray();
 
