@@ -596,8 +596,8 @@ Route::controller(LocationController::class)
             Route::post('/{asset}/transfer', 'transferAsset')->name('assets.transfer');
 
             // Asset History Routes
-            Route::get('/{asset}/history', 'showHistory')->name('assets.history.index');
-            Route::get('/asset-items/{assetItem}/history', 'showAssetItemHistory')->name('assets.items.history.index');
+            Route::get('/asset-items/{assetItem}/history', 'showHistory')->name('assets.history.index');
+            Route::get('/asset-items/{assetItem}/detailed-history', 'showAssetItemHistory')->name('assets.items.history.index');
 
             // Asset Approval Routes
             Route::get('/approvals', 'approvalsIndex')->name('assets.approvals.index');

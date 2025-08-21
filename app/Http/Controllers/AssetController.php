@@ -861,32 +861,29 @@ class AssetController extends Controller
     /**
      * Show the history of an asset.
      */
-    public function showHistory(Asset $asset)
+    public function showHistory(AssetItem $assetItem)
     {
         try {
             // Get all asset items for this asset
-            $assetItems = $asset->assetItems()->with([
+            $assetItem = $assetItem->with([
                 'assignee',
                 'category',
                 'type',
+                'asset.assetCategory',
+                'asset.assetType',
+                'asset.subLocation',
+                'asset.assetLocation',
+                'asset.region',
+                'asset.fundSource',
                 'assetHistory' => function ($query) {
                     $query->orderBy('performed_at', 'desc');
                 }
-            ])->get();
-
-            // Get the asset with its relationships
-            $assetWithRelations = $asset->load([
-                'region',
-                'assetLocation',
-                'subLocation',
-                'fundSource'
-            ]);
+            ])->first();
 
             return Inertia::render('Assets/AssetHistory', [
-                'asset' => $assetWithRelations,
-                'assetItems' => $assetItems,
+                'assetItem' => $assetItem,
                 'pageTitle' => 'Asset History',
-                'pageDescription' => 'View detailed history for asset: ' . $asset->asset_number
+                'pageDescription' => 'View detailed history for asset: ' . $assetItem->asset->asset_number
             ]);
         } catch (\Throwable $th) {
             logger()->error('Failed to show asset history: ' . $th->getMessage(), [

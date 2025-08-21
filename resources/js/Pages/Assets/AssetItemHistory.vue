@@ -20,7 +20,7 @@
                             </div>
                         </div>
                         <div class="mt-6 sm:mt-0 space-x-3">
-                            <Link :href="route('assets.history.index', asset.id)"
+                            <Link :href="route('assets.index')"
                                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-blue-700 bg-white hover:bg-blue-50 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                                     class="w-4 h-4 mr-2">
