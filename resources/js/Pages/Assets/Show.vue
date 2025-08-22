@@ -89,57 +89,103 @@
                 </div>
             </div>
 
-            <!-- Approval Workflow Status -->
-            <div class="bg-white rounded-lg shadow-sm mb-6">
-                <div class="px-6 py-4">
-                    <h2 class="text-lg font-medium text-gray-900 mb-4">Approval Workflow Status</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <!-- Submitted Stage -->
-                        <div class="text-center p-3 rounded-lg" :class="props.assetItem?.submitted_at ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'">
-                            <div class="w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center" :class="props.assetItem?.submitted_at ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'">
-                                <svg v-if="props.assetItem?.submitted_at" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            <!-- Status Stage Timeline -->
+            <div v-if="getAssetStatus(props.assetItem) === 'rejected'">
+                <div class="flex flex-col items-center mb-6">
+                    <div class="w-14 h-14 rounded-full border-4 flex items-center justify-center z-10 bg-white border-red-500">
+                        <svg class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </div>
+                    <h1 class="mt-3 text-2xl text-red-600 font-bold">Rejected</h1>
+                </div>
+            </div>
+            <div v-else class="col-span-2 mb-6">
+                <div class="relative">
+                    <!-- Timeline Track Background -->
+                    <div class="absolute top-7 left-0 right-0 h-2 bg-gray-200 z-0"></div>
+
+                    <!-- Timeline Progress -->
+                    <div class="absolute top-7 left-0 h-2 bg-green-500 z-0 transition-all duration-500 ease-in-out"
+                        :style="{
+                            width: `${(assetStatusOrder.indexOf(getAssetStatus(props.assetItem)) /
+                                (assetStatusOrder.length - 1)) *
+                                100
+                                }%`,
+                        }"></div>
+
+                    <!-- Timeline Steps -->
+                    <div class="relative flex justify-between">
+                        <!-- Draft -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-14 h-14 rounded-full border-4 flex items-center justify-center z-10" :class="[
+                                assetStatusOrder.indexOf(getAssetStatus(props.assetItem)) >=
+                                    assetStatusOrder.indexOf('draft')
+                                    ? 'bg-white border-blue-500'
+                                    : 'bg-white border-gray-200',
+                            ]">
+                                <svg v-if="assetStatusOrder.indexOf(getAssetStatus(props.assetItem)) >= assetStatusOrder.indexOf('draft')" class="w-7 h-7 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
-                                <span v-else class="text-xs font-bold">1</span>
+                                <svg v-else class="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
                             </div>
-                            <p class="text-sm font-medium text-gray-900">Submitted</p>
-                            <p class="text-xs text-gray-500">{{ props.assetItem?.submitted_at ? formatDate(props.assetItem.submitted_at) : 'Pending' }}</p>
+                            <span class="mt-3 text-xs font-bold" :class="assetStatusOrder.indexOf(getAssetStatus(props.assetItem)) >= assetStatusOrder.indexOf('draft') ? 'text-blue-600' : 'text-gray-500'">Draft</span>
                         </div>
 
-                        <!-- Reviewed Stage -->
-                        <div class="text-center p-3 rounded-lg" :class="props.assetItem?.reviewed_at ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'">
-                            <div class="w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center" :class="props.assetItem?.reviewed_at ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'">
-                                <svg v-if="props.assetItem?.reviewed_at" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        <!-- Submitted -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-14 h-14 rounded-full border-4 flex items-center justify-center z-10" :class="[
+                                assetStatusOrder.indexOf(getAssetStatus(props.assetItem)) >=
+                                    assetStatusOrder.indexOf('pending_approval')
+                                    ? 'bg-white border-orange-500'
+                                    : 'bg-white border-gray-200',
+                            ]">
+                                <svg v-if="assetStatusOrder.indexOf(getAssetStatus(props.assetItem)) >= assetStatusOrder.indexOf('pending_approval')" class="w-7 h-7 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                                 </svg>
-                                <span v-else class="text-xs font-bold">2</span>
+                                <svg v-else class="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
                             </div>
-                            <p class="text-sm font-medium text-gray-900">Reviewed</p>
-                            <p class="text-xs text-gray-500">{{ props.assetItem?.reviewed_at ? formatDate(props.assetItem.reviewed_at) : 'Pending' }}</p>
+                            <span class="mt-3 text-xs font-bold" :class="assetStatusOrder.indexOf(getAssetStatus(props.assetItem)) >= assetStatusOrder.indexOf('pending_approval') ? 'text-orange-600' : 'text-gray-500'">Submitted</span>
                         </div>
 
-                        <!-- Approved Stage -->
-                        <div class="text-center p-3 rounded-lg" :class="props.assetItem?.approved_at ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'">
-                            <div class="w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center" :class="props.assetItem?.approved_at ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'">
-                                <svg v-if="props.assetItem?.approved_at" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        <!-- Reviewed -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-14 h-14 rounded-full border-4 flex items-center justify-center z-10" :class="[
+                                assetStatusOrder.indexOf(getAssetStatus(props.assetItem)) >=
+                                    assetStatusOrder.indexOf('reviewed')
+                                    ? 'bg-white border-yellow-500'
+                                    : 'bg-white border-gray-200',
+                            ]">
+                                <svg v-if="assetStatusOrder.indexOf(getAssetStatus(props.assetItem)) >= assetStatusOrder.indexOf('reviewed')" class="w-7 h-7 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <span v-else class="text-xs font-bold">3</span>
+                                <svg v-else class="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                             </div>
-                            <p class="text-sm font-medium text-gray-900">Approved</p>
-                            <p class="text-xs text-gray-500">{{ props.assetItem?.approved_at ? formatDate(props.assetItem.approved_at) : 'Pending' }}</p>
+                            <span class="mt-3 text-xs font-bold" :class="assetStatusOrder.indexOf(getAssetStatus(props.assetItem)) >= assetStatusOrder.indexOf('reviewed') ? 'text-yellow-600' : 'text-gray-500'">Reviewed</span>
                         </div>
 
-                        <!-- Rejected Stage -->
-                        <div class="text-center p-3 rounded-lg" :class="props.assetItem?.rejected_at ? 'bg-red-50 border border-red-200' : 'bg-gray-50 border border-gray-200'">
-                            <div class="w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center" :class="props.assetItem?.rejected_at ? 'bg-red-500 text-white' : 'bg-gray-400 text-white'">
-                                <svg v-if="props.assetItem?.rejected_at" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        <!-- Approved -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-14 h-14 rounded-full border-4 flex items-center justify-center z-10" :class="[
+                                assetStatusOrder.indexOf(getAssetStatus(props.assetItem)) >=
+                                    assetStatusOrder.indexOf('approved')
+                                    ? 'bg-white border-green-500'
+                                    : 'bg-white border-gray-200',
+                            ]">
+                                <svg v-if="assetStatusOrder.indexOf(getAssetStatus(props.assetItem)) >= assetStatusOrder.indexOf('approved')" class="w-7 h-7 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                 </svg>
-                                <span v-else class="text-xs font-bold">4</span>
+                                <svg v-else class="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
                             </div>
-                            <p class="text-sm font-medium text-gray-900">Rejected</p>
-                            <p class="text-xs text-gray-500">{{ props.assetItem?.rejected_at ? formatDate(props.assetItem.rejected_at) : 'Pending' }}</p>
+                            <span class="mt-3 text-xs font-bold" :class="assetStatusOrder.indexOf(getAssetStatus(props.assetItem)) >= assetStatusOrder.indexOf('approved') ? 'text-green-600' : 'text-gray-500'">Approved</span>
                         </div>
                     </div>
                 </div>
@@ -204,146 +250,148 @@
                 </div>
             </div>
 
-                                    <!-- Approval Actions -->
-                        <div class="bg-white rounded-lg shadow-sm">
-                            <div class="px-6 py-4 border-b border-gray-200">
-                                <h2 class="text-lg font-medium text-gray-900">Approval Actions</h2>
+            <!-- Approval Actions -->
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">
+                        Asset Status Actions
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <!-- Review Button - Only show if submitted but not reviewed -->
+                    <div v-if="canReview" class="mb-4">
+                        <button
+                            @click="reviewAsset"
+                            :disabled="isProcessing"
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150"
+                        >
+                            <svg v-if="isProcessing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <svg v-else class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Review Asset
+                        </button>
+                    </div>
+
+                    <!-- Approve/Reject Buttons - Only show if reviewed but not approved/rejected -->
+                    <div v-if="canApproveReject" class="mb-4 space-y-3">
+                        <div class="flex space-x-3">
+                            <button
+                                @click="approveAsset"
+                                :disabled="isProcessing"
+                                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-900 focus:outline-none focus:border-green-900 focus:ring ring-green-300 disabled:opacity-25 transition ease-in-out duration-150"
+                            >
+                                <svg v-if="isProcessing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <svg v-else class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                Approve Asset
+                            </button>
+
+                            <button
+                                @click="showRejectModal = true"
+                                :disabled="isProcessing"
+                                class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-900 focus:outline-none focus:border-red-900 focus:ring ring-red-300 disabled:opacity-25 transition ease-in-out duration-150"
+                            >
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                Reject Asset
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Rollback Button - Only show if rejected -->
+                    <div v-if="canRollback" class="mb-4">
+                        <button
+                            @click="rollbackAsset"
+                            :disabled="isProcessing"
+                            class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 active:bg-yellow-900 focus:outline-none focus:border-yellow-900 focus:ring ring-yellow-300 disabled:opacity-25 transition ease-in-out duration-150"
+                        >
+                            <svg v-if="isProcessing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <svg v-else class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                            </svg>
+                            Rollback Rejection
+                        </button>
+                    </div>
+
+                    <!-- Status Messages -->
+                    <div v-if="statusMessage" class="mt-4 p-3 rounded-md" :class="statusMessageClass">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg v-if="statusMessageType === 'success'" class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                                <svg v-else-if="statusMessageType === 'error'" class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                </svg>
                             </div>
-                            <div class="p-6">
-                                <!-- Review Button - Only show if submitted but not reviewed -->
-                                <div v-if="canReview" class="mb-4">
-                                    <button
-                                        @click="reviewAsset"
-                                        :disabled="isProcessing"
-                                        class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150"
-                                    >
-                                        <svg v-if="isProcessing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <svg v-else class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                        Review Asset
-                                    </button>
-                                </div>
-
-                                <!-- Approve/Reject Buttons - Only show if reviewed but not approved/rejected -->
-                                <div v-if="canApproveReject" class="mb-4 space-y-3">
-                                    <div class="flex space-x-3">
-                                        <button
-                                            @click="approveAsset"
-                                            :disabled="isProcessing"
-                                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-900 focus:outline-none focus:border-green-900 focus:ring ring-green-300 disabled:opacity-25 transition ease-in-out duration-150"
-                                        >
-                                            <svg v-if="isProcessing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            <svg v-else class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                            </svg>
-                                            Approve Asset
-                                        </button>
-
-                                        <button
-                                            @click="showRejectModal = true"
-                                            :disabled="isProcessing"
-                                            class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-900 focus:outline-none focus:border-red-900 focus:ring ring-red-300 disabled:opacity-25 transition ease-in-out duration-150"
-                                        >
-                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                            </svg>
-                                            Reject Asset
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Rollback Button - Only show if rejected -->
-                                <div v-if="canRollback" class="mb-4">
-                                    <button
-                                        @click="rollbackAsset"
-                                        :disabled="isProcessing"
-                                        class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 active:bg-yellow-900 focus:outline-none focus:border-yellow-900 focus:ring ring-yellow-300 disabled:opacity-25 transition ease-in-out duration-150"
-                                    >
-                                        <svg v-if="isProcessing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <svg v-else class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
-                                        </svg>
-                                        Rollback Rejection
-                                    </button>
-                                </div>
-
-                                <!-- Status Messages -->
-                                <div v-if="statusMessage" class="mt-4 p-3 rounded-md" :class="statusMessageClass">
-                                    <div class="flex">
-                                        <div class="flex-shrink-0">
-                                            <svg v-if="statusMessageType === 'success'" class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                            </svg>
-                                            <svg v-else-if="statusMessageType === 'error'" class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                                            </svg>
-                                        </div>
-                                        <div class="ml-3">
-                                            <p class="text-sm font-medium" :class="statusMessageTextClass">
-                                                {{ statusMessage }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium" :class="statusMessageTextClass">
+                                    {{ statusMessage }}
+                                </p>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
 
-                        <!-- Approval Details Summary -->
-                        <div class="bg-white rounded-lg shadow-sm">
-                            <div class="px-6 py-4 border-b border-gray-200">
-                                <h2 class="text-lg font-medium text-gray-900">Approval Details Summary</h2>
-                            </div>
-                            <div class="p-6 space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <h3 class="text-sm font-medium text-gray-500">Submitted By</h3>
-                                        <p class="text-sm text-gray-900">{{ props.assetItem.submitted_by?.name || 'N/A' }}</p>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-sm font-medium text-gray-500">Submitted At</h3>
-                                        <p class="text-sm text-gray-900">{{ props.assetItem.submitted_at ? formatDate(props.assetItem.submitted_at) : 'N/A' }}</p>
-                                    </div>
-                                    <div v-if="props.assetItem.reviewed_by">
-                                        <h3 class="text-sm font-medium text-gray-500">Reviewed By</h3>
-                                        <p class="text-sm text-gray-900">{{ props.assetItem.reviewed_by.name }}</p>
-                                    </div>
-                                    <div v-if="props.assetItem.reviewed_at">
-                                        <h3 class="text-sm font-medium text-gray-500">Reviewed At</h3>
-                                        <p class="text-sm text-gray-900">{{ formatDate(props.assetItem.reviewed_at) }}</p>
-                                    </div>
-                                    <div v-if="props.assetItem.approved_by">
-                                        <h3 class="text-sm font-medium text-gray-500">Approved By</h3>
-                                        <p class="text-sm text-gray-900">{{ props.assetItem.approved_by.name }}</p>
-                                    </div>
-                                    <div v-if="props.assetItem.approved_at">
-                                        <h3 class="text-sm font-medium text-gray-500">Approved At</h3>
-                                        <p class="text-sm text-gray-900">{{ formatDate(props.assetItem.approved_at) }}</p>
-                                    </div>
-                                    <div v-if="props.assetItem.rejected_by">
-                                        <h3 class="text-sm font-medium text-gray-500">Rejected By</h3>
-                                        <p class="text-sm text-gray-900">{{ props.assetItem.rejected_by.name }}</p>
-                                    </div>
-                                    <div v-if="props.assetItem.rejected_at">
-                                        <h3 class="text-sm font-medium text-gray-500">Rejected At</h3>
-                                        <p class="text-sm text-gray-900">{{ formatDate(props.assetItem.rejected_at) }}</p>
-                                    </div>
-                                </div>
-                                <div v-if="props.assetItem.rejection_reason">
-                                    <h3 class="text-sm font-medium text-gray-500">Rejection Reason</h3>
-                                    <p class="text-sm text-gray-900">{{ props.assetItem.rejection_reason }}</p>
-                                </div>
-                            </div>
+            <!-- Approval Details Summary -->
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">Approval Details Summary</h2>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Submitted By</h3>
+                            <p class="text-sm text-gray-900">{{ props.assetItem.submitted_by?.name || 'N/A' }}</p>
                         </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Submitted At</h3>
+                            <p class="text-sm text-gray-900">{{ props.assetItem.submitted_at ? formatDate(props.assetItem.submitted_at) : 'N/A' }}</p>
+                        </div>
+                        <div v-if="props.assetItem.reviewed_by">
+                            <h3 class="text-sm font-medium text-gray-500">Reviewed By</h3>
+                            <p class="text-sm text-gray-900">{{ props.assetItem.reviewed_by.name }}</p>
+                        </div>
+                        <div v-if="props.assetItem.reviewed_at">
+                            <h3 class="text-sm font-medium text-gray-500">Reviewed At</h3>
+                            <p class="text-sm text-gray-900">{{ formatDate(props.assetItem.reviewed_at) }}</p>
+                        </div>
+                        <div v-if="props.assetItem.approved_by">
+                            <h3 class="text-sm font-medium text-gray-500">Approved By</h3>
+                            <p class="text-sm text-gray-900">{{ props.assetItem.approved_by.name }}</p>
+                        </div>
+                        <div v-if="props.assetItem.approved_at">
+                            <h3 class="text-sm font-medium text-gray-500">Approved At</h3>
+                            <p class="text-sm text-gray-900">{{ formatDate(props.assetItem.approved_at) }}</p>
+                        </div>
+                        <div v-if="props.assetItem.rejected_by">
+                            <h3 class="text-sm font-medium text-gray-500">Rejected By</h3>
+                            <p class="text-sm text-gray-900">{{ props.assetItem.rejected_by.name }}</p>
+                        </div>
+                        <div v-if="props.assetItem.rejected_at">
+                            <h3 class="text-sm font-medium text-gray-500">Rejected At</h3>
+                            <p class="text-sm text-gray-900">{{ formatDate(props.assetItem.rejected_at) }}</p>
+                        </div>
+                    </div>
+                    <div v-if="props.assetItem.rejection_reason">
+                        <h3 class="text-sm font-medium text-gray-500">Rejection Reason</h3>
+                        <p class="text-sm text-gray-900">{{ props.assetItem.rejection_reason }}</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- No Asset Selected Message -->
@@ -522,6 +570,14 @@ const getAssetStatus = (asset) => {
     if (asset.submitted_at) return 'pending_approval';
     return 'draft';
 };
+
+// Asset status order for timeline progression
+const assetStatusOrder = [
+    "draft",
+    "pending_approval",
+    "reviewed",
+    "approved"
+];
 
 // Computed properties for conditional visibility
 const canReview = computed(() => {
