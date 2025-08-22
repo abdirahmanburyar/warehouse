@@ -473,10 +473,7 @@ const hasActiveFilters = computed(() => {
 });
 
 function getResults(page = 1) {
-    if (props.filters) {
-        props.filters.page = page;
-    }
-    // The watch will automatically trigger applyFilters
+    props.filters.page = page;
 }
 
 const clearFilters = () => {
@@ -488,6 +485,7 @@ const clearFilters = () => {
     status.value = "";
     sortBy.value = "name";
     sortOrder.value = "asc";
+    props.filters.page = 1;
     per_page.value = 25; // Reset per_page to default
     applyFilters();
     toast.success("Filters cleared!");
@@ -732,14 +730,11 @@ const clearFilters = () => {
                             <span v-else>No items to display</span>
                         </div>
                         
-                        <!-- Pagination -->
-                        <div v-if="props.inventories && props.inventories.meta && props.inventories.meta.last_page > 1" class="flex items-center">
-                            <TailwindPagination
-                                :data="props.inventories"
-                                @pagination-change-page="getResults"
-                                :limit="2"
-                            />
-                        </div>
+                        <TailwindPagination
+                            :data="props.inventories"
+                            @pagination-change-page="getResults"
+                            :limit="2"
+                        />
                     </div>
                 </div>
 
