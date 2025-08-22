@@ -40,30 +40,8 @@ class InventoryController extends Controller
                 ->addSelect(DB::raw('COALESCE(reorder_levels.amc, 0) as amc'))
                 ->addSelect(DB::raw('COALESCE(reorder_levels.reorder_level, (reorder_levels.amc * NULLIF(reorder_levels.lead_time, 0)), ROUND(COALESCE(reorder_levels.amc, 0) * 6)) as reorder_level'));
 
-            // Apply sorting
-            $sortBy = $request->input('sort_by', 'name');
-            $sortOrder = $request->input('sort_order', 'asc');
-            
-            if ($sortBy === 'name') {
-                $productQuery->orderBy('products.name', $sortOrder);
-            } elseif ($sortBy === 'quantity') {
-                // For quantity sorting, we'll need to join with inventory items
-                $productQuery->leftJoin('inventories', 'products.id', '=', 'inventories.product_id')
-                    ->leftJoin('inventory_items', 'inventories.id', '=', 'inventory_items.inventory_id')
-                    ->addSelect(DB::raw('COALESCE(SUM(inventory_items.quantity), 0) as total_quantity'))
-                    ->groupBy(['products.id', 'products.name', 'products.category_id', 'products.dosage_id', 'reorder_levels.amc', 'reorder_levels.reorder_level'])
-                    ->orderBy('total_quantity', $sortOrder);
-            } elseif ($sortBy === 'expiry_date') {
-                // For expiry date sorting, we'll need to join with inventory items
-                $productQuery->leftJoin('inventories', 'products.id', '=', 'inventories.product_id')
-                    ->leftJoin('inventory_items', 'inventories.id', '=', 'inventory_items.inventory_id')
-                    ->addSelect(DB::raw('MIN(inventory_items.expiry_date) as earliest_expiry'))
-                    ->groupBy(['products.id', 'products.name', 'products.category_id', 'products.dosage_id', 'reorder_levels.amc', 'reorder_levels.reorder_level'])
-                    ->orderBy('earliest_expiry', $sortOrder);
-            } else {
-                // Default sorting by name
-                $productQuery->orderBy('products.name', 'asc');
-            }
+            // Default sort by product name for consistency
+            $productQuery->orderBy('products.name', 'asc');
 
             if ($request->filled('search')) {
                 $search = $request->search;
@@ -148,6 +126,30 @@ class InventoryController extends Controller
                 }
             }
 
+            // Apply sorting to the merged data after creating the collection
+            if ($request->filled('sort_by')) {
+                $sortBy = $request->input('sort_by');
+                $sortOrder = $request->input('sort_order', 'asc');
+                
+                $merged = $merged->sortBy(function ($inventory) use ($sortBy) {
+                    switch ($sortBy) {
+                        case 'name':
+                            return $inventory->product->name ?? '';
+                        case 'quantity':
+                            return $inventory->items->sum('quantity') ?? 0;
+                        case 'expiry_date':
+                            $earliestExpiry = $inventory->items->where('expiry_date', '!=', null)->min('expiry_date');
+                            return $earliestExpiry ? $earliestExpiry->timestamp : PHP_INT_MAX;
+                        default:
+                            return $inventory->product->name ?? '';
+                    }
+                });
+                
+                if ($sortOrder === 'desc') {
+                    $merged = $merged->reverse();
+                }
+            }
+
             // Apply status filters to the merged data
             if ($request->filled('status')) {
                 try {
@@ -197,24 +199,25 @@ class InventoryController extends Controller
             // Build paginator compatible with the frontend
             $filteredCount = $merged->count();
             
-            // Use standard Laravel pagination for better compatibility
-            $inventories = $merged->forPage($page, $perPage);
-            
-            // Create a simple paginator structure
-            $paginatedData = [
-                'data' => $inventories->values(),
-                'current_page' => $page,
-                'per_page' => $perPage,
-                'total' => $filteredCount,
-                'last_page' => ceil($filteredCount / $perPage),
-                'from' => ($page - 1) * $perPage + 1,
-                'to' => min($page * $perPage, $filteredCount),
-                'path' => url()->current(),
-                'first_page_url' => url()->current() . '?page=1',
-                'last_page_url' => url()->current() . '?page=' . ceil($filteredCount / $perPage),
-                'next_page_url' => $page < ceil($filteredCount / $perPage) ? url()->current() . '?page=' . ($page + 1) : null,
-                'prev_page_url' => $page > 1 ? url()->current() . '?page=' . ($page - 1) : null,
-            ];
+            // Ensure we always have a valid response structure
+            if ($filteredCount === 0) {
+                // Create an empty paginator when no results
+                $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
+                    collect([]),
+                    0,
+                    $perPage,
+                    $page,
+                    ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
+                );
+            } else {
+                $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $merged->values(),
+                    $filteredCount,
+                    $perPage,
+                    $page,
+                    ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
+                );
+            }
 
             // Calculate status counts independently of pagination
             $statusCounts = $this->calculateInventoryStatusCounts($request);
@@ -222,7 +225,7 @@ class InventoryController extends Controller
             logger()->info('Final response - inventories count: ' . $inventories->count() . ', total: ' . $inventories->total() . ', status filter: ' . ($request->status ?? 'none'));
 
             return Inertia::render('Inventory/Index', [
-                'inventories' => $paginatedData,
+                'inventories' => $inventories,
                 'inventoryStatusCounts' => collect($statusCounts)->map(fn($count, $status) => ['status' => $status, 'count' => $count]),
                 'products'   => Product::select('id', 'name')->get(),
                 'warehouses' => Warehouse::pluck('name')->toArray(),

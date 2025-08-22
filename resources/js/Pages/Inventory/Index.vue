@@ -110,43 +110,55 @@ onBeforeUnmount(() => {
 
 // Apply filters
 const applyFilters = () => {
+    const query = {};
+    // Add all filter values to query object
+    if (search.value) query.search = search.value;
+    if (location.value) query.location = location.value;
+    if (warehouse.value) query.warehouse = warehouse.value;
+    if (dosage.value) query.dosage = dosage.value;
+    if (category.value) query.category = category.value;
+    if (status.value) query.status = status.value;
+    if (sortBy.value !== 'name') query.sort_by = sortBy.value;
+    if (sortOrder.value !== 'asc') query.sort_order = sortOrder.value;
+
+    // Always include per_page in query if it exists
+    if (per_page.value) query.per_page = per_page.value;
+    if (props.filters?.page) query.page = props.filters.page;
+
+    console.log('Applying filters:', query);
+    
     isLoading.value = true;
-    router.get(
-        route('inventories.index'),
-        {
-            search: search.value,
-            location: location.value,
-            dosage: dosage.value,
-            category: category.value,
-            warehouse: warehouse.value,
-            status: status.value,
-            per_page: per_page.value,
-            sort_by: sortBy.value,
-            sort_order: sortOrder.value,
+
+    router.get(route("inventories.index"), query, {
+        preserveState: true,
+        preserveScroll: true,
+        only: [
+            "inventories",
+            "products",
+            "warehouses",
+            "inventoryStatusCounts",
+            "locations",
+            "dosage",
+            "category",
+        ],
+        onFinish: () => {
+            isLoading.value = false;
         },
-        {
-            preserveState: true,
-            preserveScroll: true,
-            onFinish: () => {
-                isLoading.value = false;
-            },
+        onError: (errors) => {
+            isLoading.value = false;
+            console.error('Filter error:', errors);
+            toast.error('Failed to apply filters');
         }
-    );
+    });
 };
 
-// Watch for changes in search input
+// Watch for filter changes and apply them
 watch(
-    [
-        () => search.value,
-        () => location.value,
-        () => per_page.value,
-        () => warehouse.value,
-        () => dosage.value,
-        () => category.value,
-        () => status.value,
-        () => props.filters?.page,
-    ],
+    [search, location, warehouse, dosage, category, status, sortBy, sortOrder, per_page],
     () => {
+        if (props.filters) {
+            props.filters.page = 1;
+        }
         applyFilters();
     }
 );
@@ -461,32 +473,24 @@ const hasActiveFilters = computed(() => {
 });
 
 function getResults(page = 1) {
-    // Update the page in filters and reload data
     if (props.filters) {
         props.filters.page = page;
     }
-    // Reload data with new page
-    applyFilters();
+    // The watch will automatically trigger applyFilters
 }
 
 const clearFilters = () => {
-    search.value = '';
-    location.value = '';
-    dosage.value = '';
-    category.value = '';
-    warehouse.value = '';
-    status.value = '';
-    sortBy.value = 'name';
-    sortOrder.value = 'asc';
+    search.value = "";
+    location.value = "";
+    warehouse.value = "";
+    dosage.value = "";
+    category.value = "";
+    status.value = "";
+    sortBy.value = "name";
+    sortOrder.value = "asc";
+    per_page.value = 25; // Reset per_page to default
     applyFilters();
-};
-
-const handlePerPageChange = () => {
-    // Reset to page 1 when changing per_page
-    if (props.filters) {
-        props.filters.page = 1;
-    }
-    applyFilters();
+    toast.success("Filters cleared!");
 };
 </script>
 
@@ -560,7 +564,7 @@ const handlePerPageChange = () => {
                         </svg>
                         {{ isLoading ? 'Clearing...' : 'Clear Filters' }}
                     </button>
-                    <select v-model="per_page" class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-3" @change="handlePerPageChange">
+                    <select v-model="per_page" class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-3">
                         <option value="25">25 per page</option>
                         <option value="50">50 per page</option>
                         <option value="100">100 per page</option>
@@ -724,12 +728,12 @@ const handlePerPageChange = () => {
 
                     <div class="mt-2 flex justify-between">
                         <div class="flex items-center gap-2">
-                            <span v-if="props.inventories && props.inventories.total > 0" class="text-sm text-gray-500">Showing {{ props.inventories.from }} to {{ props.inventories.to }} of {{ props.inventories.total }} items</span>
+                            <span v-if="props.inventories && props.inventories.meta" class="text-sm text-gray-500">Showing {{ props.inventories.meta.from }} to {{ props.inventories.meta.to }} of {{ props.inventories.meta.total }} items</span>
                             <span v-else class="text-sm text-gray-500">No items to display</span>
                         </div>
                         
                         <!-- Pagination -->
-                        <div v-if="props.inventories && props.inventories.last_page > 1" class="flex items-center">
+                        <div v-if="props.inventories && props.inventories.meta && props.inventories.meta.last_page > 1" class="flex items-center">
                             <TailwindPagination
                                 :data="props.inventories"
                                 @pagination-change-page="getResults"
@@ -738,7 +742,7 @@ const handlePerPageChange = () => {
                         </div>
                         
                         <!-- Show message if no pagination needed -->
-                        <div v-else-if="props.inventories && props.inventories.last_page <= 1" class="text-xs text-gray-400">
+                        <div v-else-if="props.inventories && props.inventories.meta && props.inventories.meta.last_page <= 1" class="text-xs text-gray-400">
                             All items fit on one page
                         </div>
                     </div>
