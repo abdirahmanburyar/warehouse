@@ -196,8 +196,12 @@ class InventoryController extends Controller
                 }
             }
 
+            logger()->info('Final merged data count: ' . $merged->count() . ', sample products: ' . $merged->take(3)->map(fn($inv) => $inv->product->name)->join(', '));
+
             // Build paginator compatible with the frontend
             $filteredCount = $merged->count();
+            
+            logger()->info('Building paginator - filteredCount: ' . $filteredCount . ', perPage: ' . $perPage . ', page: ' . $page);
             
             // Ensure we always have a valid response structure
             if ($filteredCount === 0) {
@@ -209,6 +213,7 @@ class InventoryController extends Controller
                     $page,
                     ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
                 );
+                logger()->info('Created empty paginator');
             } else {
                 $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
                     $merged->values(),
@@ -217,6 +222,7 @@ class InventoryController extends Controller
                     $page,
                     ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
                 );
+                logger()->info('Created paginator with ' . $inventories->count() . ' items, total: ' . $inventories->total());
             }
 
             // Calculate status counts independently of pagination

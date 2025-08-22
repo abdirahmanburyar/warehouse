@@ -728,12 +728,17 @@ const clearFilters = () => {
 
                     <div class="mt-2 flex justify-between">
                         <div class="flex items-center gap-2">
-                            <span v-if="props.inventories && props.inventories.meta" class="text-sm text-gray-500">Showing {{ props.inventories.meta.from }} to {{ props.inventories.meta.to }} of {{ props.inventories.meta.total }} items</span>
+                            <span v-if="props.inventories && props.inventories.total > 0" class="text-sm text-gray-500">Showing {{ props.inventories.from }} to {{ props.inventories.to }} of {{ props.inventories.total }} items</span>
                             <span v-else class="text-sm text-gray-500">No items to display</span>
                         </div>
                         
+                        <!-- Debug info - temporary -->
+                        <div v-if="props.inventories" class="text-xs text-gray-400">
+                            Debug: Total: {{ props.inventories.total }}, Per Page: {{ props.inventories.per_page }}, Current Page: {{ props.inventories.current_page }}, Last Page: {{ props.inventories.last_page }}, Data Count: {{ props.inventories.data?.length || 0 }}
+                        </div>
+                        
                         <!-- Pagination -->
-                        <div v-if="props.inventories && props.inventories.meta && props.inventories.meta.last_page > 1" class="flex items-center">
+                        <div v-if="props.inventories && props.inventories.last_page > 1" class="flex items-center">
                             <TailwindPagination
                                 :data="props.inventories"
                                 @pagination-change-page="getResults"
@@ -742,7 +747,7 @@ const clearFilters = () => {
                         </div>
                         
                         <!-- Show message if no pagination needed -->
-                        <div v-else-if="props.inventories && props.inventories.meta && props.inventories.meta.last_page <= 1" class="text-xs text-gray-400">
+                        <div v-else-if="props.inventories && props.inventories.last_page <= 1" class="text-xs text-gray-400">
                             All items fit on one page
                         </div>
                     </div>
