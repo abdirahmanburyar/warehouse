@@ -44,6 +44,11 @@ const category = ref(props.filters?.category || '');
 const warehouse = ref(props.filters?.warehouse || '');
 const status = ref(props.filters?.status || '');
 const per_page = ref(props.filters?.per_page || 25);
+
+// Sorting states
+const sortBy = ref(props.filters?.sort_by || 'name');
+const sortOrder = ref(props.filters?.sort_order || 'asc');
+
 const loadedLocation = ref([]);
 const isLoading = ref(false);
 
@@ -105,44 +110,28 @@ onBeforeUnmount(() => {
 
 // Apply filters
 const applyFilters = () => {
-    const query = {};
-    // Add all filter values to query object
-    if (search.value) query.search = search.value;
-    if (location.value) query.location = location.value;
-    if (warehouse.value) query.warehouse = warehouse.value;
-    if (dosage.value) query.dosage = dosage.value;
-    if (category.value) query.category = category.value;
-    if (status.value) query.status = status.value;
-
-    // Always include per_page in query if it exists
-    if (per_page.value) query.per_page = per_page.value;
-    if (props.filters?.page) query.page = props.filters.page;
-
-    console.log('Applying filters:', query);
-    
     isLoading.value = true;
-
-    router.get(route("inventories.index"), query, {
-        preserveState: true,
-        preserveScroll: true,
-        only: [
-            "inventories",
-            "products",
-            "warehouses",
-            "inventoryStatusCounts",
-            "locations",
-            "dosage",
-            "category",
-        ],
-        onFinish: () => {
-            isLoading.value = false;
+    router.get(
+        route('inventories.index'),
+        {
+            search: search.value,
+            location: location.value,
+            dosage: dosage.value,
+            category: category.value,
+            warehouse: warehouse.value,
+            status: status.value,
+            per_page: per_page.value,
+            sort_by: sortBy.value,
+            sort_order: sortOrder.value,
         },
-        onError: (errors) => {
-            isLoading.value = false;
-            console.error('Filter error:', errors);
-            toast.error('Failed to apply filters');
+        {
+            preserveState: true,
+            preserveScroll: true,
+            onFinish: () => {
+                isLoading.value = false;
+            },
         }
-    });
+    );
 };
 
 // Watch for changes in search input
@@ -217,6 +206,37 @@ const updateLocation = async () => {
     } finally {
         isUpdatingLocation.value = false;
     }
+};
+
+// Sorting methods
+const handleSort = (column) => {
+    if (sortBy.value === column) {
+        // Toggle sort order if same column
+        sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+    } else {
+        // Set new column with ascending order
+        sortBy.value = column;
+        sortOrder.value = 'asc';
+    }
+    applyFilters();
+};
+
+const getSortIcon = (column) => {
+    if (sortBy.value !== column) {
+        return '↕️'; // Default sort icon
+    }
+    return sortOrder.value === 'asc' ? '↑' : '↓';
+};
+
+const getSortLabel = (column) => {
+    if (sortBy.value !== column) {
+        return column === 'name' ? 'Item (A-Z)' : 
+               column === 'quantity' ? 'QTY (High-Low)' : 
+               column === 'expiry_date' ? 'Expiry Date' : column;
+    }
+    return column === 'name' ? (sortOrder.value === 'asc' ? 'Item (A-Z)' : 'Item (Z-A)') :
+           column === 'quantity' ? (sortOrder.value === 'asc' ? 'QTY (Low-High)' : 'QTY (High-Low)') :
+           column === 'expiry_date' ? (sortOrder.value === 'asc' ? 'Expiry (Earliest)' : 'Expiry (Latest)') : column;
 };
 
 // Upload modal functions
@@ -400,30 +420,33 @@ const inStockCount = computed(() => {
     const stat = Object.values(props.inventoryStatusCounts).find(
         (s) => s.status === "in_stock"
     );
-    return stat.count;
+    return stat ? stat.count : 0;
 });
 
 const lowStockCount = computed(() => {
     const stat = Object.values(props.inventoryStatusCounts).find(
         (s) => s.status === "low_stock"
     );
-    return stat.count;
+    return stat ? stat.count : 0;
 });
 
 const outOfStockCount = computed(() => {
     const stat = Object.values(props.inventoryStatusCounts).find(
         (s) => s.status === "out_of_stock"
     );
-    return stat.count;
+    return stat ? stat.count : 0;
 });
 
 // Count of items that need reorder (client-side over current page data)
 const reorderItemsCount = computed(() => {
-    try {
-        return (props.inventories?.data || []).filter((inv) => needsReorder(inv)).length;
-    } catch {
-        return 0;
-    }
+    if (!props.inventories || !props.inventories.data) return 0;
+    return props.inventories.data.filter((inventory) => needsReorder(inventory)).length;
+});
+
+// Check if there are active filters
+const hasActiveFilters = computed(() => {
+    return search.value || location.value || dosage.value || category.value || 
+           warehouse.value || status.value || sortBy.value !== 'name' || sortOrder.value !== 'asc';
 });
 
 function getResults(page = 1) {
@@ -433,20 +456,16 @@ function getResults(page = 1) {
 }
 
 const clearFilters = () => {
-    search.value = "";
-    location.value = "";
-    warehouse.value = "";
-    dosage.value = "";
-    category.value = "";
-    status.value = "";
-    per_page.value = 25; // Reset per_page to default
+    search.value = '';
+    location.value = '';
+    dosage.value = '';
+    category.value = '';
+    warehouse.value = '';
+    status.value = '';
+    sortBy.value = 'name';
+    sortOrder.value = 'asc';
     applyFilters();
-    toast.success("Filters cleared!");
 };
-
-const hasActiveFilters = computed(() => {
-    return search.value || location.value || warehouse.value || dosage.value || category.value || status.value;
-});
 </script>
 
 <template>
@@ -549,6 +568,10 @@ const hasActiveFilters = computed(() => {
                             Status: {{ status === 'reorder_level' ? 'Reorder Level' : status === 'low_stock' ? 'Low Stock' : 'Out of Stock' }}
                             <button @click="status = ''" class="ml-1 text-orange-600 hover:text-orange-800">×</button>
                         </span>
+                        <span class="inline-flex items-center px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-full">
+                            Sort: {{ getSortLabel(sortBy) }}
+                            <button @click="() => { sortBy = 'name'; sortOrder = 'asc'; applyFilters(); }" class="ml-1 text-indigo-600 hover:text-indigo-800">×</button>
+                        </span>
                     </div>
                 </div>
             </div>
@@ -559,18 +582,44 @@ const hasActiveFilters = computed(() => {
                     <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
                         <thead>
                             <tr style="background-color: #F4F7FB;">
-                                <th class="px-3 py-2 text-xs font-bold rounded-tl-lg" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Item</th>
+                                <th class="px-3 py-2 text-xs font-bold rounded-tl-lg sortable-header" 
+                                    style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" 
+                                    rowspan="2"
+                                    @click="handleSort('name')"
+                                    title="Click to sort by Item Name">
+                                    <div class="flex items-center justify-between">
+                                        <span>Item</span>
+                                        <span class="sort-icon" :class="{ 'active': sortBy === 'name' }">{{ getSortIcon('name') }}</span>
+                                    </div>
+                                </th>
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Category</th>
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">UoM</th>
                                 <th class="px-3 py-2 text-xs font-bold text-center" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" colspan="4">Item Details</th>
-                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Total QTY on Hand</th>
+                                <th class="px-3 py-2 text-xs font-bold sortable-header" 
+                                    style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" 
+                                    rowspan="2"
+                                    @click="handleSort('quantity')"
+                                    title="Click to sort by Quantity">
+                                    <div class="flex items-center justify-between">
+                                        <span>Total QTY on Hand</span>
+                                        <span class="sort-icon" :class="{ 'active': sortBy === 'quantity' }">{{ getSortIcon('quantity') }}</span>
+                                    </div>
+                                </th>
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Reorder Level</th>
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Actions</th>
                             </tr>
                             <tr style="background-color: #F4F7FB;">
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">QTY</th>
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Batch Number</th>
-                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Expiry Date</th>
+                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center sortable-header" 
+                                    style="color: #4F6FCB;"
+                                    @click="handleSort('expiry_date')"
+                                    title="Click to sort by Expiry Date">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <span>Expiry Date</span>
+                                        <span class="sort-icon" :class="{ 'active': sortBy === 'expiry_date' }">{{ getSortIcon('expiry_date') }}</span>
+                                    </div>
+                                </th>
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Location</th>
                             </tr>
                         </thead>
@@ -1013,5 +1062,26 @@ const hasActiveFilters = computed(() => {
 }
 .slide-enter-to, .slide-leave-from {
   transform: translateX(0);
+}
+
+.sortable-header {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.sortable-header:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.sort-icon {
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+    opacity: 0.7;
+}
+
+.sort-icon.active {
+    opacity: 1;
+    color: #4F6FCB;
 }
 </style>

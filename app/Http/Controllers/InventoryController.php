@@ -40,6 +40,31 @@ class InventoryController extends Controller
                 ->addSelect(DB::raw('COALESCE(reorder_levels.amc, 0) as amc'))
                 ->addSelect(DB::raw('COALESCE(reorder_levels.reorder_level, (reorder_levels.amc * NULLIF(reorder_levels.lead_time, 0)), ROUND(COALESCE(reorder_levels.amc, 0) * 6)) as reorder_level'));
 
+            // Apply sorting
+            $sortBy = $request->input('sort_by', 'name');
+            $sortOrder = $request->input('sort_order', 'asc');
+            
+            if ($sortBy === 'name') {
+                $productQuery->orderBy('products.name', $sortOrder);
+            } elseif ($sortBy === 'quantity') {
+                // For quantity sorting, we'll need to join with inventory items
+                $productQuery->leftJoin('inventories', 'products.id', '=', 'inventories.product_id')
+                    ->leftJoin('inventory_items', 'inventories.id', '=', 'inventory_items.inventory_id')
+                    ->addSelect(DB::raw('COALESCE(SUM(inventory_items.quantity), 0) as total_quantity'))
+                    ->groupBy(['products.id', 'products.name', 'products.category_id', 'products.dosage_id', 'reorder_levels.amc', 'reorder_levels.reorder_level'])
+                    ->orderBy('total_quantity', $sortOrder);
+            } elseif ($sortBy === 'expiry_date') {
+                // For expiry date sorting, we'll need to join with inventory items
+                $productQuery->leftJoin('inventories', 'products.id', '=', 'inventories.product_id')
+                    ->leftJoin('inventory_items', 'inventories.id', '=', 'inventory_items.inventory_id')
+                    ->addSelect(DB::raw('MIN(inventory_items.expiry_date) as earliest_expiry'))
+                    ->groupBy(['products.id', 'products.name', 'products.category_id', 'products.dosage_id', 'reorder_levels.amc', 'reorder_levels.reorder_level'])
+                    ->orderBy('earliest_expiry', $sortOrder);
+            } else {
+                // Default sorting by name
+                $productQuery->orderBy('products.name', 'asc');
+            }
+
             if ($request->filled('search')) {
                 $search = $request->search;
                 $productQuery->where(function($q) use ($search) {
@@ -202,7 +227,7 @@ class InventoryController extends Controller
                 'inventoryStatusCounts' => collect($statusCounts)->map(fn($count, $status) => ['status' => $status, 'count' => $count]),
                 'products'   => Product::select('id', 'name')->get(),
                 'warehouses' => Warehouse::pluck('name')->toArray(),
-                'filters'    => $request->only(['search', 'product_id', 'category', 'dosage', 'status', 'per_page', 'page']),
+                'filters'    => $request->only(['search', 'product_id', 'category', 'dosage', 'status', 'per_page', 'page', 'sort_by', 'sort_order']),
                 'category'   => Category::pluck('name')->toArray(),
                 'dosage'     => Dosage::pluck('name')->toArray(),
                 'locations'  => Location::pluck('location')->toArray(),
