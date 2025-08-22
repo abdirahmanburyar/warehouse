@@ -29,6 +29,11 @@ class PackingListItem extends Model
         return $this->hasMany(PackingListDifference::class, 'packing_list_item_id');
     }
 
+    public function differences()
+    {
+        return $this->hasMany(PackingListDifference::class, 'packing_list_item_id');
+    }
+
     public function packingList()
     {
         return $this->belongsTo(PackingList::class, 'packing_list_id');
