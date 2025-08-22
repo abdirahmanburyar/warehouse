@@ -32,6 +32,13 @@ class InventoryController extends Controller
 	public function index(Request $request)
 	{
         try {
+            // Log incoming request parameters for debugging
+            logger()->info('Inventory index request received', [
+                'filters' => $request->only(['search', 'product_id', 'category', 'dosage', 'status', 'per_page', 'page', 'sort_by', 'sort_order']),
+                'user_id' => auth()->id(),
+                'url' => $request->fullUrl()
+            ]);
+            
             // Product-first pagination so products with zero or no items still appear
             $productQuery = Product::query()
                 ->select('products.id', 'products.name', 'products.category_id', 'products.dosage_id')
@@ -244,6 +251,8 @@ class InventoryController extends Controller
         } catch (\Throwable $th) {
         	logger()->error('[INVENTORY-ERROR] Error in index method: ' . $th->getMessage());
             logger()->error('[INVENTORY-ERROR] Stack trace: ' . $th->getTraceAsString());
+            logger()->error('[INVENTORY-ERROR] Request data: ' . json_encode($request->all()));
+            logger()->error('[INVENTORY-ERROR] User: ' . (auth()->user() ? auth()->user()->id : 'not authenticated'));
             
             // Return a safe fallback response
             return Inertia::render('Inventory/Index', [
@@ -255,7 +264,7 @@ class InventoryController extends Controller
                 'category'   => [],
                 'dosage'     => [],
                 'locations'  => [],
-                'errors'     => 'An error occurred while loading inventory data. Please try again.',
+                'errors'     => 'An error occurred while loading inventory data: ' . $th->getMessage(),
             ]);
         }
 	}

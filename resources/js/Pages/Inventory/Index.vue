@@ -146,8 +146,21 @@ const applyFilters = () => {
         },
         onError: (errors) => {
             isLoading.value = false;
-            console.error('Filter error:', errors);
-            toast.error('Failed to apply filters');
+            console.error('Filter error details:', errors);
+            
+            // Provide more specific error messages
+            if (errors && typeof errors === 'object') {
+                const errorMessages = Object.values(errors).flat();
+                if (errorMessages.length > 0) {
+                    toast.error(`Filter error: ${errorMessages[0]}`);
+                } else {
+                    toast.error('Failed to apply filters - please try again');
+                }
+            } else if (typeof errors === 'string') {
+                toast.error(`Filter error: ${errors}`);
+            } else {
+                toast.error('Failed to apply filters - please try again');
+            }
         }
     });
 };
