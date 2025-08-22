@@ -157,38 +157,83 @@ class InventoryController extends Controller
                 
                 logger()->info("Applying sorting: {$sortBy} {$sortOrder}");
                 
-                $merged = $merged->sortBy(function ($inventory) use ($sortBy) {
+                // Convert to array for better sorting control
+                $mergedArray = $merged->toArray();
+                
+                usort($mergedArray, function ($a, $b) use ($sortBy, $sortOrder) {
+                    $aValue = null;
+                    $bValue = null;
+                    
                     switch ($sortBy) {
                         case 'name':
-                            return $inventory->product->name ?? '';
+                            $aValue = strtolower($a['product']['name'] ?? '');
+                            $bValue = strtolower($b['product']['name'] ?? '');
+                            break;
                         case 'quantity':
-                            // Sort by the minimum quantity of any item (to show lowest stock first)
-                            $minQuantity = $inventory->items->where('quantity', '!=', null)->min('quantity');
-                            return $minQuantity ?? 0;
+                            // Sort by the minimum quantity of any item
+                            $aQuantities = collect($a['items'])->where('quantity', '!=', null)->pluck('quantity');
+                            $bQuantities = collect($b['items'])->where('quantity', '!=', null)->pluck('quantity');
+                            $aValue = $aQuantities->isEmpty() ? 0 : $aQuantities->min();
+                            $bValue = $bQuantities->isEmpty() ? 0 : $bQuantities->min();
+                            break;
                         case 'expiry_date':
-                            // Sort by the earliest expiry date, handling null values properly
-                            $earliestExpiry = null;
-                            foreach ($inventory->items as $item) {
-                                if ($item->expiry_date && $item->expiry_date instanceof Carbon) {
-                                    if ($earliestExpiry === null || $item->expiry_date->lt($earliestExpiry)) {
-                                        $earliestExpiry = $item->expiry_date;
+                            // Sort by the earliest expiry date
+                            $aEarliest = null;
+                            $bEarliest = null;
+                            
+                            foreach ($a['items'] as $item) {
+                                if (isset($item['expiry_date']) && $item['expiry_date']) {
+                                    try {
+                                        $date = Carbon::parse($item['expiry_date']);
+                                        if ($aEarliest === null || $date->lt($aEarliest)) {
+                                            $aEarliest = $date;
+                                        }
+                                    } catch (\Exception $e) {
+                                        // Skip invalid dates
                                     }
                                 }
                             }
-                            // Return timestamp for sorting, or PHP_INT_MAX for null dates (so they appear last)
-                            $sortValue = $earliestExpiry ? $earliestExpiry->timestamp : PHP_INT_MAX;
-                            logger()->info("Product {$inventory->product->name}: Earliest expiry = " . ($earliestExpiry ? $earliestExpiry->format('Y-m-d') : 'null') . ", Sort value = {$sortValue}");
-                            return $sortValue;
+                            
+                            foreach ($b['items'] as $item) {
+                                if (isset($item['expiry_date']) && $item['expiry_date']) {
+                                    try {
+                                        $date = Carbon::parse($item['expiry_date']);
+                                        if ($bEarliest === null || $date->lt($bEarliest)) {
+                                            $bEarliest = $date;
+                                        }
+                                    } catch (\Exception $e) {
+                                        // Skip invalid dates
+                                    }
+                                }
+                            }
+                            
+                            $aValue = $aEarliest ? $aEarliest->timestamp : PHP_INT_MAX;
+                            $bValue = $bEarliest ? $bEarliest->timestamp : PHP_INT_MAX;
+                            break;
                         default:
-                            return $inventory->product->name ?? '';
+                            $aValue = strtolower($a['product']['name'] ?? '');
+                            $bValue = strtolower($b['product']['name'] ?? '');
+                            break;
+                    }
+                    
+                    // Handle null values
+                    if ($aValue === null) $aValue = '';
+                    if ($bValue === null) $bValue = '';
+                    
+                    // Compare values
+                    if ($aValue === $bValue) return 0;
+                    
+                    if ($sortOrder === 'asc') {
+                        return $aValue < $bValue ? -1 : 1;
+                    } else {
+                        return $aValue > $bValue ? -1 : 1;
                     }
                 });
                 
-                if ($sortOrder === 'desc') {
-                    $merged = $merged->reverse();
-                }
+                // Convert back to collection
+                $merged = collect($mergedArray);
                 
-                logger()->info("Sorting completed. First few items: " . $merged->take(3)->map(fn($inv) => $inv->product->name)->join(', '));
+                logger()->info("Sorting completed. First few items: " . $merged->take(3)->map(fn($inv) => $inv['product']['name'])->join(', '));
             }
 
             // Apply status filters to the merged data
