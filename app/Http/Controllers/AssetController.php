@@ -550,7 +550,10 @@ class AssetController extends Controller
         try {
             // Check if asset is in reviewed status (has reviewed_at but no approved_at)
             if (!$asset->reviewed_at || $asset->approved_at) {
-                return back()->withErrors(['error' => 'Asset must be reviewed before approval']);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Asset must be reviewed before approval'
+                ], 400);
             }
 
             $asset->update([
@@ -582,9 +585,16 @@ class AssetController extends Controller
                 ]);
             }
 
-            return back()->with('success', 'Asset approved successfully');
+            return response()->json([
+                'success' => true,
+                'message' => 'Asset approved successfully',
+                'asset' => $asset->fresh(['approvedBy', 'assetItems'])
+            ]);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Failed to approve asset: ' . $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to approve asset: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -596,7 +606,10 @@ class AssetController extends Controller
         try {
             // Check if asset is in reviewed status (has reviewed_at but no approved_at)
             if (!$asset->reviewed_at || $asset->approved_at) {
-                return back()->withErrors(['error' => 'Asset must be reviewed before rejection']);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Asset must be reviewed before rejection'
+                ], 400);
             }
 
             $request->validate([
@@ -633,9 +646,16 @@ class AssetController extends Controller
                 ]);
             }
 
-            return back()->with('success', 'Asset rejected successfully');
+            return response()->json([
+                'success' => true,
+                'message' => 'Asset rejected successfully',
+                'asset' => $asset->fresh(['rejectedBy', 'assetItems'])
+            ]);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Failed to reject asset: ' . $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reject asset: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -647,7 +667,10 @@ class AssetController extends Controller
         try {
             // Check if asset is submitted for approval (has submitted_at but no reviewed_at)
             if (!$asset->submitted_at || $asset->reviewed_at) {
-                return back()->withErrors(['error' => 'Asset must be submitted for approval before review']);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Asset must be submitted for approval before review'
+                ], 400);
             }
 
             $asset->update([
@@ -664,9 +687,16 @@ class AssetController extends Controller
                 'performed_at' => now(),
             ]);
 
-            return back()->with('success', 'Asset reviewed successfully');
+            return response()->json([
+                'success' => true,
+                'message' => 'Asset reviewed successfully',
+                'asset' => $asset->fresh(['reviewedBy'])
+            ]);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Failed to review asset: ' . $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to review asset: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -678,7 +708,10 @@ class AssetController extends Controller
         try {
             // Check if asset is rejected (has rejected_at)
             if (!$asset->rejected_at) {
-                return back()->withErrors(['error' => 'Asset is not rejected']);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Asset is not rejected'
+                ], 400);
             }
 
             $asset->update([
@@ -696,9 +729,16 @@ class AssetController extends Controller
                 'performed_at' => now(),
             ]);
 
-            return back()->with('success', 'Asset restored successfully');
+            return response()->json([
+                'success' => true,
+                'message' => 'Asset restored successfully',
+                'asset' => $asset->fresh(['assetItems'])
+            ]);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Failed to restore asset: ' . $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore asset: ' . $e->getMessage()
+            ], 500);
         }
     }
 

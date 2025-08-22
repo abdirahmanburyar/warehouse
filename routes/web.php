@@ -603,8 +603,8 @@ Route::controller(LocationController::class)
             Route::get('/approvals', 'approvalsIndex')->name('assets.approvals.index');
             Route::get('/workflow', 'approvalsIndex')->name('assets.workflow.index');
             Route::get('/{asset}', 'show')->name('assets.show');
-            Route::post('/{asset}/approve-simple', 'approve')->name('assets.approve-simple');
-            Route::post('/{asset}/reject-simple', 'reject')->name('assets.reject-simple');
+            Route::post('/{asset}/approve', 'approve')->name('assets.approve');
+            Route::post('/{asset}/reject', 'reject')->name('assets.reject');
             Route::post('/{asset}/review', 'review')->name('assets.review');
             Route::post('/{asset}/restore', 'restore')->name('assets.restore');
             Route::post('/bulk-approve', 'bulkApprove')->name('assets.bulk-approve');
