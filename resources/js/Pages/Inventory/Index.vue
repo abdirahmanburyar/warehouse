@@ -619,21 +619,20 @@ const clearFilters = () => {
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Category</th>
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">UoM</th>
                                 <th class="px-3 py-2 text-xs font-bold text-center" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" colspan="4">Item Details</th>
-                                <th class="px-3 py-2 text-xs font-bold sortable-header" 
-                                    style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" 
-                                    rowspan="2"
-                                    @click="handleSort('quantity')"
-                                    title="Click to sort by Quantity">
-                                    <div class="flex items-center justify-between">
-                                        <span>Total QTY on Hand</span>
-                                        <span class="sort-icon" :class="{ 'active': sortBy === 'quantity' }">{{ getSortIcon('quantity') }}</span>
-                                    </div>
-                                </th>
+                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Total QTY on Hand</th>
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Reorder Level</th>
                                 <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Actions</th>
                             </tr>
                             <tr style="background-color: #F4F7FB;">
-                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">QTY</th>
+                                <th class="px-2 py-2 text-xs font-bold border border-[#B7C6E6] text-center sortable-header" 
+                                    style="color: #4F6FCB;"
+                                    @click="handleSort('quantity')"
+                                    title="Click to sort by Quantity">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <span>QTY</span>
+                                        <span class="sort-icon" :class="{ 'active': sortBy === 'quantity' }">{{ getSortIcon('quantity') }}</span>
+                                    </div>
+                                </th>
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Batch Number</th>
                                 <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center sortable-header" 
                                     style="color: #4F6FCB;"

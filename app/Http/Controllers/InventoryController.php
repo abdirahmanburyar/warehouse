@@ -136,7 +136,9 @@ class InventoryController extends Controller
                         case 'name':
                             return $inventory->product->name ?? '';
                         case 'quantity':
-                            return $inventory->items->sum('quantity') ?? 0;
+                            // Sort by the minimum quantity of any item (to show lowest stock first)
+                            $minQuantity = $inventory->items->where('quantity', '!=', null)->min('quantity');
+                            return $minQuantity ?? 0;
                         case 'expiry_date':
                             $earliestExpiry = $inventory->items->where('expiry_date', '!=', null)->min('expiry_date');
                             return $earliestExpiry ? $earliestExpiry->timestamp : PHP_INT_MAX;
@@ -222,13 +224,11 @@ class InventoryController extends Controller
                     $page,
                     ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
                 );
-                logger()->info('Created paginator with ' . $inventories->count() . ' items, total: ' . $inventories->total());
             }
 
             // Calculate status counts independently of pagination
             $statusCounts = $this->calculateInventoryStatusCounts($request);
 
-            logger()->info('Final response - inventories count: ' . $inventories->count() . ', total: ' . $inventories->total() . ', status filter: ' . ($request->status ?? 'none'));
 
             return Inertia::render('Inventory/Index', [
                 'inventories' => InventoryResource::collection($inventories),
