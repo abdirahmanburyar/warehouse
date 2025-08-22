@@ -728,13 +728,18 @@ const clearFilters = () => {
 
                     <div class="mt-2 flex justify-between">  
                         <div class="text-xs text-gray-400">
-                            Showing {{ props.inventories.meta.from }} to {{ props.inventories.meta.to }} of {{ props.inventories.meta.total }} items
+                            <span v-if="props.inventories && props.inventories.meta && props.inventories.meta.total > 0">Showing {{ props.inventories.meta.from }} to {{ props.inventories.meta.to }} of {{ props.inventories.meta.total }} items</span>
+                            <span v-else>No items to display</span>
                         </div>
-                        <TailwindPagination
-                            :data="props.inventories"
-                            @pagination-change-page="getResults"
-                            :limit="2"
-                        />
+                        
+                        <!-- Pagination -->
+                        <div v-if="props.inventories && props.inventories.meta && props.inventories.meta.last_page > 1" class="flex items-center">
+                            <TailwindPagination
+                                :data="props.inventories"
+                                @pagination-change-page="getResults"
+                                :limit="2"
+                            />
+                        </div>
                     </div>
                 </div>
 

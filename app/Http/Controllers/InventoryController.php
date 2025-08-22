@@ -231,7 +231,7 @@ class InventoryController extends Controller
             logger()->info('Final response - inventories count: ' . $inventories->count() . ', total: ' . $inventories->total() . ', status filter: ' . ($request->status ?? 'none'));
 
             return Inertia::render('Inventory/Index', [
-                'inventories' => $inventories,
+                'inventories' => InventoryResource::collection($inventories),
                 'inventoryStatusCounts' => collect($statusCounts)->map(fn($count, $status) => ['status' => $status, 'count' => $count]),
                 'products'   => Product::select('id', 'name')->get(),
                 'warehouses' => Warehouse::pluck('name')->toArray(),
@@ -247,7 +247,7 @@ class InventoryController extends Controller
             
             // Return a safe fallback response
             return Inertia::render('Inventory/Index', [
-                'inventories' => new \Illuminate\Pagination\LengthAwarePaginator(collect([]), 0, 25, 1),
+                'inventories' => InventoryResource::collection(new \Illuminate\Pagination\LengthAwarePaginator(collect([]), 0, 25, 1)),
                 'inventoryStatusCounts' => collect([]),
                 'products'   => collect([]),
                 'warehouses' => [],
