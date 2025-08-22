@@ -449,7 +449,7 @@ const openAddReasonModal = () => {
 
                                     <!-- Total Quantity on Hand Per Unit -->
                                     <td class="px-3 py-3 text-sm text-center text-gray-700 border-b" style="border-bottom: 1px solid #B7C6E6;">
-                                        {{ props.inventory.quantity }}
+                                        {{ (props.inventory.quantity && !isNaN(props.inventory.quantity)) ? props.inventory.quantity : 0 }}
                                     </td>
 
                                     <!-- Item Details Columns -->

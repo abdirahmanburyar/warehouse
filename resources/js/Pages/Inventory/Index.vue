@@ -152,8 +152,13 @@ watch(
 );
 
 function formatQty(qty) {
+    // Ensure qty is a valid number
+    const num = Number(qty);
+    if (isNaN(num) || !isFinite(num)) {
+        return '0';
+    }
     // 123,456.789
-    return Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(qty);
+    return Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num);
 }
 
 // Edit location functions
@@ -386,7 +391,13 @@ const formatDate = (date) => {
 // Helpers
 function getTotalQuantity(inventory) {
     if (!inventory?.items || !Array.isArray(inventory.items)) return 0;
-    return inventory.items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+    
+    const total = inventory.items.reduce((sum, item) => {
+        const quantity = Number(item.quantity);
+        return sum + (isNaN(quantity) ? 0 : quantity);
+    }, 0);
+    
+    return isNaN(total) ? 0 : total;
 }
 
 // Low stock formula: total_on_hand <= (reorder_level - 30% of reorder_level) = 0.7 * reorder_level
@@ -652,7 +663,7 @@ const clearFilters = () => {
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs font-medium text-gray-800 align-middle items-center">{{ inventory.product.name }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.product.category.name }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.items[0].uom }}</td>
-                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatQty(item.quantity) }}</td>
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatQty(item.quantity || 0) }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
                                     <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">
@@ -681,8 +692,8 @@ const clearFilters = () => {
                                         </div>
                                     </td>
                                     
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.items ? inventory.items.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0) }}</td>
-                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.reorder_level) }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(getTotalQuantity(inventory)) }}</td>
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.reorder_level || 0) }}</td>
                                     <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                         <div class="flex items-center justify-center space-x-2">
                                             <div v-if="needsReorder(inventory)">

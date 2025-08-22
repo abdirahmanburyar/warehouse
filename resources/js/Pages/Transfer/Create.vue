@@ -319,10 +319,9 @@ async function handleProductSelect(index, selected) {
                     transfer_reason: '',
                     transfer_reason_object: null
                 }));
-                item.available_quantity = response.data?.reduce(
-                    (sum, item) => sum + item.quantity,
-                    0
-                );
+                item.available_quantity = getSafeAvailableQuantity({
+                    details: response.data
+                });
                 item.product = selected;
                 item.product_id = selected.id;
                 item.quantity = 0;
@@ -389,6 +388,18 @@ function isExpiringSoon(expiryDate) {
     const expiry = moment(expiryDate);
     const monthsDiff = expiry.diff(today, 'months');
     return monthsDiff <= 6 && monthsDiff >= 0;
+}
+
+// Helper function to safely calculate available quantity
+function getSafeAvailableQuantity(item) {
+    if (!item || !item.details || !Array.isArray(item.details)) return 0;
+    
+    const total = item.details.reduce((sum, detail) => {
+        const quantity = Number(detail.quantity);
+        return sum + (isNaN(quantity) ? 0 : quantity);
+    }, 0);
+    
+    return isNaN(total) ? 0 : total;
 }
 
 // Modal state for adding new reason
@@ -719,7 +730,7 @@ async function handleAddReason() {
                                     <!-- Total Quantity on Hand Per Unit - only on first row for this item -->
                                     <td v-if="detailIndex === 0" :rowspan="Math.max(item.details?.length || 1, 1)"
                                         class="px-3 py-2 text-xs text-gray-800 align-top">
-                                        {{ item.available_quantity || 0 }}
+                                        {{ getSafeAvailableQuantity(item) }}
                                     </td>
 
                                     <!-- Item Details Columns -->

@@ -588,6 +588,9 @@ class TransferController extends Controller
                         ->sum('quantity');
                 }
 
+                // Ensure totalQuantityOnHand is a valid number
+                $totalQuantityOnHand = is_numeric($totalQuantityOnHand) ? (float) $totalQuantityOnHand : 0.0;
+
                 // Create transfer item for this product
                 $transferItem = $transfer->items()->create([
                     'product_id' => $item['product_id'],

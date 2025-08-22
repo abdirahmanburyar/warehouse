@@ -530,7 +530,7 @@
                                         <!-- Total Quantity per Unit -->
                                         <td v-if="allocIndex === 0" :rowspan="item.inventory_allocations?.length || 1"
                                             class="px-3 py-2 text-xs text-gray-800 align-top items-center">
-                                            {{ item.quantity_per_unit || 0 }}
+                                            {{ (item.quantity_per_unit && !isNaN(item.quantity_per_unit)) ? item.quantity_per_unit : 0 }}
                                         </td>
 
                                         <!-- Transfer Reason - per allocation -->
