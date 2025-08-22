@@ -461,9 +461,12 @@ const hasActiveFilters = computed(() => {
 });
 
 function getResults(page = 1) {
+    // Update the page in filters and reload data
     if (props.filters) {
         props.filters.page = page;
     }
+    // Reload data with new page
+    applyFilters();
 }
 
 const clearFilters = () => {
@@ -475,6 +478,14 @@ const clearFilters = () => {
     status.value = '';
     sortBy.value = 'name';
     sortOrder.value = 'asc';
+    applyFilters();
+};
+
+const handlePerPageChange = () => {
+    // Reset to page 1 when changing per_page
+    if (props.filters) {
+        props.filters.page = 1;
+    }
     applyFilters();
 };
 </script>
@@ -549,7 +560,7 @@ const clearFilters = () => {
                         </svg>
                         {{ isLoading ? 'Clearing...' : 'Clear Filters' }}
                     </button>
-                    <select v-model="per_page" class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-3" @change="() => { if (props.filters) props.filters.page = 1; }">
+                    <select v-model="per_page" class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-3" @change="handlePerPageChange">
                         <option value="25">25 per page</option>
                         <option value="50">50 per page</option>
                         <option value="100">100 per page</option>
@@ -713,15 +724,23 @@ const clearFilters = () => {
 
                     <div class="mt-2 flex justify-between">
                         <div class="flex items-center gap-2">
-                            <span v-if="props.inventories && props.inventories.meta" class="text-sm text-gray-500">Showing {{ props.inventories.meta.from }} to {{ props.inventories.meta.to }} of {{ props.inventories.meta.total }} items</span>
+                            <span v-if="props.inventories && props.inventories.total > 0" class="text-sm text-gray-500">Showing {{ props.inventories.from }} to {{ props.inventories.to }} of {{ props.inventories.total }} items</span>
                             <span v-else class="text-sm text-gray-500">No items to display</span>
                         </div>
-                        <TailwindPagination
-                            v-if="props.inventories"
-                            :data="props.inventories"
-                            @pagination-change-page="getResults"
-                            :limit="2"
-                        />
+                        
+                        <!-- Pagination -->
+                        <div v-if="props.inventories && props.inventories.last_page > 1" class="flex items-center">
+                            <TailwindPagination
+                                :data="props.inventories"
+                                @pagination-change-page="getResults"
+                                :limit="2"
+                            />
+                        </div>
+                        
+                        <!-- Show message if no pagination needed -->
+                        <div v-else-if="props.inventories && props.inventories.last_page <= 1" class="text-xs text-gray-400">
+                            All items fit on one page
+                        </div>
                     </div>
                 </div>
 

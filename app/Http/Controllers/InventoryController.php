@@ -197,25 +197,24 @@ class InventoryController extends Controller
             // Build paginator compatible with the frontend
             $filteredCount = $merged->count();
             
-            // Ensure we always have a valid response structure
-            if ($filteredCount === 0) {
-                // Create an empty paginator when no results
-                $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
-                    collect([]),
-                    0,
-                    $perPage,
-                    $page,
-                    ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
-                );
-            } else {
-                $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
-                    $merged->values(),
-                    $filteredCount,
-                    $productsPaginator->perPage(),
-                    $productsPaginator->currentPage(),
-                    ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
-                );
-            }
+            // Use standard Laravel pagination for better compatibility
+            $inventories = $merged->forPage($page, $perPage);
+            
+            // Create a simple paginator structure
+            $paginatedData = [
+                'data' => $inventories->values(),
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $filteredCount,
+                'last_page' => ceil($filteredCount / $perPage),
+                'from' => ($page - 1) * $perPage + 1,
+                'to' => min($page * $perPage, $filteredCount),
+                'path' => url()->current(),
+                'first_page_url' => url()->current() . '?page=1',
+                'last_page_url' => url()->current() . '?page=' . ceil($filteredCount / $perPage),
+                'next_page_url' => $page < ceil($filteredCount / $perPage) ? url()->current() . '?page=' . ($page + 1) : null,
+                'prev_page_url' => $page > 1 ? url()->current() . '?page=' . ($page - 1) : null,
+            ];
 
             // Calculate status counts independently of pagination
             $statusCounts = $this->calculateInventoryStatusCounts($request);
@@ -223,7 +222,7 @@ class InventoryController extends Controller
             logger()->info('Final response - inventories count: ' . $inventories->count() . ', total: ' . $inventories->total() . ', status filter: ' . ($request->status ?? 'none'));
 
             return Inertia::render('Inventory/Index', [
-                'inventories' => InventoryResource::collection($inventories),
+                'inventories' => $paginatedData,
                 'inventoryStatusCounts' => collect($statusCounts)->map(fn($count, $status) => ['status' => $status, 'count' => $count]),
                 'products'   => Product::select('id', 'name')->get(),
                 'warehouses' => Warehouse::pluck('name')->toArray(),
