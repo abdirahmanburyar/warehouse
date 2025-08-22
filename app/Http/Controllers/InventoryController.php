@@ -26,6 +26,7 @@ use App\Services\InventoryAnalyticsService;
 use App\Models\InventoryItem;
 use App\Models\Warehouse;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class InventoryController extends Controller
 {
@@ -98,6 +99,22 @@ class InventoryController extends Controller
                 ->get()
                 ->groupBy('product_id');
 
+            // Ensure expiry dates are properly converted to Carbon instances
+            foreach ($existingInventories as $productInventories) {
+                foreach ($productInventories as $inventory) {
+                    foreach ($inventory->items as $item) {
+                        if ($item->expiry_date && !($item->expiry_date instanceof Carbon)) {
+                            try {
+                                $item->expiry_date = Carbon::parse($item->expiry_date);
+                            } catch (\Exception $e) {
+                                logger()->warning("Could not parse expiry date for item {$item->id}: {$item->expiry_date}");
+                                $item->expiry_date = null;
+                            }
+                        }
+                    }
+                }
+            }
+
             // Merge: ensure every product has at least one row
             $merged = collect();
             foreach ($productsPaginator->items() as $product) {
@@ -138,6 +155,8 @@ class InventoryController extends Controller
                 $sortBy = $request->input('sort_by');
                 $sortOrder = $request->input('sort_order', 'asc');
                 
+                logger()->info("Applying sorting: {$sortBy} {$sortOrder}");
+                
                 $merged = $merged->sortBy(function ($inventory) use ($sortBy) {
                     switch ($sortBy) {
                         case 'name':
@@ -147,8 +166,19 @@ class InventoryController extends Controller
                             $minQuantity = $inventory->items->where('quantity', '!=', null)->min('quantity');
                             return $minQuantity ?? 0;
                         case 'expiry_date':
-                            $earliestExpiry = $inventory->items->where('expiry_date', '!=', null)->min('expiry_date');
-                            return $earliestExpiry ? $earliestExpiry->timestamp : PHP_INT_MAX;
+                            // Sort by the earliest expiry date, handling null values properly
+                            $earliestExpiry = null;
+                            foreach ($inventory->items as $item) {
+                                if ($item->expiry_date && $item->expiry_date instanceof Carbon) {
+                                    if ($earliestExpiry === null || $item->expiry_date->lt($earliestExpiry)) {
+                                        $earliestExpiry = $item->expiry_date;
+                                    }
+                                }
+                            }
+                            // Return timestamp for sorting, or PHP_INT_MAX for null dates (so they appear last)
+                            $sortValue = $earliestExpiry ? $earliestExpiry->timestamp : PHP_INT_MAX;
+                            logger()->info("Product {$inventory->product->name}: Earliest expiry = " . ($earliestExpiry ? $earliestExpiry->format('Y-m-d') : 'null') . ", Sort value = {$sortValue}");
+                            return $sortValue;
                         default:
                             return $inventory->product->name ?? '';
                     }
@@ -157,6 +187,8 @@ class InventoryController extends Controller
                 if ($sortOrder === 'desc') {
                     $merged = $merged->reverse();
                 }
+                
+                logger()->info("Sorting completed. First few items: " . $merged->take(3)->map(fn($inv) => $inv->product->name)->join(', '));
             }
 
             // Apply status filters to the merged data
