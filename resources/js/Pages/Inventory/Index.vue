@@ -396,7 +396,7 @@ const downloadTemplate = () => {
 
 // Format date
 const formatDate = (date) => {
-    if (!date) return "N/A";
+    if (!date) return "";
     return moment(date).format("DD/MM/YYYY");
 };
 
