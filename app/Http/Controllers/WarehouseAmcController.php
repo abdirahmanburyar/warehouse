@@ -12,6 +12,7 @@ use Inertia\Inertia;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\WarehouseAmcExport;
+use App\Imports\WarehouseAmcImport;
 
 class WarehouseAmcController extends Controller
 {
@@ -283,5 +284,134 @@ class WarehouseAmcController extends Controller
         $filename = 'warehouse_amc_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
         
         return Excel::download(new WarehouseAmcExport($pivotData, $monthYears), $filename);
+    }
+
+    /**
+     * Import warehouse AMC data from Excel
+     */
+    public function import(Request $request)
+    {
+        try {
+            $request->validate([
+                'file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
+            ]);
+
+            $file = $request->file('file');
+            
+            // Generate unique import ID for tracking
+            $importId = (string) \Illuminate\Support\Str::uuid();
+            
+            // Store import progress in cache
+            \Illuminate\Support\Facades\Cache::put("warehouse_amc_import_{$importId}", [
+                'status' => 'queued',
+                'progress' => 0,
+                'message' => 'Import has been queued successfully'
+            ], 3600); // 1 hour expiry
+            
+            // Queue the import job
+            Excel::queueImport(new WarehouseAmcImport($importId), $file)->onQueue('imports');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Import has been queued successfully. You will be notified when it completes.',
+                'import_id' => $importId,
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Warehouse AMC import failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Import failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Check import status
+     */
+    public function checkImportStatus($importId)
+    {
+        try {
+            $cacheKey = "warehouse_amc_import_{$importId}";
+            $status = \Illuminate\Support\Facades\Cache::get($cacheKey);
+            
+            if (!$status) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Import not found or expired',
+                ], 404);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'data' => $status,
+            ], 200);
+            
+        } catch (\Exception $e) {
+            \Log::error('Import status check failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to check import status: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Download template for warehouse AMC import
+     */
+    public function downloadTemplate()
+    {
+        try {
+            // Get unique month-years for template
+            $monthYears = WarehouseAmc::select('month_year')
+                ->distinct()
+                ->orderBy('month_year', 'desc')
+                ->limit(12) // Limit to last 12 months for template
+                ->pluck('month_year');
+
+            // Get ALL products for template
+            $allProducts = Product::with(['category:id,name', 'dosage:id,name'])
+                ->join('categories', 'products.category_id', '=', 'categories.id')
+                ->leftJoin('dosages', 'products.dosage_id', '=', 'dosages.id')
+                ->select([
+                    'products.id',
+                    'products.name',
+                    'categories.name as category_name',
+                    'dosages.name as dosage_name'
+                ])
+                ->orderBy('products.name')
+                ->get();
+
+            // Create template data with ALL products
+            $templateData = [];
+            foreach ($allProducts as $product) {
+                $row = [
+                    'name' => $product->name,
+                    'category' => $product->category_name,
+                    'dosage' => $product->dosage_name,
+                ];
+
+                // Add sample quantities for each month (0 for template)
+                foreach ($monthYears as $monthYear) {
+                    $row[$monthYear] = 0;
+                }
+
+                $templateData[] = $row;
+            }
+
+            $filename = 'warehouse_amc_import_template_' . now()->format('Y-m-d') . '.xlsx';
+            
+            return Excel::download(new WarehouseAmcExport($templateData, $monthYears), $filename);
+
+        } catch (\Exception $e) {
+            \Log::error('Template download failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Template download failed: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

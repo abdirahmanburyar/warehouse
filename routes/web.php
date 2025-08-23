@@ -716,6 +716,9 @@ Route::controller(LocationController::class)
         // Warehouse AMC Report Routes
             Route::get('/warehouse-amc', [WarehouseAmcController::class, 'index'])->name('reports.warehouse-amc');
             Route::get('/warehouse-amc/export', [WarehouseAmcController::class, 'export'])->name('reports.warehouse-amc.export');
+            Route::post('/warehouse-amc/import', [WarehouseAmcController::class, 'import'])->name('reports.warehouse-amc.import');
+            Route::get('/warehouse-amc/import/{importId}/status', [WarehouseAmcController::class, 'checkImportStatus'])->name('reports.warehouse-amc.import.status');
+            Route::get('/warehouse-amc/template', [WarehouseAmcController::class, 'downloadTemplate'])->name('reports.warehouse-amc.template');
     });
 
     // Approval Routes
