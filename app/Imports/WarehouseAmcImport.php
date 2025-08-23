@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
@@ -34,13 +35,15 @@ class WarehouseAmcImport implements
     protected $skippedCount = 0;
     protected $errors = [];
     protected $productCache = [];
-    protected $importId;
+        protected $importId;
+    protected $storedFilePath;
     protected $monthYears = [];
 
-    public function __construct(string $importId)
+    public function __construct(string $importId, string $storedFilePath = null)
     {
         $this->importId = $importId;
-        
+        $this->storedFilePath = $storedFilePath;
+
         // Get existing month years from database
         $this->monthYears = WarehouseAmc::select('month_year')
             ->distinct()

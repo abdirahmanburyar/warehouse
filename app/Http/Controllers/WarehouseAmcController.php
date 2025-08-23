@@ -364,7 +364,11 @@ class WarehouseAmcController extends Controller
                 Log::info('Large file detected, attempting queued import');
                 // Use queued import for large files
                 try {
-                    Excel::queueImport(new WarehouseAmcImport($importId), $file)->onQueue('imports');
+                    // Store the file permanently for queued processing
+                    $storedPath = $file->store('warehouse-amc-imports', 'local');
+                    Log::info('File stored for queued import', ['stored_path' => $storedPath]);
+                    
+                    Excel::queueImport(new WarehouseAmcImport($importId, $storedPath), $storedPath)->onQueue('imports');
                     Log::info('Queued import successful');
                     
                     return response()->json([
