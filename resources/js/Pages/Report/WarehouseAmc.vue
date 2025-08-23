@@ -142,11 +142,15 @@
                                         </svg>
                                     </div>
                                 </th>
-                                <!-- Dynamic Month Columns -->
-                                <th v-for="monthYear in monthYears" :key="monthYear"
-                                    class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
-                                    {{ formatMonthYear(monthYear) }}
-                                </th>
+                                                                 <!-- Dynamic Month Columns -->
+                                 <th v-for="monthYear in monthYears" :key="monthYear"
+                                     class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
+                                     {{ formatMonthYear(monthYear) }}
+                                 </th>
+                                 <!-- AMC Column -->
+                                 <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px] bg-blue-50">
+                                     AMC
+                                 </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -161,18 +165,22 @@
                                     <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ product.dosage }}
                                     </td>
-                                    <!-- Dynamic Month Data -->
-                                    <td v-for="monthYear in monthYears" :key="monthYear"
-                                        class="px-3 py-4 whitespace-nowrap text-sm text-center text-gray-900 font-medium">
-                                        {{ formatNumber(product.months[monthYear] || 0) }}
-                                    </td>
+                                                                         <!-- Dynamic Month Data -->
+                                     <td v-for="monthYear in monthYears" :key="monthYear"
+                                         class="px-3 py-4 whitespace-nowrap text-sm text-center text-gray-900 font-medium">
+                                         {{ formatNumber(product.months[monthYear] || 0) }}
+                                     </td>
+                                     <!-- AMC Data -->
+                                     <td class="px-3 py-4 whitespace-nowrap text-sm text-center text-blue-900 font-bold bg-blue-50">
+                                         {{ formatNumber(product.amc || 0) }}
+                                     </td>
                                 </tr>
                             </template>
                             <template v-else>
                                 <tr>
-                                    <td :colspan="3 + monthYears.length" class="px-6 py-4 text-center text-sm text-gray-500">
-                                        No warehouse AMC data found.
-                                    </td>
+                                                                     <td :colspan="4 + monthYears.length" class="px-6 py-4 text-center text-sm text-gray-500">
+                                     No warehouse AMC data found.
+                                 </td>
                                 </tr>
                             </template>
                         </tbody>

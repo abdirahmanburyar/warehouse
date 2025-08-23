@@ -146,6 +146,9 @@ class WarehouseAmcController extends Controller
                 $row['months'][$monthYear] = $consumption;
             }
 
+            // Calculate AMC using Tukey's Rule
+            $row['amc'] = $this->calculateAMC($product->id, $monthYears);
+
             $pivotData[] = $row;
         }
 
@@ -290,6 +293,9 @@ class WarehouseAmcController extends Controller
                 
                 $row[$monthYear] = $consumption;
             }
+
+            // Calculate AMC using Tukey's Rule
+            $row['AMC'] = $this->calculateAMC($product->id, $monthYears);
 
             $pivotData[] = $row;
         }
@@ -558,6 +564,9 @@ class WarehouseAmcController extends Controller
                     $row[$monthYear] = ''; // Empty cell - won't overwrite existing data
                 }
 
+                // Add AMC column (empty for template)
+                $row['AMC'] = '';
+
                 $templateData[] = $row;
             }
             
@@ -585,6 +594,70 @@ class WarehouseAmcController extends Controller
                 'success' => false,
                 'message' => 'Template download failed: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Calculate AMC using Tukey's Rule for outlier detection
+     */
+    private function calculateAMC($productId, $monthYears)
+    {
+        try {
+            // Get all consumption values for the product, ordered by month (most recent first)
+            $consumptions = WarehouseAmc::where('product_id', $productId)
+                ->whereIn('month_year', $monthYears)
+                ->where('quantity', '>', 0) // Only consider positive consumption values
+                ->orderBy('month_year', 'desc')
+                ->pluck('quantity')
+                ->filter(function($value) {
+                    return $value > 0; // Additional filter for positive values
+                })
+                ->values();
+
+            // If we have less than 3 values, return 0
+            if ($consumptions->count() < 3) {
+                return 0;
+            }
+
+            // Apply Tukey's Rule for outlier detection
+            $sortedValues = $consumptions->sort()->values();
+            $count = $sortedValues->count();
+
+            // Calculate Q1 (25th percentile) and Q3 (75th percentile)
+            $q1Index = (int) (0.25 * ($count - 1));
+            $q3Index = (int) (0.75 * ($count - 1));
+
+            $q1 = $sortedValues[$q1Index];
+            $q3 = $sortedValues[$q3Index];
+
+            // Calculate IQR (Interquartile Range)
+            $iqr = $q3 - $q1;
+
+            // Define bounds for outlier detection
+            $lowerBound = $q1 - (1.5 * $iqr);
+            $upperBound = $q3 + (1.5 * $iqr);
+
+            // Filter out outliers and get the 3 most recent non-outlier values
+            $nonOutlierValues = $consumptions->filter(function($value) use ($lowerBound, $upperBound) {
+                return $value >= $lowerBound && $value <= $upperBound;
+            })->take(3);
+
+            // If we don't have 3 non-outlier values, use the original 3 most recent
+            if ($nonOutlierValues->count() < 3) {
+                $nonOutlierValues = $consumptions->take(3);
+            }
+
+            // Calculate AMC as average of the 3 values
+            $amc = $nonOutlierValues->avg();
+
+            return round($amc, 2);
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating AMC for product ' . $productId, [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return 0;
         }
     }
 }

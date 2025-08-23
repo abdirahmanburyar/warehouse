@@ -96,7 +96,7 @@ class WarehouseAmcImport implements
             
             foreach ($row as $key => $value) {
                 // Skip non-month columns
-                if (in_array($key, ['item', 'category', 'dosage_form'])) {
+                if (in_array($key, ['item', 'category', 'dosage_form', 'AMC'])) {
                     Log::info("Skipping non-month column: {$key} = {$value}");
                     continue;
                 }
@@ -167,6 +167,7 @@ class WarehouseAmcImport implements
             'item' => 'nullable|string|max:255', // Changed from required to nullable
             'category' => 'nullable|string|max:255',
             'dosage_form' => 'nullable|string|max:255',
+            'AMC' => 'nullable|string|max:255',
         ];
     }
 

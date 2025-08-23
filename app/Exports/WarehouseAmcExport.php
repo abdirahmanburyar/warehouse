@@ -41,6 +41,9 @@ class WarehouseAmcExport implements FromArray, WithHeadings, WithStyles, WithCol
                 $exportRow[] = $row[$monthYear] ?? 0;
             }
             
+            // Add AMC column
+            $exportRow[] = $row['AMC'] ?? 0;
+            
             $exportData[] = $exportRow;
         }
         
@@ -55,6 +58,9 @@ class WarehouseAmcExport implements FromArray, WithHeadings, WithStyles, WithCol
         foreach ($this->monthYears as $monthYear) {
             $headers[] = $this->formatMonthYear($monthYear);
         }
+        
+        // Add AMC header
+        $headers[] = 'AMC';
         
         return $headers;
     }
@@ -73,6 +79,10 @@ class WarehouseAmcExport implements FromArray, WithHeadings, WithStyles, WithCol
             $widths[$currentColumn] = 15;
             $currentColumn++;
         }
+        
+        // Set width for AMC column
+        $amcColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($this->monthYears) + 3);
+        $widths[$amcColumn] = 20; // AMC column
         
         return $widths;
     }
@@ -120,8 +130,12 @@ class WarehouseAmcExport implements FromArray, WithHeadings, WithStyles, WithCol
             
             // Center align month data columns
             $monthStartColumn = 'D';
-            $monthEndColumn = $lastColumn;
-            $sheet->getStyle("{$monthStartColumn}2:{$monthEndColumn}{$lastRow}")->applyFromArray([
+            $monthEndColumn = $this->getLastColumn();
+            $amcColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($this->monthYears) + 3);
+            
+            // Center align month columns (excluding AMC column)
+            $monthEndColumnBeforeAmc = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($this->monthYears) + 2);
+            $sheet->getStyle("{$monthStartColumn}2:{$monthEndColumnBeforeAmc}{$lastRow}")->applyFromArray([
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
                 ],
@@ -131,6 +145,21 @@ class WarehouseAmcExport implements FromArray, WithHeadings, WithStyles, WithCol
             $sheet->getStyle("A2:C{$lastRow}")->applyFromArray([
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_LEFT,
+                ],
+            ]);
+            
+            // Style AMC column with special formatting
+            $sheet->getStyle("{$amcColumn}2:{$amcColumn}{$lastRow}")->applyFromArray([
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                ],
+                'font' => [
+                    'bold' => true,
+                    'color' => ['rgb' => '1E40AF'], // Blue-800
+                ],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'DBEAFE'], // Blue-100
                 ],
             ]);
         }
@@ -178,7 +207,8 @@ class WarehouseAmcExport implements FromArray, WithHeadings, WithStyles, WithCol
     {
         $baseColumns = 3; // Item, Category, Dosage Form
         $monthColumns = count($this->monthYears);
-        $totalColumns = $baseColumns + $monthColumns;
+        $amcColumn = 1; // AMC column
+        $totalColumns = $baseColumns + $monthColumns + $amcColumn;
         
         return \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($totalColumns);
     }
