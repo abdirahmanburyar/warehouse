@@ -709,6 +709,8 @@ function getResults(page = 1) {
                                     <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">UoM</th>
                                     <th class="px-3 py-2 text-xs font-bold text-center" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" colspan="4">Item Details</th>
                                     <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Total QTY on Hand</th>
+                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">AMC</th>
+                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Buffer Stock</th>
                                     <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Reorder Level</th>
                                     <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Actions</th>
                                 </tr>
@@ -732,7 +734,7 @@ function getResults(page = 1) {
                             <tbody>
                                 <template v-if="isLoading">
                                     <tr>
-                                        <td colspan="10" class="text-center py-8 text-gray-500 bg-gray-50">
+                                        <td colspan="12" class="text-center py-8 text-gray-500 bg-gray-50">
                                             <div class="flex flex-col items-center justify-center gap-2">
                                                 <svg class="animate-spin h-10 w-10 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -745,7 +747,7 @@ function getResults(page = 1) {
                                 </template>
                                 <template v-else-if="!props.inventories || !props.inventories.data || props.inventories.data.length === 0">
                                     <tr>
-                                        <td colspan="10" class="text-center py-8 text-gray-500 bg-gray-50">
+                                        <td colspan="12" class="text-center py-8 text-gray-500 bg-gray-50">
                                             <div class="flex flex-col items-center justify-center gap-2">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 118 0v2m-4 4a4 4 0 01-4-4H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-2a4 4 0 01-4 4z" /></svg>
                                                 <span>{{ !props.inventories ? 'Loading...' : 'No inventory data found.' }}</span>
@@ -788,6 +790,8 @@ function getResults(page = 1) {
                                         </td>
                                         
                                         <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(getTotalQuantity(inventory)) }}</td>
+                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.amc || 0) }}</td>
+                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.buffer_stock || 0) }}</td>
                                         <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.reorder_level || 0) }}</td>
                                         <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                             <div class="flex items-center justify-center space-x-2">

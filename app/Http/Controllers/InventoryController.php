@@ -17,7 +17,7 @@ use App\Events\InventoryEvent;
 use Illuminate\Support\Facades\Event;
 use App\Models\IssueQuantityReport;
 use App\Models\IssueQuantityItem;
-use App\Models\ReorderLevel;
+use App\Models\WarehouseAmc;
 use App\Events\InventoryUpdated;
 use Illuminate\Support\Facades\Cache;
 use Maatwebsite\Excel\Facades\Excel;
@@ -44,9 +44,11 @@ class InventoryController extends Controller
             $productQuery = Product::query()
                 ->select('products.id', 'products.name', 'products.category_id', 'products.dosage_id')
                 ->with(['category:id,name', 'dosage:id,name'])
-                ->leftJoin('reorder_levels', 'products.id', '=', 'reorder_levels.product_id')
-                ->addSelect(DB::raw('COALESCE(reorder_levels.amc, 0) as amc'))
-                ->addSelect(DB::raw('COALESCE(reorder_levels.reorder_level, (reorder_levels.amc * NULLIF(reorder_levels.lead_time, 0)), ROUND(COALESCE(reorder_levels.amc, 0) * 6)) as reorder_level'));
+                ->leftJoin('warehouse_amcs', 'products.id', '=', 'warehouse_amcs.product_id')
+                ->addSelect(DB::raw('COALESCE(warehouse_amcs.quantity, 0) as monthly_consumption'))
+                ->addSelect(DB::raw('0 as amc')) // Will be calculated dynamically
+                ->addSelect(DB::raw('0 as buffer_stock')) // Will be calculated dynamically
+                ->addSelect(DB::raw('0 as reorder_level')); // Will be calculated dynamically
 
             // Default sort by product name for consistency
             $productQuery->orderBy('products.name', 'asc');
@@ -81,7 +83,7 @@ class InventoryController extends Controller
 
             $perPage = $request->input('per_page', 25);
             $page = $request->input('page', 1);
-            $productsPaginator = $productQuery->paginate($perPage, ['products.*', 'reorder_levels.amc', 'reorder_levels.reorder_level'], 'page', $page)
+            $productsPaginator = $productQuery->paginate($perPage, ['products.*', 'warehouse_amcs.monthly_consumption'], 'page', $page)
                 ->withQueryString();
             $productsPaginator->setPath(url()->current());
 
@@ -118,12 +120,17 @@ class InventoryController extends Controller
             // Merge: ensure every product has at least one row
             $merged = collect();
             foreach ($productsPaginator->items() as $product) {
-                $amc = (float) ($product->amc ?? 0);
-                $reorderLevel = (float) ($product->reorder_level ?? round($amc * 6));
+                // Calculate AMC using the new formula
+                $amc = $this->calculateAMC($product->id);
+                
+                // Calculate Buffer Stock and Reorder Level
+                $bufferStock = $this->calculateBufferStock($amc);
+                $reorderLevel = $this->calculateReorderLevel($amc, $bufferStock);
 
                 if (isset($existingInventories[$product->id]) && $existingInventories[$product->id]->isNotEmpty()) {
                     $inventory = $existingInventories[$product->id]->first();
                     $inventory->setAttribute('amc', $amc);
+                    $inventory->setAttribute('buffer_stock', $bufferStock);
                     $inventory->setAttribute('reorder_level', $reorderLevel);
                     $inventory->setRelation('product', $inventory->product->loadMissing('category:id,name', 'dosage:id,name'));
                     $merged->push($inventory);
@@ -132,6 +139,7 @@ class InventoryController extends Controller
                     $placeholder->setAttribute('id', -$product->id); // synthetic id to keep rows unique
                     $placeholder->setAttribute('product_id', $product->id);
                     $placeholder->setAttribute('amc', $amc);
+                    $placeholder->setAttribute('buffer_stock', $bufferStock);
                     $placeholder->setAttribute('reorder_level', $reorderLevel);
                     $placeholder->setRelation('product', $product);
 
@@ -584,10 +592,7 @@ class InventoryController extends Controller
 				'product.category:id,name',
 				'product.dosage:id,name'
 			])
-			->leftJoin('reorder_levels', 'inventories.product_id', '=', 'reorder_levels.product_id')
-			->addSelect('inventories.*')
-			->addSelect(DB::raw('COALESCE(reorder_levels.amc, 0) as amc'))
-			->addSelect(DB::raw('COALESCE(reorder_levels.reorder_level, (reorder_levels.amc * NULLIF(reorder_levels.lead_time, 0)), ROUND(COALESCE(reorder_levels.amc, 0) * 6)) as reorder_level'));
+			->addSelect('inventories.*');
 
 		// Apply the same filters as the main query
 		if ($request->filled('search')) {
@@ -610,7 +615,7 @@ class InventoryController extends Controller
 		}
 
 		if ($request->filled('dosage')) {
-			$query->whereHas('product.dosage', fn($q) => $q->where('name', $request->dosage));
+			$query->whereHas('product.dosage', fn($q) => $q->where('name', $request->category));
 		}
 
 		// Get all results without pagination for counting
@@ -626,8 +631,10 @@ class InventoryController extends Controller
 
 		$now = now();
 		foreach ($allInventories as $inventory) {
-			$amc = (float) ($inventory->amc ?: 0);
-			$reorderLevel = (float) ($inventory->reorder_level ?: 0);
+			// Calculate AMC, Buffer Stock, and Reorder Level dynamically
+			$amc = $this->calculateAMC($inventory->product_id);
+			$bufferStock = $this->calculateBufferStock($amc);
+			$reorderLevel = $this->calculateReorderLevel($amc, $bufferStock);
 
 			// Calculate total quantity for this inventory
 			$totalQuantity = 0.0;
@@ -717,4 +724,211 @@ class InventoryController extends Controller
 
 		return $statusCounts;
 	}
+
+    /**
+     * Calculate Average Monthly Consumption (AMC) for a product.
+     * This method uses the new percentage deviation screening formula.
+     *
+     * @param int $productId
+     * @return float
+     */
+    private function calculateAMC(int $productId): float
+    {
+        try {
+            // Get all consumption values for the product from warehouse_amcs table
+            $consumptionsWithMonth = WarehouseAmc::where('product_id', $productId)
+                ->where('quantity', '>', 0) // Only consider positive consumption values
+                ->orderBy('month_year', 'desc') // Most recent first (bottom to top)
+                ->get(['month_year', 'quantity']);
+
+            // If we have less than 3 values, return 0
+            if ($consumptionsWithMonth->count() < 3) {
+                return 0;
+            }
+
+            // Extract quantities and months
+            $quantities = $consumptionsWithMonth->pluck('quantity')->values();
+            $months = $consumptionsWithMonth->pluck('month_year')->values();
+            
+            Log::info("AMC calculation for product {$productId}", [
+                'quantities' => $quantities->toArray(),
+                'months' => $months->toArray()
+            ]);
+
+            // Start with the 3 most recent months
+            $selectedMonths = [];
+            $passedMonths = [];
+            $failedMonths = [];
+            
+            // Initial selection: 3 most recent months
+            for ($i = 0; $i < 3; $i++) {
+                $selectedMonths[] = [
+                    'month' => $months[$i],
+                    'quantity' => $quantities[$i]
+                ];
+            }
+            
+            $attempt = 1;
+            $maxAttempts = 10; // Prevent infinite loops
+            
+            while ($attempt <= $maxAttempts) {
+                Log::info("AMC calculation attempt {$attempt}", [
+                    'selected_months' => $selectedMonths,
+                    'passed_months' => $passedMonths,
+                    'failed_months' => $failedMonths
+                ]);
+                
+                // Calculate average of selected months
+                $average = collect($selectedMonths)->avg('quantity');
+                
+                Log::info("Calculated average", ['average' => $average]);
+                
+                // Check each month's deviation
+                $allPassed = true;
+                $newPassedMonths = [];
+                $newFailedMonths = [];
+                
+                foreach ($selectedMonths as $monthData) {
+                    $quantity = $monthData['quantity'];
+                    $deviation = abs($quantity - $average) / $average * 100;
+                    
+                    Log::info("Checking month {$monthData['month']}", [
+                        'quantity' => $quantity,
+                        'deviation_percentage' => round($deviation, 2)
+                    ]);
+                    
+                    if ($deviation <= 70) {
+                        // Month passed screening
+                        $newPassedMonths[] = $monthData;
+                        Log::info("Month {$monthData['month']} PASSED screening");
+                    } else {
+                        // Month failed screening
+                        $newFailedMonths[] = $monthData;
+                        $allPassed = false;
+                        Log::info("Month {$monthData['month']} FAILED screening");
+                    }
+                }
+                
+                // Add newly passed months to the global passed list
+                foreach ($newPassedMonths as $monthData) {
+                    if (!collect($passedMonths)->contains('month', $monthData['month'])) {
+                        $passedMonths[] = $monthData;
+                    }
+                }
+                
+                // Add newly failed months to the global failed list
+                foreach ($newFailedMonths as $monthData) {
+                    if (!collect($failedMonths)->contains('month', $monthData['month'])) {
+                        $failedMonths[] = $monthData;
+                    }
+                }
+                
+                // If all months passed, we're done
+                if ($allPassed) {
+                    Log::info("All months passed screening!", [
+                        'final_selected_months' => $selectedMonths,
+                        'final_passed_months' => $passedMonths
+                    ]);
+                    break;
+                }
+                
+                // If we have 3 or more passed months, use them
+                if (count($passedMonths) >= 3) {
+                    $selectedMonths = array_slice($passedMonths, 0, 3);
+                    Log::info("Using 3 passed months", ['selected_months' => $selectedMonths]);
+                    break;
+                }
+                
+                // Need to reselect months including passed ones
+                $newSelection = [];
+                
+                // First, include all passed months
+                foreach ($passedMonths as $monthData) {
+                    $newSelection[] = $monthData;
+                }
+                
+                // Then add more months from the original list until we have 3
+                $monthIndex = 0;
+                while (count($newSelection) < 3 && $monthIndex < count($quantities)) {
+                    $monthData = [
+                        'month' => $months[$monthIndex],
+                        'quantity' => $quantities[$monthIndex]
+                    ];
+                    
+                    // Only add if not already in selection and not in failed months
+                    $alreadySelected = collect($newSelection)->contains('month', $monthData['month']);
+                    $isFailed = collect($failedMonths)->contains('month', $monthData['month']);
+                    
+                    if (!$alreadySelected && !$isFailed) {
+                        $newSelection[] = $monthData;
+                    }
+                    
+                    $monthIndex++;
+                }
+                
+                // Update selected months for next iteration
+                $selectedMonths = $newSelection;
+                
+                Log::info("Reselected months for next attempt", [
+                    'new_selection' => $selectedMonths
+                ]);
+                
+                $attempt++;
+            }
+            
+            // Calculate final AMC
+            if (count($selectedMonths) >= 3) {
+                $amc = collect($selectedMonths)->avg('quantity');
+                $result = round($amc, 2);
+                
+                Log::info("AMC calculation completed", [
+                    'product_id' => $productId,
+                    'final_selected_months' => $selectedMonths,
+                    'amc' => $result
+                ]);
+                
+                return $result;
+            } else {
+                Log::warning("Could not find 3 suitable months for AMC calculation", [
+                    'product_id' => $productId,
+                    'selected_months_count' => count($selectedMonths)
+                ]);
+                return 0;
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating AMC for product ' . $productId, [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return 0;
+        }
+    }
+
+    /**
+     * Calculate Buffer Stock for a product.
+     * Buffer Stock = AMC × Lead Time (3 months)
+     *
+     * @param float $amc
+     * @return float
+     */
+    private function calculateBufferStock(float $amc): float
+    {
+        $leadTime = 3; // Lead Time is 3 months as per the image
+        return round($amc * $leadTime, 2);
+    }
+
+    /**
+     * Calculate Reorder Level for a product.
+     * Reorder Level = (AMC × Lead Time) + Buffer Stock
+     *
+     * @param float $amc
+     * @param float $bufferStock
+     * @return float
+     */
+    private function calculateReorderLevel(float $amc, float $bufferStock): float
+    {
+        $leadTime = 3; // Lead Time is 3 months as per the image
+        return round(($amc * $leadTime) + $bufferStock, 2);
+    }
 }
