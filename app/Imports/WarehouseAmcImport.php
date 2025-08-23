@@ -18,6 +18,8 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterImport;
+use Maatwebsite\Excel\Concerns\SkipsOnFailure;
+use Maatwebsite\Excel\Events\BeforeImport;
 
 class WarehouseAmcImport implements 
     ToModel, 
@@ -26,6 +28,7 @@ class WarehouseAmcImport implements
     WithBatchInserts, 
     WithValidation, 
     SkipsEmptyRows, 
+    SkipsOnFailure,
     WithEvents,
     ShouldQueue
 {
@@ -55,7 +58,16 @@ class WarehouseAmcImport implements
     public function model(array $row)
     {
         try {
-            if (empty($row['item'])) {
+            // Log the raw row data for debugging
+            Log::info("Processing row", [
+                'import_id' => $this->importId,
+                'row_keys' => array_keys($row),
+                'row_data' => $row
+            ]);
+            
+            // Check if item field exists and has a value
+            if (!isset($row['item']) || empty(trim($row['item'] ?? ''))) {
+                Log::info("Skipping row with empty item field", ['row' => $row]);
                 $this->skippedCount++;
                 return null;
             }
@@ -150,10 +162,26 @@ class WarehouseAmcImport implements
     public function rules(): array
     {
         return [
-            'item' => 'required|string|max:255',
+            'item' => 'nullable|string|max:255', // Changed from required to nullable
             'category' => 'nullable|string|max:255',
             'dosage_form' => 'nullable|string|max:255',
         ];
+    }
+
+    /**
+     * Custom validation failure handling
+     */
+    public function onFailure(\Maatwebsite\Excel\Validators\Failure ...$failures)
+    {
+        foreach ($failures as $failure) {
+            $this->errors[] = "Row {$failure->row()}: {$failure->attribute()} - {$failure->errors()[0]}";
+            $this->skippedCount++;
+        }
+        
+        Log::warning('Validation failures in import', [
+            'import_id' => $this->importId,
+            'failures' => $this->errors
+        ]);
     }
 
     public function chunkSize(): int
@@ -169,6 +197,12 @@ class WarehouseAmcImport implements
     public function registerEvents(): array
     {
         return [
+            BeforeImport::class => function (BeforeImport $event) {
+                Log::info('=== WAREHOUSE AMC IMPORT STARTING ===', [
+                    'import_id' => $this->importId,
+                    'stored_file_path' => $this->storedFilePath
+                ]);
+            },
             AfterImport::class => function (AfterImport $event) {
                 // Update cache with final results
                 $results = $this->getResults();
