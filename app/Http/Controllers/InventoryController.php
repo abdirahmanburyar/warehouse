@@ -241,12 +241,32 @@ class InventoryController extends Controller
                 try {
                     logger()->info('Applying status filter: ' . $request->status . ' to ' . $merged->count() . ' items');
                     
+                    // Log sample data structure for debugging
+                    if ($merged->count() > 0) {
+                        $sampleInventory = $merged->first();
+                        logger()->info('Sample inventory structure:', [
+                            'product_name' => $sampleInventory->product->name ?? 'N/A',
+                            'items_count' => $sampleInventory->items ? $sampleInventory->items->count() : 0,
+                            'first_item_quantity' => $sampleInventory->items && $sampleInventory->items->count() > 0 ? $sampleInventory->items->first()->quantity : 'N/A',
+                            'reorder_level' => $sampleInventory->reorder_level ?? 'N/A'
+                        ]);
+                    }
+                    
                     $merged = $merged->filter(function ($inventory) use ($request) {
                         try {
                             $totalQuantity = $inventory->items->sum('quantity');
                             $reorderLevel = (float) ($inventory->reorder_level ?? 0);
                             
+                            // Log the values being used for filtering
+                            logger()->info("Filtering inventory: {$inventory->product->name}, TotalQty: {$totalQuantity}, ReorderLevel: {$reorderLevel}");
+                            
                             switch ($request->status) {
+                                case 'in_stock':
+                                    // Items that are in stock (total quantity > 0)
+                                    $result = $totalQuantity > 0;
+                                    logger()->info("Product {$inventory->product->name}: Qty={$totalQuantity}, InStock={$result} (qty > 0)");
+                                    return $result;
+                                
                                 case 'reorder_level':
                                     // Items that need reorder (total quantity <= 70% of reorder level)
                                     $result = $reorderLevel > 0 && $totalQuantity <= ($reorderLevel * 0.7);
@@ -275,6 +295,21 @@ class InventoryController extends Controller
                     });
                     
                     logger()->info('After status filtering: ' . $merged->count() . ' items remain');
+                    
+                    // Log sample of filtered results for debugging
+                    if ($merged->count() > 0) {
+                        $filteredSample = $merged->take(3);
+                        logger()->info('Sample filtered results:', $filteredSample->map(function($inv) {
+                            $totalQty = $inv->items->sum('quantity');
+                            $reorderLevel = (float) ($inv->reorder_level ?? 0);
+                            return [
+                                'product_name' => $inv->product->name,
+                                'total_quantity' => $totalQty,
+                                'reorder_level' => $reorderLevel,
+                                'status' => $request->status
+                            ];
+                        })->toArray());
+                    }
                 } catch (\Exception $e) {
                     logger()->error('Error applying status filter: ' . $e->getMessage());
                     // If filtering fails, return all items
@@ -617,11 +652,14 @@ class InventoryController extends Controller
 			}
 
 			// Product-level status for in-stock/low-stock
-			if ($reorderLevel > 0 && $totalQuantity <= (0.7 * $reorderLevel)) {
-				// Low stock when total_on_hand <= 70% of reorder level
-				$statusCounts['low_stock']++;
-			} else {
+			// Simplified logic: in_stock = quantity > 0, low_stock = quantity > 0 but <= reorder level
+			if ($totalQuantity > 0) {
 				$statusCounts['in_stock']++;
+				
+				// Check if it's also low stock (when reorder level is set)
+				if ($reorderLevel > 0 && $totalQuantity <= $reorderLevel) {
+					$statusCounts['low_stock']++;
+				}
 			}
 
 			// Do not calculate out_of_stock here; we'll do a robust item-level count below
