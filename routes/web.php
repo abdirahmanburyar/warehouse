@@ -38,6 +38,7 @@ use App\Http\Controllers\LogisticCompanyController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\ReasonController;
 use App\Http\Controllers\ReorderLevelController;
+use App\Http\Controllers\WarehouseAmcController;
 use Maatwebsite\Excel\Facades\Excel;
 
 // Welcome route - accessible without authentication
@@ -711,6 +712,10 @@ Route::controller(LocationController::class)
             Route::get('/procurement/backorder', [ReportController::class, 'backorderReport'])->name('reports.procurement.backorder');
             Route::get('/procurement/lead-time-analysis', [ReportController::class, 'leadTimeAnalysisReport'])->name('reports.procurement.lead-time-analysis');
             Route::get('/procurement/demand-forecasting', [ReportController::class, 'demandForecastingReport'])->name('reports.procurement.demand-forecasting');
+        
+        // Warehouse AMC Report Routes
+            Route::get('/warehouse-amc', [WarehouseAmcController::class, 'index'])->name('reports.warehouse-amc');
+            Route::get('/warehouse-amc/export', [WarehouseAmcController::class, 'export'])->name('reports.warehouse-amc.export');
     });
 
     // Approval Routes
