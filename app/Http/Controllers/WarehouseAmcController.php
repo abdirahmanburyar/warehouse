@@ -25,17 +25,19 @@ class WarehouseAmcController extends Controller
         // Log filter values for debugging
         Log::info('Warehouse AMC index filters', [
             'search' => $request->get('search'),
-            'month_from' => $request->get('month_from'),
-            'month_to' => $request->get('month_to'),
+            'year' => $request->get('year'),
             'sort' => $request->get('sort'),
             'direction' => $request->get('direction'),
         ]);
 
-        // Get unique month-years for filtering and display
-        $monthYears = WarehouseAmc::select('month_year')
-            ->distinct()
-            ->orderBy('month_year', 'asc')
-            ->pluck('month_year');
+        // Get the selected year, default to current year
+        $selectedYear = $request->get('year', now()->year);
+        
+        // Generate all months for the selected year
+        $monthYears = collect();
+        for ($month = 1; $month <= 12; $month++) {
+            $monthYears->push($selectedYear . '-' . str_pad($month, 2, '0', STR_PAD_LEFT));
+        }
 
         // Get years from month-years for template selection only
         $years = $monthYears->map(function($monthYear) {
@@ -92,23 +94,15 @@ class WarehouseAmcController extends Controller
 
 
 
-        // Apply month range filter
-        if ($request->filled('month_from') || $request->filled('month_to')) {
+        // Apply year filter
+        if ($request->filled('year')) {
             $query->whereExists(function($subQuery) use ($request) {
                 $subQuery->select(DB::raw(1))
                     ->from('warehouse_amcs')
-                    ->whereColumn('warehouse_amcs.product_id', 'products.id');
-                
-                if ($request->filled('month_from')) {
-                    Log::info('Applying month_from filter', ['month_from' => $request->month_from]);
-                    $subQuery->where('warehouse_amcs.month_year', '>=', $request->month_from);
-                }
-                
-                if ($request->filled('month_to')) {
-                    Log::info('Applying month_to filter', ['month_to' => $request->month_to]);
-                    $subQuery->where('warehouse_amcs.month_year', '<=', $request->month_to);
-                }
+                    ->whereColumn('warehouse_amcs.product_id', 'products.id')
+                    ->where('warehouse_amcs.month_year', 'like', $request->year . '-%');
             });
+            Log::info('Applying year filter', ['year' => $request->year]);
         }
 
         // Apply sorting
@@ -156,7 +150,7 @@ class WarehouseAmcController extends Controller
             'products' => $products,
             'pivotData' => $pivotData,
             'monthYears' => $monthYears,
-            'filters' => $request->only(['search', 'month_from', 'month_to', 'sort', 'direction']),
+            'filters' => $request->only(['search', 'year', 'sort', 'direction']),
             'years' => $years,
             'months' => $months,
         ]);
@@ -223,11 +217,14 @@ class WarehouseAmcController extends Controller
      */
     public function export(Request $request)
     {
-        // Get unique month-years for display
-        $monthYears = WarehouseAmc::select('month_year')
-            ->distinct()
-            ->orderBy('month_year', 'asc')
-            ->pluck('month_year');
+        // Get the selected year, default to current year
+        $selectedYear = $request->get('year', now()->year);
+        
+        // Generate all months for the selected year
+        $monthYears = collect();
+        for ($month = 1; $month <= 12; $month++) {
+            $monthYears->push($selectedYear . '-' . str_pad($month, 2, '0', STR_PAD_LEFT));
+        }
 
         // Build the pivot table query
         $query = Product::query()
@@ -257,20 +254,13 @@ class WarehouseAmcController extends Controller
 
 
 
-        // Apply month range filter
-        if ($request->filled('month_from') || $request->filled('month_to')) {
+        // Apply year filter
+        if ($request->filled('year')) {
             $query->whereExists(function($subQuery) use ($request) {
                 $subQuery->select(DB::raw(1))
                     ->from('warehouse_amcs')
-                    ->whereColumn('warehouse_amcs.product_id', 'products.id');
-                
-                if ($request->filled('month_from')) {
-                    $subQuery->where('warehouse_amcs.month_year', '>=', $request->month_from);
-                }
-                
-                if ($request->filled('month_to')) {
-                    $subQuery->where('warehouse_amcs.month_year', '<=', $request->month_to);
-                }
+                    ->whereColumn('warehouse_amcs.product_id', 'products.id')
+                    ->where('warehouse_amcs.month_year', 'like', $request->year . '-%');
             });
         }
 

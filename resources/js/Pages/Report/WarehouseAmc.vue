@@ -70,27 +70,15 @@
 
 
                     <div class="sm:w-48">
-                        <label for="month_from" class="block text-sm font-medium text-gray-700 mb-1">From Month</label>
-                        <input 
-                            type="month" 
-                            id="month_from" 
-                            v-model="month_from" 
+                        <label for="year" class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                        <select 
+                            id="year"
+                            v-model="year" 
                             @change="applyFilters"
-                            placeholder="YYYY-MM"
                             class="block w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                    </div>
-
-                    <div class="sm:w-48">
-                        <label for="month_to" class="block text-sm font-medium text-gray-700 mb-1">To Month</label>
-                        <input 
-                            type="month" 
-                            id="month_to" 
-                            v-model="month_to" 
-                            @change="applyFilters"
-                            placeholder="YYYY-MM"
-                            class="block w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                        />
+                        >
+                            <option v-for="yearOption in years" :key="yearOption" :value="yearOption">{{ yearOption }}</option>
+                        </select>
                     </div>
 
 
@@ -400,8 +388,7 @@ const props = defineProps({
 
 // Reactive variables
 const search = ref(props.filters.search || '');
-const month_from = ref(props.filters.month_from || '');
-const month_to = ref(props.filters.month_to || '');
+const year = ref(props.filters.year || new Date().getFullYear());
 const sortField = ref(props.filters.sort || 'name');
 const sortDirection = ref(props.filters.direction || 'asc');
 const templateYear = ref(new Date().getFullYear()); // Default to current year
@@ -421,11 +408,10 @@ const progressInterval = ref(null);
 const showTemplateModal = ref(false);
 
 // Watch for changes and apply filters
-watch([search, month_from, month_to], () => {
+watch([search, year], () => {
     router.get(route('reports.warehouse-amc'), {
         search: search.value || undefined,
-        month_from: month_from.value?.toString() || undefined,
-        month_to: month_to.value?.toString() || undefined,
+        year: year.value || undefined,
         sort: sortField.value,
         direction: sortDirection.value,
     }, {
@@ -439,8 +425,7 @@ watch([search, month_from, month_to], () => {
 const applyFilters = () => {
     router.get(route('reports.warehouse-amc'), {
         search: search.value || undefined,
-        month_from: month_from.value?.toString() || undefined,
-        month_to: month_to.value?.toString() || undefined,
+        year: year.value || undefined,
         sort: sortField.value,
         direction: sortDirection.value,
     }, {
@@ -468,8 +453,7 @@ const exportData = () => {
     const params = new URLSearchParams();
     
     if (search.value) params.append('search', search.value);
-    if (month_from.value) params.append('month_from', month_from.value.toString());
-    if (month_to.value) params.append('month_to', month_to.value.toString());
+    if (year.value) params.append('year', year.value.toString());
 
     window.open(route('reports.warehouse-amc.export') + '?' + params.toString(), '_blank');
 };
