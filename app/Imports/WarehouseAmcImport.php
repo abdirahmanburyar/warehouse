@@ -69,30 +69,42 @@ class WarehouseAmcImport implements
                 return null;
             }
 
+            // Debug: Log product found
+            Log::info("Processing product: {$itemName} (ID: {$product->id})");
+
             // Update progress in cache
             Cache::increment($this->importId);
 
             // Process each month column and create/update WarehouseAmc records
             $processedMonths = 0;
+            Log::info("Row keys: " . implode(', ', array_keys($row)));
+            
             foreach ($row as $key => $value) {
                 // Skip non-month columns
                 if (in_array($key, ['item', 'category', 'dosage_form'])) {
+                    Log::info("Skipping non-month column: {$key} = {$value}");
                     continue;
                 }
 
                 // Convert formatted month back to YYYY-MM format
                 $monthYear = $this->parseMonthYear($key);
                 if (!$monthYear) {
+                    Log::info("Could not parse month from column: {$key} = {$value}");
                     continue;
                 }
+
+                Log::info("Processing month: {$key} -> {$monthYear} = {$value}");
 
                 // Clean and validate quantity
                 $quantity = $this->cleanQuantity($value);
                 
                 // If quantity is null or empty, skip this month (don't update existing data)
                 if ($quantity === null) {
+                    Log::info("Skipping null/empty quantity for month: {$monthYear}");
                     continue;
                 }
+
+                Log::info("Creating/updating WarehouseAmc: product_id={$product->id}, month_year={$monthYear}, quantity={$quantity}");
 
                 // Create or update WarehouseAmc record
                 $warehouseAmc = WarehouseAmc::updateOrCreate(
@@ -107,8 +119,10 @@ class WarehouseAmcImport implements
 
                 if ($warehouseAmc->wasRecentlyCreated) {
                     $this->importedCount++;
+                    Log::info("Created new WarehouseAmc record: ID={$warehouseAmc->id}");
                 } else {
                     $this->updatedCount++;
+                    Log::info("Updated existing WarehouseAmc record: ID={$warehouseAmc->id}");
                 }
                 
                 $processedMonths++;
