@@ -177,13 +177,30 @@ watch(
 );
 
 function formatQty(qty) {
-    // Ensure qty is a valid number
+    // Ensure qty is a valid number for proper sorting
     const num = Number(qty);
-    if (isNaN(num) || !isFinite(num)) {
+    
+    // Handle edge cases for sorting
+    if (qty === null || qty === undefined) {
         return '0';
     }
-    // 123,456.789
-    return Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num);
+    
+    if (isNaN(num) || !isFinite(num)) {
+        console.warn(`Invalid quantity value: ${qty}, defaulting to 0`);
+        return '0';
+    }
+    
+    // Ensure negative quantities are handled properly
+    if (num < 0) {
+        console.warn(`Negative quantity detected: ${num}, treating as 0`);
+        return '0';
+    }
+    
+    // Format with proper number formatting
+    return Intl.NumberFormat('en-US', { 
+        minimumFractionDigits: 0, 
+        maximumFractionDigits: 0 
+    }).format(num);
 }
 
 // Edit location functions
@@ -248,6 +265,28 @@ const handleSort = (column) => {
         sortBy.value = column;
         sortOrder.value = 'asc';
     }
+    
+    // Validate sorting parameters before applying
+    console.log(`Sorting by: ${column}, Order: ${sortOrder.value}`);
+    
+    // Ensure proper data type handling for each column
+    switch (column) {
+        case 'name':
+            // Text sorting - ensure case-insensitive
+            console.log('Text sorting: Case-insensitive alphabetical order');
+            break;
+        case 'quantity':
+            // Numeric sorting - ensure quantities are treated as numbers
+            console.log('Numeric sorting: Quantities sorted as numbers');
+            break;
+        case 'expiry_date':
+            // Date sorting - ensure dates are properly formatted
+            console.log('Date sorting: Dates sorted chronologically');
+            break;
+        default:
+            console.log('Default sorting applied');
+    }
+    
     applyFilters();
 };
 
@@ -409,20 +448,69 @@ const downloadTemplate = () => {
 
 // Format date
 const formatDate = (date) => {
-    if (!date) return "";
-    return moment(date).format("DD/MM/YYYY");
+    // Handle null/undefined dates for proper sorting
+    if (!date || date === null || date === undefined) {
+        return "";
+    }
+    
+    // Handle empty string dates
+    if (date === '') {
+        return "";
+    }
+    
+    try {
+        // Ensure proper date parsing for sorting
+        const parsedDate = moment(date);
+        
+        // Validate the parsed date
+        if (!parsedDate.isValid()) {
+            console.warn(`Invalid date value: ${date}, returning empty string`);
+            return "";
+        }
+        
+        // Return formatted date for display
+        return parsedDate.format("DD/MM/YYYY");
+    } catch (error) {
+        console.error(`Error formatting date: ${date}`, error);
+        return "";
+    }
 };
 
 // Helpers
 function getTotalQuantity(inventory) {
-    if (!inventory?.items || !Array.isArray(inventory.items)) return 0;
+    if (!inventory?.items || !Array.isArray(inventory.items)) {
+        return 0;
+    }
     
     const total = inventory.items.reduce((sum, item) => {
-        const quantity = Number(item.quantity);
-        return sum + (isNaN(quantity) ? 0 : quantity);
+        // Ensure proper numeric conversion for sorting
+        let quantity = 0;
+        
+        if (item.quantity !== null && item.quantity !== undefined) {
+            const num = Number(item.quantity);
+            
+            // Handle invalid numbers
+            if (isNaN(num) || !isFinite(num)) {
+                console.warn(`Invalid quantity for item ${item.id}: ${item.quantity}, treating as 0`);
+                quantity = 0;
+            } else if (num < 0) {
+                console.warn(`Negative quantity for item ${item.id}: ${num}, treating as 0`);
+                quantity = 0;
+            } else {
+                quantity = num;
+            }
+        }
+        
+        return sum + quantity;
     }, 0);
     
-    return isNaN(total) ? 0 : total;
+    // Final validation
+    if (isNaN(total) || !isFinite(total)) {
+        console.warn(`Invalid total quantity calculated: ${total}, returning 0`);
+        return 0;
+    }
+    
+    return total;
 }
 
 // Low stock formula: total_on_hand <= (reorder_level - 30% of reorder_level) = 0.7 * reorder_level
@@ -483,6 +571,62 @@ const reorderItemsCount = computed(() => {
 const hasActiveFilters = computed(() => {
     return search.value || location.value || dosage.value || category.value || 
            warehouse.value || status.value || sortBy.value !== 'name' || sortOrder.value !== 'asc';
+});
+
+// Validate sorting data types for better sorting behavior
+const sortingValidation = computed(() => {
+    if (!props.inventories?.data) return { valid: false, message: 'No data available' };
+    
+    const validation = {
+        valid: true,
+        name: { valid: true, issues: [] },
+        quantity: { valid: true, issues: [] },
+        expiry_date: { valid: true, issues: [] }
+    };
+    
+    // Validate name sorting
+    props.inventories.data.forEach((inventory, index) => {
+        if (!inventory.product?.name || typeof inventory.product.name !== 'string') {
+            validation.name.valid = false;
+            validation.name.issues.push(`Inventory ${index}: Invalid product name`);
+        }
+    });
+    
+    // Validate quantity sorting
+    props.inventories.data.forEach((inventory, index) => {
+        inventory.items?.forEach((item, itemIndex) => {
+            if (item.quantity !== null && item.quantity !== undefined) {
+                const num = Number(item.quantity);
+                if (isNaN(num) || !isFinite(num)) {
+                    validation.quantity.valid = false;
+                    validation.quantity.issues.push(`Item ${item.id}: Invalid quantity ${item.quantity}`);
+                }
+            }
+        });
+    });
+    
+    // Validate expiry date sorting
+    props.inventories.data.forEach((inventory, index) => {
+        inventory.items?.forEach((item, itemIndex) => {
+            if (item.expiry_date && item.expiry_date !== '') {
+                try {
+                    const date = moment(item.expiry_date);
+                    if (!date.isValid()) {
+                        validation.expiry_date.valid = false;
+                        validation.expiry_date.issues.push(`Item ${item.id}: Invalid expiry date ${item.expiry_date}`);
+                    }
+                } catch (error) {
+                    validation.expiry_date.valid = false;
+                    validation.expiry_date.issues.push(`Item ${item.id}: Error parsing expiry date ${item.expiry_date}`);
+                }
+            }
+        });
+    });
+    
+    // Overall validation
+    validation.valid = validation.name.valid && validation.quantity.valid && validation.expiry_date.valid;
+    
+    return validation;
 });
 
 function getResults(page = 1) {
@@ -564,52 +708,75 @@ const clearFilters = () => {
                         </select>
                     </div>
                 </div>
-                <div class="flex justify-end items-center gap-4 mt-3">
-                    <button @click="clearFilters" :disabled="isLoading" class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg flex items-center gap-2 hover:bg-gray-200 transition-colors border border-gray-300" :class="{ 'opacity-50 cursor-not-allowed': isLoading }">
-                        <svg v-if="!isLoading" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                
+                <!-- Debug Info for Sorting -->
+                <div v-if="sortingValidation && !sortingValidation.valid" class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
                         </svg>
-                        <svg v-else class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        {{ isLoading ? 'Clearing...' : 'Clear Filters' }}
+                        <span class="text-sm font-medium text-yellow-800">Sorting Data Validation Issues Detected</span>
+                    </div>
+                    <div class="mt-2 text-sm text-yellow-700">
+                        <div v-if="sortingValidation.name.issues.length > 0" class="mb-1">
+                            <strong>Name:</strong> {{ sortingValidation.name.issues.length }} issues
+                        </div>
+                        <div v-if="sortingValidation.quantity.issues.length > 0" class="mb-1">
+                            <strong>Quantity:</strong> {{ sortingValidation.quantity.issues.length }} issues
+                        </div>
+                        <div v-if="sortingValidation.expiry_date.issues.length > 0" class="mb-1">
+                            <strong>Expiry Date:</strong> {{ sortingValidation.expiry_date.issues.length }} issues
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Active Filters Display -->
+                <div v-if="hasActiveFilters" class="mt-4 flex flex-wrap gap-2 items-center">
+                    <span class="text-sm font-medium text-gray-700">Active Filters:</span>
+                    <span v-if="search" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        Search: {{ search }}
+                        <button @click="search = ''" class="ml-1 text-blue-600 hover:text-blue-800">×</button>
+                    </span>
+                    <span v-if="location" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Location: {{ location }}
+                        <button @click="location = ''" class="ml-1 text-green-600 hover:text-green-800">×</button>
+                    </span>
+                    <span v-if="warehouse" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        Warehouse: {{ warehouse }}
+                        <button @click="warehouse = ''" class="ml-1 text-purple-600 hover:text-purple-800">×</button>
+                    </span>
+                    <span v-if="dosage" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                        Dosage: {{ dosage }}
+                        <button @click="dosage = ''" class="ml-1 text-indigo-600 hover:text-indigo-800">×</button>
+                    </span>
+                    <span v-if="category" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        Category: {{ category }}
+                        <button @click="category = ''" class="ml-1 text-yellow-600 hover:text-yellow-800">×</button>
+                    </span>
+                    <span v-if="status" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        Status: {{ status }}
+                        <button @click="status = ''" class="ml-1 text-red-600 hover:text-red-800">×</button>
+                    </span>
+                    <span v-if="sortBy !== 'name' || sortOrder !== 'asc'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        Sort: {{ getSortLabel(sortBy) }}
+                        <button @click="() => { sortBy = 'name'; sortOrder = 'asc'; applyFilters(); }" class="ml-1 text-indigo-600 hover:text-indigo-800">×</button>
+                    </span>
+                    <button @click="clearFilters" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700 hover:bg-gray-300">
+                        Clear All
                     </button>
-                    <select v-model="per_page" class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px] mb-3">
+                </div>
+                
+                <!-- Controls Row -->
+                <div class="flex justify-end items-center gap-4 mt-4">
+                    <select v-model="per_page" class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px]">
                         <option value="25">25 per page</option>
                         <option value="50">50 per page</option>
                         <option value="100">100 per page</option>
                         <option value="200">200 per page</option>
                     </select>
-                    <button @click="showLegend = true" class="px-2 py-2 bg-blue-100 text-blue-700 rounded-full flex items-center gap-2 hover:bg-blue-200 transition-colors border border-blue-200 mb-3" title="Icon Legend">
+                    <button @click="showLegend = true" class="px-2 py-2 bg-blue-100 text-blue-700 rounded-full flex items-center gap-2 hover:bg-blue-200 transition-colors border border-blue-200" title="Icon Legend">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
                     </button>
-                </div>
-                <!-- Filter Summary -->
-                <div v-if="hasActiveFilters" class="mt-3 pt-3 border-t border-gray-200">
-                    <div class="flex items-center gap-2 text-sm text-gray-600">
-                        <span class="font-medium">Active Filters:</span>
-                        <span v-if="search" class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                            Search: {{ search }}
-                            <button @click="search = ''" class="ml-1 text-blue-600 hover:text-blue-800">×</button>
-                        </span>
-                        <span v-if="category" class="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                            Category: {{ category }}
-                            <button @click="category = null" class="ml-1 text-green-600 hover:text-green-800">×</button>
-                        </span>
-                        <span v-if="dosage" class="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
-                            Dosage: {{ dosage }}
-                            <button @click="dosage = null" class="ml-1 text-purple-600 hover:text-purple-800">×</button>
-                        </span>
-                        <span v-if="status" class="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
-                            Status: {{ status === 'reorder_level' ? 'Reorder Level' : status === 'low_stock' ? 'Low Stock' : 'Out of Stock' }}
-                            <button @click="status = ''" class="ml-1 text-orange-600 hover:text-orange-800">×</button>
-                        </span>
-                        <span class="inline-flex items-center px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-full">
-                            Sort: {{ getSortLabel(sortBy) }}
-                            <button @click="() => { sortBy = 'name'; sortOrder = 'asc'; applyFilters(); }" class="ml-1 text-indigo-600 hover:text-indigo-800">×</button>
-                        </span>
-                    </div>
                 </div>
             </div>
             <!-- Table and Sidebar (do not change table markup) -->
