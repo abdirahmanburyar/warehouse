@@ -18,11 +18,13 @@ class WarehouseAmcExport implements FromArray, WithHeadings, WithStyles, WithCol
 {
     protected $pivotData;
     protected $monthYears;
+    protected $isTemplate;
 
-    public function __construct($pivotData, $monthYears)
+    public function __construct($pivotData, $monthYears, $isTemplate = false)
     {
         $this->pivotData = $pivotData;
         $this->monthYears = $monthYears;
+        $this->isTemplate = $isTemplate;
     }
 
     public function array(): array
@@ -39,8 +41,10 @@ class WarehouseAmcExport implements FromArray, WithHeadings, WithStyles, WithCol
                 $exportRow[] = $row[$monthYear] ?? 0;
             }
             
-            // Add AMC column
-            $exportRow[] = $row['AMC'] ?? 0;
+            // Add AMC column only if not a template
+            if (!$this->isTemplate) {
+                $exportRow[] = $row['AMC'] ?? 0;
+            }
             
             $exportData[] = $exportRow;
         }
@@ -57,8 +61,10 @@ class WarehouseAmcExport implements FromArray, WithHeadings, WithStyles, WithCol
             $headers[] = $this->formatMonthYear($monthYear);
         }
         
-        // Add AMC header
-        $headers[] = 'AMC';
+        // Add AMC header only if not a template
+        if (!$this->isTemplate) {
+            $headers[] = 'AMC';
+        }
         
         return $headers;
     }
@@ -76,9 +82,11 @@ class WarehouseAmcExport implements FromArray, WithHeadings, WithStyles, WithCol
             $currentColumn++;
         }
         
-        // Set width for AMC column
-        $amcColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($this->monthYears) + 1);
-        $widths[$amcColumn] = 20; // AMC column
+        // Set width for AMC column only if not a template
+        if (!$this->isTemplate) {
+            $amcColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($this->monthYears) + 1);
+            $widths[$amcColumn] = 20; // AMC column
+        }
         
         return $widths;
     }
@@ -144,20 +152,23 @@ class WarehouseAmcExport implements FromArray, WithHeadings, WithStyles, WithCol
                 ],
             ]);
             
-            // Style AMC column with special formatting
-            $sheet->getStyle("{$amcColumn}2:{$amcColumn}{$lastRow}")->applyFromArray([
-                'alignment' => [
-                    'horizontal' => Alignment::HORIZONTAL_CENTER,
-                ],
-                'font' => [
-                    'bold' => true,
-                    'color' => ['rgb' => '1E40AF'], // Blue-800
-                ],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'DBEAFE'], // Blue-100
-                ],
-            ]);
+            // Style AMC column with special formatting only if not a template
+            if (!$this->isTemplate) {
+                $amcColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($this->monthYears) + 1);
+                $sheet->getStyle("{$amcColumn}2:{$amcColumn}{$lastRow}")->applyFromArray([
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    ],
+                    'font' => [
+                        'bold' => true,
+                        'color' => ['rgb' => '1E40AF'], // Blue-800
+                    ],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'DBEAFE'], // Blue-100
+                    ],
+                ]);
+            }
         }
         
         // Add alternating row colors
@@ -203,7 +214,7 @@ class WarehouseAmcExport implements FromArray, WithHeadings, WithStyles, WithCol
     {
         $baseColumns = 1; // Item
         $monthColumns = count($this->monthYears);
-        $amcColumn = 1; // AMC column
+        $amcColumn = $this->isTemplate ? 0 : 1; // AMC column only if not template
         $totalColumns = $baseColumns + $monthColumns + $amcColumn;
         
         return \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($totalColumns);

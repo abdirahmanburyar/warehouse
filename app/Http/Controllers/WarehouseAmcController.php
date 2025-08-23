@@ -466,28 +466,17 @@ class WarehouseAmcController extends Controller
             $selectedYear = $request->get('year', now()->year);
             Log::info('Template year selected', ['year' => $selectedYear]);
             
-            // Get months for the selected year only
-            $monthYears = WarehouseAmc::select('month_year')
-                ->where('month_year', 'like', $selectedYear . '-%')
-                ->distinct()
-                ->orderBy('month_year', 'asc')
-                ->pluck('month_year');
+            // Always generate all 12 months for the selected year
+            $monthYears = collect();
+            for ($month = 1; $month <= 12; $month++) {
+                $monthYears->push($selectedYear . '-' . str_pad($month, 2, '0', STR_PAD_LEFT));
+            }
             
-            Log::info('Months found for year', [
+            Log::info('Generated months for year', [
                 'year' => $selectedYear,
                 'month_count' => $monthYears->count(),
                 'months' => $monthYears->toArray()
             ]);
-
-            // If no months found for selected year, create default months
-            if ($monthYears->isEmpty()) {
-                Log::info('No months found for year, creating default months');
-                $monthYears = collect();
-                for ($month = 1; $month <= 12; $month++) {
-                    $monthYears->push($selectedYear . '-' . str_pad($month, 2, '0', STR_PAD_LEFT));
-                }
-                Log::info('Default months created', ['months' => $monthYears->toArray()]);
-            }
 
             // Get ALL products for template
             Log::info('Fetching all products for template');
@@ -517,8 +506,7 @@ class WarehouseAmcController extends Controller
                     $row[$monthYear] = ''; // Empty cell - won't overwrite existing data
                 }
 
-                // Add AMC column (empty for template)
-                $row['AMC'] = '';
+
 
                 $templateData[] = $row;
             }
@@ -533,7 +521,7 @@ class WarehouseAmcController extends Controller
             Log::info('Template filename prepared', ['filename' => $filename]);
             
             Log::info('=== TEMPLATE DOWNLOAD COMPLETED SUCCESSFULLY ===');
-            return Excel::download(new WarehouseAmcExport($templateData, $monthYears), $filename);
+            return Excel::download(new WarehouseAmcExport($templateData, $monthYears, true), $filename);
 
         } catch (\Exception $e) {
             Log::error('=== TEMPLATE DOWNLOAD FAILED ===', [
