@@ -4,7 +4,7 @@ namespace App\Imports;
 
 use App\Models\WarehouseAmc;
 use App\Models\Product;
-use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\Importable;
@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, WithBatchInserts, WithChunkReading, WithProgressBar, WithEvents, ShouldQueue
+class WarehouseAmcImport implements ToCollection, WithHeadingRow, WithValidation, WithBatchInserts, WithChunkReading, WithProgressBar, WithEvents, ShouldQueue
 {
     use Importable;
 
@@ -48,13 +48,23 @@ class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, Wit
             ->toArray();
     }
 
-    public function model(array $row)
+    public function collection(Collection $rows)
+    {
+        foreach ($rows as $row) {
+            $this->processRow($row->toArray());
+        }
+    }
+
+    private function processRow(array $row)
     {
         try {
             // Skip empty rows
             if (empty($row['item']) || trim($row['item']) === '') {
-                return null;
+                Log::info("Skipping empty row: " . json_encode($row));
+                return;
             }
+
+            Log::info("Processing row: " . json_encode($row));
 
             // Find product by name (exact match first, then partial)
             $product = Product::where('name', '=', trim($row['item']))->first();
@@ -67,33 +77,42 @@ class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, Wit
             if (!$product) {
                 $this->errors[] = "Product '{$row['item']}' not found - skipping this row";
                 Log::warning("Product not found during import: {$row['item']} - row skipped");
-                return null;
+                return;
             }
+
+            Log::info("Found product: {$product->name} (ID: {$product->id})");
 
             // Process each month column
             foreach ($row as $key => $value) {
                 // Skip non-month columns
                 if (in_array($key, ['item', 'category', 'dosage_form'])) {
+                    Log::info("Skipping non-month column: {$key} = {$value}");
                     continue;
                 }
 
                 // Convert formatted month back to YYYY-MM format
                 $monthYear = $this->parseMonthYear($key);
                 if (!$monthYear) {
+                    Log::info("Could not parse month from column: {$key} = {$value}");
                     continue;
                 }
+
+                Log::info("Processing month: {$key} -> {$monthYear} = {$value}");
 
                 // Clean and validate quantity
                 $quantity = $this->cleanQuantity($value);
                 
                 // If quantity is null or empty, skip this month (don't update existing data)
                 if ($quantity === null) {
+                    Log::info("Skipping null/empty quantity for month: {$monthYear}");
                     continue;
                 }
 
+                Log::info("Creating/updating WarehouseAmc: product_id={$product->id}, month_year={$monthYear}, quantity={$quantity}");
+
                 // Only update/create if we have a valid quantity
                 if ($quantity !== null) {
-                    WarehouseAmc::updateOrCreate(
+                    $warehouseAmc = WarehouseAmc::updateOrCreate(
                         [
                             'product_id' => $product->id,
                             'month_year' => $monthYear,
@@ -102,6 +121,8 @@ class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, Wit
                             'quantity' => $quantity,
                         ]
                     );
+                    
+                    Log::info("WarehouseAmc record " . ($warehouseAmc->wasRecentlyCreated ? 'created' : 'updated') . ": ID={$warehouseAmc->id}");
                 }
             }
 
@@ -109,13 +130,9 @@ class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, Wit
             $this->processedRows++;
             $this->updateProgress();
 
-            // Return null since we're handling the creation manually
-            return null;
-
         } catch (\Exception $e) {
             $this->errors[] = "Error processing row for '{$row['item']}': " . $e->getMessage();
             Log::error("Import error for row: " . json_encode($row) . " - " . $e->getMessage());
-            return null;
         }
     }
 
@@ -199,6 +216,9 @@ class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, Wit
             return null;
         }
 
+        $headerValue = trim($headerValue);
+        Log::info("Parsing month year from: '{$headerValue}'");
+
         // Try to parse various date formats
         $formats = [
             'M Y',      // Feb 2025
@@ -210,9 +230,11 @@ class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, Wit
 
         foreach ($formats as $format) {
             try {
-                $date = \DateTime::createFromFormat($format, trim($headerValue));
+                $date = \DateTime::createFromFormat($format, $headerValue);
                 if ($date) {
-                    return $date->format('Y-m');
+                    $result = $date->format('Y-m');
+                    Log::info("Successfully parsed '{$headerValue}' using format '{$format}' -> '{$result}'");
+                    return $result;
                 }
             } catch (\Exception $e) {
                 continue;
@@ -220,16 +242,28 @@ class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, Wit
         }
 
         // If no format matches, try to extract year and month manually
-        if (preg_match('/(\w+)\s+(\d{4})/', trim($headerValue), $matches)) {
+        if (preg_match('/(\w+)\s+(\d{4})/', $headerValue, $matches)) {
             $monthName = $matches[1];
             $year = $matches[2];
             
             $monthNumber = date('m', strtotime($monthName . ' 1'));
             if ($monthNumber) {
-                return $year . '-' . str_pad($monthNumber, 2, '0', STR_PAD_LEFT);
+                $result = $year . '-' . str_pad($monthNumber, 2, '0', STR_PAD_LEFT);
+                Log::info("Manually parsed '{$headerValue}' -> '{$result}'");
+                return $result;
             }
         }
 
+        // Try to handle Excel's date format (e.g., "2025-01-01" -> "2025-01")
+        if (preg_match('/^(\d{4})-(\d{1,2})/', $headerValue, $matches)) {
+            $year = $matches[1];
+            $month = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
+            $result = $year . '-' . $month;
+            Log::info("Excel date format parsed '{$headerValue}' -> '{$result}'");
+            return $result;
+        }
+
+        Log::warning("Could not parse month year from: '{$headerValue}'");
         return null;
     }
 
@@ -256,3 +290,5 @@ class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, Wit
         return max(0, $quantity);
     }
 }
+
+
