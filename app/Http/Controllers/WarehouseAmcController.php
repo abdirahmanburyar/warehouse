@@ -34,7 +34,7 @@ class WarehouseAmcController extends Controller
         // Get unique month-years for filtering and display
         $monthYears = WarehouseAmc::select('month_year')
             ->distinct()
-            ->orderBy('month_year', 'desc')
+            ->orderBy('month_year', 'asc')
             ->pluck('month_year');
 
         // Get years from month-years for template selection only
@@ -224,7 +224,7 @@ class WarehouseAmcController extends Controller
         // Get unique month-years for display
         $monthYears = WarehouseAmc::select('month_year')
             ->distinct()
-            ->orderBy('month_year', 'desc')
+            ->orderBy('month_year', 'asc')
             ->pluck('month_year');
 
         // Build the pivot table query
