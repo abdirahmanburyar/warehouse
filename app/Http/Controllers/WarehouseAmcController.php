@@ -32,6 +32,16 @@ class WarehouseAmcController extends Controller
             return explode('-', $monthYear)[0];
         })->unique()->sort()->values();
 
+        // Add additional years for template selection (current year + 2 years back and 2 years forward)
+        $currentYear = now()->year;
+        $additionalYears = collect();
+        for ($i = -2; $i <= 2; $i++) {
+            $additionalYears->push($currentYear + $i);
+        }
+        
+        // Merge and deduplicate years
+        $years = $years->merge($additionalYears)->unique()->sort()->values();
+
         // Get months from month-years
         $months = $monthYears->map(function($monthYear) {
             return explode('-', $monthYear)[1];
@@ -381,15 +391,26 @@ class WarehouseAmcController extends Controller
     /**
      * Download template for warehouse AMC import
      */
-    public function downloadTemplate()
+    public function downloadTemplate(Request $request)
     {
         try {
-            // Get unique month-years for template
+            // Get the selected year from request, default to current year
+            $selectedYear = $request->get('year', now()->year);
+            
+            // Get months for the selected year only
             $monthYears = WarehouseAmc::select('month_year')
+                ->where('month_year', 'like', $selectedYear . '-%')
                 ->distinct()
-                ->orderBy('month_year', 'desc')
-                ->limit(12) // Limit to last 12 months for template
+                ->orderBy('month_year', 'asc')
                 ->pluck('month_year');
+
+            // If no months found for selected year, create default months
+            if ($monthYears->isEmpty()) {
+                $monthYears = collect();
+                for ($month = 1; $month <= 12; $month++) {
+                    $monthYears->push($selectedYear . '-' . str_pad($month, 2, '0', STR_PAD_LEFT));
+                }
+            }
 
             // Get ALL products for template
             $allProducts = Product::with(['category:id,name', 'dosage:id,name'])
@@ -421,7 +442,7 @@ class WarehouseAmcController extends Controller
                 $templateData[] = $row;
             }
 
-            $filename = 'warehouse_amc_import_template_' . now()->format('Y-m-d') . '.xlsx';
+            $filename = 'warehouse_amc_import_template_' . $selectedYear . '_' . now()->format('Y-m-d') . '.xlsx';
             
             return Excel::download(new WarehouseAmcExport($templateData, $monthYears), $filename);
 
