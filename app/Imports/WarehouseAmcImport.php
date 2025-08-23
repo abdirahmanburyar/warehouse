@@ -18,8 +18,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, WithBatchInserts, WithChunkReading, WithProgressBar, WithEvents
+class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, WithBatchInserts, WithChunkReading, WithProgressBar, WithEvents, ShouldQueue
 {
     use Importable;
 
@@ -29,6 +30,11 @@ class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, Wit
     protected $importId;
     protected $totalRows = 0;
     protected $processedRows = 0;
+
+    /**
+     * The name of the queue the job should be sent to.
+     */
+    public $queue = 'imports';
 
     public function __construct($importId = null)
     {

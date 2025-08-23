@@ -308,14 +308,34 @@ class WarehouseAmcController extends Controller
                 'message' => 'Import has been queued successfully'
             ], 3600); // 1 hour expiry
             
-            // Queue the import job
-            Excel::queueImport(new WarehouseAmcImport($importId), $file)->onQueue('imports');
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Import has been queued successfully. You will be notified when it completes.',
-                'import_id' => $importId,
-            ], 200);
+            try {
+                // Queue the import job
+                Excel::queueImport(new WarehouseAmcImport($importId), $file)->onQueue('imports');
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Import has been queued successfully. You will be notified when it completes.',
+                    'import_id' => $importId,
+                ], 200);
+                
+            } catch (\Exception $queueError) {
+                \Log::error('Queue import failed: ' . $queueError->getMessage());
+                
+                // Fallback to synchronous import if queuing fails
+                try {
+                    Excel::import(new WarehouseAmcImport($importId), $file);
+                    
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Import completed successfully (synchronous mode).',
+                        'import_id' => $importId,
+                    ], 200);
+                    
+                } catch (\Exception $syncError) {
+                    \Log::error('Synchronous import failed: ' . $syncError->getMessage());
+                    throw $syncError;
+                }
+            }
 
         } catch (\Exception $e) {
             \Log::error('Warehouse AMC import failed: ' . $e->getMessage());
