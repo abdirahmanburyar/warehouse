@@ -61,7 +61,7 @@
                 <!-- Search and Filters -->
                 <div class="mb-6 flex flex-col sm:flex-row gap-4">
                     <div class="flex-1">
-                        <label for="search" class="sr-only">Search</label>
+                        <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Item</label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
@@ -102,16 +102,7 @@
                         />
                     </div>
 
-                    <div class="sm:w-48">
-                        <label for="per_page" class="sr-only">Items per page</label>
-                        <select id="per_page" v-model="per_page" @change="props.filters.page = 1; applyFilters()"
-                            class="block w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="10">10 per page</option>
-                            <option value="25">25 per page</option>
-                            <option value="50">50 per page</option>
-                            <option value="100">100 per page</option>
-                        </select>
-                    </div>
+
                 </div>
 
                 <!-- Clear Filters Button -->
@@ -206,19 +197,7 @@
                     </table>
                 </div>
 
-                <!-- Pagination -->
-                <div class="mt-4 flex justify-between items-center">
-                    <div class="text-sm text-gray-700">
-                        <span v-if="products && products.meta">
-                            Showing {{ products.meta.from }} to {{ products.meta.to }} of {{ products.meta.total }} results
-                        </span>
-                    </div>
-                    <TailwindPagination
-                        :data="products"
-                        @pagination-change-page="getResults"
-                        :limit="2"
-                    />
-                </div>
+
             </div>
         </div>
 
@@ -361,7 +340,7 @@
 import { ref, watch, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { TailwindPagination } from "laravel-vue-pagination";
+
 import { useToast } from 'vue-toastification';
 import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
@@ -384,7 +363,6 @@ const props = defineProps({
 const search = ref(props.filters.search || '');
 const month_from = ref(props.filters.month_from || '');
 const month_to = ref(props.filters.month_to || '');
-const per_page = ref(props.filters.per_page || 25);
 const sortField = ref(props.filters.sort || 'name');
 const sortDirection = ref(props.filters.direction || 'asc');
 const templateYear = ref(new Date().getFullYear()); // Default to current year
@@ -408,8 +386,6 @@ watch([search, month_from, month_to], () => {
         month_to: month_to.value?.toString() || undefined,
         sort: sortField.value,
         direction: sortDirection.value,
-        per_page: per_page.value,
-        page: 1,
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -425,8 +401,6 @@ const applyFilters = () => {
         month_to: month_to.value?.toString() || undefined,
         sort: sortField.value,
         direction: sortDirection.value,
-        per_page: per_page.value,
-        page: props.filters.page,
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -440,7 +414,6 @@ const clearFilters = () => {
     month_to.value = '';
     sortField.value = 'name';
     sortDirection.value = 'asc';
-    props.filters.page = 1;
     applyFilters();
     toast.success('Filters cleared!');
 };
@@ -455,10 +428,7 @@ const sortBy = (field) => {
     applyFilters();
 };
 
-const getResults = (page) => {
-    props.filters.page = page;
-    applyFilters();
-};
+
 
 const exportData = () => {
     const params = new URLSearchParams();

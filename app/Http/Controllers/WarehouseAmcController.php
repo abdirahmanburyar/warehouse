@@ -123,13 +123,12 @@ class WarehouseAmcController extends Controller
             $query->orderBy('products.name', $sortDirection);
         }
 
-        // Paginate results
-        $perPage = $request->get('per_page', 25);
-        $products = $query->paginate($perPage);
+        // Get all results (no pagination)
+        $products = $query->get();
 
         // Transform data to pivot table format
         $pivotData = [];
-        foreach ($products->items() as $product) {
+        foreach ($products as $product) {
             $row = [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -154,7 +153,7 @@ class WarehouseAmcController extends Controller
             'products' => $products,
             'pivotData' => $pivotData,
             'monthYears' => $monthYears,
-            'filters' => $request->only(['search', 'month_from', 'month_to', 'sort', 'direction', 'per_page']),
+            'filters' => $request->only(['search', 'month_from', 'month_to', 'sort', 'direction']),
             'years' => $years,
             'months' => $months,
         ]);
