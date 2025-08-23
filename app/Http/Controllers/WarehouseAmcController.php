@@ -539,59 +539,172 @@ class WarehouseAmcController extends Controller
     }
 
     /**
-     * Calculate AMC using Tukey's Rule for outlier detection
+     * Calculate AMC using percentage deviation screening
      */
     private function calculateAMC($productId, $monthYears)
     {
         try {
-            // Get all consumption values for the product, ordered by month (most recent first)
-            $consumptions = WarehouseAmc::where('product_id', $productId)
+            // Get all consumption values for the product with month_year for ordering
+            $consumptionsWithMonth = WarehouseAmc::where('product_id', $productId)
                 ->whereIn('month_year', $monthYears)
                 ->where('quantity', '>', 0) // Only consider positive consumption values
-                ->orderBy('month_year', 'desc')
-                ->pluck('quantity')
-                ->filter(function($value) {
-                    return $value > 0; // Additional filter for positive values
-                })
-                ->values();
+                ->orderBy('month_year', 'desc') // Most recent first (bottom to top)
+                ->get(['month_year', 'quantity']);
 
             // If we have less than 3 values, return 0
-            if ($consumptions->count() < 3) {
+            if ($consumptionsWithMonth->count() < 3) {
                 return 0;
             }
 
-            // Apply Tukey's Rule for outlier detection
-            $sortedValues = $consumptions->sort()->values();
-            $count = $sortedValues->count();
+            // Extract quantities and months
+            $quantities = $consumptionsWithMonth->pluck('quantity')->values();
+            $months = $consumptionsWithMonth->pluck('month_year')->values();
+            
+            Log::info("AMC calculation for product {$productId}", [
+                'quantities' => $quantities->toArray(),
+                'months' => $months->toArray()
+            ]);
 
-            // Calculate Q1 (25th percentile) and Q3 (75th percentile)
-            $q1Index = (int) (0.25 * ($count - 1));
-            $q3Index = (int) (0.75 * ($count - 1));
-
-            $q1 = $sortedValues[$q1Index];
-            $q3 = $sortedValues[$q3Index];
-
-            // Calculate IQR (Interquartile Range)
-            $iqr = $q3 - $q1;
-
-            // Define bounds for outlier detection
-            $lowerBound = $q1 - (1.5 * $iqr);
-            $upperBound = $q3 + (1.5 * $iqr);
-
-            // Filter out outliers and get the 3 most recent non-outlier values
-            $nonOutlierValues = $consumptions->filter(function($value) use ($lowerBound, $upperBound) {
-                return $value >= $lowerBound && $value <= $upperBound;
-            })->take(3);
-
-            // If we don't have 3 non-outlier values, use the original 3 most recent
-            if ($nonOutlierValues->count() < 3) {
-                $nonOutlierValues = $consumptions->take(3);
+            // Start with the 3 most recent months
+            $selectedMonths = [];
+            $passedMonths = [];
+            $failedMonths = [];
+            
+            // Initial selection: 3 most recent months
+            for ($i = 0; $i < 3; $i++) {
+                $selectedMonths[] = [
+                    'month' => $months[$i],
+                    'quantity' => $quantities[$i]
+                ];
             }
-
-            // Calculate AMC as average of the 3 values
-            $amc = $nonOutlierValues->avg();
-
-            return round($amc, 2);
+            
+            $attempt = 1;
+            $maxAttempts = 10; // Prevent infinite loops
+            
+            while ($attempt <= $maxAttempts) {
+                Log::info("AMC calculation attempt {$attempt}", [
+                    'selected_months' => $selectedMonths,
+                    'passed_months' => $passedMonths,
+                    'failed_months' => $failedMonths
+                ]);
+                
+                // Calculate average of selected months
+                $average = collect($selectedMonths)->avg('quantity');
+                
+                Log::info("Calculated average", ['average' => $average]);
+                
+                // Check each month's deviation
+                $allPassed = true;
+                $newPassedMonths = [];
+                $newFailedMonths = [];
+                
+                foreach ($selectedMonths as $monthData) {
+                    $quantity = $monthData['quantity'];
+                    $deviation = abs($quantity - $average) / $average * 100;
+                    
+                    Log::info("Checking month {$monthData['month']}", [
+                        'quantity' => $quantity,
+                        'deviation_percentage' => round($deviation, 2)
+                    ]);
+                    
+                    if ($deviation <= 70) {
+                        // Month passed screening
+                        $newPassedMonths[] = $monthData;
+                        Log::info("Month {$monthData['month']} PASSED screening");
+                    } else {
+                        // Month failed screening
+                        $newFailedMonths[] = $monthData;
+                        $allPassed = false;
+                        Log::info("Month {$monthData['month']} FAILED screening");
+                    }
+                }
+                
+                // Add newly passed months to the global passed list
+                foreach ($newPassedMonths as $monthData) {
+                    if (!collect($passedMonths)->contains('month', $monthData['month'])) {
+                        $passedMonths[] = $monthData;
+                    }
+                }
+                
+                // Add newly failed months to the global failed list
+                foreach ($newFailedMonths as $monthData) {
+                    if (!collect($failedMonths)->contains('month', $monthData['month'])) {
+                        $failedMonths[] = $monthData;
+                    }
+                }
+                
+                // If all months passed, we're done
+                if ($allPassed) {
+                    Log::info("All months passed screening!", [
+                        'final_selected_months' => $selectedMonths,
+                        'final_passed_months' => $passedMonths
+                    ]);
+                    break;
+                }
+                
+                // If we have 3 or more passed months, use them
+                if (count($passedMonths) >= 3) {
+                    $selectedMonths = array_slice($passedMonths, 0, 3);
+                    Log::info("Using 3 passed months", ['selected_months' => $selectedMonths]);
+                    break;
+                }
+                
+                // Need to reselect months including passed ones
+                $newSelection = [];
+                
+                // First, include all passed months
+                foreach ($passedMonths as $monthData) {
+                    $newSelection[] = $monthData;
+                }
+                
+                // Then add more months from the original list until we have 3
+                $monthIndex = 0;
+                while (count($newSelection) < 3 && $monthIndex < count($quantities)) {
+                    $monthData = [
+                        'month' => $months[$monthIndex],
+                        'quantity' => $quantities[$monthIndex]
+                    ];
+                    
+                    // Only add if not already in selection and not in failed months
+                    $alreadySelected = collect($newSelection)->contains('month', $monthData['month']);
+                    $isFailed = collect($failedMonths)->contains('month', $monthData['month']);
+                    
+                    if (!$alreadySelected && !$isFailed) {
+                        $newSelection[] = $monthData;
+                    }
+                    
+                    $monthIndex++;
+                }
+                
+                // Update selected months for next iteration
+                $selectedMonths = $newSelection;
+                
+                Log::info("Reselected months for next attempt", [
+                    'new_selection' => $selectedMonths
+                ]);
+                
+                $attempt++;
+            }
+            
+            // Calculate final AMC
+            if (count($selectedMonths) >= 3) {
+                $amc = collect($selectedMonths)->avg('quantity');
+                $result = round($amc, 2);
+                
+                Log::info("AMC calculation completed", [
+                    'product_id' => $productId,
+                    'final_selected_months' => $selectedMonths,
+                    'amc' => $result
+                ]);
+                
+                return $result;
+            } else {
+                Log::warning("Could not find 3 suitable months for AMC calculation", [
+                    'product_id' => $productId,
+                    'selected_months_count' => count($selectedMonths)
+                ]);
+                return 0;
+            }
 
         } catch (\Exception $e) {
             Log::error('Error calculating AMC for product ' . $productId, [
