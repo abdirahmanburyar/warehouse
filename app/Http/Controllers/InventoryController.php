@@ -43,9 +43,9 @@ class InventoryController extends Controller
             // Product-first pagination so products with zero or no items still appear
             $productQuery = Product::query()
                 ->select('products.id', 'products.name', 'products.category_id', 'products.dosage_id')
+                ->groupBy('products.id', 'products.name', 'products.category_id', 'products.dosage_id')
                 ->with(['category:id,name', 'dosage:id,name'])
-                ->leftJoin('warehouse_amcs', 'products.id', '=', 'warehouse_amcs.product_id')
-                ->addSelect(DB::raw('COALESCE(warehouse_amcs.quantity, 0) as monthly_consumption'))
+                ->addSelect(DB::raw('(SELECT COALESCE(SUM(quantity), 0) FROM warehouse_amcs WHERE warehouse_amcs.product_id = products.id) as monthly_consumption'))
                 ->addSelect(DB::raw('0 as amc')) // Will be calculated dynamically
                 ->addSelect(DB::raw('0 as buffer_stock')) // Will be calculated dynamically
                 ->addSelect(DB::raw('0 as reorder_level')); // Will be calculated dynamically
@@ -58,7 +58,8 @@ class InventoryController extends Controller
                 $productQuery->where(function($q) use ($search) {
                     $q->where('products.name', 'like', "%{$search}%")
                       ->orWhereExists(function($sub) use ($search) {
-                          $sub->from('inventories')
+                          $sub->select(DB::raw(1))
+                              ->from('inventories')
                               ->join('inventory_items', 'inventories.id', '=', 'inventory_items.inventory_id')
                               ->whereColumn('inventories.product_id', 'products.id')
                               ->where(function($w) use ($search){
@@ -83,11 +84,19 @@ class InventoryController extends Controller
 
             $perPage = $request->input('per_page', 25);
             $page = $request->input('page', 1);
-            $productsPaginator = $productQuery->paginate($perPage, ['products.*', 'warehouse_amcs.monthly_consumption'], 'page', $page)
+            $productsPaginator = $productQuery->paginate($perPage, ['products.*'], 'page', $page)
                 ->withQueryString();
             $productsPaginator->setPath(url()->current());
 
             $productIds = collect($productsPaginator->items())->pluck('id')->all();
+
+            // Debug: Log the products to check for duplicates
+            Log::info('Products from paginator', [
+                'total_products' => count($productsPaginator->items()),
+                'unique_product_ids' => count(array_unique($productIds)),
+                'product_ids' => $productIds,
+                'duplicate_check' => array_count_values($productIds)
+            ]);
 
             // Load existing inventories (and items) for products on this page
             $existingInventories = Inventory::query()
@@ -198,7 +207,17 @@ class InventoryController extends Controller
             Log::info("Final merged data", [
                 'total_merged_records' => $merged->count(),
                 'products_with_inventory' => $merged->where('id', '>', 0)->count(),
-                'placeholder_products' => $merged->where('id', '<', 0)->count()
+                'placeholder_products' => $merged->where('id', '<', 0)->count(),
+                'unique_product_ids' => $merged->pluck('product_id')->unique()->count(),
+                'duplicate_product_check' => $merged->pluck('product_id')->duplicates()->values()->toArray()
+            ]);
+
+            // Final safeguard: ensure no duplicate products in the merged collection
+            $merged = $merged->unique('product_id')->values();
+            
+            Log::info("After deduplication", [
+                'total_merged_records' => $merged->count(),
+                'unique_product_ids' => $merged->pluck('product_id')->unique()->count()
             ]);
 
             // Apply sorting to the merged data after creating the collection
