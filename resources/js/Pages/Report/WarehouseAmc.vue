@@ -79,25 +79,9 @@
 
 
                     <div class="sm:w-48">
-                        <label for="year" class="sr-only">Year</label>
+                        <label for="month_from" class="sr-only">From Month</label>
                         <Multiselect 
-                            v-model="year" 
-                            :options="years" 
-                            :multiple="false" 
-                            :show-labels="false"
-                            :searchable="true" 
-                            :close-on-select="true" 
-                            :clear-on-select="false" 
-                            :hide-selected="true" 
-                            :placeholder="'All Years'"
-                            @change="applyFilters"
-                        />
-                    </div>
-
-                    <div class="sm:w-48">
-                        <label for="month_year" class="sr-only">Month Year</label>
-                        <Multiselect 
-                            v-model="month_year" 
+                            v-model="month_from" 
                             :options="monthYears" 
                             :multiple="false" 
                             :show-labels="false"
@@ -105,8 +89,22 @@
                             :close-on-select="true" 
                             :clear-on-select="false" 
                             :hide-selected="true" 
-                            :placeholder="'All Months'"
-                            @change="applyFilters"
+                            :placeholder="'From Month'"
+                        />
+                    </div>
+
+                    <div class="sm:w-48">
+                        <label for="month_to" class="sr-only">To Month</label>
+                        <Multiselect 
+                            v-model="month_to" 
+                            :options="monthYears" 
+                            :multiple="false" 
+                            :show-labels="false"
+                            :searchable="true" 
+                            :close-on-select="true" 
+                            :clear-on-select="false" 
+                            :hide-selected="true" 
+                            :placeholder="'To Month'"
                         />
                     </div>
 
@@ -390,8 +388,8 @@ const props = defineProps({
 
 // Reactive variables
 const search = ref(props.filters.search || '');
-const year = ref(props.filters.year || '');
-const month_year = ref(props.filters.month_year || '');
+const month_from = ref(props.filters.month_from || '');
+const month_to = ref(props.filters.month_to || '');
 const per_page = ref(props.filters.per_page || 25);
 const sortField = ref(props.filters.sort || 'name');
 const sortDirection = ref(props.filters.direction || 'asc');
@@ -409,11 +407,11 @@ const importId = ref(null);
 const progressInterval = ref(null);
 
 // Watch for changes and apply filters
-watch([search, year, month_year], () => {
+watch([search, month_from, month_to], () => {
     router.get(route('reports.warehouse-amc'), {
         search: search.value || undefined,
-        year: year.value?.toString() || undefined,
-        month_year: month_year.value?.toString() || undefined,
+        month_from: month_from.value?.toString() || undefined,
+        month_to: month_to.value?.toString() || undefined,
         sort: sortField.value,
         direction: sortDirection.value,
         per_page: per_page.value,
@@ -429,8 +427,8 @@ watch([search, year, month_year], () => {
 const applyFilters = () => {
     router.get(route('reports.warehouse-amc'), {
         search: search.value || undefined,
-        year: year.value?.toString() || undefined,
-        month_year: month_year.value?.toString() || undefined,
+        month_from: month_from.value?.toString() || undefined,
+        month_to: month_to.value?.toString() || undefined,
         sort: sortField.value,
         direction: sortDirection.value,
         per_page: per_page.value,
@@ -444,8 +442,8 @@ const applyFilters = () => {
 
 const clearFilters = () => {
     search.value = '';
-    year.value = '';
-    month_year.value = '';
+    month_from.value = '';
+    month_to.value = '';
     sortField.value = 'name';
     sortDirection.value = 'asc';
     props.filters.page = 1;
@@ -472,8 +470,8 @@ const exportData = () => {
     const params = new URLSearchParams();
     
     if (search.value) params.append('search', search.value);
-    if (year.value) params.append('year', year.value.toString());
-    if (month_year.value) params.append('month_year', month_year.value.toString());
+    if (month_from.value) params.append('month_from', month_from.value.toString());
+    if (month_to.value) params.append('month_to', month_to.value.toString());
 
     window.open(route('reports.warehouse-amc.export') + '?' + params.toString(), '_blank');
 };
