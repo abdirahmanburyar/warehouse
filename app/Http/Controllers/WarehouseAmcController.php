@@ -393,9 +393,9 @@ class WarehouseAmcController extends Controller
                     'dosage' => $product->dosage_name,
                 ];
 
-                // Add sample quantities for each month (0 for template)
+                // Add sample quantities for each month (empty for template - won't overwrite existing data)
                 foreach ($monthYears as $monthYear) {
-                    $row[$monthYear] = 0;
+                    $row[$monthYear] = ''; // Empty cell - won't overwrite existing data
                 }
 
                 $templateData[] = $row;

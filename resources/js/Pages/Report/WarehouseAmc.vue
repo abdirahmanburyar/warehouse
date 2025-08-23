@@ -14,7 +14,7 @@
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h3 class="text-lg font-medium text-gray-900">Warehouse AMC Management</h3>
-                        <p class="text-sm text-gray-600 mt-1">View and analyze Average Monthly Consumption data for warehouse products. Download complete template with all products, upload data, and export to Excel with full formatting.</p>
+                                                 <p class="text-sm text-gray-600 mt-1">View and analyze Average Monthly Consumption data for warehouse products. Download complete template with all products, upload data, and export to Excel with full formatting. <strong>Import Tip:</strong> Empty cells in uploaded files won't overwrite existing data.</p>
                     </div>
                     <div class="flex space-x-3">
                         <button
@@ -253,9 +253,10 @@
                     </div>
                     
                     <div class="mb-4">
-                        <p class="text-sm text-gray-600 mb-3">
-                            Upload an Excel file (.xlsx) with warehouse AMC data. Make sure the file follows the template format.
-                        </p>
+                                                 <p class="text-sm text-gray-600 mb-3">
+                             Upload an Excel file (.xlsx) with warehouse AMC data. Make sure the file follows the template format. 
+                             <strong>Note:</strong> Empty cells will not overwrite existing data - only filled quantities will be updated.
+                         </p>
                         
                         <!-- File Input -->
                         <div class="mb-4">

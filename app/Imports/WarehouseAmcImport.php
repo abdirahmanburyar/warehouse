@@ -57,9 +57,10 @@ class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, Wit
                 $product = Product::where('name', 'like', '%' . trim($row['item']) . '%')->first();
             }
             
+            // If product not found, log warning but continue processing other rows
             if (!$product) {
-                $this->errors[] = "Product '{$row['item']}' not found";
-                Log::warning("Product not found during import: {$row['item']}");
+                $this->errors[] = "Product '{$row['item']}' not found - skipping this row";
+                Log::warning("Product not found during import: {$row['item']} - row skipped");
                 return null;
             }
 
@@ -78,20 +79,24 @@ class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, Wit
 
                 // Clean and validate quantity
                 $quantity = $this->cleanQuantity($value);
+                
+                // If quantity is null or empty, skip this month (don't update existing data)
                 if ($quantity === null) {
                     continue;
                 }
 
-                // Update or create warehouse AMC record
-                WarehouseAmc::updateOrCreate(
-                    [
-                        'product_id' => $product->id,
-                        'month_year' => $monthYear,
-                    ],
-                    [
-                        'quantity' => $quantity,
-                    ]
-                );
+                // Only update/create if we have a valid quantity
+                if ($quantity !== null) {
+                    WarehouseAmc::updateOrCreate(
+                        [
+                            'product_id' => $product->id,
+                            'month_year' => $monthYear,
+                        ],
+                        [
+                            'quantity' => $quantity,
+                        ]
+                    );
+                }
             }
 
             // Update progress
@@ -227,15 +232,16 @@ class WarehouseAmcImport implements ToModel, WithHeadingRow, WithValidation, Wit
      */
     private function cleanQuantity($value)
     {
-        if ($value === null || $value === '') {
-            return 0;
+        // Return null for empty or null values
+        if ($value === null || $value === '' || trim($value) === '') {
+            return null;
         }
 
         // Remove any non-numeric characters except decimal point and minus
         $cleaned = preg_replace('/[^0-9.-]/', '', $value);
         
         if ($cleaned === '' || $cleaned === '-') {
-            return 0;
+            return null;
         }
 
         $quantity = (float) $cleaned;
