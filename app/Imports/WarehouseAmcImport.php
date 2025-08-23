@@ -95,11 +95,11 @@ class WarehouseAmcImport implements
             Log::info("Row keys: " . implode(', ', array_keys($row)));
             
             foreach ($row as $key => $value) {
-                // Skip non-month columns
-                if (in_array($key, ['item', 'category', 'dosage_form', 'AMC'])) {
-                    Log::info("Skipping non-month column: {$key} = {$value}");
-                    continue;
-                }
+                        // Skip non-month columns
+        if (in_array($key, ['item', 'AMC'])) {
+            Log::info("Skipping non-month column: {$key} = {$value}");
+            continue;
+        }
 
                 // Convert formatted month back to YYYY-MM format
                 $monthYear = $this->parseMonthYear($key);
@@ -165,8 +165,6 @@ class WarehouseAmcImport implements
     {
         return [
             'item' => 'nullable|string|max:255', // Changed from required to nullable
-            'category' => 'nullable|string|max:255',
-            'dosage_form' => 'nullable|string|max:255',
             'AMC' => 'nullable|string|max:255',
         ];
     }

@@ -63,7 +63,7 @@
                             </div>
                             <input id="search" v-model="search" type="text"
                                 class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                placeholder="Search products, categories, or dosages..." />
+                                                                 placeholder="Search products..." />
                         </div>
                     </div>
                     
@@ -104,32 +104,7 @@
                                         </svg>
                                     </div>
                                 </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                    @click="sortBy('category_name')">
-                                    <div class="flex items-center">
-                                        Category
-                                        <svg v-if="sortField === 'category_name'" class="ml-1 h-4 w-4 text-gray-400"
-                                            :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none"
-                                            stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
-                                        </svg>
-                                    </div>
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                    @click="sortBy('dosage_name')">
-                                    <div class="flex items-center">
-                                        Dosage Form
-                                        <svg v-if="sortField === 'dosage_name'" class="ml-1 h-4 w-4 text-gray-400"
-                                            :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none"
-                                            stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
-                                        </svg>
-                                    </div>
-                                </th>
+
                                                                  <!-- Dynamic Month Columns -->
                                  <th v-for="monthYear in monthYears" :key="monthYear"
                                      class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
@@ -147,12 +122,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10">
                                         {{ product.name }}
                                     </td>
-                                    <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ product.category }}
-                                    </td>
-                                    <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ product.dosage }}
-                                    </td>
+
                                                                          <!-- Dynamic Month Data -->
                                      <td v-for="monthYear in monthYears" :key="monthYear"
                                          class="px-3 py-4 whitespace-nowrap text-sm text-center text-gray-900 font-medium">
@@ -166,7 +136,7 @@
                             </template>
                             <template v-else>
                                 <tr>
-                                                                     <td :colspan="4 + monthYears.length" class="px-6 py-4 text-center text-sm text-gray-500">
+                                                                     <td :colspan="2 + monthYears.length" class="px-6 py-4 text-center text-sm text-gray-500">
                                      No warehouse AMC data found.
                                  </td>
                                 </tr>

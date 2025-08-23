@@ -63,18 +63,10 @@ class WarehouseAmcController extends Controller
 
         // Build the pivot table query
         $query = Product::query()
-            ->with([
-                'category:id,name',
-                'dosage:id,name'
-            ])
             ->select([
                 'products.id',
-                'products.name',
-                'categories.name as category_name',
-                'dosages.name as dosage_name'
+                'products.name'
             ])
-            ->join('categories', 'products.category_id', '=', 'categories.id')
-            ->leftJoin('dosages', 'products.dosage_id', '=', 'dosages.id')
             ->whereExists(function($subQuery) {
                 $subQuery->select(DB::raw(1))
                     ->from('warehouse_amcs')
@@ -85,11 +77,7 @@ class WarehouseAmcController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             Log::info('Applying search filter', ['search' => $search]);
-            $query->where(function($q) use ($search) {
-                $q->where('products.name', 'like', "%{$search}%")
-                  ->orWhere('categories.name', 'like', "%{$search}%")
-                  ->orWhere('dosages.name', 'like', "%{$search}%");
-            });
+            $query->where('products.name', 'like', "%{$search}%");
         }
 
 
@@ -109,13 +97,7 @@ class WarehouseAmcController extends Controller
         $sortField = $request->get('sort', 'name');
         $sortDirection = $request->get('direction', 'asc');
         
-        if ($sortField === 'category_name') {
-            $query->orderBy('categories.name', $sortDirection);
-        } elseif ($sortField === 'dosage_name') {
-            $query->orderBy('dosages.name', $sortDirection);
-        } else {
-            $query->orderBy('products.name', $sortDirection);
-        }
+        $query->orderBy('products.name', $sortDirection);
 
         // Get all results (no pagination)
         $products = $query->get();
@@ -126,8 +108,6 @@ class WarehouseAmcController extends Controller
             $row = [
                 'id' => $product->id,
                 'name' => $product->name,
-                'category' => $product->category_name,
-                'dosage' => $product->dosage_name,
                 'months' => []
             ];
 
@@ -228,18 +208,10 @@ class WarehouseAmcController extends Controller
 
         // Build the pivot table query
         $query = Product::query()
-            ->with([
-                'category:id,name',
-                'dosage:id,name'
-            ])
             ->select([
                 'products.id',
-                'products.name',
-                'categories.name as category_name',
-                'dosages.name as dosage_name'
+                'products.name'
             ])
-            ->join('categories', 'products.category_id', '=', 'categories.id')
-            ->leftJoin('dosages', 'products.dosage_id', '=', 'dosages.id')
             ->whereExists(function($subQuery) {
                 $subQuery->select(DB::raw(1))
                     ->from('warehouse_amcs')
@@ -271,8 +243,6 @@ class WarehouseAmcController extends Controller
         foreach ($products as $product) {
             $row = [
                 'name' => $product->name,
-                'category' => $product->category_name,
-                'dosage' => $product->dosage_name,
             ];
 
             // Add consumption data for each month
@@ -521,22 +491,17 @@ class WarehouseAmcController extends Controller
 
             // Get ALL products for template
             Log::info('Fetching all products for template');
-            $allProducts = Product::with(['category:id,name', 'dosage:id,name'])
-                ->join('categories', 'products.category_id', '=', 'categories.id')
-                ->leftJoin('dosages', 'products.dosage_id', '=', 'dosages.id')
-                ->select([
-                    'products.id',
-                    'products.name',
-                    'categories.name as category_name',
-                    'dosages.name as dosage_name'
-                ])
+            $allProducts = Product::select([
+                'products.id',
+                'products.name'
+            ])
                 ->orderBy('products.name')
                 ->get();
             
             Log::info('Products fetched for template', [
                 'product_count' => $allProducts->count(),
                 'sample_products' => $allProducts->take(3)->map(function($p) {
-                    return ['id' => $p->id, 'name' => $p->name, 'category' => $p->category_name, 'dosage' => $p->dosage_name];
+                    return ['id' => $p->id, 'name' => $p->name];
                 })->toArray()
             ]);
 
@@ -545,8 +510,6 @@ class WarehouseAmcController extends Controller
             foreach ($allProducts as $product) {
                 $row = [
                     'name' => $product->name,
-                    'category' => $product->category_name,
-                    'dosage' => $product->dosage_name,
                 ];
 
                 // Add sample quantities for each month (empty for template - won't overwrite existing data)
