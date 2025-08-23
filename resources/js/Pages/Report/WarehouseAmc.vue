@@ -14,7 +14,6 @@
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h3 class="text-lg font-medium text-gray-900">Warehouse AMC Management</h3>
-                                                 <p class="text-sm text-gray-600 mt-1">View and analyze Average Monthly Consumption data for warehouse products. Select a year to download a template with months for that specific year, upload data, and export to Excel with full formatting. <strong>Import Tip:</strong> Empty cells in uploaded files won't overwrite existing data.</p>
                     </div>
                                          <div class="flex space-x-3">
                          <div class="flex items-center space-x-2">
@@ -77,41 +76,7 @@
                         </div>
                     </div>
                     
-                    <div class="sm:w-48">
-                        <label for="category" class="sr-only">Category</label>
-                        <Multiselect 
-                            v-model="category" 
-                            :options="categories" 
-                            :multiple="false" 
-                            :show-labels="false"
-                            :searchable="true" 
-                            :close-on-select="true" 
-                            :clear-on-select="false" 
-                            :hide-selected="true" 
-                            :placeholder="'All Categories'"
-                            @change="applyFilters"
-                            track-by="id"
-                            label="name"
-                        />
-                    </div>
 
-                    <div class="sm:w-48">
-                        <label for="dosage" class="sr-only">Dosage</label>
-                        <Multiselect 
-                            v-model="dosage" 
-                            :options="dosages" 
-                            :multiple="false" 
-                            :show-labels="false"
-                            :searchable="true" 
-                            :close-on-select="true" 
-                            :clear-on-select="false" 
-                            :hide-selected="true" 
-                            :placeholder="'All Dosages'"
-                            @change="applyFilters"
-                            track-by="id"
-                            label="name"
-                        />
-                    </div>
 
                     <div class="sm:w-48">
                         <label for="year" class="sr-only">Year</label>
@@ -125,6 +90,22 @@
                             :clear-on-select="false" 
                             :hide-selected="true" 
                             :placeholder="'All Years'"
+                            @change="applyFilters"
+                        />
+                    </div>
+
+                    <div class="sm:w-48">
+                        <label for="month_year" class="sr-only">Month Year</label>
+                        <Multiselect 
+                            v-model="month_year" 
+                            :options="monthYears" 
+                            :multiple="false" 
+                            :show-labels="false"
+                            :searchable="true" 
+                            :close-on-select="true" 
+                            :clear-on-select="false" 
+                            :hide-selected="true" 
+                            :placeholder="'All Months'"
                             @change="applyFilters"
                         />
                     </div>
@@ -403,17 +384,14 @@ const props = defineProps({
     pivotData: Array,
     monthYears: Array,
     filters: Object,
-    categories: Array,
-    dosages: Array,
     years: Array,
     months: Array,
 });
 
 // Reactive variables
 const search = ref(props.filters.search || '');
-const category = ref(props.filters.category || '');
-const dosage = ref(props.filters.dosage || '');
 const year = ref(props.filters.year || '');
+const month_year = ref(props.filters.month_year || '');
 const per_page = ref(props.filters.per_page || 25);
 const sortField = ref(props.filters.sort || 'name');
 const sortDirection = ref(props.filters.direction || 'asc');
@@ -431,18 +409,28 @@ const importId = ref(null);
 const progressInterval = ref(null);
 
 // Watch for changes and apply filters
-watch([search, category, dosage, year], () => {
-    props.filters.page = 1;
-    applyFilters();
+watch([search, year, month_year], () => {
+    router.get(route('reports.warehouse-amc'), {
+        search: search.value || undefined,
+        year: year.value?.toString() || undefined,
+        month_year: month_year.value?.toString() || undefined,
+        sort: sortField.value,
+        direction: sortDirection.value,
+        per_page: per_page.value,
+        page: 1,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
 }, { deep: true });
 
 // Methods
 const applyFilters = () => {
     router.get(route('reports.warehouse-amc'), {
-        search: search.value,
-        category: category.value,
-        dosage: dosage.value,
-        year: year.value,
+        search: search.value || undefined,
+        year: year.value?.toString() || undefined,
+        month_year: month_year.value?.toString() || undefined,
         sort: sortField.value,
         direction: sortDirection.value,
         per_page: per_page.value,
@@ -456,9 +444,8 @@ const applyFilters = () => {
 
 const clearFilters = () => {
     search.value = '';
-    category.value = '';
-    dosage.value = '';
     year.value = '';
+    month_year.value = '';
     sortField.value = 'name';
     sortDirection.value = 'asc';
     props.filters.page = 1;
@@ -482,12 +469,11 @@ const getResults = (page) => {
 };
 
 const exportData = () => {
-    const params = new URLSearchParams({
-        search: search.value,
-        category: category.value,
-        dosage: dosage.value,
-        year: year.value,
-    });
+    const params = new URLSearchParams();
+    
+    if (search.value) params.append('search', search.value);
+    if (year.value) params.append('year', year.value.toString());
+    if (month_year.value) params.append('month_year', month_year.value.toString());
 
     window.open(route('reports.warehouse-amc.export') + '?' + params.toString(), '_blank');
 };

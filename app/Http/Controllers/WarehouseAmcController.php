@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\WarehouseAmc;
 use App\Models\Product;
-use App\Models\Category;
-use App\Models\Dosage;
 use App\Imports\WarehouseAmcImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -24,6 +22,15 @@ class WarehouseAmcController extends Controller
      */
     public function index(Request $request)
     {
+        // Log filter values for debugging
+        Log::info('Warehouse AMC index filters', [
+            'search' => $request->get('search'),
+            'year' => $request->get('year'),
+            'month_year' => $request->get('month_year'),
+            'sort' => $request->get('sort'),
+            'direction' => $request->get('direction'),
+        ]);
+
         // Get unique month-years for filtering and display
         $monthYears = WarehouseAmc::select('month_year')
             ->distinct()
@@ -50,15 +57,7 @@ class WarehouseAmcController extends Controller
             return explode('-', $monthYear)[1];
         })->unique()->sort()->values();
 
-        // Get categories for filter
-        $categories = Category::select('id', 'name')
-            ->orderBy('name')
-            ->get();
 
-        // Get dosages for filter
-        $dosages = Dosage::select('id', 'name')
-            ->orderBy('name')
-            ->get();
 
         // Build the pivot table query
         $query = Product::query()
@@ -83,6 +82,7 @@ class WarehouseAmcController extends Controller
         // Apply search filter
         if ($request->filled('search')) {
             $search = $request->search;
+            Log::info('Applying search filter', ['search' => $search]);
             $query->where(function($q) use ($search) {
                 $q->where('products.name', 'like', "%{$search}%")
                   ->orWhere('categories.name', 'like', "%{$search}%")
@@ -90,23 +90,27 @@ class WarehouseAmcController extends Controller
             });
         }
 
-        // Apply category filter
-        if ($request->filled('category')) {
-            $query->where('categories.id', $request->category);
-        }
 
-        // Apply dosage filter
-        if ($request->filled('dosage')) {
-            $query->where('dosages.id', $request->dosage);
-        }
 
         // Apply year filter
         if ($request->filled('year')) {
+            Log::info('Applying year filter', ['year' => $request->year]);
             $query->whereExists(function($subQuery) use ($request) {
                 $subQuery->select(DB::raw(1))
                     ->from('warehouse_amcs')
                     ->whereColumn('warehouse_amcs.product_id', 'products.id')
                     ->where('warehouse_amcs.month_year', 'like', "{$request->year}-%");
+            });
+        }
+
+        // Apply month year filter
+        if ($request->filled('month_year')) {
+            Log::info('Applying month year filter', ['month_year' => $request->month_year]);
+            $query->whereExists(function($subQuery) use ($request) {
+                $subQuery->select(DB::raw(1))
+                    ->from('warehouse_amcs')
+                    ->whereColumn('warehouse_amcs.product_id', 'products.id')
+                    ->where('warehouse_amcs.month_year', $request->month_year);
             });
         }
 
@@ -153,9 +157,7 @@ class WarehouseAmcController extends Controller
             'products' => $products,
             'pivotData' => $pivotData,
             'monthYears' => $monthYears,
-            'filters' => $request->only(['search', 'category', 'dosage', 'year', 'sort', 'direction', 'per_page']),
-            'categories' => $categories,
-            'dosages' => $dosages,
+            'filters' => $request->only(['search', 'year', 'month_year', 'sort', 'direction', 'per_page']),
             'years' => $years,
             'months' => $months,
         ]);
@@ -254,13 +256,7 @@ class WarehouseAmcController extends Controller
             $query->where('products.name', 'like', "%{$search}%");
         }
 
-        if ($request->filled('category')) {
-            $query->where('categories.id', $request->category);
-        }
 
-        if ($request->filled('dosage')) {
-            $query->where('dosages.id', $request->dosage);
-        }
 
         if ($request->filled('year')) {
             $query->whereExists(function($subQuery) use ($request) {
@@ -268,6 +264,15 @@ class WarehouseAmcController extends Controller
                     ->from('warehouse_amcs')
                     ->whereColumn('warehouse_amcs.product_id', 'products.id')
                     ->where('warehouse_amcs.month_year', 'like', "{$request->year}-%");
+            });
+        }
+
+        if ($request->filled('month_year')) {
+            $query->whereExists(function($subQuery) use ($request) {
+                $subQuery->select(DB::raw(1))
+                    ->from('warehouse_amcs')
+                    ->whereColumn('warehouse_amcs.product_id', 'products.id')
+                    ->where('warehouse_amcs.month_year', $request->month_year);
             });
         }
 
