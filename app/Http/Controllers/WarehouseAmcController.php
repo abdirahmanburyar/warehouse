@@ -133,35 +133,6 @@ class WarehouseAmcController extends Controller
             $pivotData[] = $row;
         }
 
-        // Calculate summary statistics
-        $summary = [
-            'total_products' => Product::whereExists(function($subQuery) {
-                $subQuery->select(DB::raw(1))
-                    ->from('warehouse_amcs')
-                    ->whereColumn('warehouse_amcs.product_id', 'products.id');
-            })->count(),
-            'total_consumption' => WarehouseAmc::sum('quantity'),
-            'average_consumption' => WarehouseAmc::avg('quantity'),
-            'highest_consumption' => WarehouseAmc::max('quantity'),
-            'lowest_consumption' => WarehouseAmc::min('quantity'),
-        ];
-
-        // Get top consuming products
-        $topProducts = WarehouseAmc::with('product:id,name')
-            ->select('product_id', DB::raw('SUM(quantity) as total_consumption'))
-            ->groupBy('product_id')
-            ->orderBy('total_consumption', 'desc')
-            ->limit(10)
-            ->get();
-
-        // Get consumption trend for current year
-        $currentYear = now()->year;
-        $consumptionTrend = WarehouseAmc::select('month_year', DB::raw('SUM(quantity) as total_consumption'))
-            ->where('month_year', 'like', "{$currentYear}-%")
-            ->groupBy('month_year')
-            ->orderBy('month_year')
-            ->get();
-
         return Inertia::render('Report/WarehouseAmc', [
             'products' => $products,
             'pivotData' => $pivotData,
@@ -171,9 +142,6 @@ class WarehouseAmcController extends Controller
             'dosages' => $dosages,
             'years' => $years,
             'months' => $months,
-            'summary' => $summary,
-            'topProducts' => $topProducts,
-            'consumptionTrend' => $consumptionTrend,
         ]);
     }
 

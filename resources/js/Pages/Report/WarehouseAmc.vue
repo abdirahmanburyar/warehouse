@@ -34,79 +34,6 @@
                     {{ $page.props.flash.success }}
                 </div>
 
-                <!-- Summary Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-blue-600">Total Products</p>
-                                <p class="text-2xl font-bold text-blue-900">{{ summary.total_products }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-green-600">Total Consumption</p>
-                                <p class="text-2xl font-bold text-green-900">{{ formatNumber(summary.total_consumption) }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-yellow-600">Average Consumption</p>
-                                <p class="text-2xl font-bold text-yellow-900">{{ formatNumber(summary.average_consumption) }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-red-600">Highest Consumption</p>
-                                <p class="text-2xl font-bold text-red-900">{{ formatNumber(summary.highest_consumption) }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-purple-600">Lowest Consumption</p>
-                                <p class="text-2xl font-bold text-purple-900">{{ formatNumber(summary.lowest_consumption) }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Search and Filters -->
                 <div class="mb-6 flex flex-col sm:flex-row gap-4">
                     <div class="flex-1">
@@ -127,29 +54,51 @@
                     
                     <div class="sm:w-48">
                         <label for="category" class="sr-only">Category</label>
-                        <select id="category" v-model="category" @change="applyFilters"
-                            class="block w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">All Categories</option>
-                            <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                        </select>
+                        <Multiselect 
+                            v-model="category" 
+                            :options="categories" 
+                            :multiple="false" 
+                            :searchable="true" 
+                            :close-on-select="true" 
+                            :clear-on-select="false" 
+                            :hide-selected="true" 
+                            :placeholder="'All Categories'"
+                            @change="applyFilters"
+                            track-by="id"
+                            label="name"
+                        />
                     </div>
 
                     <div class="sm:w-48">
                         <label for="dosage" class="sr-only">Dosage</label>
-                        <select id="dosage" v-model="dosage" @change="applyFilters"
-                            class="block w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">All Dosages</option>
-                            <option v-for="dos in dosages" :key="dos.id" :value="dos.id">{{ dos.name }}</option>
-                        </select>
+                        <Multiselect 
+                            v-model="dosage" 
+                            :options="dosages" 
+                            :multiple="false" 
+                            :searchable="true" 
+                            :close-on-select="true" 
+                            :clear-on-select="false" 
+                            :hide-selected="true" 
+                            :placeholder="'All Dosages'"
+                            @change="applyFilters"
+                            track-by="id"
+                            label="name"
+                        />
                     </div>
 
                     <div class="sm:w-48">
                         <label for="year" class="sr-only">Year</label>
-                        <select id="year" v-model="year" @change="applyFilters"
-                            class="block w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">All Years</option>
-                            <option v-for="yr in years" :key="yr" :value="yr">{{ yr }}</option>
-                        </select>
+                        <Multiselect 
+                            v-model="year" 
+                            :options="years" 
+                            :multiple="false" 
+                            :searchable="true" 
+                            :close-on-select="true" 
+                            :clear-on-select="false" 
+                            :hide-selected="true" 
+                            :placeholder="'All Years'"
+                            @change="applyFilters"
+                        />
                     </div>
 
                     <div class="sm:w-48">
@@ -271,47 +220,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Top Products Chart -->
-        <div class="mt-6 bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Top Consuming Products</h3>
-                <div class="space-y-3">
-                    <div v-for="(product, index) in topProducts" :key="product.product_id" 
-                         class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div class="flex items-center">
-                            <span class="w-8 h-8 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-medium mr-3">
-                                {{ index + 1 }}
-                            </span>
-                            <span class="text-sm font-medium text-gray-900">
-                                {{ product.product?.name || 'Unknown Product' }}
-                            </span>
-                        </div>
-                        <span class="text-sm font-semibold text-blue-600">
-                            {{ formatNumber(product.total_consumption) }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Consumption Trend Chart -->
-        <div class="mt-6 bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Consumption Trend ({{ new Date().getFullYear() }})</h3>
-                <div class="space-y-3">
-                    <div v-for="trend in consumptionTrend" :key="trend.month_year" 
-                         class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span class="text-sm font-medium text-gray-900">
-                            {{ formatMonthYear(trend.month_year) }}
-                        </span>
-                        <span class="text-sm font-semibold text-green-600">
-                            {{ formatNumber(trend.total_consumption) }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
     </AuthenticatedLayout>
 </template>
 
@@ -321,6 +229,9 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { TailwindPagination } from "laravel-vue-pagination";
 import { useToast } from 'vue-toastification';
+import Multiselect from 'vue-multiselect';
+import 'vue-multiselect/dist/vue-multiselect.css';
+
 const toast = useToast();
 
 const props = defineProps({
@@ -332,9 +243,6 @@ const props = defineProps({
     dosages: Array,
     years: Array,
     months: Array,
-    summary: Object,
-    topProducts: Array,
-    consumptionTrend: Array,
 });
 
 // Reactive variables
