@@ -15,24 +15,15 @@
                     <div>
                         <h3 class="text-lg font-medium text-gray-900">Warehouse AMC Management</h3>
                     </div>
-                                         <div class="flex space-x-3">
-                         <div class="flex items-center space-x-2">
-                             <label class="text-sm font-medium text-gray-700">Year:</label>
-                             <select 
-                                 v-model="templateYear" 
-                                 class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                             >
-                                 <option v-for="year in years" :key="year" :value="year">{{ year }}</option>
-                             </select>
-                             <button
-                                 @click="downloadTemplate"
-                                 class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8l-8-8-8 8"></path>
-                                 </svg>
-                                 Download Template
-                             </button>
-                         </div>
+                                                             <div class="flex space-x-3">
+                        <button
+                            @click="openTemplateModal"
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8l-8-8-8 8"></path>
+                            </svg>
+                            Download Template
+                        </button>
                         <button
                             @click="openUploadModal"
                             class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
@@ -333,6 +324,55 @@
                 </div>
             </div>
         </div>
+
+        <!-- Template Download Modal -->
+        <div v-if="showTemplateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeTemplateModal">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" @click.stop>
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">
+                            Download Template
+                        </h3>
+                        <button @click="closeTemplateModal" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-600 mb-3">
+                            Select a year to download a template with months for that specific year. The template will include all products with empty quantity cells.
+                        </p>
+                        
+                        <div class="mb-4">
+                            <label for="template_year" class="block text-sm font-medium text-gray-700 mb-2">Select Year</label>
+                            <select 
+                                id="template_year"
+                                v-model="templateYear" 
+                                class="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                                <option v-for="year in years" :key="year" :value="year">{{ year }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Modal Actions -->
+                    <div class="flex items-center justify-end space-x-3 pt-4 border-t">
+                        <button 
+                            @click="closeTemplateModal" 
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                            Cancel
+                        </button>
+                        <button 
+                            @click="downloadTemplate"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Download Template
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </AuthenticatedLayout>
 </template>
 
@@ -377,6 +417,9 @@ const uploadResults = ref(null);
 const fileInput = ref(null);
 const importId = ref(null);
 const progressInterval = ref(null);
+
+// Template modal variables
+const showTemplateModal = ref(false);
 
 // Watch for changes and apply filters
 watch([search, month_from, month_to], () => {
@@ -438,6 +481,15 @@ const exportData = () => {
     if (month_to.value) params.append('month_to', month_to.value.toString());
 
     window.open(route('reports.warehouse-amc.export') + '?' + params.toString(), '_blank');
+};
+
+// Template Modal Functions
+const openTemplateModal = () => {
+    showTemplateModal.value = true;
+};
+
+const closeTemplateModal = () => {
+    showTemplateModal.value = false;
 };
 
 // Upload Modal Functions
@@ -604,6 +656,7 @@ const downloadTemplate = () => {
     const url = route('reports.warehouse-amc.template') + '?year=' + templateYear.value;
     window.open(url, '_blank');
     toast.success(`Template download started for year ${templateYear.value}!`);
+    closeTemplateModal();
 };
 
 // Utility functions
