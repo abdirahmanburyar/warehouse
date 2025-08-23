@@ -29,7 +29,6 @@ class WarehouseAmcImport implements
     ShouldQueue
 {
     use InteractsWithQueue, Queueable;
-
     protected $importedCount = 0;
     protected $updatedCount = 0;
     protected $skippedCount = 0;
@@ -154,7 +153,25 @@ class WarehouseAmcImport implements
     {
         return [
             AfterImport::class => function (AfterImport $event) {
-                Cache::forget($this->importId);
+                // Update cache with final results
+                $results = $this->getResults();
+                $message = "Import completed successfully. ";
+                if ($results['imported'] > 0) {
+                    $message .= "Created: {$results['imported']} new AMC records. ";
+                }
+                if ($results['updated'] > 0) {
+                    $message .= "Updated: {$results['updated']} existing AMC records. ";
+                }
+                if ($results['skipped'] > 0) {
+                    $message .= "Skipped: {$results['skipped']} rows. ";
+                }
+
+                Cache::put("warehouse_amc_import_{$this->importId}", [
+                    'status' => 'completed',
+                    'progress' => 100,
+                    'message' => trim($message),
+                    'results' => $results
+                ], 3600);
                 
                 // Log completion
                 Log::info("Warehouse AMC import completed", [

@@ -6,13 +6,16 @@ use App\Models\WarehouseAmc;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Dosage;
+use App\Imports\WarehouseAmcImport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\WarehouseAmcExport;
-use App\Imports\WarehouseAmcImport;
 
 class WarehouseAmcController extends Controller
 {
@@ -302,53 +305,110 @@ class WarehouseAmcController extends Controller
     public function import(Request $request)
     {
         try {
-            $request->validate([
-                'file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
-            ]);
+            if (!$request->hasFile('file')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No file was uploaded'
+                ], 422);
+            }
 
             $file = $request->file('file');
-            
-            // Generate unique import ID for tracking
-            $importId = (string) \Illuminate\Support\Str::uuid();
-            
-            // Store import progress in cache
-            \Illuminate\Support\Facades\Cache::put("warehouse_amc_import_{$importId}", [
-                'status' => 'queued',
-                'progress' => 0,
-                'message' => 'Import has been queued successfully'
-            ], 3600); // 1 hour expiry
-            
-            try {
-                // Queue the import job
-                Excel::queueImport(new WarehouseAmcImport($importId), $file)->onQueue('imports');
-                
+
+            // Validate file type
+            $extension = $file->getClientOriginalExtension();
+            if (!$file->isValid() || !in_array($extension, ['xlsx', 'xls', 'csv'])) {
                 return response()->json([
-                    'success' => true,
-                    'message' => 'Import has been queued successfully. You will be notified when it completes.',
-                    'import_id' => $importId,
-                ], 200);
-                
-            } catch (\Exception $queueError) {
-                \Log::error('Queue import failed: ' . $queueError->getMessage());
-                
-                // Fallback to synchronous import if queuing fails
+                    'success' => false,
+                    'message' => 'Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file (.csv)'
+                ], 422);
+            }
+
+            $importId = (string) Str::uuid();
+
+            Log::info('Starting warehouse AMC import with Maatwebsite Excel', [
+                'import_id' => $importId,
+                'original_name' => $file->getClientOriginalName(),
+                'file_size' => $file->getSize(),
+                'extension' => $extension
+            ]);
+
+            // Initialize cache progress for tracking
+            Cache::put("warehouse_amc_import_{$importId}", [
+                'status' => 'processing',
+                'progress' => 0,
+                'message' => 'Import started'
+            ], 3600); // 1 hour expiry
+
+            // Determine import method based on file size
+            $fileSize = $file->getSize();
+            $largeFileThreshold = 5 * 1024 * 1024; // 5MB
+
+            if ($fileSize > $largeFileThreshold) {
+                // Use queued import for large files
                 try {
-                    Excel::import(new WarehouseAmcImport($importId), $file);
+                    Excel::queueImport(new WarehouseAmcImport($importId), $file)->onQueue('imports');
                     
                     return response()->json([
                         'success' => true,
-                        'message' => 'Import completed successfully (synchronous mode).',
+                        'message' => 'Large file detected. Import has been queued and will process in the background.',
                         'import_id' => $importId,
-                    ], 200);
+                        'queued' => true
+                    ]);
                     
-                } catch (\Exception $syncError) {
-                    \Log::error('Synchronous import failed: ' . $syncError->getMessage());
-                    throw $syncError;
+                } catch (\Exception $queueError) {
+                    Log::warning('Queue import failed, falling back to synchronous: ' . $queueError->getMessage());
+                    // Fall through to synchronous import
                 }
             }
 
-        } catch (\Exception $e) {
-            \Log::error('Warehouse AMC import failed: ' . $e->getMessage());
+            // Use synchronous import for smaller files or if queue failed
+            $import = new WarehouseAmcImport($importId);
+            Excel::import($import, $file);
+            
+            // Get import results
+            $results = $import->getResults();
+            
+            $message = "Import completed successfully. ";
+            if ($results['imported'] > 0) {
+                $message .= "Created: {$results['imported']} new AMC records. ";
+            }
+            if ($results['updated'] > 0) {
+                $message .= "Updated: {$results['updated']} existing AMC records. ";
+            }
+            if ($results['skipped'] > 0) {
+                $message .= "Skipped: {$results['skipped']} rows. ";
+            }
+
+            // Update cache with completion status
+            Cache::put("warehouse_amc_import_{$importId}", [
+                'status' => 'completed',
+                'progress' => 100,
+                'message' => trim($message),
+                'results' => $results
+            ], 3600);
+
+            return response()->json([
+                'success' => true,
+                'message' => trim($message),
+                'import_id' => $importId,
+                'results' => $results,
+                'queued' => false
+            ]);
+
+        } catch (\Throwable $e) {
+            Log::error('Warehouse AMC import failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Update cache with error status
+            if (isset($importId)) {
+                Cache::put("warehouse_amc_import_{$importId}", [
+                    'status' => 'failed',
+                    'progress' => 0,
+                    'message' => 'Import failed: ' . $e->getMessage()
+                ], 3600);
+            }
             
             return response()->json([
                 'success' => false,
@@ -364,7 +424,7 @@ class WarehouseAmcController extends Controller
     {
         try {
             $cacheKey = "warehouse_amc_import_{$importId}";
-            $status = \Illuminate\Support\Facades\Cache::get($cacheKey);
+            $status = Cache::get($cacheKey);
             
             if (!$status) {
                 return response()->json([
@@ -379,7 +439,7 @@ class WarehouseAmcController extends Controller
             ], 200);
             
         } catch (\Exception $e) {
-            \Log::error('Import status check failed: ' . $e->getMessage());
+            Log::error('Import status check failed: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,
@@ -447,7 +507,7 @@ class WarehouseAmcController extends Controller
             return Excel::download(new WarehouseAmcExport($templateData, $monthYears), $filename);
 
         } catch (\Exception $e) {
-            \Log::error('Template download failed: ' . $e->getMessage());
+            Log::error('Template download failed: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,
