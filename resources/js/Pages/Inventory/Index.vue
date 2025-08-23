@@ -574,7 +574,7 @@ const reorderItemsCount = computed(() => {
 // const getEarliestExpiryDate = (inventory) => { ... }
 
 function getResults(page = 1) {
-    props.filters.page = page;
+        props.filters.page = page;
 }
 
 </script>
@@ -686,7 +686,7 @@ function getResults(page = 1) {
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
                     </button>
                 </div>
-            </div>
+                    </div>
             
             <!-- Table and Sidebar -->
             <div class="grid grid-cols-1 lg:grid-cols-8 gap-6">
@@ -695,9 +695,9 @@ function getResults(page = 1) {
                     <!-- Remove sorting info banner -->
                     
                     <div class="bg-white rounded-xl overflow-hidden">
-                        <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
-                            <thead>
-                                <tr style="background-color: #F4F7FB;">
+                    <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
+                        <thead>
+                            <tr style="background-color: #F4F7FB;">
                                     <th class="px-3 py-2 text-xs font-bold rounded-tl-lg w-48" 
                                         style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" 
                                         rowspan="2">
@@ -705,126 +705,188 @@ function getResults(page = 1) {
                                             <span>Item</span>
                                         </div>
                                     </th>
-                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Category</th>
-                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">UoM</th>
-                                    <th class="px-3 py-2 text-xs font-bold text-center" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" colspan="4">Item Details</th>
-                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Total QTY on Hand</th>
-                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">AMC</th>
-                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Buffer Stock</th>
-                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Reorder Level</th>
-                                    <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Actions</th>
-                                </tr>
-                                <tr style="background-color: #F4F7FB;">
+                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Category</th>
+                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">UoM</th>
+                                <th class="px-3 py-2 text-xs font-bold text-center" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" colspan="4">Item Details</th>
+                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Total QTY on Hand</th>
+                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Reorder Level</th>
+                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Actions</th>
+                            </tr>
+                            <tr style="background-color: #F4F7FB;">
                                     <th class="px-2 py-2 text-xs font-bold border border-[#B7C6E6] text-center" 
                                         style="color: #4F6FCB;">
                                         <div class="flex items-center justify-center gap-1">
                                             <span>QTY</span>
                                         </div>
                                     </th>
-                                    <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Batch Number</th>
+                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Batch Number</th>
                                     <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" 
                                         style="color: #4F6FCB;">
                                         <div class="flex items-center justify-center gap-1">
                                             <span>Expiry Date</span>
                                         </div>
                                     </th>
-                                    <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Location</th>
+                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Location</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template v-if="isLoading">
+                                <tr>
+                                    <td colspan="7" class="text-center py-8 text-gray-500 bg-gray-50">
+                                        <div class="flex flex-col items-center justify-center gap-2">
+                                            <svg class="animate-spin h-10 w-10 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span>Applying filters...</span>
+                                        </div>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <template v-if="isLoading">
-                                    <tr>
-                                        <td colspan="12" class="text-center py-8 text-gray-500 bg-gray-50">
-                                            <div class="flex flex-col items-center justify-center gap-2">
-                                                <svg class="animate-spin h-10 w-10 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                <span>Applying filters...</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </template>
-                                <template v-else-if="!props.inventories || !props.inventories.data || props.inventories.data.length === 0">
-                                    <tr>
-                                        <td colspan="12" class="text-center py-8 text-gray-500 bg-gray-50">
-                                            <div class="flex flex-col items-center justify-center gap-2">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 118 0v2m-4 4a4 4 0 01-4-4H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-2a4 4 0 01-4 4z" /></svg>
-                                                <span>{{ !props.inventories ? 'Loading...' : 'No inventory data found.' }}</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </template>
-                                <template v-else v-for="inventory in props.inventories.data" :key="inventory.id">
-                                    <tr v-for="(item, itemIndex) in inventory.items" :key="`${inventory.id}-${item.id}`" class="hover:bg-gray-50 transition-colors duration-150 border-b items-center" style="border-bottom: 1px solid #B7C6E6;">
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs font-medium text-gray-800 align-middle items-center">{{ inventory.product.name }}</td>
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.product.category.name }}</td>
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.items[0].uom }}</td>
-                                        <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatQty(item.quantity || 0) }}</td>
-                                        <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
-                                        <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
-                                        <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">
-                                            <div class="flex items-center justify-center space-x-2">
-                                                <span>{{ item.location }}</span>
-                                                <button
-                                                    @click="openEditLocationModal(item, inventory)"
-                                                    class="p-1 bg-green-50 text-green-600 hover:bg-green-100 rounded-full"
-                                                    title="Edit Location"
+                            </template>
+                            <template v-else-if="!props.inventories || !props.inventories.data || props.inventories.data.length === 0">
+                                <tr>
+                                    <td colspan="7" class="text-center py-8 text-gray-500 bg-gray-50">
+                                        <div class="flex flex-col items-center justify-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 118 0v2m-4 4a4 4 0 01-4-4H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-2a4 4 0 01-4 4z" /></svg>
+                                            <span>{{ !props.inventories ? 'Loading...' : 'No inventory data found.' }}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                                                        <template v-else v-for="inventory in props.inventories.data" :key="inventory.id">
+                                <tr v-for="(item, itemIndex) in inventory.items" :key="`${inventory.id}-${item.id}`" class="hover:bg-gray-50 transition-colors duration-150 border-b items-center" style="border-bottom: 1px solid #B7C6E6;">
+                                    <!-- Item Name - only on first row for this inventory -->
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs font-medium text-gray-800 align-middle items-center">{{ inventory.product.name }}</td>
+                                    
+                                    <!-- Category - only on first row for this inventory -->
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.product.category.name }}</td>
+                                    
+                                    <!-- UoM - only on first row for this inventory -->
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.items[0].uom }}</td>
+                                    
+                                    <!-- QTY -->
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatQty(item.quantity || 0) }}</td>
+                                    
+                                    <!-- Batch Number -->
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
+                                    
+                                    <!-- Expiry Date -->
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
+                                    
+                                    <!-- Location -->
+                                    <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <span>{{ item.location }}</span>
+                                            <button
+                                                @click="openEditLocationModal(item, inventory)"
+                                                class="p-1 bg-green-50 text-green-600 hover:bg-green-100 rounded-full"
+                                                title="Edit Location"
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    class="h-4 w-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
                                                 >
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        class="h-4 w-4"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            stroke-linecap="round"
-                                                            stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                        />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </td>
-                                        
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(getTotalQuantity(inventory)) }}</td>
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.amc || 0) }}</td>
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.buffer_stock || 0) }}</td>
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.reorder_level || 0) }}</td>
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
-                                            <div class="flex items-center justify-center space-x-2">
-                                                <div v-if="needsReorder(inventory)">
-                                                    <img
-                                                        src="/assets/images/reorder_status.png"
-                                                        alt="Reorder Status"
-                                                        class="w-6 h-6"
-                                                        title="Reorder Status"
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                                     />
-                                                </div>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- Reorder Status - only on first row for this inventory -->
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <div v-if="needsReorder(inventory)">
+                                                <img
+                                                    src="/assets/images/reorder_status.png"
+                                                    alt="Reorder Status"
+                                                    class="w-6 h-6"
+                                                    title="Reorder Status"
+                                                />
                                             </div>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                        
-                        <div class="mt-2 flex justify-between">  
+                                            <!-- Show reorder action for out of stock items -->
+                                            <div v-if="getTotalQuantity(inventory) <= 0" class="flex flex-col items-center">
+                                                <button 
+                                                    class="px-2 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 transition-colors"
+                                                    title="Reorder - Out of Stock"
+                                                >
+                                                    Reorder
+                                                </button>
+                                                <span class="text-xs text-red-600 mt-1">Out of Stock</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- Total QTY on Hand - only on first row for this inventory -->
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(getTotalQuantity(inventory)) }}</td>
+                                    
+                                    <!-- Reorder Level - only on first row for this inventory -->
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.reorder_level || 0) }}</td>
+                                    
+                                    <!-- Actions - only on first row for this inventory -->
+                                    <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <!-- Edit button -->
+                                            <button
+                                                @click="openEditModal(item, inventory)"
+                                                class="p-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full"
+                                                title="Edit Item"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </button>
+                                            
+                                            <!-- Delete button -->
+                                            <button
+                                                @click="deleteItem(item, inventory)"
+                                                class="p-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-full"
+                                                title="Delete Item"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                            
+                                            <!-- View History button -->
+                                            <button
+                                                @click="viewHistory(item, inventory)"
+                                                class="p-1 bg-green-50 text-green-600 hover:bg-green-100 rounded-full"
+                                                title="View History"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+
+                    <div class="mt-2 flex justify-between">
                             <div class="text-xs text-gray-400">
                                 <span v-if="props.inventories && props.inventories.meta && props.inventories.meta.total > 0">Showing {{ props.inventories.meta.from }} to {{ props.inventories.meta.to }} of {{ props.inventories.meta.total }} items</span>
                                 <span v-else>No items to display</span>
-                            </div>
+                        </div>
                             
-                            <TailwindPagination
-                                :data="props.inventories"
-                                @pagination-change-page="getResults"
-                                :limit="2"
-                            />
+                        <TailwindPagination
+                            :data="props.inventories"
+                            @pagination-change-page="getResults"
+                            :limit="2"
+                        />
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Sidebar -->
                 <div class="lg:col-span-1">
                     <div class="sticky top-0 z-10 shadow-sm">

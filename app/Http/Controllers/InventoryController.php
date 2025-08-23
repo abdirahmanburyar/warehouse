@@ -101,6 +101,20 @@ class InventoryController extends Controller
                 ->get()
                 ->groupBy('product_id');
 
+            // Debug: Log the structure to understand what's happening
+            Log::info('Inventory data structure', [
+                'total_products' => count($productIds),
+                'inventory_groups' => $existingInventories->map(function($group) {
+                    return [
+                        'product_id' => $group->first()->product_id,
+                        'inventory_count' => $group->count(),
+                        'total_items' => $group->sum(function($inv) {
+                            return $inv->items ? $inv->items->count() : 0;
+                        })
+                    ];
+                })->toArray()
+            ]);
+
             // Ensure expiry dates are properly converted to Carbon instances
             foreach ($existingInventories as $productInventories) {
                 foreach ($productInventories as $inventory) {
@@ -120,29 +134,46 @@ class InventoryController extends Controller
             // Merge: ensure every product has at least one row
             $merged = collect();
             foreach ($productsPaginator->items() as $product) {
-                // Calculate AMC using the new formula
-                $amc = $this->calculateAMC($product->id);
+                // Calculate AMC using the new formula (for reorder level calculation only)
+                $amcData = $this->calculateAMC($product->id);
+                $amc = $amcData['amc'];
+                $selectedMonths = $amcData['selected_months'];
                 
-                // Calculate Buffer Stock and Reorder Level
-                $bufferStock = $this->calculateBufferStock($amc);
-                $reorderLevel = $this->calculateReorderLevel($amc, $bufferStock);
+                // Calculate Reorder Level using the new formula
+                $reorderLevel = $this->calculateReorderLevel($amc, $selectedMonths);
 
                 if (isset($existingInventories[$product->id]) && $existingInventories[$product->id]->isNotEmpty()) {
+                    // Get the first inventory record for this product
                     $inventory = $existingInventories[$product->id]->first();
-                    $inventory->setAttribute('amc', $amc);
-                    $inventory->setAttribute('buffer_stock', $bufferStock);
+                    
+                    // Consolidate all inventory items for this product into one collection
+                    $allItems = collect();
+                    foreach ($existingInventories[$product->id] as $inv) {
+                        if ($inv->items) {
+                            $allItems = $allItems->merge($inv->items);
+                        }
+                    }
+                    
+                    // Set the consolidated items
+                    $inventory->setRelation('items', $allItems);
                     $inventory->setAttribute('reorder_level', $reorderLevel);
                     $inventory->setRelation('product', $inventory->product->loadMissing('category:id,name', 'dosage:id,name'));
                     $merged->push($inventory);
+                    
+                    Log::info("Product {$product->id} ({$product->name}) merged", [
+                        'inventory_records' => $existingInventories[$product->id]->count(),
+                        'total_items' => $allItems->count(),
+                        'amc' => $amc,
+                        'reorder_level' => $reorderLevel
+                    ]);
                 } else {
                     $placeholder = new Inventory();
                     $placeholder->setAttribute('id', -$product->id); // synthetic id to keep rows unique
                     $placeholder->setAttribute('product_id', $product->id);
-                    $placeholder->setAttribute('amc', $amc);
-                    $placeholder->setAttribute('buffer_stock', $bufferStock);
                     $placeholder->setAttribute('reorder_level', $reorderLevel);
                     $placeholder->setRelation('product', $product);
 
+                    // Create only one placeholder item
                     $item = new InventoryItem();
                     $item->setAttribute('id', -$product->id);
                     $item->setAttribute('product_id', $product->id);
@@ -151,12 +182,24 @@ class InventoryController extends Controller
                     $item->setAttribute('barcode', null);
                     $item->setAttribute('location', null);
                     $item->setAttribute('expiry_date', null);
+                    $item->setAttribute('uom', null);
                     $item->setRelation('warehouse', null);
 
                     $placeholder->setRelation('items', collect([$item]));
                     $merged->push($placeholder);
+                    
+                    Log::info("Product {$product->id} ({$product->name}) created placeholder", [
+                        'amc' => $amc,
+                        'reorder_level' => $reorderLevel
+                    ]);
                 }
             }
+            
+            Log::info("Final merged data", [
+                'total_merged_records' => $merged->count(),
+                'products_with_inventory' => $merged->where('id', '>', 0)->count(),
+                'placeholder_products' => $merged->where('id', '<', 0)->count()
+            ]);
 
             // Apply sorting to the merged data after creating the collection
             if ($request->filled('sort_by')) {
@@ -632,9 +675,11 @@ class InventoryController extends Controller
 		$now = now();
 		foreach ($allInventories as $inventory) {
 			// Calculate AMC, Buffer Stock, and Reorder Level dynamically
-			$amc = $this->calculateAMC($inventory->product_id);
-			$bufferStock = $this->calculateBufferStock($amc);
-			$reorderLevel = $this->calculateReorderLevel($amc, $bufferStock);
+			$amcData = $this->calculateAMC($inventory->product_id);
+			$amc = $amcData['amc'];
+			$selectedMonths = $amcData['selected_months'];
+			$bufferStock = $this->calculateBufferStock($amc, $selectedMonths);
+			$reorderLevel = $this->calculateReorderLevel($amc, $selectedMonths);
 
 			// Calculate total quantity for this inventory
 			$totalQuantity = 0.0;
@@ -730,9 +775,9 @@ class InventoryController extends Controller
      * This method uses the new percentage deviation screening formula.
      *
      * @param int $productId
-     * @return float
+     * @return array ['amc' => float, 'selected_months' => array]
      */
-    private function calculateAMC(int $productId): float
+    private function calculateAMC(int $productId): array
     {
         try {
             // Get all consumption values for the product from warehouse_amcs table
@@ -743,7 +788,7 @@ class InventoryController extends Controller
 
             // If we have less than 3 values, return 0
             if ($consumptionsWithMonth->count() < 3) {
-                return 0;
+                return ['amc' => 0, 'selected_months' => []];
             }
 
             // Extract quantities and months
@@ -887,13 +932,13 @@ class InventoryController extends Controller
                     'amc' => $result
                 ]);
                 
-                return $result;
+                return ['amc' => $result, 'selected_months' => $selectedMonths];
             } else {
                 Log::warning("Could not find 3 suitable months for AMC calculation", [
                     'product_id' => $productId,
                     'selected_months_count' => count($selectedMonths)
                 ]);
-                return 0;
+                return ['amc' => 0, 'selected_months' => []];
             }
 
         } catch (\Exception $e) {
@@ -901,34 +946,60 @@ class InventoryController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return 0;
+            return ['amc' => 0, 'selected_months' => []];
         }
     }
 
     /**
      * Calculate Buffer Stock for a product.
-     * Buffer Stock = AMC × Lead Time (3 months)
+     * Buffer Stock = (Max AMC - AMC) × 3
      *
      * @param float $amc
+     * @param array $selectedMonths
      * @return float
      */
-    private function calculateBufferStock(float $amc): float
+    private function calculateBufferStock(float $amc, array $selectedMonths = []): float
     {
-        $leadTime = 3; // Lead Time is 3 months as per the image
-        return round($amc * $leadTime, 2);
+        if (empty($selectedMonths)) {
+            return 0;
+        }
+        
+        // Find the maximum quantity from the selected months (Max AMC)
+        $maxQuantity = max(array_column($selectedMonths, 'quantity'));
+        
+        // Calculate buffer stock: (Max AMC - AMC) × 3
+        $bufferStock = ($maxQuantity - $amc) * 3;
+        
+        return round(max(0, $bufferStock), 2); // Ensure non-negative value
     }
 
     /**
      * Calculate Reorder Level for a product.
-     * Reorder Level = (AMC × Lead Time) + Buffer Stock
+     * Reorder Level = (AMC × 3) + Buffer Stock
      *
      * @param float $amc
-     * @param float $bufferStock
+     * @param array $selectedMonths
      * @return float
      */
-    private function calculateReorderLevel(float $amc, float $bufferStock): float
+    private function calculateReorderLevel(float $amc, array $selectedMonths = []): float
     {
-        $leadTime = 3; // Lead Time is 3 months as per the image
+        $leadTime = 3; // Lead Time is 3 months
+        $bufferStock = $this->calculateBufferStock($amc, $selectedMonths);
         return round(($amc * $leadTime) + $bufferStock, 2);
     }
+
+    /**
+     * Check if an item needs reorder action (out of stock)
+     *
+     * @param mixed $item
+     * @return bool
+     */
+    private function needsReorderAction($item): bool
+    {
+        // If item doesn't exist or has zero quantity, it needs reorder
+        if (!$item || !isset($item->quantity) || (float) $item->quantity <= 0) {
+            return true;
+        }
+        return false;
+	}
 }
