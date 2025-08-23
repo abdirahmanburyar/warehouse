@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\WarehouseAmcExport;
 
 class WarehouseAmcController extends Controller
 {
@@ -278,41 +280,8 @@ class WarehouseAmcController extends Controller
             $pivotData[] = $row;
         }
 
-        $filename = 'warehouse_amc_report_' . now()->format('Y-m-d_H-i-s') . '.csv';
+        $filename = 'warehouse_amc_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
         
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ];
-
-        $callback = function() use ($pivotData, $monthYears) {
-            $file = fopen('php://output', 'w');
-            
-            // Add headers
-            $csvHeaders = ['Item', 'Category', 'Dosage Form'];
-            foreach ($monthYears as $monthYear) {
-                $csvHeaders[] = $monthYear;
-            }
-            fputcsv($file, $csvHeaders);
-
-            // Add data
-            foreach ($pivotData as $row) {
-                $csvRow = [
-                    $row['name'],
-                    $row['category'],
-                    $row['dosage']
-                ];
-                
-                foreach ($monthYears as $monthYear) {
-                    $csvRow[] = $row[$monthYear];
-                }
-                
-                fputcsv($file, $csvRow);
-            }
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return Excel::download(new WarehouseAmcExport($pivotData, $monthYears), $filename);
     }
 }
