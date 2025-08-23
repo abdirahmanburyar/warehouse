@@ -387,8 +387,10 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { TailwindPagination } from "laravel-vue-pagination";
 import { useToast } from 'vue-toastification';
-import Multiselect from 'vue-multiselect';
-import 'vue-multiselect/dist/vue-multiselect.css';
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.css";
+import "@/Components/multiselect.css";
+
 import axios from 'axios';
 
 const toast = useToast();
