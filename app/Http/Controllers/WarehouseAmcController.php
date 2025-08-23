@@ -305,7 +305,10 @@ class WarehouseAmcController extends Controller
     public function import(Request $request)
     {
         try {
+            Log::info('=== WAREHOUSE AMC IMPORT STARTED ===');
+            
             if (!$request->hasFile('file')) {
+                Log::warning('No file uploaded in request');
                 return response()->json([
                     'success' => false,
                     'message' => 'No file was uploaded'
@@ -313,10 +316,17 @@ class WarehouseAmcController extends Controller
             }
 
             $file = $request->file('file');
+            Log::info('File received', [
+                'name' => $file->getClientOriginalName(),
+                'size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+                'extension' => $file->getClientOriginalExtension()
+            ]);
 
             // Validate file type
             $extension = $file->getClientOriginalExtension();
             if (!$file->isValid() || !in_array($extension, ['xlsx', 'xls', 'csv'])) {
+                Log::warning('Invalid file type', ['extension' => $extension]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file (.csv)'
@@ -324,6 +334,7 @@ class WarehouseAmcController extends Controller
             }
 
             $importId = (string) Str::uuid();
+            Log::info('Generated import ID', ['import_id' => $importId]);
 
             Log::info('Starting warehouse AMC import with Maatwebsite Excel', [
                 'import_id' => $importId,
@@ -338,15 +349,23 @@ class WarehouseAmcController extends Controller
                 'progress' => 0,
                 'message' => 'Import started'
             ], 3600); // 1 hour expiry
+            Log::info('Cache initialized for import tracking');
 
             // Determine import method based on file size
             $fileSize = $file->getSize();
             $largeFileThreshold = 5 * 1024 * 1024; // 5MB
+            Log::info('File size analysis', [
+                'file_size' => $fileSize,
+                'large_file_threshold' => $largeFileThreshold,
+                'is_large_file' => $fileSize > $largeFileThreshold
+            ]);
 
             if ($fileSize > $largeFileThreshold) {
+                Log::info('Large file detected, attempting queued import');
                 // Use queued import for large files
                 try {
                     Excel::queueImport(new WarehouseAmcImport($importId), $file)->onQueue('imports');
+                    Log::info('Queued import successful');
                     
                     return response()->json([
                         'success' => true,
@@ -356,17 +375,26 @@ class WarehouseAmcController extends Controller
                     ]);
                     
                 } catch (\Exception $queueError) {
-                    Log::warning('Queue import failed, falling back to synchronous: ' . $queueError->getMessage());
+                    Log::warning('Queue import failed, falling back to synchronous', [
+                        'error' => $queueError->getMessage(),
+                        'trace' => $queueError->getTraceAsString()
+                    ]);
                     // Fall through to synchronous import
                 }
             }
 
+            Log::info('Using synchronous import');
             // Use synchronous import for smaller files or if queue failed
             $import = new WarehouseAmcImport($importId);
+            Log::info('WarehouseAmcImport instance created', ['import_id' => $importId]);
+            
+            Log::info('Starting Excel::import()');
             Excel::import($import, $file);
+            Log::info('Excel::import() completed successfully');
             
             // Get import results
             $results = $import->getResults();
+            Log::info('Import results retrieved', $results);
             
             $message = "Import completed successfully. ";
             if ($results['imported'] > 0) {
@@ -379,6 +407,8 @@ class WarehouseAmcController extends Controller
                 $message .= "Skipped: {$results['skipped']} rows. ";
             }
 
+            Log::info('Final message prepared', ['message' => trim($message)]);
+
             // Update cache with completion status
             Cache::put("warehouse_amc_import_{$importId}", [
                 'status' => 'completed',
@@ -386,6 +416,9 @@ class WarehouseAmcController extends Controller
                 'message' => trim($message),
                 'results' => $results
             ], 3600);
+            Log::info('Cache updated with completion status');
+
+            Log::info('=== WAREHOUSE AMC IMPORT COMPLETED SUCCESSFULLY ===');
 
             return response()->json([
                 'success' => true,
@@ -396,8 +429,10 @@ class WarehouseAmcController extends Controller
             ]);
 
         } catch (\Throwable $e) {
-            Log::error('Warehouse AMC import failed', [
+            Log::error('=== WAREHOUSE AMC IMPORT FAILED ===', [
                 'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -408,6 +443,7 @@ class WarehouseAmcController extends Controller
                     'progress' => 0,
                     'message' => 'Import failed: ' . $e->getMessage()
                 ], 3600);
+                Log::info('Cache updated with error status');
             }
             
             return response()->json([
@@ -454,8 +490,11 @@ class WarehouseAmcController extends Controller
     public function downloadTemplate(Request $request)
     {
         try {
+            Log::info('=== TEMPLATE DOWNLOAD STARTED ===');
+            
             // Get the selected year from request, default to current year
             $selectedYear = $request->get('year', now()->year);
+            Log::info('Template year selected', ['year' => $selectedYear]);
             
             // Get months for the selected year only
             $monthYears = WarehouseAmc::select('month_year')
@@ -463,16 +502,25 @@ class WarehouseAmcController extends Controller
                 ->distinct()
                 ->orderBy('month_year', 'asc')
                 ->pluck('month_year');
+            
+            Log::info('Months found for year', [
+                'year' => $selectedYear,
+                'month_count' => $monthYears->count(),
+                'months' => $monthYears->toArray()
+            ]);
 
             // If no months found for selected year, create default months
             if ($monthYears->isEmpty()) {
+                Log::info('No months found for year, creating default months');
                 $monthYears = collect();
                 for ($month = 1; $month <= 12; $month++) {
                     $monthYears->push($selectedYear . '-' . str_pad($month, 2, '0', STR_PAD_LEFT));
                 }
+                Log::info('Default months created', ['months' => $monthYears->toArray()]);
             }
 
             // Get ALL products for template
+            Log::info('Fetching all products for template');
             $allProducts = Product::with(['category:id,name', 'dosage:id,name'])
                 ->join('categories', 'products.category_id', '=', 'categories.id')
                 ->leftJoin('dosages', 'products.dosage_id', '=', 'dosages.id')
@@ -484,6 +532,13 @@ class WarehouseAmcController extends Controller
                 ])
                 ->orderBy('products.name')
                 ->get();
+            
+            Log::info('Products fetched for template', [
+                'product_count' => $allProducts->count(),
+                'sample_products' => $allProducts->take(3)->map(function($p) {
+                    return ['id' => $p->id, 'name' => $p->name, 'category' => $p->category_name, 'dosage' => $p->dosage_name];
+                })->toArray()
+            ]);
 
             // Create template data with ALL products
             $templateData = [];
@@ -501,13 +556,26 @@ class WarehouseAmcController extends Controller
 
                 $templateData[] = $row;
             }
+            
+            Log::info('Template data prepared', [
+                'template_rows' => count($templateData),
+                'template_columns' => count($templateData[0] ?? []),
+                'sample_row' => $templateData[0] ?? 'No data'
+            ]);
 
             $filename = 'warehouse_amc_import_template_' . $selectedYear . '_' . now()->format('Y-m-d') . '.xlsx';
+            Log::info('Template filename prepared', ['filename' => $filename]);
             
+            Log::info('=== TEMPLATE DOWNLOAD COMPLETED SUCCESSFULLY ===');
             return Excel::download(new WarehouseAmcExport($templateData, $monthYears), $filename);
 
         } catch (\Exception $e) {
-            Log::error('Template download failed: ' . $e->getMessage());
+            Log::error('=== TEMPLATE DOWNLOAD FAILED ===', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             
             return response()->json([
                 'success' => false,
