@@ -96,16 +96,7 @@
 
                 </div>
 
-                <!-- Clear Filters Button -->
-                <div class="mb-4 flex justify-end">
-                    <button @click="clearFilters"
-                        class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                        Clear Filters
-                    </button>
-                </div>
+
 
                 <!-- Pivot Table -->
                 <div class="overflow-x-auto">
@@ -451,15 +442,7 @@ const applyFilters = () => {
     });
 };
 
-const clearFilters = () => {
-    search.value = '';
-    month_from.value = '';
-    month_to.value = '';
-    sortField.value = 'name';
-    sortDirection.value = 'asc';
-    applyFilters();
-    toast.success('Filters cleared!');
-};
+
 
 const sortBy = (field) => {
     if (sortField.value === field) {
