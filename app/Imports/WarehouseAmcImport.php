@@ -115,9 +115,11 @@ class WarehouseAmcImport implements
                 
                 // If quantity is null or empty, skip this month (don't update existing data)
                 if ($quantity === null) {
-                    Log::info("Skipping null/empty quantity for month: {$monthYear}");
+                    Log::info("Skipping null/empty quantity for month: {$monthYear} (value: '{$value}')");
                     continue;
                 }
+                
+                Log::info("Quantity cleaned: '{$value}' -> {$quantity}");
 
                 Log::info("Creating/updating WarehouseAmc: product_id={$product->id}, month_year={$monthYear}, quantity={$quantity}");
 
@@ -256,6 +258,25 @@ class WarehouseAmcImport implements
         }
 
         $headerValue = trim($headerValue);
+
+        // Handle the format "jan_2025", "feb_2025", etc.
+        if (preg_match('/^([a-z]{3})_(\d{4})$/i', $headerValue, $matches)) {
+            $monthAbbr = strtolower($matches[1]);
+            $year = $matches[2];
+            
+            // Map month abbreviations to numbers
+            $monthMap = [
+                'jan' => '01', 'feb' => '02', 'mar' => '03', 'apr' => '04',
+                'may' => '05', 'jun' => '06', 'jul' => '07', 'aug' => '08',
+                'sep' => '09', 'oct' => '10', 'nov' => '11', 'dec' => '12'
+            ];
+            
+            if (isset($monthMap[$monthAbbr])) {
+                $result = $year . '-' . $monthMap[$monthAbbr];
+                Log::info("Successfully parsed month: {$headerValue} -> {$result}");
+                return $result;
+            }
+        }
 
         // Try to parse various date formats
         $formats = [
