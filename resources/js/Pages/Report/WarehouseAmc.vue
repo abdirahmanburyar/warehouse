@@ -79,32 +79,26 @@
 
 
                     <div class="sm:w-48">
-                        <label for="month_from" class="sr-only">From Month</label>
-                        <Multiselect 
+                        <label for="month_from" class="block text-sm font-medium text-gray-700 mb-1">From Month</label>
+                        <input 
+                            type="month" 
+                            id="month_from" 
                             v-model="month_from" 
-                            :options="monthYears" 
-                            :multiple="false" 
-                            :show-labels="false"
-                            :searchable="true" 
-                            :close-on-select="true" 
-                            :clear-on-select="false" 
-                            :hide-selected="true" 
-                            :placeholder="'From Month'"
+                            @change="applyFilters"
+                            placeholder="YYYY-MM"
+                            class="block w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                         />
                     </div>
 
                     <div class="sm:w-48">
-                        <label for="month_to" class="sr-only">To Month</label>
-                        <Multiselect 
+                        <label for="month_to" class="block text-sm font-medium text-gray-700 mb-1">To Month</label>
+                        <input 
+                            type="month" 
+                            id="month_to" 
                             v-model="month_to" 
-                            :options="monthYears" 
-                            :multiple="false" 
-                            :show-labels="false"
-                            :searchable="true" 
-                            :close-on-select="true" 
-                            :clear-on-select="false" 
-                            :hide-selected="true" 
-                            :placeholder="'To Month'"
+                            @change="applyFilters"
+                            placeholder="YYYY-MM"
+                            class="block w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                         />
                     </div>
 
