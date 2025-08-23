@@ -308,6 +308,141 @@ const clearFilters = () => {
     toast.success("Filters cleared!");
 };
 
+// Upload modal functions
+const openUploadModal = () => {
+    showUploadModal.value = true;
+};
+
+const closeUploadModal = () => {
+    showUploadModal.value = false;
+    selectedFile.value = null;
+    uploadProgress.value = 0;
+    uploadResults.value = null;
+    if (fileInput.value) {
+        fileInput.value.value = null;
+    }
+};
+
+const triggerFileInput = () => {
+    fileInput.value.click();
+};
+
+const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Check file type - allow .xlsx and .csv
+    const fileExtension = "." + file.name.split(".").pop().toLowerCase();
+    const validExtensions = [".xlsx", ".csv"];
+
+    if (!validExtensions.includes(fileExtension)) {
+        toast.error(
+            "Invalid file type. Please upload an Excel file (.xlsx) or CSV file (.csv)"
+        );
+        event.target.value = null; // Clear the file input
+        selectedFile.value = null;
+        return;
+    }
+
+    // Check file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+        toast.error("File is too large. Maximum file size is 5MB.");
+        event.target.value = null;
+        selectedFile.value = null;
+        return;
+    }
+
+    selectedFile.value = file;
+};
+
+const removeSelectedFile = () => {
+    selectedFile.value = null;
+    if (fileInput.value) {
+        fileInput.value.value = null;
+    }
+};
+
+const uploadFile = async () => {
+    if (!selectedFile.value) {
+        toast.error("Please select a file to upload");
+        return;
+    }
+
+    // Show loading toast
+    const loadingToast = toast.info("Preparing to upload file...", {
+        timeout: false,
+        closeOnClick: false,
+        draggable: false,
+    });
+
+    isUploading.value = true;
+    uploadProgress.value = 0;
+    const formData = new FormData();
+    formData.append("file", selectedFile.value);
+
+    await axios.post(
+        route("inventories.import"),
+        formData,
+        {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+            onUploadProgress: (progressEvent) => {
+                uploadProgress.value = Math.round(
+                    (progressEvent.loaded * 100) / progressEvent.total
+                );
+            },
+        }
+    )
+    .then(response => {
+        isUploading.value = false;
+        uploadResults.value = response.data;
+        console.log('Upload response:', response.data);
+        toast.dismiss(loadingToast);
+        toast.success(response.data.message || "File uploaded successfully!");
+        
+        // Refresh inventory data
+        applyFilters();
+    })
+    .catch(error => {
+        isUploading.value = false;
+        console.error('Upload error:', error);
+        closeUploadModal();
+        toast.dismiss(loadingToast);
+        toast.error(error.response?.data?.message || "Failed to upload file");
+    });
+};
+
+// Download template function
+const downloadTemplate = () => {
+    // Create a CSV format that Excel can open properly
+    const headers = ['Item', 'Category', 'UoM', 'Quantity', 'Batch No', 'Expiry Date', 'Location'];
+    
+    // Create CSV content with headers
+    const csvContent = headers.join(',') + '\n';
+    
+    // Create blob with CSV MIME type
+    const blob = new Blob([csvContent], { 
+        type: 'text/csv;charset=utf-8;' 
+    });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'inventory_import_template.csv');
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up the URL object
+    URL.revokeObjectURL(url);
+    
+    toast.success('Template downloaded successfully! Open with Excel to use.');
+};
+
 // Format date
 const formatDate = (date) => {
     // Handle null/undefined dates for proper sorting
