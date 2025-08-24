@@ -96,7 +96,7 @@ class Product extends Model
     // reorderLevel
     public function reorderLevel()
     {
-        return $this->calculateReorderLevel();
+        return $this->hasOne(ReorderLevel::class);
     }
 
     /**
