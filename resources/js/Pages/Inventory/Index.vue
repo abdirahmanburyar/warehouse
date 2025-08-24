@@ -29,13 +29,6 @@ const props = defineProps({
     inventoryStatusCounts: Object,
 });
 
-// Debug logging
-console.log('Inventory props:', props);
-console.log('Inventories data:', props.inventories);
-console.log('Inventory status counts:', props.inventoryStatusCounts);
-
-const toast = useToast();
-
 // Search and filter states
 const search = ref(props.filters?.search || '');
 const location = ref(props.filters?.location || '');
@@ -44,6 +37,14 @@ const category = ref(props.filters?.category || '');
 const warehouse = ref(props.filters?.warehouse || '');
 const status = ref(props.filters?.status || '');
 const per_page = ref(props.filters?.per_page || 25);
+
+// Watch for invalid status values and clear them
+watch(status, (newStatus) => {
+    if (newStatus === 'out_of_stock') {
+        status.value = '';
+        toast.warning('Out of Stock filter is no longer available. Showing all items instead.');
+    }
+});
 
 const loadedLocation = ref([]);
 const isLoading = ref(false);
@@ -76,7 +77,6 @@ onMounted(() => {
     echoChannel = window.Echo.channel("inventory").listen(
         ".refresh",
         (data) => {
-            console.log("[PUSHER-DEBUG] Received inventory update:", data);
             applyFilters();
         }
     );
@@ -85,7 +85,6 @@ onMounted(() => {
     if (importId.value) {
         Echo.private(`import-progress.${importId.value}`)
             .listen('.ImportProgressUpdated', (e) => {
-                console.log('Import progress:', e);
                 uploadProgress.value = e.progress || 0;
                 if (e.completed) {
                     isUploading.value = false;
@@ -119,8 +118,6 @@ const applyFilters = () => {
     if (per_page.value) query.per_page = per_page.value;
     if (props.filters?.page) query.page = props.filters.page;
 
-    console.log('Applying filters:', query);
-    
     isLoading.value = true;
 
     router.get(route("inventories.index"), query, {
@@ -140,7 +137,6 @@ const applyFilters = () => {
         },
         onError: (errors) => {
             isLoading.value = false;
-            console.error('Filter error details:', errors);
             
             // Provide more specific error messages
             if (errors && typeof errors === 'object') {
@@ -398,7 +394,6 @@ const uploadFile = async () => {
     .then(response => {
         isUploading.value = false;
         uploadResults.value = response.data;
-        console.log('Upload response:', response.data);
         toast.dismiss(loadingToast);
         toast.success(response.data.message || "File uploaded successfully!");
         
@@ -633,9 +628,8 @@ function getResults(page = 1) {
                         <select v-model="status" :disabled="isLoading" class="w-full rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2" :class="{ 'opacity-50 cursor-not-allowed': isLoading }">
                             <option value="">All Status</option>
                             <option value="in_stock">In Stock</option>
-                            <option value="reorder_level">Reorder Level</option>
                             <option value="low_stock">Low Stock</option>
-                            <option value="out_of_stock">Out of Stock</option>
+                            <option value="low_stock_reorder_level">Low Stock + Reorder Level</option>
                         </select>
                     </div>
                 </div>
@@ -666,7 +660,7 @@ function getResults(page = 1) {
                         <button @click="category = ''" class="ml-1 text-yellow-600 hover:text-yellow-800">×</button>
                     </span>
                     <span v-if="status" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        Status: {{ status === 'in_stock' ? 'In Stock' : status === 'reorder_level' ? 'Reorder Level' : status === 'low_stock' ? 'Low Stock' : 'Out of Stock' }}
+                        Status: {{ status === 'in_stock' ? 'In Stock' : status === 'reorder_level' ? 'Reorder Level' : status === 'low_stock' ? 'Low Stock' : status }}
                         <button @click="status = ''" class="ml-1 text-red-600 hover:text-red-800">×</button>
                     </span>
                     <button @click="clearFilters" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700 hover:bg-gray-300">
@@ -754,133 +748,177 @@ function getResults(page = 1) {
                                     </td>
                                 </tr>
                             </template>
-                                                        <template v-else v-for="inventory in props.inventories.data" :key="inventory.id">
-                                <!-- Only create rows if there are items -->
+                            <template v-else v-for="inventory in props.inventories.data" :key="inventory.id">
+                                <!-- Show all products, but handle 0-quantity items differently -->
                                 <template v-if="inventory.items && inventory.items.length > 0">
-                                    <tr v-for="(item, itemIndex) in inventory.items" :key="`${inventory.id}-${item.id}`" class="hover:bg-gray-50 transition-colors duration-150 border-b items-center" style="border-bottom: 1px solid #B7C6E6;">
-                                        <!-- Item Name - only on first row for this inventory -->
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs font-medium text-gray-800 align-middle items-center">{{ inventory.product.name }}</td>
-                                        
-                                        <!-- Category - only on first row for this inventory -->
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.product.category.name }}</td>
-                                        
-                                        <!-- UoM - only on first row for this inventory -->
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.items[0].uom }}</td>
-                                        
-                                        <!-- QTY -->
-                                        <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatQty(item.quantity || 0) }}</td>
-                                        
-                                        <!-- Batch Number -->
-                                        <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ item.batch_number }}</td>
-                                        
-                                        <!-- Expiry Date -->
-                                        <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">{{ formatDate(item.expiry_date) }}</td>
-                                        
-                                        <!-- Location -->
-                                        <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle" :class="isItemOutOfStock(item) ? 'text-red-600 font-medium' : 'text-gray-900'">
-                                            <div class="flex items-center justify-center space-x-2">
-                                                <span>{{ item.location }}</span>
-                                                <button
-                                                    @click="openEditLocationModal(item, inventory)"
-                                                    class="p-1 bg-green-50 text-green-600 hover:bg-green-100 rounded-full"
-                                                    title="Edit Location"
-                                                >
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        class="h-4 w-4"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
+                                    <!-- Check if this product has any items with quantity > 0 -->
+                                    <template v-if="inventory.items.some(item => (item.quantity || 0) > 0)">
+                                        <!-- Show items with quantity > 0 -->
+                                        <tr v-for="(item, itemIndex) in inventory.items.filter(item => (item.quantity || 0) > 0)" :key="`${inventory.id}-${item.id}`" class="hover:bg-gray-50 transition-colors duration-150 border-b items-center" style="border-bottom: 1px solid #B7C6E6;">
+                                            <!-- Item Name - only on first row for this inventory -->
+                                            <td v-if="itemIndex === 0" :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length" class="px-3 py-2 text-xs font-medium text-gray-800 align-middle items-center">{{ inventory.product.name }}</td>
+                                            
+                                            <!-- Category - only on first row for this inventory -->
+                                            <td v-if="itemIndex === 0" :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length" class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.product.category.name }}</td>
+                                            
+                                            <!-- UoM - only on first row for this inventory -->
+                                            <td v-if="itemIndex === 0" :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length" class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.items[0].uom }}</td>
+                                            
+                                            <!-- QTY -->
+                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">{{ formatQty(item.quantity || 0) }}</td>
+                                            
+                                            <!-- Batch Number -->
+                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">{{ item.batch_number }}</td>
+                                            
+                                            <!-- Expiry Date -->
+                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">{{ formatDate(item.expiry_date) }}</td>
+                                            
+                                            <!-- Location -->
+                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">
+                                                <div class="flex items-center justify-center space-x-2">
+                                                    <span>{{ item.location }}</span>
+                                                    <button
+                                                        @click="openEditLocationModal(item, inventory)"
+                                                        class="p-1 bg-green-50 text-green-600 hover:bg-green-100 rounded-full"
+                                                        title="Edit Location"
                                                     >
-                                                        <path
-                                                            stroke-linecap="round"
-                                                            stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                        />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </td>
-                                        
-                                        <!-- Total QTY on Hand - only on first row for this inventory -->
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
-                                            <div class="flex items-center justify-center">
-                                                <span class="font-medium text-lg">{{ formatQty(getTotalQuantity(inventory)) }}</span>
-                                            </div>
-                                        </td>
-                                        
-                                        <!-- Status - only on first row for this inventory -->
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
-                                            <div class="flex flex-col items-center justify-center space-y-2">
-                                                <!-- Stock Status Badge -->
-                                                <span v-if="getTotalQuantity(inventory) <= 0" 
-                                                      class="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full font-medium">
-                                                    Out of Stock
-                                                </span>
-                                                <span v-else-if="getTotalQuantity(inventory) <= ((inventory.reorder_level || 0) * 0.3)" 
-                                                      class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full font-medium">
-                                                    Low Stock
-                                                </span>
-                                                <span v-else 
-                                                      class="px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full font-medium">
-                                                    In Stock
-                                                </span>
-                                                
-                                                <!-- Reorder Status Icon -->
-                                                <div v-if="needsReorder(inventory)" class="flex items-center justify-center">
-                                                    <img
-                                                        src="/assets/images/reorder_status.png"
-                                                        alt="Reorder Status"
-                                                        class="w-4 h-4"
-                                                        title="Reorder Status"
-                                                    />
-                                                </div>
-                                                
-                                                <!-- Reorder Button for Out of Stock Items -->
-                                                <div v-if="getTotalQuantity(inventory) <= 0" class="flex flex-col items-center">
-                                                    <button 
-                                                        class="px-2 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 transition-colors"
-                                                        title="Reorder - Out of Stock"
-                                                    >
-                                                        Reorder
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            class="h-4 w-4"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                stroke-linecap="round"
+                                                                stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                            />
+                                                        </svg>
                                                     </button>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        
-                                        <!-- Reorder Level - only on first row for this inventory -->
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.reorder_level || 0) }}</td>
-                                        
-                                        <!-- Actions - only on first row for this inventory -->
-                                        <td v-if="itemIndex === 0" :rowspan="inventory.items.length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
-                                            <div class="flex items-center justify-center">
-                                                <!-- Actions column is now empty but reserved for future use -->
-                                                <span class="text-gray-400 text-xs">-</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </template>
-                                
-                                <!-- Show message if no items for this inventory -->
-                                <template v-else>
-                                    <tr class="hover:bg-gray-50 transition-colors duration-150 border-b items-center" style="border-bottom: 1px solid #B7C6E6;">
-                                        <td class="px-3 py-2 text-xs font-medium text-gray-800 align-middle items-center">{{ inventory.product.name }}</td>
-                                        <td class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.product.category.name }}</td>
-                                        <td class="px-3 py-2 text-xs text-gray-700 align-middle items-center">-</td>
-                                        <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">-</td>
-                                        <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">-</td>
-                                        <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">-</td>
-                                        <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">-</td>
-                                        <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(getTotalQuantity(inventory)) }}</td>
-                                        <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
-                                            <span class="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full font-medium">Out of Stock</span>
-                                        </td>
-                                        <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.reorder_level || 0) }}</td>
-                                        <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
-                                            <span class="text-gray-400 text-xs">-</span>
-                                        </td>
-                                    </tr>
+                                            </td>
+                                            
+                                            <!-- Total QTY on Hand - only on first row for this inventory -->
+                                            <td v-if="itemIndex === 0" :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
+                                                <div class="flex items-center justify-center">
+                                                    <span class="font-medium text-lg">{{ formatQty(getTotalQuantity(inventory)) }}</span>
+                                                </div>
+                                            </td>
+                                            
+                                            <!-- Status - only on first row for this inventory -->
+                                            <td v-if="itemIndex === 0" :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
+                                                <div class="flex flex-col items-center justify-center space-y-2">
+                                                    <!-- Stock Status Badge -->
+                                                    <span v-if="getTotalQuantity(inventory) <= 0" 
+                                                          class="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full font-medium">
+                                                        Out of Stock
+                                                    </span>
+                                                    <span v-else-if="(inventory.reorder_level || 0) > 0 && getTotalQuantity(inventory) <= (inventory.reorder_level || 0)" 
+                                                          class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full font-medium">
+                                                        Low Stock
+                                                    </span>
+                                                    <span v-else 
+                                                          class="px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full font-medium">
+                                                        In Stock
+                                                    </span>
+                                                    
+                                                    <!-- Reorder Status Icon -->
+                                                    <div v-if="needsReorder(inventory)" class="flex items-center justify-center">
+                                                        <img
+                                                            src="/assets/images/reorder_status.png"
+                                                            alt="Reorder Status"
+                                                            class="w-4 h-4"
+                                                            title="Reorder Status"
+                                                        />
+                                                    </div>
+                                                    
+                                                    <!-- Reorder Button for Out of Stock Items -->
+                                                    <div v-if="getTotalQuantity(inventory) <= 0" class="flex flex-col items-center">
+                                                        <button 
+                                                            class="px-2 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 transition-colors"
+                                                            title="Reorder - Out of Stock"
+                                                        >
+                                                            Reorder
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            
+                                            <!-- Reorder Level - only on first row for this inventory -->
+                                            <td v-if="itemIndex === 0" :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.reorder_level || 0) }}</td>
+                                            
+                                            <!-- Actions - only on first row for this inventory -->
+                                            <td v-if="itemIndex === 0" :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
+                                                <div class="flex items-center justify-center">
+                                                    <!-- Actions column is now empty but reserved for future use -->
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    
+                                    <!-- Show products with only 0-quantity items as a single row -->
+                                    <template v-else>
+                                        <tr class="hover:bg-gray-50 transition-colors duration-150 border-b items-center" style="border-bottom: 1px solid #B7C6E6;">
+                                            <!-- Item Name -->
+                                            <td class="px-3 py-2 text-xs font-medium text-gray-800 align-middle items-center">{{ inventory.product.name }}</td>
+                                            
+                                            <!-- Category -->
+                                            <td class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.product.category.name }}</td>
+                                            
+                                            <!-- UoM -->
+                                            <td class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.items[0]?.uom || '-' }}</td>
+                                            
+                                            <!-- QTY -->
+                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">-</td>
+                                            
+                                            <!-- Batch Number -->
+                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">-</td>
+                                            
+                                            <!-- Expiry Date -->
+                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">-</td>
+                                            
+                                            <!-- Location -->
+                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">-</td>
+                                            
+                                            <!-- Total QTY on Hand -->
+                                            <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
+                                                <div class="flex items-center justify-center">
+                                                    <span class="font-medium text-lg">{{ formatQty(getTotalQuantity(inventory)) }}</span>
+                                                </div>
+                                            </td>
+                                            
+                                            <!-- Status -->
+                                            <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
+                                                <div class="flex flex-col items-center justify-center space-y-2">
+                                                    <span class="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full font-medium">
+                                                        Out of Stock
+                                                    </span>
+                                                    
+                                                    <!-- Reorder Button for Out of Stock Items -->
+                                                    <div class="flex flex-col items-center">
+                                                        <button 
+                                                            class="px-2 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 transition-colors"
+                                                            title="Reorder - Out of Stock"
+                                                        >
+                                                            Reorder
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            
+                                            <!-- Reorder Level -->
+                                            <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.reorder_level || 0) }}</td>
+                                            
+                                            <!-- Actions -->
+                                            <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
+                                                <div class="flex items-center justify-center">
+                                                    <!-- Actions column is now empty but reserved for future use -->
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
                                 </template>
                             </template>
                         </tbody>

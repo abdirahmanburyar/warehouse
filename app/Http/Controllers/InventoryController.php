@@ -30,9 +30,14 @@ use Carbon\Carbon;
 
 class InventoryController extends Controller
 {
+	protected $placeholderCount = 0; // Track placeholders for out-of-stock count
+
 	public function index(Request $request)
 	{
         try {
+            // Reset placeholder count for this request
+            $this->placeholderCount = 0;
+            
             // Log incoming request parameters for debugging
             logger()->info('Inventory index request received', [
                 'filters' => $request->only(['search', 'product_id', 'category', 'dosage', 'status', 'per_page', 'page', 'sort_by', 'sort_order']),
@@ -90,14 +95,6 @@ class InventoryController extends Controller
 
             $productIds = collect($productsPaginator->items())->pluck('id')->all();
 
-            // Debug: Log the products to check for duplicates
-            Log::info('Products from paginator', [
-                'total_products' => count($productsPaginator->items()),
-                'unique_product_ids' => count(array_unique($productIds)),
-                'product_ids' => $productIds,
-                'duplicate_check' => array_count_values($productIds)
-            ]);
-
             // Load existing inventories (and items) for products on this page
             $existingInventories = Inventory::query()
                 ->with([
@@ -109,20 +106,6 @@ class InventoryController extends Controller
                 ->whereIn('product_id', $productIds)
                 ->get()
                 ->groupBy('product_id');
-
-            // Debug: Log the structure to understand what's happening
-            Log::info('Inventory data structure', [
-                'total_products' => count($productIds),
-                'inventory_groups' => $existingInventories->map(function($group) {
-                    return [
-                        'product_id' => $group->first()->product_id,
-                        'inventory_count' => $group->count(),
-                        'total_items' => $group->sum(function($inv) {
-                            return $inv->items ? $inv->items->count() : 0;
-                        })
-                    ];
-                })->toArray()
-            ]);
 
             // Ensure expiry dates are properly converted to Carbon instances
             foreach ($existingInventories as $productInventories) {
@@ -142,6 +125,7 @@ class InventoryController extends Controller
 
             // Merge: ensure every product has at least one row
             $merged = collect();
+            
             foreach ($productsPaginator->items() as $product) {
                 // Calculate AMC using the new formula (for reorder level calculation only)
                 $amcData = $this->calculateAMC($product->id);
@@ -169,56 +153,37 @@ class InventoryController extends Controller
                     $inventory->setRelation('product', $inventory->product->loadMissing('category:id,name', 'dosage:id,name'));
                     $merged->push($inventory);
                     
-                    Log::info("Product {$product->id} ({$product->name}) merged", [
-                        'inventory_records' => $existingInventories[$product->id]->count(),
-                        'total_items' => $allItems->count(),
-                        'amc' => $amc,
-                        'reorder_level' => $reorderLevel
-                    ]);
                 } else {
-                    $placeholder = new Inventory();
-                    $placeholder->setAttribute('id', -$product->id); // synthetic id to keep rows unique
-                    $placeholder->setAttribute('product_id', $product->id);
-                    $placeholder->setAttribute('reorder_level', $reorderLevel);
-                    $placeholder->setRelation('product', $product);
-
-                    // Create only one placeholder item
-                    $item = new InventoryItem();
-                    $item->setAttribute('id', -$product->id);
-                    $item->setAttribute('product_id', $product->id);
-                    $item->setAttribute('quantity', 0);
-                    $item->setAttribute('batch_number', null);
-                    $item->setAttribute('barcode', null);
-                    $item->setAttribute('location', null);
-                    $item->setAttribute('expiry_date', null);
-                    $item->setAttribute('uom', null);
-                    $item->setRelation('warehouse', null);
-
-                    $placeholder->setRelation('items', collect([$item]));
-                    $merged->push($placeholder);
-                    
-                    Log::info("Product {$product->id} ({$product->name}) created placeholder", [
-                        'amc' => $amc,
-                        'reorder_level' => $reorderLevel
-                    ]);
+                    // Don't add placeholder to main display, just count it for out-of-stock
+                    $this->placeholderCount++;
                 }
             }
             
-            Log::info("Final merged data", [
-                'total_merged_records' => $merged->count(),
-                'products_with_inventory' => $merged->where('id', '>', 0)->count(),
-                'placeholder_products' => $merged->where('id', '<', 0)->count(),
-                'unique_product_ids' => $merged->pluck('product_id')->unique()->count(),
-                'duplicate_product_check' => $merged->pluck('product_id')->duplicates()->values()->toArray()
-            ]);
-
             // Final safeguard: ensure no duplicate products in the merged collection
             $merged = $merged->unique('product_id')->values();
+
+            // Build paginator compatible with the frontend
+            $filteredCount = $merged->count();
             
-            Log::info("After deduplication", [
-                'total_merged_records' => $merged->count(),
-                'unique_product_ids' => $merged->pluck('product_id')->unique()->count()
-            ]);
+            // Ensure we always have a valid response structure
+            if ($filteredCount === 0) {
+                // Create an empty paginator when no results
+                $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
+                    collect([]),
+                    0,
+                    $perPage,
+                    $page,
+                    ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
+                );
+            } else {
+                $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $merged->values(),
+                    $filteredCount,
+                    $perPage,
+                    $page,
+                    ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
+                );
+            }
 
             // Apply sorting to the merged data after creating the collection
             if ($request->filled('sort_by')) {
@@ -309,51 +274,24 @@ class InventoryController extends Controller
             // Apply status filters to the merged data
             if ($request->filled('status')) {
                 try {
-                    logger()->info('Applying status filter: ' . $request->status . ' to ' . $merged->count() . ' items');
-                    
-                    // Log sample data structure for debugging
-                    if ($merged->count() > 0) {
-                        $sampleInventory = $merged->first();
-                        logger()->info('Sample inventory structure:', [
-                            'product_name' => $sampleInventory->product->name ?? 'N/A',
-                            'items_count' => $sampleInventory->items ? $sampleInventory->items->count() : 0,
-                            'first_item_quantity' => $sampleInventory->items && $sampleInventory->items->count() > 0 ? $sampleInventory->items->first()->quantity : 'N/A',
-                            'reorder_level' => $sampleInventory->reorder_level ?? 'N/A'
-                        ]);
-                    }
                     
                     $merged = $merged->filter(function ($inventory) use ($request) {
                         try {
                             $totalQuantity = $inventory->items->sum('quantity');
                             $reorderLevel = (float) ($inventory->reorder_level ?? 0);
                             
-                            // Log the values being used for filtering
-                            logger()->info("Filtering inventory: {$inventory->product->name}, TotalQty: {$totalQuantity}, ReorderLevel: {$reorderLevel}");
-                            
                             switch ($request->status) {
                                 case 'in_stock':
                                     // Items that are in stock (total quantity > 0)
-                                    $result = $totalQuantity > 0;
-                                    logger()->info("Product {$inventory->product->name}: Qty={$totalQuantity}, InStock={$result} (qty > 0)");
-                                    return $result;
-                                
-                                case 'reorder_level':
-                                    // Items that need reorder (total quantity <= 70% of reorder level)
-                                    $result = $reorderLevel > 0 && $totalQuantity <= ($reorderLevel * 0.7);
-                                    logger()->info("Product {$inventory->product->name}: Qty={$totalQuantity}, ReorderLevel={$reorderLevel}, NeedsReorder={$result}");
-                                    return $result;
+                                    return $totalQuantity > 0;
                                 
                                 case 'low_stock':
                                     // Items that are low stock (total quantity > 0 but <= reorder level)
-                                    $result = $totalQuantity > 0 && $totalQuantity <= $reorderLevel;
-                                    logger()->info("Product {$inventory->product->name}: Qty={$totalQuantity}, ReorderLevel={$reorderLevel}, LowStock={$result}");
-                                    return $result;
+                                    return $totalQuantity > 0 && $reorderLevel > 0 && $totalQuantity <= $reorderLevel;
                                 
-                                case 'out_of_stock':
-                                    // Items that are out of stock (total quantity = 0)
-                                    $result = $totalQuantity === 0;
-                                    logger()->info("Product {$inventory->product->name}: Qty={$totalQuantity}, OutOfStock={$result}");
-                                    return $result;
+                                case 'low_stock_reorder_level':
+                                    // Items that need reorder (total quantity <= 70% of reorder level)
+                                    return $reorderLevel > 0 && $totalQuantity <= ($reorderLevel * 0.7);
                                 
                                 default:
                                     return true;
@@ -364,22 +302,6 @@ class InventoryController extends Controller
                         }
                     });
                     
-                    logger()->info('After status filtering: ' . $merged->count() . ' items remain');
-                    
-                    // Log sample of filtered results for debugging
-                    if ($merged->count() > 0) {
-                        $filteredSample = $merged->take(3);
-                        logger()->info('Sample filtered results:', $filteredSample->map(function($inv) {
-                            $totalQty = $inv->items->sum('quantity');
-                            $reorderLevel = (float) ($inv->reorder_level ?? 0);
-                            return [
-                                'product_name' => $inv->product->name,
-                                'total_quantity' => $totalQty,
-                                'reorder_level' => $reorderLevel,
-                                'status' => $request->status
-                            ];
-                        })->toArray());
-                    }
                 } catch (\Exception $e) {
                     logger()->error('Error applying status filter: ' . $e->getMessage());
                     // If filtering fails, return all items
@@ -387,37 +309,8 @@ class InventoryController extends Controller
                 }
             }
 
-            logger()->info('Final merged data count: ' . $merged->count() . ', sample products: ' . $merged->take(3)->map(fn($inv) => $inv->product->name)->join(', '));
-
-            // Build paginator compatible with the frontend
-            $filteredCount = $merged->count();
-            
-            logger()->info('Building paginator - filteredCount: ' . $filteredCount . ', perPage: ' . $perPage . ', page: ' . $page);
-            
-            // Ensure we always have a valid response structure
-            if ($filteredCount === 0) {
-                // Create an empty paginator when no results
-                $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
-                    collect([]),
-                    0,
-                    $perPage,
-                    $page,
-                    ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
-                );
-                logger()->info('Created empty paginator');
-            } else {
-                $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
-                    $merged->values(),
-                    $filteredCount,
-                    $perPage,
-                    $page,
-                    ['path' => $productsPaginator->path(), 'pageName' => $productsPaginator->getPageName()]
-                );
-            }
-
             // Calculate status counts independently of pagination
             $statusCounts = $this->calculateInventoryStatusCounts($request);
-
 
             return Inertia::render('Inventory/Index', [
                 'inventories' => InventoryResource::collection($inventories),
@@ -677,7 +570,7 @@ class InventoryController extends Controller
 		}
 
 		if ($request->filled('dosage')) {
-			$query->whereHas('product.dosage', fn($q) => $q->where('name', $request->category));
+			$query->whereHas('product.dosage', fn($q) => $q->where('name', $request->dosage));
 		}
 
 		// Get all results without pagination for counting
@@ -722,20 +615,7 @@ class InventoryController extends Controller
 				}
 			}
 
-			// Product-level status for in-stock/low-stock
-			// Simplified logic: in_stock = quantity > 0, low_stock = quantity > 0 but <= reorder level
-			if ($totalQuantity > 0) {
-				$statusCounts['in_stock']++;
-				
-				// Check if it's also low stock (when reorder level is set)
-				if ($reorderLevel > 0 && $totalQuantity <= $reorderLevel) {
-					$statusCounts['low_stock']++;
-				}
-			}
-
-			// Do not calculate out_of_stock here; we'll do a robust item-level count below
-			
-			// Count expiry status
+			// Count expiry status only
 			if ($hasExpiredItems) {
 				$statusCounts['expired']++;
 			} elseif ($hasSoonExpiringItems) {
@@ -751,7 +631,8 @@ class InventoryController extends Controller
             $productFilterQuery->where(function($q) use ($search) {
                 $q->where('products.name', 'like', "%{$search}%")
                   ->orWhereExists(function($sub) use ($search) {
-                      $sub->from('inventories')
+                      $sub->select(DB::raw(1))
+                          ->from('inventories')
                           ->join('inventory_items', 'inventories.id', '=', 'inventory_items.inventory_id')
                           ->whereColumn('inventories.product_id', 'products.id')
                           ->where(function($w) use ($search){
@@ -784,6 +665,46 @@ class InventoryController extends Controller
                 ->count();
 
             $statusCounts['out_of_stock'] = $filteredProductIds->count() - $positiveTotals;
+        }
+
+        // Add placeholder count from main inventory display to out-of-stock count
+        if ($this->placeholderCount > 0) {
+            $statusCounts['out_of_stock'] += $this->placeholderCount;
+        }
+
+        // Ensure we're counting unique products, not inventory records
+        // Reset counts and recalculate based on unique products
+        $statusCounts['in_stock'] = 0;
+        $statusCounts['low_stock'] = 0;
+        
+        // Get unique products with their total quantities
+        $productStatuses = DB::table('products')
+            ->leftJoin('inventories', 'products.id', '=', 'inventories.product_id')
+            ->leftJoin('inventory_items', 'inventories.id', '=', 'inventory_items.inventory_id')
+            ->select(
+                'products.id',
+                'products.name',
+                DB::raw('COALESCE(SUM(COALESCE(inventory_items.quantity, 0)), 0) as total_quantity')
+            )
+            ->whereIn('products.id', $filteredProductIds)
+            ->groupBy('products.id', 'products.name')
+            ->get();
+
+        foreach ($productStatuses as $product) {
+            $totalQty = (float) $product->total_quantity;
+            
+            // Calculate reorder level for this product
+            $amcData = $this->calculateAMC($product->id);
+            $reorderLevel = $this->calculateReorderLevel($amcData['amc'], $amcData['selected_months']);
+            
+            if ($totalQty > 0) {
+                $statusCounts['in_stock']++;
+                
+                // Check if it's also low stock (when reorder level is set)
+                if ($reorderLevel > 0 && $totalQty <= $reorderLevel) {
+                    $statusCounts['low_stock']++;
+                }
+            }
         }
 
 		return $statusCounts;
