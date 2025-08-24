@@ -140,7 +140,6 @@ watch(
         search, 
         location, 
         warehouse, 
-        dosage, 
         category, 
         status, 
         per_page
@@ -152,9 +151,8 @@ watch(
             if (newValues[0] !== oldValues[0] || // search
                 newValues[1] !== oldValues[1] || // location
                 newValues[2] !== oldValues[2] || // warehouse
-                newValues[3] !== oldValues[3] || // dosage
-                newValues[4] !== oldValues[4] || // category
-                newValues[5] !== oldValues[5]) { // status
+                newValues[3] !== oldValues[3] || // category
+                newValues[4] !== oldValues[4]) { // status
                 props.filters.page = 1;
             }
             applyFilters();
@@ -246,7 +244,7 @@ const updateLocation = async () => {
 
 // Update hasActiveFilters to remove sorting
 const hasActiveFilters = computed(() => {
-    return search.value || location.value || dosage.value || category.value ||
+    return search.value || location.value || category.value ||
         warehouse.value || status.value; // Remove sorting checks
 });
 
@@ -280,7 +278,6 @@ const clearFilters = () => {
             "warehouses",
             "inventoryStatusCounts",
             "locations",
-            "dosage",
             "category",
         ],
         onFinish: () => {
