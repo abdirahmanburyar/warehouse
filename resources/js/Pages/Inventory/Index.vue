@@ -71,6 +71,18 @@ const applyFilters = () => {
     if (per_page.value) query.per_page = per_page.value;
     if (props.filters?.page) query.page = props.filters.page;
 
+    console.log('🔍 Applying filters:', query);
+    console.log('📊 Current filter values:', {
+        search: search.value,
+        location: location.value,
+        warehouse: warehouse.value,
+        dosage: dosage.value,
+        category: category.value,
+        status: status.value,
+        per_page: per_page.value,
+        page: props.filters?.page
+    });
+
     isLoading.value = true;
 
     router.get(route("inventories.index"), query, {
@@ -87,9 +99,11 @@ const applyFilters = () => {
         ],
         onFinish: () => {
             isLoading.value = false;
+            console.log('✅ Filters applied successfully');
         },
         onError: (errors) => {
             isLoading.value = false;
+            console.error('❌ Filter error:', errors);
 
             // Provide more specific error messages
             if (errors && typeof errors === 'object') {
@@ -111,14 +125,13 @@ const applyFilters = () => {
 // Watch for filter changes and apply them
 watch(
     [
-        search.value, 
-        location.value, 
-        warehouse.value, 
-        dosage.value, 
-        category.value, 
-        status.value, 
-        per_page.value,
-        props.filters.page
+        search, 
+        location, 
+        warehouse, 
+        dosage, 
+        category, 
+        status, 
+        per_page
     ],
     () => {
         applyFilters();
@@ -204,44 +217,7 @@ const updateLocation = async () => {
     }
 };
 
-// Remove sorting from query building
-const buildQuery = () => {
-    const query = {};
-    if (search.value) query.search = search.value;
-    if (location.value) query.location = location.value;
-    if (warehouse.value) query.warehouse = warehouse.value;
-    if (dosage.value) query.dosage = dosage.value;
-    if (category.value) query.category = category.value;
-    if (status.value) query.status = status.value;
 
-    // Always include per_page in query if it exists
-    if (per_page.value) query.per_page = per_page.value;
-    return query;
-};
-
-// Remove sorting from watch
-watch(
-    [search, location, warehouse, dosage, category, status, per_page], // Remove sortBy, sortOrder
-    () => {
-        if (props.filters) {
-            props.filters.search = search.value;
-            props.filters.location = location.value;
-            props.filters.warehouse = warehouse.value;
-            props.filters.dosage = dosage.value;
-            props.filters.category = category.value;
-            props.filters.status = status.value;
-            props.filters.per_page = per_page.value;
-        }
-    },
-    { immediate: true }
-);
-
-// Remove all sorting methods and computed properties
-// const handleSort = (column) => { ... }
-// const getSortIcon = (column) => { ... }
-// const getSortLabel = (column) => { ... }
-// const sortedInventories = computed(() => { ... })
-// const getEarliestExpiryDate = (inventory) => { ... }
 
 // Update hasActiveFilters to remove sorting
 const hasActiveFilters = computed(() => {
@@ -523,6 +499,7 @@ const reorderItemsCount = computed(() => {
 
 function getResults(page = 1) {
     props.filters.page = page;
+    applyFilters();
 }
 
 </script>
@@ -581,11 +558,21 @@ function getResults(page = 1) {
             </div>
             <!-- Filters Card -->
             <div class="bg-white rounded-xl shadow-md p-4 mb-4 border border-gray-200">
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-4 items-end">
                     <div class="col-span-1 md:col-span-2 min-w-0">
                         <input v-model="search" type="text"
                             class="w-full rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             placeholder="Search by item name, barcode, batch number, uom" />
+                    </div>
+                    <div class="col-span-1 min-w-0">
+                        <Multiselect v-model="location" :options="props.locations || []" :searchable="true"
+                            :close-on-select="true" :show-labels="false" placeholder="Select a location"
+                            :allow-empty="true" class="multiselect--with-icon w-full" />
+                    </div>
+                    <div class="col-span-1 min-w-0">
+                        <Multiselect v-model="warehouse" :options="props.warehouses || []" :searchable="true"
+                            :close-on-select="true" :show-labels="false" placeholder="Select a warehouse"
+                            :allow-empty="true" class="multiselect--with-icon w-full" />
                     </div>
                     <div class="col-span-1 min-w-0">
                         <Multiselect v-model="category" :options="props.category || []" :searchable="true"
@@ -659,6 +646,7 @@ function getResults(page = 1) {
                 <!-- Controls Row -->
                 <div class="flex justify-end items-center gap-4 mt-4">
                     <select v-model="per_page"
+                        @change="() => { props.filters.page = 1; applyFilters(); }"
                         class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px]">
                         <option value="25">25 per page</option>
                         <option value="50">50 per page</option>

@@ -70,6 +70,31 @@ class InventoryController extends Controller
 				$productQuery->whereHas('dosage', fn($q) => $q->where('name', $request->dosage));
 			}
 
+			// Apply location filter
+			if ($request->filled('location')) {
+				$productQuery->whereHas('items', fn($q) => $q->where('location', $request->location));
+			}
+
+			// Apply warehouse filter
+			if ($request->filled('warehouse')) {
+				$productQuery->whereHas('items.warehouse', fn($q) => $q->where('name', $request->warehouse));
+			}
+
+			// Apply status filter
+			if ($request->filled('status')) {
+				switch ($request->status) {
+					case 'in_stock':
+						$productQuery->whereHas('items', fn($q) => $q->where('quantity', '>', 0));
+						break;
+					case 'low_stock':
+						// This will be handled by the accessor logic
+						break;
+					case 'low_stock_reorder_level':
+						// This will be handled by the accessor logic
+						break;
+				}
+			}
+
 			// Paginate products
 			$products = $productQuery->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
@@ -98,7 +123,7 @@ class InventoryController extends Controller
 			return Inertia::render('Inventory/Index', [
 				'inventories' => InventoryResource::collection($products),  // Pass products directly with subquery data
 				// 'inventoryStatusCounts' => $statusCounts,
-				'filters' => $request->only(['search', 'per_page', 'page', 'category', 'dosage', 'status']),
+				'filters' => $request->only(['search', 'per_page', 'page', 'category', 'dosage', 'status', 'location', 'warehouse']),
 				'category' => $categories,
 				'dosage' => $dosages,
 				'locations' => $locations,
