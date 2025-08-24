@@ -582,8 +582,16 @@ class Product extends Model
             $status = 'out_of_stock';
         } elseif ($reorderLevel > 0 && $totalQuantity <= $reorderLevel) {
             $status = 'reorder_level';
-        } elseif ($reorderLevel > 0 && $totalQuantity <= ($reorderLevel + ($reorderLevel * 0.3))) {
+        } elseif ($reorderLevel > 0 && $totalQuantity < ($reorderLevel / 0.3)) {
+            // Low Stock: when reorder level is higher than 30% of current quantity
+            // This means: reorder_level > (total_quantity * 0.3)
+            // Or: total_quantity < (reorder_level / 0.3)
             $status = 'low_stock';
+        }
+        
+        // Add a special status for items that are both low stock AND at reorder level
+        if ($reorderLevel > 0 && $totalQuantity <= $reorderLevel && $totalQuantity < ($reorderLevel / 0.3)) {
+            $status = 'low_stock_reorder_level';
         }
         
         return [

@@ -112,7 +112,23 @@ class InventoryController extends Controller
 				return $product->inventory_structure;
 			});
 
-			// Replace the products collection with our transformed data
+			// Apply status filtering after transformation
+			if ($request->filled('status')) {
+				switch ($request->status) {
+					case 'low_stock':
+						$inventoriesData = $inventoriesData->filter(function($inventory) {
+							return $inventory['status'] === 'low_stock';
+						});
+						break;
+					case 'low_stock_reorder_level':
+						$inventoriesData = $inventoriesData->filter(function($inventory) {
+							return $inventory['status'] === 'low_stock_reorder_level';
+						});
+						break;
+				}
+			}
+
+			// Replace the products collection with our filtered and transformed data
 			$products->setCollection($inventoriesData);
 
 			// Get filter options
@@ -139,6 +155,10 @@ class InventoryController extends Controller
 				],
 				[
 					'status' => 'reorder_level',
+					'count' => 0
+				],
+				[
+					'status' => 'low_stock_reorder_level',
 					'count' => 0
 				],
 				[
@@ -181,10 +201,12 @@ class InventoryController extends Controller
 				$reorderLevel = (float) $product->reorder_level;
 				
 				if ($totalQuantity <= 0) {
-					$statusCounts[3]['count']++; // out_of_stock
+					$statusCounts[4]['count']++; // out_of_stock
+				} elseif ($reorderLevel > 0 && $totalQuantity <= $reorderLevel && $totalQuantity < ($reorderLevel / 0.3)) {
+					$statusCounts[3]['count']++; // low_stock_reorder_level
 				} elseif ($reorderLevel > 0 && $totalQuantity <= $reorderLevel) {
 					$statusCounts[2]['count']++; // reorder_level
-				} elseif ($reorderLevel > 0 && $totalQuantity <= ($reorderLevel + ($reorderLevel * 0.3))) {
+				} elseif ($reorderLevel > 0 && $totalQuantity < ($reorderLevel / 0.3)) {
 					$statusCounts[1]['count']++; // low_stock
 				} else {
 					$statusCounts[0]['count']++; // in_stock

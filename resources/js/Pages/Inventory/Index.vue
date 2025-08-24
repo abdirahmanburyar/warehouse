@@ -20,7 +20,6 @@ const toast = useToast();
 
 const props = defineProps({
     inventories: Object,
-    dosage: Array,
     category: Array,
     locations: Array,
     warehouses: Array,
@@ -87,7 +86,6 @@ const applyFilters = () => {
             search: search.value,
             location: location.value,
             warehouse: warehouse.value,
-            dosage: dosage.value,
             category: category.value,
             status: status.value,
             per_page: per_page.value,
@@ -105,7 +103,6 @@ const applyFilters = () => {
                 "warehouses",
                 "inventoryStatusCounts",
                 "locations",
-                "dosage",
                 "category",
             ],
             onFinish: () => {
@@ -791,10 +788,7 @@ onUnmounted(() => {
                             <span class="font-medium text-gray-600">Category:</span>
                             <span class="ml-2 text-gray-800">{{ category || 'None' }}</span>
                         </div>
-                        <div>
-                            <span class="font-medium text-gray-600">Dosage:</span>
-                            <span class="ml-2 text-gray-800">{{ dosage || 'None' }}</span>
-                        </div>
+
                         <div>
                             <span class="font-medium text-gray-600">Status:</span>
                             <span class="ml-2 text-gray-800">{{ status || 'None' }}</span>
