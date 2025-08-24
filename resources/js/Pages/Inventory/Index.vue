@@ -111,13 +111,14 @@ const applyFilters = () => {
 // Watch for filter changes and apply them
 watch(
     [
-        search, 
-        location, 
-        warehouse, 
-        dosage, 
-        category, 
-        status, 
-        per_page
+        search.value, 
+        location.value, 
+        warehouse.value, 
+        dosage.value, 
+        category.value, 
+        status.value, 
+        per_page.value,
+        props.filters.page
     ],
     () => {
         applyFilters();
@@ -884,8 +885,12 @@ function getResults(page = 1) {
                                             <!-- Reorder Level - only on first row for this inventory -->
                                             <td v-if="itemIndex === 0"
                                                 :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
-                                                class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{
-                                                formatQty(inventory.reorder_level || 0) }}</td>
+                                                class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
+                                                <div class="flex flex-col items-center space-y-1">
+                                                    <div class="font-medium">Reorder: {{ formatQty(inventory.reorder_level || 0) }}</div>
+                                                    <div class="text-gray-600">AMC: {{ formatQty(inventory.amc || 0) }}</div>
+                                                </div>
+                                            </td>
 
                                             <!-- Actions - only on first row for this inventory -->
                                             <td v-if="itemIndex === 0"
@@ -969,8 +974,12 @@ function getResults(page = 1) {
                                             </td>
 
                                             <!-- Reorder Level -->
-                                            <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{
-                                                formatQty(inventory.reorder_level || 0) }}</td>
+                                            <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
+                                                <div class="flex flex-col items-center space-y-1">
+                                                    <div class="font-medium">Reorder: {{ formatQty(inventory.reorder_level || 0) }}</div>
+                                                    <div class="text-gray-600">AMC: {{ formatQty(inventory.amc || 0) }}</div>
+                                                </div>
+                                            </td>
 
                                             <!-- Actions -->
                                             <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
