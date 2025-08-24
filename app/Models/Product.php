@@ -573,6 +573,19 @@ class Product extends Model
         // Calculate all inventory metrics in one optimized call
         $metrics = $this->calculateInventoryMetrics();
         
+        // Calculate the current status based on total quantity and reorder level
+        $totalQuantity = $inventoryItems->sum('quantity');
+        $reorderLevel = $metrics['reorder_level'];
+        
+        $status = 'in_stock'; // default
+        if ($totalQuantity <= 0) {
+            $status = 'out_of_stock';
+        } elseif ($reorderLevel > 0 && $totalQuantity <= $reorderLevel) {
+            $status = 'reorder_level';
+        } elseif ($reorderLevel > 0 && $totalQuantity <= ($reorderLevel + ($reorderLevel * 0.3))) {
+            $status = 'low_stock';
+        }
+        
         return [
             'id' => $this->id,
             'product_id' => $this->id,
@@ -580,6 +593,7 @@ class Product extends Model
             'amc' => $metrics['amc'],
             'buffer_stock' => $metrics['buffer_stock'],
             'reorder_level' => $metrics['reorder_level'],
+            'status' => $status, // Add calculated status
             'product' => [
                 'id' => $this->id,
                 'name' => $this->name,

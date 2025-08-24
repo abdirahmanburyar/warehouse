@@ -427,7 +427,7 @@
                                             fill="none"
                                             stroke="#eab308"
                                             stroke-width="4"
-                                            :stroke-dasharray="(stats.pending === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.pending / totalOrders) * 175.93} 175.93`"
+                                            :stroke-dasharray="(safeStats.pending === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(safeStats.pending / totalOrders) * 175.93} 175.93`"
                                         />
                                     </svg>
                                     <div
@@ -438,7 +438,7 @@
                                             >{{
                                                 totalOrders > 0
                                                     ? Math.round(
-                                                          (stats.pending /
+                                                          (safeStats.pending /
                                                               totalOrders) *
                                                               100
                                                       )
@@ -451,7 +451,7 @@
                                     <div
                                         class="text-lg font-bold text-gray-900"
                                     >
-                                        {{ stats.pending }}
+                                        {{ safeStats.pending }}
                                     </div>
                                     <div class="text-base text-gray-600">
                                         Pending
@@ -481,7 +481,7 @@
                                         fill="none"
                                         stroke="#22c55e"
                                         stroke-width="4"
-                                        :stroke-dasharray="(stats.reviewed === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.reviewed / totalOrders) * 175.93} 175.93`"
+                                        :stroke-dasharray="(safeStats.reviewed === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(safeStats.reviewed / totalOrders) * 175.93} 175.93`"
                                     />
                                 </svg>
                                 <div
@@ -492,7 +492,7 @@
                                         >{{
                                             totalOrders > 0
                                                 ? Math.round(
-                                                      (stats.reviewed /
+                                                      (safeStats.reviewed /
                                                           totalOrders) *
                                                           100
                                                   )
@@ -503,7 +503,7 @@
                             </div>
                             <div>
                                 <div class="text-lg font-bold text-gray-900">
-                                    {{ stats.reviewed }}
+                                    {{ safeStats.reviewed }}
                                 </div>
                                 <div class="text-base text-gray-600">
                                     Reviewed
@@ -532,7 +532,7 @@
                                         fill="none"
                                         stroke="#22c55e"
                                         stroke-width="4"
-                                        :stroke-dasharray="(stats.approved === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.approved / totalOrders) * 175.93} 175.93`"
+                                        :stroke-dasharray="(safeStats.approved === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(safeStats.approved / totalOrders) * 175.93} 175.93`"
                                     />
                                 </svg>
                                 <div
@@ -543,7 +543,7 @@
                                         >{{
                                             totalOrders > 0
                                                 ? Math.round(
-                                                      (stats.approved /
+                                                      (safeStats.approved /
                                                           totalOrders) *
                                                           100
                                                   )
@@ -554,7 +554,7 @@
                             </div>
                             <div>
                                 <div class="text-lg font-bold text-gray-900">
-                                    {{ stats.approved }}
+                                    {{ safeStats.approved }}
                                 </div>
                                 <div class="text-base text-gray-600">
                                     Approved
@@ -583,7 +583,7 @@
                                         fill="none"
                                         stroke="#ef4444"
                                         stroke-width="4"
-                                        :stroke-dasharray="(stats.rejected === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.rejected / totalOrders) * 175.93} 175.93`"
+                                        :stroke-dasharray="(safeStats.rejected === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(safeStats.rejected / totalOrders) * 175.93} 175.93`"
                                     />
                                 </svg>
                                 <div
@@ -594,7 +594,7 @@
                                         >{{
                                             totalOrders > 0
                                                 ? Math.round(
-                                                      (stats.rejected /
+                                                      (safeStats.rejected /
                                                           totalOrders) *
                                                           100
                                                   )
@@ -605,7 +605,7 @@
                             </div>
                             <div>
                                 <div class="text-lg font-bold text-gray-900">
-                                    {{ stats.rejected }}
+                                    {{ safeStats.rejected }}
                                 </div>
                                 <div class="text-base text-gray-600">
                                     Rejected
@@ -634,7 +634,7 @@
                                         fill="none"
                                         stroke="#3b82f6"
                                         stroke-width="4"
-                                        :stroke-dasharray="(stats.in_process === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.in_process / totalOrders) * 175.93} 175.93`"
+                                        :stroke-dasharray="(safeStats.in_process === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(safeStats.in_process / totalOrders) * 175.93} 175.93`"
                                     />
                                 </svg>
                                 <div
@@ -645,7 +645,7 @@
                                         >{{
                                             totalOrders > 0
                                                 ? Math.round(
-                                                      (stats.in_process /
+                                                      (safeStats.in_process /
                                                           totalOrders) *
                                                           100
                                                   )
@@ -656,7 +656,7 @@
                             </div>
                             <div>
                                 <div class="text-lg font-bold text-gray-900">
-                                    {{ stats.in_process }}
+                                    {{ safeStats.in_process }}
                                 </div>
                                 <div class="text-base text-gray-600">
                                     In Process
@@ -685,7 +685,7 @@
                                         fill="none"
                                         stroke="#8b5cf6"
                                         stroke-width="4"
-                                        :stroke-dasharray="(stats.dispatched === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.dispatched / totalOrders) * 175.93} 175.93`"
+                                        :stroke-dasharray="(safeStats.dispatched === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(safeStats.dispatched / totalOrders) * 175.93} 175.93`"
                                     />
                                 </svg>
                                 <div
@@ -696,7 +696,7 @@
                                         >{{
                                             totalOrders > 0
                                                 ? Math.round(
-                                                      (stats.dispatched /
+                                                      (safeStats.dispatched /
                                                           totalOrders) *
                                                           100
                                                   )
@@ -707,7 +707,7 @@
                             </div>
                             <div>
                                 <div class="text-lg font-bold text-gray-900">
-                                    {{ stats.dispatched }}
+                                    {{ safeStats.dispatched }}
                                 </div>
                                 <div class="text-base text-gray-600">
                                     Dispatched
@@ -736,14 +736,14 @@
                                         fill="none"
                                         stroke="#f59e42"
                                         stroke-width="4"
-                                        :stroke-dasharray="(stats.delivered === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.delivered / totalOrders) * 175.93} 175.93`"
+                                        :stroke-dasharray="(safeStats.delivered === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(safeStats.delivered / totalOrders) * 175.93} 175.93`"
                                     />
                                 </svg>
                                 <div class="absolute inset-0 flex items-center justify-center">
                                     <span class="text-base font-bold text-orange-600">
                                         {{
                                             totalOrders > 0
-                                                ? Math.round((stats.delivered / totalOrders) * 100)
+                                                ? Math.round((safeStats.delivered / totalOrders) * 100)
                                                 : 0
                                         }}%
                                     </span>
@@ -751,7 +751,7 @@
                             </div>
                             <div>
                                 <div class="text-lg font-bold text-gray-900">
-                                    {{ stats.delivered }}
+                                    {{ safeStats.delivered }}
                                 </div>
                                 <div class="text-base text-gray-600">
                                     Delivered
@@ -780,7 +780,7 @@
                                         fill="none"
                                         stroke="#6366f1"
                                         stroke-width="4"
-                                        :stroke-dasharray="(stats.received === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(stats.received / totalOrders) * 175.93} 175.93`"
+                                        :stroke-dasharray="(safeStats.received === totalOrders && totalOrders > 0) ? '175.93 175.93' : `${(safeStats.received / totalOrders) * 175.93} 175.93`"
                                     />
                                 </svg>
                                 <div
@@ -791,7 +791,7 @@
                                         >{{
                                             totalOrders > 0
                                                 ? Math.round(
-                                                      (stats.received /
+                                                      (safeStats.received /
                                                           totalOrders) *
                                                           100
                                                   )
@@ -802,7 +802,7 @@
                             </div>
                             <div>
                                 <div class="text-lg font-bold text-gray-900">
-                                    {{ stats.received }}
+                                    {{ safeStats.received }}
                                 </div>
                                 <div class="text-base text-gray-600">
                                     Received
@@ -838,6 +838,34 @@ const facilities = ref([]);
 
 // Debounce setup
 let searchTimeout = null;
+
+// Ensure stats object has all required properties with defaults
+const safeStats = computed(() => {
+    const defaultStats = {
+        pending: 0,
+        reviewed: 0,
+        approved: 0,
+        in_process: 0,
+        dispatched: 0,
+        delivered: 0,
+        received: 0,
+        rejected: 0
+    };
+    
+    const result = {
+        ...defaultStats,
+        ...props.stats
+    };
+    
+    console.log('🔍 Order Stats Debug:', {
+        propsStats: props.stats,
+        defaultStats,
+        result,
+        totalOrders: totalOrders.value
+    });
+    
+    return result;
+});
 
 async function handleRegionSelect(option) {
     if (!option) {
@@ -885,14 +913,14 @@ const orderTypes = ["All", "Quarterly", "Replenishment"];
 // Compute total orders
 const totalOrders = computed(() => {
     return (
-        props.stats.pending +
-        props.stats.reviewed +
-        props.stats.approved +
-        props.stats.in_process +
-        props.stats.dispatched +
-        props.stats.delivered +
-        props.stats.received +
-        props.stats.rejected
+        safeStats.value.pending +
+        safeStats.value.reviewed +
+        safeStats.value.approved +
+        safeStats.value.in_process +
+        safeStats.value.dispatched +
+        safeStats.value.delivered +
+        safeStats.value.received +
+        safeStats.value.rejected
     );
 });
 
