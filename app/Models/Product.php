@@ -11,6 +11,7 @@ use App\Models\ReorderLevel;
 use App\Models\Supply;
 use App\Models\SupplyItem;
 use App\Models\SubCategory;
+use App\Models\WarehouseAmc;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Product extends Model
@@ -100,23 +101,12 @@ class Product extends Model
         return $this->hasMany(Inventory::class);
     }
 
-    public function eligible(){
-        return $this->hasMany(EligibleItem::class);
+    public function items(){
+        return $this->hasMany(InventoryItem::class);
     }
 
-    /**
-     * Get the inventory items for the product.
-     */
-    public function inventoryItems()
-    {
-        return $this->hasManyThrough(
-            InventoryItem::class,
-            Inventory::class,
-            'product_id', // Foreign key on inventories table
-            'inventory_id', // Foreign key on inventory_items table
-            'id', // Local key on products table
-            'id' // Local key on inventories table
-        );
+    public function eligible(){
+        return $this->hasMany(EligibleItem::class);
     }
 
     public function facilityInventories(){
@@ -130,4 +120,13 @@ class Product extends Model
     {
         return $this->hasOne(ReorderLevel::class);
     }
+
+    /**
+     * Get the warehouse AMCs for this product.
+     */
+    public function warehouseAmcs()
+    {
+        return $this->hasMany(\App\Models\WarehouseAmc::class);
+    }
+
 }

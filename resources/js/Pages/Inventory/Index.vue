@@ -20,7 +20,6 @@ import { TailwindPagination } from "laravel-vue-pagination";
 
 const props = defineProps({
     inventories: Object,
-    products: Array,
     dosage: Array,
     category: Array,
     locations: Array,
@@ -38,11 +37,13 @@ const warehouse = ref(props.filters?.warehouse || '');
 const status = ref(props.filters?.status || '');
 const per_page = ref(props.filters?.per_page || 25);
 
-// Watch for invalid status values and clear them
+// Watch for status changes to trigger filtering
 watch(status, (newStatus) => {
-    if (newStatus === 'out_of_stock') {
-        status.value = '';
-        toast.warning('Out of Stock filter is no longer available. Showing all items instead.');
+    if (newStatus) {
+        // Reset to first page when filtering
+        currentPage.value = 1;
+        // Trigger the filter
+        applyFilters();
     }
 });
 
@@ -73,6 +74,18 @@ const importId = ref(null);
 let echoChannel = null;
 
 onMounted(() => {
+    // Debug: Log what props we received
+    console.log('Frontend received props:', {
+        category: props.category,
+        dosage: props.dosage,
+        locations: props.locations,
+        warehouses: props.warehouses,
+        categoryType: typeof props.category,
+        dosageType: typeof props.dosage,
+        locationsType: typeof props.locations,
+        warehousesType: typeof props.warehouses
+    });
+
     // Listen for inventory updates
     echoChannel = window.Echo.channel("inventory").listen(
         ".refresh",
@@ -137,7 +150,7 @@ const applyFilters = () => {
         },
         onError: (errors) => {
             isLoading.value = false;
-            
+
             // Provide more specific error messages
             if (errors && typeof errors === 'object') {
                 const errorMessages = Object.values(errors).flat();
@@ -169,27 +182,27 @@ watch(
 function formatQty(qty) {
     // Ensure qty is a valid number for proper sorting
     const num = Number(qty);
-    
+
     // Handle edge cases for sorting
     if (qty === null || qty === undefined) {
         return '0';
     }
-    
+
     if (isNaN(num) || !isFinite(num)) {
         console.warn(`Invalid quantity value: ${qty}, defaulting to 0`);
         return '0';
     }
-    
+
     // Ensure negative quantities are handled properly
     if (num < 0) {
         console.warn(`Negative quantity detected: ${num}, treating as 0`);
         return '0';
     }
-    
+
     // Format with proper number formatting
-    return Intl.NumberFormat('en-US', { 
-        minimumFractionDigits: 0, 
-        maximumFractionDigits: 0 
+    return Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
     }).format(num);
 }
 
@@ -286,8 +299,8 @@ watch(
 
 // Update hasActiveFilters to remove sorting
 const hasActiveFilters = computed(() => {
-    return search.value || location.value || dosage.value || category.value || 
-           warehouse.value || status.value; // Remove sorting checks
+    return search.value || location.value || dosage.value || category.value ||
+        warehouse.value || status.value; // Remove sorting checks
 });
 
 // Update clearFilters to remove sorting reset
@@ -391,50 +404,50 @@ const uploadFile = async () => {
             },
         }
     )
-    .then(response => {
-        isUploading.value = false;
-        uploadResults.value = response.data;
-        toast.dismiss(loadingToast);
-        toast.success(response.data.message || "File uploaded successfully!");
-        
-        // Refresh inventory data
-        applyFilters();
-    })
-    .catch(error => {
-        isUploading.value = false;
-        console.error('Upload error:', error);
-        closeUploadModal();
-        toast.dismiss(loadingToast);
-        toast.error(error.response?.data?.message || "Failed to upload file");
-    });
+        .then(response => {
+            isUploading.value = false;
+            uploadResults.value = response.data;
+            toast.dismiss(loadingToast);
+            toast.success(response.data.message || "File uploaded successfully!");
+
+            // Refresh inventory data
+            applyFilters();
+        })
+        .catch(error => {
+            isUploading.value = false;
+            console.error('Upload error:', error);
+            closeUploadModal();
+            toast.dismiss(loadingToast);
+            toast.error(error.response?.data?.message || "Failed to upload file");
+        });
 };
 
 // Download template function
 const downloadTemplate = () => {
     // Create a CSV format that Excel can open properly
     const headers = ['Item', 'Category', 'UoM', 'Quantity', 'Batch No', 'Expiry Date', 'Location'];
-    
+
     // Create CSV content with headers
     const csvContent = headers.join(',') + '\n';
-    
+
     // Create blob with CSV MIME type
-    const blob = new Blob([csvContent], { 
-        type: 'text/csv;charset=utf-8;' 
+    const blob = new Blob([csvContent], {
+        type: 'text/csv;charset=utf-8;'
     });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    
+
     link.setAttribute('href', url);
     link.setAttribute('download', 'inventory_import_template.csv');
     link.style.visibility = 'hidden';
-    
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     // Clean up the URL object
     URL.revokeObjectURL(url);
-    
+
     toast.success('Template downloaded successfully! Open with Excel to use.');
 };
 
@@ -444,22 +457,22 @@ const formatDate = (date) => {
     if (!date || date === null || date === undefined) {
         return "";
     }
-    
+
     // Handle empty string dates
     if (date === '') {
         return "";
     }
-    
+
     try {
         // Ensure proper date parsing for sorting
         const parsedDate = moment(date);
-        
+
         // Validate the parsed date
         if (!parsedDate.isValid()) {
             console.warn(`Invalid date value: ${date}, returning empty string`);
             return "";
         }
-        
+
         // Return formatted date for display
         return parsedDate.format("DD/MM/YYYY");
     } catch (error) {
@@ -473,14 +486,14 @@ function getTotalQuantity(inventory) {
     if (!inventory?.items || !Array.isArray(inventory.items)) {
         return 0;
     }
-    
+
     const total = inventory.items.reduce((sum, item) => {
         // Ensure proper numeric conversion for sorting
         let quantity = 0;
-        
+
         if (item.quantity !== null && item.quantity !== undefined) {
             const num = Number(item.quantity);
-            
+
             // Handle invalid numbers
             if (isNaN(num) || !isFinite(num)) {
                 console.warn(`Invalid quantity for item ${item.id}: ${item.quantity}, treating as 0`);
@@ -492,16 +505,16 @@ function getTotalQuantity(inventory) {
                 quantity = num;
             }
         }
-        
+
         return sum + quantity;
     }, 0);
-    
+
     // Final validation
     if (isNaN(total) || !isFinite(total)) {
         console.warn(`Invalid total quantity calculated: ${total}, returning 0`);
         return 0;
     }
-    
+
     return total;
 }
 
@@ -533,6 +546,7 @@ function needsReorder(inventory) {
 
 // Computed properties for inventory status counts
 const inStockCount = computed(() => {
+    if (!props.inventoryStatusCounts || typeof props.inventoryStatusCounts !== 'object') return 0;
     const stat = Object.values(props.inventoryStatusCounts).find(
         (s) => s.status === "in_stock"
     );
@@ -540,6 +554,7 @@ const inStockCount = computed(() => {
 });
 
 const lowStockCount = computed(() => {
+    if (!props.inventoryStatusCounts || typeof props.inventoryStatusCounts !== 'object') return 0;
     const stat = Object.values(props.inventoryStatusCounts).find(
         (s) => s.status === "low_stock"
     );
@@ -547,15 +562,9 @@ const lowStockCount = computed(() => {
 });
 
 const outOfStockCount = computed(() => {
+    if (!props.inventoryStatusCounts || typeof props.inventoryStatusCounts !== 'object') return 0;
     const stat = Object.values(props.inventoryStatusCounts).find(
         (s) => s.status === "out_of_stock"
-    );
-    return stat ? stat.count : 0;
-});
-
-const lowStockReorderLevelCount = computed(() => {
-    const stat = Object.values(props.inventoryStatusCounts).find(
-        (s) => s.status === "low_stock_reorder_level"
     );
     return stat ? stat.count : 0;
 });
@@ -576,46 +585,60 @@ const reorderItemsCount = computed(() => {
 // const getEarliestExpiryDate = (inventory) => { ... }
 
 function getResults(page = 1) {
-        props.filters.page = page;
+    props.filters.page = page;
 }
 
 </script>
 
 <template>
+
     <Head title="Inventory Management" />
 
-    <AuthenticatedLayout
-        img="/assets/images/inventory.png"
-        title="Management Your Inventory"
-        description="Keeping Essentials Ready, Every Time"
-    >        
+    <AuthenticatedLayout img="/assets/images/inventory.png" title="Management Your Inventory"
+        description="Keeping Essentials Ready, Every Time">
         <div class="mb-[100px]">
             <!-- Header & Actions -->
             <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
                 <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Warehouse Inventory</h1>
                 <div class="flex flex-wrap gap-2 md:gap-4 items-center">
-                    <button
-                        @click="openUploadModal"
+                    <button @click="openUploadModal"
                         class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 border border-transparent rounded-lg font-medium text-sm text-white hover:from-amber-600 hover:to-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
-                        :disabled="isUploading"
-                    >
-                        <svg v-if="!isUploading" class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        :disabled="isUploading">
+                        <svg v-if="!isUploading" class="h-4 w-4 mr-2" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                            </path>
                         </svg>
                         <svg v-else class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
                         </svg>
                         {{ isUploading ? 'Uploading...' : 'Upload Excel' }}
                     </button>
 
-                    <Link :href="route('inventories.location.index')" class="inline-flex items-center px-4 py-2 bg-blue-500 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-600 focus:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                        Locations List
+                    <Link :href="route('inventories.location.index')"
+                        class="inline-flex items-center px-4 py-2 bg-blue-500 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-600 focus:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Locations List
                     </Link>
-                    <Link :href="route('inventories.warehouses.index')" class="inline-flex items-center px-4 py-2 bg-blue-100 border border-blue-200 rounded-lg font-semibold text-xs text-blue-700 uppercase tracking-widest hover:bg-blue-200 focus:bg-blue-200 active:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                        Warehouses List
+                    <Link :href="route('inventories.warehouses.index')"
+                        class="inline-flex items-center px-4 py-2 bg-blue-100 border border-blue-200 rounded-lg font-semibold text-xs text-blue-700 uppercase tracking-widest hover:bg-blue-200 focus:bg-blue-200 active:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    Warehouses List
                     </Link>
                 </div>
             </div>
@@ -623,305 +646,391 @@ function getResults(page = 1) {
             <div class="bg-white rounded-xl shadow-md p-4 mb-4 border border-gray-200">
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
                     <div class="col-span-1 md:col-span-2 min-w-0">
-                        <input v-model="search" type="text" class="w-full rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2" placeholder="Search by item name, barcode, batch number, uom" />
+                        <input v-model="search" type="text"
+                            class="w-full rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                            placeholder="Search by item name, barcode, batch number, uom" />
                     </div>
                     <div class="col-span-1 min-w-0">
-                        <Multiselect v-model="category" :options="props.category" :searchable="true" :close-on-select="true" :show-labels="false" placeholder="Select a category" :allow-empty="true" class="multiselect--with-icon w-full" />
+                        <Multiselect v-model="category" :options="props.category || []" :searchable="true"
+                            :close-on-select="true" :show-labels="false" placeholder="Select a category"
+                            :allow-empty="true" class="multiselect--with-icon w-full" />
                     </div>
                     <div class="col-span-1 min-w-0">
-                        <Multiselect v-model="dosage" :options="props.dosage" :searchable="true" :close-on-select="true" :show-labels="false" placeholder="Select a dosage form" :allow-empty="true" class="multiselect--with-icon w-full" />
+                        <Multiselect v-model="dosage" :options="props.dosage || []" :searchable="true" :close-on-select="true"
+                            :show-labels="false" placeholder="Select a dosage form" :allow-empty="true"
+                            class="multiselect--with-icon w-full" />
                     </div>
                     <div class="col-span-1 min-w-0">
-                        <select v-model="status" :disabled="isLoading" class="w-full rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2" :class="{ 'opacity-50 cursor-not-allowed': isLoading }">
-                            <option value="">All Status</option>
+                        <select v-model="status"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="">All Statuses</option>
                             <option value="in_stock">In Stock</option>
                             <option value="low_stock">Low Stock</option>
                             <option value="low_stock_reorder_level">Low Stock + Reorder Level</option>
                         </select>
                     </div>
                 </div>
-                
+
                 <!-- Remove debug info for sorting since sorting is removed -->
-                
+
                 <!-- Active Filters Display -->
                 <div v-if="hasActiveFilters" class="mt-4 flex flex-wrap gap-2 items-center">
                     <span class="text-sm font-medium text-gray-700">Active Filters:</span>
-                    <span v-if="search" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span v-if="search"
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         Search: {{ search }}
                         <button @click="search = ''" class="ml-1 text-blue-600 hover:text-blue-800">×</button>
                     </span>
-                    <span v-if="location" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <span v-if="location"
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         Location: {{ location }}
                         <button @click="location = ''" class="ml-1 text-green-600 hover:text-green-800">×</button>
                     </span>
-                    <span v-if="warehouse" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    <span v-if="warehouse"
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                         Warehouse: {{ warehouse }}
                         <button @click="warehouse = ''" class="ml-1 text-purple-600 hover:text-purple-800">×</button>
                     </span>
-                    <span v-if="dosage" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                    <span v-if="dosage"
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                         Dosage: {{ dosage }}
                         <button @click="dosage = ''" class="ml-1 text-indigo-600 hover:text-indigo-800">×</button>
                     </span>
-                    <span v-if="category" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    <span v-if="category"
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                         Category: {{ category }}
                         <button @click="category = ''" class="ml-1 text-yellow-600 hover:text-yellow-800">×</button>
                     </span>
-                    <span v-if="status" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        Status: {{ status === 'in_stock' ? 'In Stock' : status === 'reorder_level' ? 'Reorder Level' : status === 'low_stock' ? 'Low Stock' : status }}
+                    <span v-if="status"
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <span class="text-sm text-gray-600">
+                            Status: {{
+                                status === 'in_stock' ? 'In Stock' :
+                                    status === 'low_stock' ? 'Low Stock' :
+                                        status === 'low_stock_reorder_level' ? 'Low Stock + Reorder Level' :
+                                            status
+                            }}
+                        </span>
                         <button @click="status = ''" class="ml-1 text-red-600 hover:text-red-800">×</button>
                     </span>
-                    <button @click="clearFilters" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    <button @click="clearFilters"
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700 hover:bg-gray-300">
                         Clear All
                     </button>
                 </div>
-                
+
                 <!-- Controls Row -->
                 <div class="flex justify-end items-center gap-4 mt-4">
-                    <select v-model="per_page" class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px]">
+                    <select v-model="per_page"
+                        class="rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-[200px]">
                         <option value="25">25 per page</option>
                         <option value="50">50 per page</option>
                         <option value="100">100 per page</option>
                         <option value="200">200 per page</option>
                     </select>
-                    <button @click="showLegend = true" class="px-2 py-2 bg-blue-100 text-blue-700 rounded-full flex items-center gap-2 hover:bg-blue-200 transition-colors border border-blue-200" title="Icon Legend">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
+                    <button @click="showLegend = true"
+                        class="px-2 py-2 bg-blue-100 text-blue-700 rounded-full flex items-center gap-2 hover:bg-blue-200 transition-colors border border-blue-200"
+                        title="Icon Legend">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+                        </svg>
                     </button>
                 </div>
-                    </div>
-            
+            </div>
+
             <!-- Table and Sidebar -->
             <div class="grid grid-cols-1 lg:grid-cols-8 gap-6">
                 <!-- Main Table -->
                 <div class="lg:col-span-7">
                     <!-- Remove sorting info banner -->
-                    
+
                     <div class="bg-white rounded-xl overflow-hidden">
-                    <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
-                        <thead>
-                            <tr style="background-color: #F4F7FB;">
-                                    <th class="px-3 py-2 text-xs font-bold rounded-tl-lg w-48" 
-                                        style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" 
-                                        rowspan="2">
+                        <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
+                            <thead>
+                                <tr style="background-color: #F4F7FB;">
+                                    <th class="px-3 py-2 text-xs font-bold rounded-tl-lg w-48"
+                                        style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">
                                         <div class="flex items-center justify-between">
                                             <span>Item</span>
                                         </div>
                                     </th>
-                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Category</th>
-                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">UoM</th>
-                                <th class="px-3 py-2 text-xs font-bold text-center" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" colspan="4">Item Details</th>
-                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Total QTY on Hand</th>
-                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Status</th>
-                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Reorder Level</th>
-                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Actions</th>
-                            </tr>
-                            <tr style="background-color: #F4F7FB;">
-                                    <th class="px-2 py-2 text-xs font-bold border border-[#B7C6E6] text-center" 
+                                    <th class="px-3 py-2 text-xs font-bold"
+                                        style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Category
+                                    </th>
+                                    <th class="px-3 py-2 text-xs font-bold"
+                                        style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">UoM</th>
+                                    <th class="px-3 py-2 text-xs font-bold text-center"
+                                        style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" colspan="4">Item
+                                        Details</th>
+                                    <th class="px-3 py-2 text-xs font-bold"
+                                        style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Total QTY
+                                        on Hand</th>
+                                    <th class="px-3 py-2 text-xs font-bold"
+                                        style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Status
+                                    </th>
+                                    <th class="px-3 py-2 text-xs font-bold"
+                                        style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Reorder
+                                        Level</th>
+                                    <th class="px-3 py-2 text-xs font-bold"
+                                        style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Actions
+                                    </th>
+                                </tr>
+                                <tr style="background-color: #F4F7FB;">
+                                    <th class="px-2 py-2 text-xs font-bold border border-[#B7C6E6] text-center"
                                         style="color: #4F6FCB;">
                                         <div class="flex items-center justify-center gap-1">
                                             <span>QTY</span>
                                         </div>
                                     </th>
-                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Batch Number</th>
-                                    <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" 
+                                    <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center"
+                                        style="color: #4F6FCB;">Batch Number</th>
+                                    <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center"
                                         style="color: #4F6FCB;">
                                         <div class="flex items-center justify-center gap-1">
                                             <span>Expiry Date</span>
                                         </div>
                                     </th>
-                                <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center" style="color: #4F6FCB;">Location</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template v-if="isLoading">
-                                <tr>
-                                    <td colspan="8" class="text-center py-8 text-gray-500 bg-gray-50">
-                                        <div class="flex flex-col items-center justify-center gap-2">
-                                            <svg class="animate-spin h-10 w-10 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            <span>Applying filters...</span>
-                                        </div>
-                                    </td>
+                                    <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center"
+                                        style="color: #4F6FCB;">Location</th>
                                 </tr>
-                            </template>
-                            <template v-else-if="!props.inventories || !props.inventories.data || props.inventories.data.length === 0">
-                                <tr>
-                                    <td colspan="8" class="text-center py-8 text-gray-500 bg-gray-50">
-                                        <div class="flex flex-col items-center justify-center gap-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 118 0v2m-4 4a4 4 0 01-4-4H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-2a4 4 0 01-4 4z" /></svg>
-                                            <span>{{ !props.inventories ? 'Loading...' : 'No inventory data found.' }}</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </template>
-                            <template v-else v-for="inventory in props.inventories.data" :key="inventory.id">
-                                <!-- Show all products, but handle 0-quantity items differently -->
-                                <template v-if="inventory.items && inventory.items.length > 0">
-                                    <!-- Check if this product has any items with quantity > 0 -->
-                                    <template v-if="inventory.items.some(item => (item.quantity || 0) > 0)">
+                            </thead>
+                            <tbody>
+                                <template v-if="isLoading">
+                                    <tr>
+                                        <td colspan="8" class="text-center py-8 text-gray-500 bg-gray-50">
+                                            <div class="flex flex-col items-center justify-center gap-2">
+                                                <svg class="animate-spin h-10 w-10 text-gray-300"
+                                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10"
+                                                        stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor"
+                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                                    </path>
+                                                </svg>
+                                                <span>Applying filters...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template
+                                    v-else-if="!props.inventories || !props.inventories.data || props.inventories.data.length === 0">
+                                    <tr>
+                                        <td colspan="11" class="text-center py-8 text-gray-500 bg-gray-50">
+                                            <div class="flex flex-col items-center justify-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-300"
+                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9 17v-2a4 4 0 118 0v2m-4 4a4 4 0 01-4-4H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-2a4 4 0 01-4 4z" />
+                                                </svg>
+                                                <span>{{ !props.inventories ? 'Loading...' : 'No inventory data found.'
+                                                    }}</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template v-else v-for="inventory in props.inventories.data" :key="inventory.id">
+                                    <!-- Show all products, but handle 0-quantity items differently -->
+                                    <template v-if="inventory.items && inventory.items.length > 0">
                                         <!-- Show items with quantity > 0 -->
-                                        <tr v-for="(item, itemIndex) in inventory.items.filter(item => (item.quantity || 0) > 0)" :key="`${inventory.id}-${item.id}`" class="hover:bg-gray-50 transition-colors duration-150 border-b items-center" style="border-bottom: 1px solid #B7C6E6;">
+                                        <tr v-for="(item, itemIndex) in inventory.items.filter(item => (item.quantity || 0) > 0)"
+                                            :key="`${inventory.id}-${item.id}`"
+                                            class="hover:bg-gray-50 transition-colors duration-150 border-b items-center"
+                                            style="border-bottom: 1px solid #B7C6E6;">
                                             <!-- Item Name - only on first row for this inventory -->
-                                            <td v-if="itemIndex === 0" :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length" class="px-3 py-2 text-xs font-medium text-gray-800 align-middle items-center">{{ inventory.product.name }}</td>
-                                            
+                                            <td v-if="itemIndex === 0"
+                                                :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
+                                                class="px-3 py-2 text-xs font-medium text-gray-800 align-middle items-center">
+                                                {{ inventory.product?.name || inventory.name }}</td>
+
                                             <!-- Category - only on first row for this inventory -->
-                                            <td v-if="itemIndex === 0" :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length" class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.product.category.name }}</td>
-                                            
+                                            <td v-if="itemIndex === 0"
+                                                :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
+                                                class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{
+                                                    inventory.product?.category?.name || inventory.category?.name }}</td>
+
                                             <!-- UoM - only on first row for this inventory -->
-                                            <td v-if="itemIndex === 0" :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length" class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.items[0].uom }}</td>
-                                            
+                                            <td v-if="itemIndex === 0"
+                                                :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
+                                                class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{
+                                                inventory.items[0].uom }}</td>
+
                                             <!-- QTY -->
-                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">{{ formatQty(item.quantity || 0) }}</td>
-                                            
+                                            <td
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">
+                                                {{ formatQty(item.quantity || 0) }}</td>
+
                                             <!-- Batch Number -->
-                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">{{ item.batch_number }}</td>
-                                            
+                                            <td
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">
+                                                {{ item.batch_number }}</td>
+
                                             <!-- Expiry Date -->
-                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">{{ formatDate(item.expiry_date) }}</td>
-                                            
+                                            <td
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">
+                                                {{ formatDate(item.expiry_date) }}</td>
+
                                             <!-- Location -->
-                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">
+                                            <td
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">
                                                 <div class="flex items-center justify-center space-x-2">
                                                     <span>{{ item.location }}</span>
-                                                    <button
-                                                        @click="openEditLocationModal(item, inventory)"
+                                                    <button @click="openEditLocationModal(item, inventory)"
                                                         class="p-1 bg-green-50 text-green-600 hover:bg-green-100 rounded-full"
-                                                        title="Edit Location"
-                                                    >
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            class="h-4 w-4"
-                                                            fill="none"
-                                                            viewBox="0 0 24 24"
-                                                            stroke="currentColor"
-                                                        >
-                                                            <path
-                                                                stroke-linecap="round"
-                                                                stroke-linejoin="round"
+                                                        title="Edit Location">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
+                                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
                                                                 stroke-width="2"
-                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                            />
+                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                         </svg>
                                                     </button>
                                                 </div>
                                             </td>
-                                            
+
                                             <!-- Total QTY on Hand - only on first row for this inventory -->
-                                            <td v-if="itemIndex === 0" :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
+                                            <td v-if="itemIndex === 0"
+                                                :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
+                                                class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                                 <div class="flex items-center justify-center">
-                                                    <span class="font-medium text-lg">{{ formatQty(getTotalQuantity(inventory)) }}</span>
+                                                    <span class="font-medium text-lg">{{
+                                                        formatQty(getTotalQuantity(inventory)) }}</span>
                                                 </div>
                                             </td>
-                                            
+
                                             <!-- Status - only on first row for this inventory -->
-                                            <td v-if="itemIndex === 0" :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
+                                            <td v-if="itemIndex === 0"
+                                                :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
+                                                class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                                 <div class="flex flex-col items-center justify-center space-y-2">
                                                     <!-- Stock Status Badge -->
-                                                    <span v-if="getTotalQuantity(inventory) <= 0" 
-                                                          class="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full font-medium">
+                                                    <span v-if="getTotalQuantity(inventory) <= 0"
+                                                        class="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full font-medium">
                                                         Out of Stock
                                                     </span>
-                                                    <span v-else-if="(inventory.reorder_level || 0) > 0 && getTotalQuantity(inventory) === ((inventory.reorder_level || 0) + ((inventory.reorder_level || 0) * 0.3))" 
-                                                          class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full font-medium">
+                                                    <span
+                                                        v-else-if="(inventory.reorder_level || 0) > 0 && getTotalQuantity(inventory) === ((inventory.reorder_level || 0) + ((inventory.reorder_level || 0) * 0.3))"
+                                                        class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full font-medium">
                                                         Low Stock
                                                     </span>
-                                                    <span v-else-if="(inventory.reorder_level || 0) > 0 && getTotalQuantity(inventory) <= (inventory.reorder_level || 0)" 
-                                                          class="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full font-medium">
+                                                    <span
+                                                        v-else-if="(inventory.reorder_level || 0) > 0 && getTotalQuantity(inventory) <= (inventory.reorder_level || 0)"
+                                                        class="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full font-medium">
                                                         Reorder Level
                                                     </span>
-                                                    <span v-else 
-                                                          class="px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full font-medium">
+                                                    <span v-else
+                                                        class="px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full font-medium">
                                                         In Stock
                                                     </span>
-                                                    
+
                                                     <!-- Reorder Status Icon -->
-                                                    <div v-if="needsReorder(inventory)" class="flex items-center justify-center">
-                                                        <img
-                                                            src="/assets/images/reorder_status.png"
-                                                            alt="Reorder Status"
-                                                            class="w-4 h-4"
-                                                            title="Reorder Status"
-                                                        />
+                                                    <div v-if="needsReorder(inventory)"
+                                                        class="flex items-center justify-center">
+                                                        <img src="/assets/images/reorder_status.png"
+                                                            alt="Reorder Status" class="w-4 h-4"
+                                                            title="Reorder Status" />
                                                     </div>
-                                                    
+
                                                     <!-- Reorder Button for Out of Stock Items -->
-                                                    <div v-if="getTotalQuantity(inventory) <= 0" class="flex flex-col items-center">
-                                                        <button 
+                                                    <div v-if="getTotalQuantity(inventory) <= 0"
+                                                        class="flex flex-col items-center">
+                                                        <button
                                                             class="px-2 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 transition-colors"
-                                                            title="Reorder - Out of Stock"
-                                                        >
+                                                            title="Reorder - Out of Stock">
                                                             Reorder
                                                         </button>
                                                     </div>
                                                 </div>
                                             </td>
-                                            
+
                                             <!-- Reorder Level - only on first row for this inventory -->
-                                            <td v-if="itemIndex === 0" :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.reorder_level || 0) }}</td>
-                                            
+                                            <td v-if="itemIndex === 0"
+                                                :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
+                                                class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{
+                                                formatQty(inventory.reorder_level || 0) }}</td>
+
                                             <!-- Actions - only on first row for this inventory -->
-                                            <td v-if="itemIndex === 0" :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length" class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
+                                            <td v-if="itemIndex === 0"
+                                                :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
+                                                class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                                 <div class="flex items-center justify-center">
                                                     <!-- Actions column is now empty but reserved for future use -->
                                                 </div>
                                             </td>
                                         </tr>
                                     </template>
-                                    
+
                                     <!-- Show products with only 0-quantity items as a single row -->
                                     <template v-else>
-                                        <tr class="hover:bg-gray-50 transition-colors duration-150 border-b items-center" style="border-bottom: 1px solid #B7C6E6;">
+                                        <tr class="hover:bg-gray-50 transition-colors duration-150 border-b items-center"
+                                            style="border-bottom: 1px solid #B7C6E6;">
                                             <!-- Item Name -->
-                                            <td class="px-3 py-2 text-xs font-medium text-gray-800 align-middle items-center">{{ inventory.product.name }}</td>
-                                            
+                                            <td
+                                                class="px-3 py-2 text-xs font-medium text-gray-800 align-middle items-center">
+                                                {{ inventory.product?.name || inventory.name }}</td>
+
                                             <!-- Category -->
-                                            <td class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.product.category.name }}</td>
-                                            
+                                            <td class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{
+                                                inventory.product?.category?.name || inventory.category?.name }}</td>
+
                                             <!-- UoM -->
-                                            <td class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{ inventory.items[0]?.uom || '-' }}</td>
-                                            
+                                            <td class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{
+                                                inventory.items?.[0]?.uom || '-' }}</td>
+
                                             <!-- QTY -->
-                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">-</td>
-                                            
+                                            <td
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">
+                                                -</td>
+
                                             <!-- Batch Number -->
-                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">-</td>
-                                            
+                                            <td
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">
+                                                -</td>
+
                                             <!-- Expiry Date -->
-                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">-</td>
-                                            
+                                            <td
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">
+                                                -</td>
+
                                             <!-- Location -->
-                                            <td class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">-</td>
-                                            
+                                            <td
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">
+                                                -</td>
+
                                             <!-- Total QTY on Hand -->
                                             <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                                 <div class="flex items-center justify-center">
-                                                    <span class="font-medium text-lg">{{ formatQty(getTotalQuantity(inventory)) }}</span>
+                                                    <span class="font-medium text-lg">{{
+                                                        formatQty(getTotalQuantity(inventory)) }}</span>
                                                 </div>
                                             </td>
-                                            
+
                                             <!-- Status -->
                                             <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                                 <div class="flex flex-col items-center justify-center space-y-2">
-                                                    <span class="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full font-medium">
+                                                    <!-- Stock Status Badge -->
+                                                    <span
+                                                        class="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full font-medium">
                                                         Out of Stock
                                                     </span>
-                                                    
+
                                                     <!-- Reorder Button for Out of Stock Items -->
                                                     <div class="flex flex-col items-center">
-                                                        <button 
+                                                        <button
                                                             class="px-2 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 transition-colors"
-                                                            title="Reorder - Out of Stock"
-                                                        >
+                                                            title="Reorder - Out of Stock">
                                                             Reorder
                                                         </button>
                                                     </div>
                                                 </div>
                                             </td>
-                                            
+
                                             <!-- Reorder Level -->
-                                            <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{ formatQty(inventory.reorder_level || 0) }}</td>
-                                            
+                                            <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">{{
+                                                formatQty(inventory.reorder_level || 0) }}</td>
+
                                             <!-- Actions -->
                                             <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                                 <div class="flex items-center justify-center">
@@ -931,21 +1040,22 @@ function getResults(page = 1) {
                                         </tr>
                                     </template>
                                 </template>
-                            </template>
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
 
-                    <div class="mt-2 flex justify-between">
+                        <div class="mt-2 flex justify-between">
                             <div class="text-xs text-gray-400">
-                                <span v-if="props.inventories && props.inventories.meta && props.inventories.meta.total > 0">Showing {{ props.inventories.meta.from }} to {{ props.inventories.meta.to }} of {{ props.inventories.meta.total }} items</span>
+                                <span
+                                    v-if="props.inventories && props.inventories.meta && props.inventories.meta.total > 0">Showing
+                                    {{
+                                    props.inventories.meta.from }} to {{ props.inventories.meta.to }} of {{
+                                    props.inventories.meta.total }}
+                                    items</span>
                                 <span v-else>No items to display</span>
-                        </div>
-                            
-                        <TailwindPagination
-                            :data="props.inventories"
-                            @pagination-change-page="getResults"
-                            :limit="2"
-                        />
+                            </div>
+
+                            <TailwindPagination :data="props.inventories" @pagination-change-page="getResults"
+                                :limit="2" />
                         </div>
                     </div>
                 </div>
@@ -955,9 +1065,11 @@ function getResults(page = 1) {
                     <div class="sticky top-0 z-10 shadow-sm">
                         <div class="space-y-3">
                             <!-- In Stock Card -->
-                            <div class="flex items-center rounded-lg bg-gradient-to-r from-green-50 to-green-100 p-3 shadow-md border border-green-200">
+                            <div
+                                class="flex items-center rounded-lg bg-gradient-to-r from-green-50 to-green-100 p-3 shadow-md border border-green-200">
                                 <div class="flex-shrink-0">
-                                    <img src="/assets/images/in_stock.png" class="w-8 h-8 drop-shadow-sm" alt="In Stock" />
+                                    <img src="/assets/images/in_stock.png" class="w-8 h-8 drop-shadow-sm"
+                                        alt="In Stock" />
                                 </div>
                                 <div class="ml-3 flex flex-col flex-1">
                                     <span class="text-lg font-bold text-green-700">{{ inStockCount }}</span>
@@ -965,19 +1077,9 @@ function getResults(page = 1) {
                                 </div>
                             </div>
 
-                            <!-- Reorder Items Card -->
-                            <div class="flex items-center rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 p-3 shadow-md border border-blue-200">
-                                <div class="flex-shrink-0">
-                                    <img src="/assets/images/reorder_status.png" class="w-8 h-8 drop-shadow-sm" alt="Reorder Items" />
-                                </div>
-                                <div class="ml-3 flex flex-col flex-1">
-                                    <span class="text-lg font-bold text-blue-700">{{ reorderItemsCount }}</span>
-                                    <span class="text-xs font-medium text-blue-600">Reorder Items</span>
-                                </div>
-                            </div>
-
                             <!-- Low Stock Card -->
-                            <div class="flex items-center rounded-lg bg-gradient-to-r from-orange-50 to-orange-100 p-3 shadow-md border border-orange-200">
+                            <div
+                                class="flex items-center rounded-lg bg-gradient-to-r from-orange-50 to-orange-100 p-3 shadow-md border border-orange-200">
                                 <div class="flex-shrink-0">
                                     <img src="/assets/images/low_stock.png" class="w-8 h-8" alt="Low Stock" />
                                 </div>
@@ -987,25 +1089,29 @@ function getResults(page = 1) {
                                 </div>
                             </div>
 
-                            <!-- Out of Stock Card -->
-                            <div class="flex items-center rounded-lg bg-gradient-to-r from-red-50 to-red-100 p-3 shadow-md border border-red-200">
+                            <!-- Reorder Items Card -->
+                            <div
+                                class="flex items-center rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 p-3 shadow-md border border-blue-200">
                                 <div class="flex-shrink-0">
-                                    <img src="/assets/images/out_of_stock.png" class="w-8 h-8 drop-shadow-sm" alt="Out of Stock" />
+                                    <img src="/assets/images/reorder_status.png" class="w-8 h-8 drop-shadow-sm"
+                                        alt="Reorder Items" />
+                                </div>
+                                <div class="ml-3 flex flex-col flex-1">
+                                    <span class="text-lg font-bold text-blue-700">{{ reorderItemsCount }}</span>
+                                    <span class="text-xs font-medium text-blue-600">Reorder Items</span>
+                                </div>
+                            </div>
+
+                            <!-- Out of Stock Card -->
+                            <div
+                                class="flex items-center rounded-lg bg-gradient-to-r from-red-50 to-red-100 p-3 shadow-md border border-red-200">
+                                <div class="flex-shrink-0">
+                                    <img src="/assets/images/out_of_stock.png" class="w-8 h-8 drop-shadow-sm"
+                                        alt="Out of Stock" />
                                 </div>
                                 <div class="ml-3 flex flex-col flex-1">
                                     <span class="text-lg font-bold text-red-700">{{ outOfStockCount }}</span>
                                     <span class="text-xs font-medium text-red-600">Out of Stock</span>
-                                </div>
-                            </div>
-
-                            <!-- Low Stock + Reorder Level Card -->
-                            <div class="flex items-center rounded-lg bg-gradient-to-r from-purple-50 to-purple-100 p-3 shadow-md border border-purple-200">
-                                <div class="flex-shrink-0">
-                                    <img src="/assets/images/low_stock_reorder.png" class="w-8 h-8" alt="Low Stock + Reorder Level" />
-                                </div>
-                                <div class="ml-3 flex flex-col flex-1">
-                                    <span class="text-lg font-bold text-purple-700">{{ lowStockReorderLevelCount }}</span>
-                                    <span class="text-xs font-medium text-purple-600">Low Stock + Reorder Level</span>
                                 </div>
                             </div>
                         </div>
@@ -1017,34 +1123,35 @@ function getResults(page = 1) {
         <!-- Modals: Add Inventory, Upload Progress, Icon Legend -->
 
         <!-- Excel Upload Modal -->
-        <div
-            v-if="showUploadModal"
+        <div v-if="showUploadModal"
             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            @click="closeUploadModal"
-        >
+            @click="closeUploadModal">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" @click.stop>
                 <div class="flex items-center justify-between p-6 border-b border-gray-200">
                     <div>
                         <h3 class="text-lg font-semibold text-gray-900">Upload Inventory</h3>
                         <p class="text-sm text-gray-500 mt-1">Import inventory items from Excel file</p>
                     </div>
-                    <button
-                        @click="closeUploadModal"
-                        class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                    >
+                    <button @click="closeUploadModal"
+                        class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12">
+                            </path>
                         </svg>
                     </button>
                 </div>
 
                 <div class="p-6">
                     <!-- Download Template Section -->
-                    <div class="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+                    <div
+                        class="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
                         <div class="flex items-start">
                             <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             </div>
                             <div class="ml-3">
@@ -1052,12 +1159,12 @@ function getResults(page = 1) {
                                 <p class="text-sm text-green-700 mt-1">
                                     Download our template to see the correct format for uploading inventory items.
                                 </p>
-                                <button
-                                    @click="downloadTemplate"
-                                    class="mt-3 inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-medium text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                >
+                                <button @click="downloadTemplate"
+                                    class="mt-3 inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-medium text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                     <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                        </path>
                                     </svg>
                                     Download Template
                                 </button>
@@ -1109,19 +1216,15 @@ function getResults(page = 1) {
                     </div>
 
                     <div class="mb-6">
-                        <div
-                            class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer"
-                            @click="triggerFileInput"
-                        >
-                            <input
-                                type="file"
-                                ref="fileInput"
-                                class="hidden"
-                                @change="handleFileUpload"
-                                accept=".xlsx,.xls,.csv"
-                            />
-                            <svg class="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer"
+                            @click="triggerFileInput">
+                            <input type="file" ref="fileInput" class="hidden" @change="handleFileUpload"
+                                accept=".xlsx,.xls,.csv" />
+                            <svg class="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                </path>
                             </svg>
                             <p class="text-lg font-medium text-gray-900 mb-2">
                                 {{ selectedFile ? 'File Selected' : 'Choose File' }}
@@ -1134,25 +1237,26 @@ function getResults(page = 1) {
                             </p>
                         </div>
 
-                        <div
-                            v-if="selectedFile"
-                            class="mt-4 flex items-center justify-between bg-blue-50 p-4 rounded-lg border border-blue-200"
-                        >
+                        <div v-if="selectedFile"
+                            class="mt-4 flex items-center justify-between bg-blue-50 p-4 rounded-lg border border-blue-200">
                             <div class="flex items-center">
-                                <svg class="h-5 w-5 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                <svg class="h-5 w-5 text-blue-500 mr-3" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                    </path>
                                 </svg>
                                 <div>
                                     <p class="text-sm font-medium text-blue-900">{{ selectedFile.name }}</p>
-                                    <p class="text-xs text-blue-700">{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</p>
+                                    <p class="text-xs text-blue-700">{{ (selectedFile.size / 1024 / 1024).toFixed(2) }}
+                                        MB</p>
                                 </div>
                             </div>
-                            <button
-                                @click.stop="removeSelectedFile"
-                                class="text-red-500 hover:text-red-700 transition-colors duration-200"
-                            >
+                            <button @click.stop="removeSelectedFile"
+                                class="text-red-500 hover:text-red-700 transition-colors duration-200">
                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"></path>
                                 </svg>
                             </button>
                         </div>
@@ -1162,7 +1266,8 @@ function getResults(page = 1) {
                     <div v-if="isUploading" class="mb-6">
                         <h4 class="text-sm font-medium text-gray-900 mb-3">Upload Progress</h4>
                         <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" :style="{ width: uploadProgress + '%' }"></div>
+                            <div class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                :style="{ width: uploadProgress + '%' }"></div>
                         </div>
                         <p class="text-sm text-gray-600 mt-2">{{ uploadProgress }}% complete</p>
                     </div>
@@ -1175,30 +1280,34 @@ function getResults(page = 1) {
                             <div v-if="uploadResults.import_id" class="mt-2 text-xs text-gray-600">
                                 <p>Import ID: {{ uploadResults.import_id }}</p>
                                 <p v-if="uploadResults.status">Status: {{ uploadResults.status }}</p>
-                                <p v-if="uploadResults.completed_at">Completed at: {{ formatDate(uploadResults.completed_at) }}</p>
+                                <p v-if="uploadResults.completed_at">Completed at: {{
+                                    formatDate(uploadResults.completed_at) }}
+                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
-                    <button
-                        @click="closeUploadModal"
-                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
-                    >
+                    <button @click="closeUploadModal"
+                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200">
                         Cancel
                     </button>
-                    <button
-                        @click="uploadFile"
+                    <button @click="uploadFile"
                         class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 border border-transparent rounded-lg font-medium text-sm text-white hover:from-amber-600 hover:to-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200"
-                        :disabled="!selectedFile || isUploading"
-                    >
-                        <svg v-if="isUploading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        :disabled="!selectedFile || isUploading">
+                        <svg v-if="isUploading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none"
+                            viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
                         </svg>
                         <svg v-else class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                            </path>
                         </svg>
                         {{ isUploading ? 'Uploading...' : 'Upload File' }}
                     </button>
@@ -1207,45 +1316,54 @@ function getResults(page = 1) {
         </div>
         <!-- Slideover for Icon Legend -->
         <transition name="slide">
-          <div v-if="showLegend" class="fixed inset-0 z-50 flex justify-end">
-            <div class="fixed inset-0 bg-black bg-opacity-30 transition-opacity" @click="showLegend = false"></div>
-            <div class="relative w-full max-w-sm bg-white shadow-xl h-full flex flex-col p-6 overflow-y-auto rounded-l-xl">
-              <button @click="showLegend = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-              <h2 class="text-lg font-bold text-blue-700 mb-6 mt-2">Icon Legend</h2>
-              <ul class="space-y-5">
-                <li class="flex items-center gap-4">
-                  <img src="/assets/images/in_stock.png" class="w-10 h-10" alt="In Stock" />
-                  <div>
-                    <div class="font-semibold text-green-700">In Stock</div>
-                    <div class="text-xs text-gray-500">Indicates items that are sufficiently stocked.</div>
-                  </div>
-                </li>
-                <li class="flex items-center gap-4">
-                    <img src="/assets/images/low_stock.png" class="w-10 h-10" alt="Low Stock" />
-                    <div>
-                    <div class="font-semibold text-orange-600">Low Stock</div>
-                    <div class="text-xs text-gray-500">Indicates items that are below the reorder level.</div>
-                  </div>
-                </li>
-                <li class="flex items-center gap-4">
-                  <img src="/assets/images/out_stock.png" class="w-10 h-10" alt="Out of Stock" />
-                  <div>
-                    <div class="font-semibold text-red-600">Out of Stock</div>
-                    <div class="text-xs text-gray-500">Indicates items that are completely out of stock.</div>
-                  </div>
-                </li>
-                <li class="flex items-center gap-4">
-                  <img src="/assets/images/reorder_status.png" class="w-10 h-10" alt="Reorder Status" />
-                  <div>
-                    <div class="font-semibold text-blue-600">Reorder Status</div>
-                    <div class="text-xs text-gray-500">Indicates that a reorder is recommended for this item.</div>
-                  </div>
-                </li>
-              </ul>
+            <div v-if="showLegend" class="fixed inset-0 z-50 flex justify-end">
+                <div class="fixed inset-0 bg-black bg-opacity-30 transition-opacity" @click="showLegend = false"></div>
+                <div
+                    class="relative w-full max-w-sm bg-white shadow-xl h-full flex flex-col p-6 overflow-y-auto rounded-l-xl">
+                    <button @click="showLegend = false"
+                        class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <h2 class="text-lg font-bold text-blue-700 mb-6 mt-2">Icon Legend</h2>
+                    <ul class="space-y-5">
+                        <li class="flex items-center gap-4">
+                            <img src="/assets/images/in_stock.png" class="w-10 h-10" alt="In Stock" />
+                            <div>
+                                <div class="font-semibold text-green-700">In Stock</div>
+                                <div class="text-xs text-gray-500">Indicates items that are sufficiently stocked.</div>
+                            </div>
+                        </li>
+                        <li class="flex items-center gap-4">
+                            <img src="/assets/images/low_stock.png" class="w-10 h-10" alt="Low Stock" />
+                            <div>
+                                <div class="font-semibold text-orange-600">Low Stock</div>
+                                <div class="text-xs text-gray-500">Indicates items that are below the reorder level.
+                                </div>
+                            </div>
+                        </li>
+                        <li class="flex items-center gap-4">
+                            <img src="/assets/images/out_stock.png" class="w-10 h-10" alt="Out of Stock" />
+                            <div>
+                                <div class="font-semibold text-red-600">Out of Stock</div>
+                                <div class="text-xs text-gray-500">Indicates items that are completely out of stock.
+                                </div>
+                            </div>
+                        </li>
+                        <li class="flex items-center gap-4">
+                            <img src="/assets/images/reorder_status.png" class="w-10 h-10" alt="Reorder Status" />
+                            <div>
+                                <div class="font-semibold text-blue-600">Reorder Status</div>
+                                <div class="text-xs text-gray-500">Indicates that a reorder is recommended for this
+                                    item.</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
             </div>
-          </div>
         </transition>
 
         <!-- Edit Location Modal -->
@@ -1253,9 +1371,12 @@ function getResults(page = 1) {
             <div class="p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold text-gray-900">Edit Location</h2>
-                    <button @click="closeEditLocationModal" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                    <button @click="closeEditLocationModal"
+                        class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12">
+                            </path>
                         </svg>
                     </button>
                 </div>
@@ -1264,7 +1385,8 @@ function getResults(page = 1) {
                     <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
                             <span class="text-gray-600 font-medium">Product:</span>
-                            <p class="text-gray-900 font-semibold">{{ editingItem?.inventory?.product?.name || 'N/A' }}</p>
+                            <p class="text-gray-900 font-semibold">{{ editingItem?.inventory?.product?.name || 'N/A' }}
+                            </p>
                         </div>
                         <div>
                             <span class="text-gray-600 font-medium">Current Location:</span>
@@ -1283,25 +1405,24 @@ function getResults(page = 1) {
 
                 <div class="mb-6">
                     <label for="new_location" class="block text-sm font-medium text-gray-700 mb-2">New Location</label>
-                    <Multiselect v-model="newLocation" :options="props.locations" :multiple="false" :searchable="true" :close-on-select="true" :clear-on-select="false" :hide-selected="true" :loading="isUpdatingLocation" :internal-search="false" :placeholder="isUpdatingLocation ? 'Loading locations...' : 'Select location'"/>
+                    <Multiselect v-model="newLocation" :options="props.locations || []" :multiple="false" :searchable="true"
+                        :close-on-select="true" :allow-empty="true" class="multiselect--with-icon w-full" />
                 </div>
 
                 <div class="flex justify-end space-x-3">
-                    <button
-                        @click="closeEditLocationModal"
-                        :disabled="isUpdatingLocation"
-                        class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
-                    >
+                    <button @click="closeEditLocationModal" :disabled="isUpdatingLocation"
+                        class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200">
                         Cancel
                     </button>
-                    <button
-                        @click="updateLocation"
-                        :disabled="isUpdatingLocation || !newLocation.trim()"
-                        class="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <svg v-if="isUpdatingLocation" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <button @click="updateLocation" :disabled="isUpdatingLocation || !newLocation.trim()"
+                        class="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <svg v-if="isUpdatingLocation" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none"
+                            viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
                         </svg>
                         {{ isUpdatingLocation ? 'Updating...' : 'Update Location' }}
                     </button>
@@ -1312,14 +1433,19 @@ function getResults(page = 1) {
 </template>
 
 <style scoped>
-.slide-enter-active, .slide-leave-active {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.slide-enter-active,
+.slide-leave-active {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.slide-enter-from, .slide-leave-to {
-  transform: translateX(100%);
+
+.slide-enter-from,
+.slide-leave-to {
+    transform: translateX(100%);
 }
-.slide-enter-to, .slide-leave-from {
-  transform: translateX(0);
+
+.slide-enter-to,
+.slide-leave-from {
+    transform: translateX(0);
 }
 
 .sortable-header {
