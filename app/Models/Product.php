@@ -93,6 +93,12 @@ class Product extends Model
             ->withTimestamps();
     }
 
+    // reorderLevel
+    public function reorderLevel()
+    {
+        return $this->calculateReorderLevel();
+    }
+
     /**
      * Get the inventories for the product.
      */
