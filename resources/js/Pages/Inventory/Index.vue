@@ -555,6 +555,12 @@ const lowStockCount = computed(() => {
 
 const reorderLevelCount = computed(() => {
     if (!props.inventoryStatusCounts || !Array.isArray(props.inventoryStatusCounts)) return 0;
+    const stat = props.inventoryStatusCounts.find(s => s.status === 'low_stock_reorder_level');
+    return stat ? stat.count : 0;
+});
+
+const reorderLevelOnlyCount = computed(() => {
+    if (!props.inventoryStatusCounts || !Array.isArray(props.inventoryStatusCounts)) return 0;
     const stat = props.inventoryStatusCounts.find(s => s.status === 'reorder_level');
     return stat ? stat.count : 0;
 });
