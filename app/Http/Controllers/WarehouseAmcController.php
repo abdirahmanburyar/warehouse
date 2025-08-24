@@ -22,13 +22,6 @@ class WarehouseAmcController extends Controller
      */
     public function index(Request $request)
     {
-        // Log filter values for debugging
-        Log::info('Warehouse AMC index filters', [
-            'search' => $request->get('search'),
-            'year' => $request->get('year'),
-            'sort' => $request->get('sort'),
-            'direction' => $request->get('direction'),
-        ]);
 
         // Get the selected year, default to current year
         $selectedYear = $request->get('year', now()->year);

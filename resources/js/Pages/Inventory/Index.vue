@@ -2,13 +2,10 @@
 import {
     ref,
     watch,
-    computed,
-    onMounted,
-    onBeforeUnmount,
+    computed
 } from "vue";
 import { Head, router, Link } from "@inertiajs/vue3";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import SecondaryButton from "@/Components/SecondaryButton.vue";
 import Modal from "@/Components/Modal.vue";
 import { useToast } from "vue-toastification";
 import axios from "axios";
@@ -17,6 +14,8 @@ import "vue-multiselect/dist/vue-multiselect.css";
 import "@/Components/multiselect.css";
 import moment from "moment";
 import { TailwindPagination } from "laravel-vue-pagination";
+
+const toast = useToast();
 
 const props = defineProps({
     inventories: Object,
@@ -37,17 +36,6 @@ const warehouse = ref(props.filters?.warehouse || '');
 const status = ref(props.filters?.status || '');
 const per_page = ref(props.filters?.per_page || 25);
 
-// Watch for status changes to trigger filtering
-watch(status, (newStatus) => {
-    if (newStatus) {
-        // Reset to first page when filtering
-        currentPage.value = 1;
-        // Trigger the filter
-        applyFilters();
-    }
-});
-
-const loadedLocation = ref([]);
 const isLoading = ref(false);
 
 // Modal states
@@ -67,54 +55,6 @@ const isUploading = ref(false);
 const uploadProgress = ref(0);
 const uploadResults = ref(null);
 const importId = ref(null);
-
-
-
-// Set up real-time inventory updates
-let echoChannel = null;
-
-onMounted(() => {
-    // Debug: Log what props we received
-    console.log('Frontend received props:', {
-        category: props.category,
-        dosage: props.dosage,
-        locations: props.locations,
-        warehouses: props.warehouses,
-        categoryType: typeof props.category,
-        dosageType: typeof props.dosage,
-        locationsType: typeof props.locations,
-        warehousesType: typeof props.warehouses
-    });
-
-    // Listen for inventory updates
-    echoChannel = window.Echo.channel("inventory").listen(
-        ".refresh",
-        (data) => {
-            applyFilters();
-        }
-    );
-
-    // Listen for import progress updates
-    if (importId.value) {
-        Echo.private(`import-progress.${importId.value}`)
-            .listen('.ImportProgressUpdated', (e) => {
-                uploadProgress.value = e.progress || 0;
-                if (e.completed) {
-                    isUploading.value = false;
-                    uploadResults.value = e;
-                    toast.success('Import completed successfully!');
-                    applyFilters();
-                }
-            });
-    }
-});
-
-onBeforeUnmount(() => {
-    // Clean up Echo listeners when component is unmounted
-    if (echoChannel) {
-        echoChannel.stopListening(".refresh");
-    }
-});
 
 // Apply filters
 const applyFilters = () => {
@@ -170,11 +110,16 @@ const applyFilters = () => {
 
 // Watch for filter changes and apply them
 watch(
-    [search, location, warehouse, dosage, category, status, per_page],
+    [
+        search, 
+        location, 
+        warehouse, 
+        dosage, 
+        category, 
+        status, 
+        per_page
+    ],
     () => {
-        if (props.filters) {
-            props.filters.page = 1;
-        }
         applyFilters();
     }
 );
@@ -575,15 +520,6 @@ const reorderItemsCount = computed(() => {
     return props.inventories.data.filter((inventory) => needsReorder(inventory)).length;
 });
 
-// Remove sorting validation since sorting is removed
-// const sortingValidation = computed(() => { ... });
-
-// Remove frontend sorting computed property
-// const sortedInventories = computed(() => { ... })
-
-// Remove helper function for sorting
-// const getEarliestExpiryDate = (inventory) => { ... }
-
 function getResults(page = 1) {
     props.filters.page = page;
 }
@@ -744,7 +680,6 @@ function getResults(page = 1) {
             <div class="grid grid-cols-1 lg:grid-cols-8 gap-6">
                 <!-- Main Table -->
                 <div class="lg:col-span-7">
-                    <!-- Remove sorting info banner -->
 
                     <div class="bg-white rounded-xl overflow-hidden">
                         <table class="w-full overflow-hidden text-sm text-left table-sm rounded-t-lg">
@@ -799,23 +734,22 @@ function getResults(page = 1) {
                             <tbody>
                                 <template v-if="isLoading">
                                     <tr>
-                                        <td colspan="8" class="text-center py-8 text-gray-500 bg-gray-50">
+                                        <td colspan="11" class="text-center py-8 text-gray-500 bg-gray-50">
                                             <div class="flex flex-col items-center justify-center gap-2">
                                                 <svg class="animate-spin h-10 w-10 text-gray-300"
                                                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                     <circle class="opacity-25" cx="12" cy="12" r="10"
                                                         stroke="currentColor" stroke-width="4"></circle>
                                                     <path class="opacity-75" fill="currentColor"
-                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                                                     </path>
                                                 </svg>
-                                                <span>Applying filters...</span>
+                                                <span>{{ isLoading ? 'Applying filters...' : 'Loading inventory data...' }}</span>
                                             </div>
                                         </td>
                                     </tr>
                                 </template>
-                                <template
-                                    v-else-if="!props.inventories || !props.inventories.data || props.inventories.data.length === 0">
+                                <template v-else-if="!props.inventories || !props.inventories.data || props.inventories.data.length === 0">
                                     <tr>
                                         <td colspan="11" class="text-center py-8 text-gray-500 bg-gray-50">
                                             <div class="flex flex-col items-center justify-center gap-2">
@@ -825,8 +759,10 @@ function getResults(page = 1) {
                                                         stroke-width="2"
                                                         d="M9 17v-2a4 4 0 118 0v2m-4 4a4 4 0 01-4-4H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-2a4 4 0 01-4 4z" />
                                                 </svg>
-                                                <span>{{ !props.inventories ? 'Loading...' : 'No inventory data found.'
-                                                    }}</span>
+                                                <span>{{ !props.inventories ? 'Loading...' : 'No inventory data found.' }}</span>
+                                                <div class="text-xs text-gray-400 mt-2">
+                                                    {{ totalProducts > 0 ? `Total products: ${totalProducts}` : 'No products available' }}
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
@@ -976,33 +912,38 @@ function getResults(page = 1) {
                                                 inventory.product?.category?.name || inventory.category?.name }}</td>
 
                                             <!-- UoM -->
-                                            <td class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{
-                                                inventory.items?.[0]?.uom || '-' }}</td>
+                                            <td class="px-3 py-2 text-xs text-gray-700 align-middle items-center">
+                                                <span class="text-gray-400">No UoM</span>
+                                            </td>
 
                                             <!-- QTY -->
                                             <td
                                                 class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">
-                                                -</td>
+                                                <span class="text-gray-400">No Items</span>
+                                            </td>
 
                                             <!-- Batch Number -->
                                             <td
                                                 class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">
-                                                -</td>
+                                                <span class="text-gray-400">No Batch</span>
+                                            </td>
 
                                             <!-- Expiry Date -->
                                             <td
                                                 class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">
-                                                -</td>
+                                                <span class="text-gray-400">No Expiry</span>
+                                            </td>
 
                                             <!-- Location -->
                                             <td
                                                 class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">
-                                                -</td>
+                                                <span class="text-gray-400">No Location</span>
+                                            </td>
 
                                             <!-- Total QTY on Hand -->
                                             <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                                 <div class="flex items-center justify-center">
-                                                    <span class="font-medium text-lg">{{
+                                                    <span class="font-medium text-lg text-gray-400">{{
                                                         formatQty(getTotalQuantity(inventory)) }}</span>
                                                 </div>
                                             </td>
@@ -1045,17 +986,13 @@ function getResults(page = 1) {
 
                         <div class="mt-2 flex justify-between">
                             <div class="text-xs text-gray-400">
-                                <span
-                                    v-if="props.inventories && props.inventories.meta && props.inventories.meta.total > 0">Showing
-                                    {{
-                                    props.inventories.meta.from }} to {{ props.inventories.meta.to }} of {{
-                                    props.inventories.meta.total }}
-                                    items</span>
-                                <span v-else>No items to display</span>
+                                <span v-if="props.inventories && props.inventories.meta.total > 0">
+                                    Showing {{ props.inventories.meta.from }} to {{ props.inventories.meta.to }} of {{ props.inventories.meta.total }} products
+                                </span>
+                                <span v-else>No products to display</span>
                             </div>
 
-                            <TailwindPagination :data="props.inventories" @pagination-change-page="getResults"
-                                :limit="2" />
+                            <TailwindPagination :data="props.inventories" @pagination-change-page="getResults" :limit="2" />
                         </div>
                     </div>
                 </div>

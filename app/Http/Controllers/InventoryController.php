@@ -41,10 +41,10 @@ class InventoryController extends Controller
 				->with([
 					'category:id,name',
 					'dosage:id,name',
-					'items.warehouse:id,name'
+					'items.warehouse:id,name'  // Direct relationship with InventoryItem
 				]);
 
-                logger()->info('Product Query', ['productQuery' => $productQuery->get()]);    
+            // reorder level calculation will be here
 
 			// Apply search filter
 			if ($request->filled('search')) {
@@ -75,6 +75,13 @@ class InventoryController extends Controller
             ->withQueryString();
             $products->setPath(url()->current()); // Force Laravel to use full URLs
 
+			// Transform products using the accessor method to get inventory structure with calculated AMC
+			$inventoriesData = $products->getCollection()->map(function($product) {
+				return $product->inventory_structure;
+			});
+
+			// Replace the products collection with our transformed data
+			$products->setCollection($inventoriesData);
 
 			// Get filter options
 			$categories = Category::orderBy('name')->pluck('name')->toArray();
@@ -89,7 +96,7 @@ class InventoryController extends Controller
 			$warehouses = is_array($warehouses) ? $warehouses : [];
 
 			return Inertia::render('Inventory/Index', [
-				'inventories' => InventoryResource::collection($products),
+				'inventories' => InventoryResource::collection($products),  // Pass products directly with subquery data
 				// 'inventoryStatusCounts' => $statusCounts,
 				'filters' => $request->only(['search', 'per_page', 'page', 'category', 'dosage', 'status']),
 				'category' => $categories,
@@ -375,18 +382,18 @@ class InventoryController extends Controller
 		return $formattedStatusCounts;
 	}
 
-    /**
-     * Check if an item needs reorder action (out of stock)
-     *
-     * @param mixed $item
-     * @return bool
-     */
-    private function needsReorderAction($item): bool
-    {
-        // If item doesn't exist or has zero quantity, it needs reorder
-        if (!$item || !isset($item->quantity) || (float) $item->quantity <= 0) {
-            return true;
-        }
-        return false;
+	/**
+	 * Check if an item needs reorder action (out of stock)
+	 *
+	 * @param mixed $item
+	 * @return bool
+	 */
+	private function needsReorderAction($item): bool
+	{
+		// If item doesn't exist or has zero quantity, it needs reorder
+		if (!$item || !isset($item->quantity) || (float) $item->quantity <= 0) {
+			return true;
+		}
+		return false;
 	}
 }
