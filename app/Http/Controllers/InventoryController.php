@@ -282,16 +282,21 @@ class InventoryController extends Controller
                             
                             switch ($request->status) {
                                 case 'in_stock':
-                                    // Items that are in stock (total quantity > 0)
-                                    return $totalQuantity > 0;
+                                    // Items that are in stock (total quantity > low stock threshold)
+                                    $lowStockThreshold = $reorderLevel > 0 ? $reorderLevel + ($reorderLevel * 0.3) : 0;
+                                    $result = $totalQuantity > $lowStockThreshold;
+                                    return $result;
                                 
                                 case 'low_stock':
-                                    // Items that are low stock (total quantity > 0 but <= reorder level)
-                                    return $totalQuantity > 0 && $reorderLevel > 0 && $totalQuantity <= $reorderLevel;
+                                    // Items that are at low stock threshold (total quantity = low stock threshold)
+                                    $lowStockThreshold = $reorderLevel > 0 ? $reorderLevel + ($reorderLevel * 0.3) : 0;
+                                    $result = $totalQuantity == $lowStockThreshold;
+                                    return $result;
                                 
                                 case 'low_stock_reorder_level':
-                                    // Items that need reorder (total quantity <= 70% of reorder level)
-                                    return $reorderLevel > 0 && $totalQuantity <= ($reorderLevel * 0.7);
+                                    // Items that need reorder (total quantity <= reorder level)
+                                    $result = $reorderLevel > 0 && $totalQuantity <= $reorderLevel;
+                                    return $result;
                                 
                                 default:
                                     return true;
@@ -676,6 +681,7 @@ class InventoryController extends Controller
         // Reset counts and recalculate based on unique products
         $statusCounts['in_stock'] = 0;
         $statusCounts['low_stock'] = 0;
+        $statusCounts['low_stock_reorder_level'] = 0;
         
         // Get unique products with their total quantities
         $productStatuses = DB::table('products')
@@ -697,12 +703,21 @@ class InventoryController extends Controller
             $amcData = $this->calculateAMC($product->id);
             $reorderLevel = $this->calculateReorderLevel($amcData['amc'], $amcData['selected_months']);
             
+            // Calculate low stock threshold: reorder level + 30% of reorder level
+            $lowStockThreshold = $reorderLevel > 0 ? $reorderLevel + ($reorderLevel * 0.3) : 0;
+            
             if ($totalQty > 0) {
-                $statusCounts['in_stock']++;
-                
-                // Check if it's also low stock (when reorder level is set)
-                if ($reorderLevel > 0 && $totalQty <= $reorderLevel) {
+                if ($totalQty > $lowStockThreshold) {
+                    // In Stock: quantity > low stock threshold
+                    $statusCounts['in_stock']++;
+                } elseif ($totalQty == $lowStockThreshold) {
+                    // Low Stock: quantity = low stock threshold
                     $statusCounts['low_stock']++;
+                }
+                
+                // Count products at or below reorder level (low stock + reorder level)
+                if ($reorderLevel > 0 && $totalQty <= $reorderLevel) {
+                    $statusCounts['low_stock_reorder_level']++;
                 }
             }
         }

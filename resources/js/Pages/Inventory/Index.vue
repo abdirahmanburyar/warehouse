@@ -524,11 +524,11 @@ const isOutOfStock = (inventory) => {
     return totalQuantity === 0;
 };
 
-// Needs reorder: total_on_hand <= 70% of reorder level
+// Needs reorder: total_on_hand <= reorder level
 function needsReorder(inventory) {
     const total = getTotalQuantity(inventory);
     const reorder = Number(inventory.reorder_level) || 0;
-    return reorder > 0 && total <= (reorder * 0.7);
+    return reorder > 0 && total <= reorder;
 }
 
 // Computed properties for inventory status counts
@@ -549,6 +549,13 @@ const lowStockCount = computed(() => {
 const outOfStockCount = computed(() => {
     const stat = Object.values(props.inventoryStatusCounts).find(
         (s) => s.status === "out_of_stock"
+    );
+    return stat ? stat.count : 0;
+});
+
+const lowStockReorderLevelCount = computed(() => {
+    const stat = Object.values(props.inventoryStatusCounts).find(
+        (s) => s.status === "low_stock_reorder_level"
     );
     return stat ? stat.count : 0;
 });
@@ -815,9 +822,13 @@ function getResults(page = 1) {
                                                           class="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full font-medium">
                                                         Out of Stock
                                                     </span>
-                                                    <span v-else-if="(inventory.reorder_level || 0) > 0 && getTotalQuantity(inventory) <= (inventory.reorder_level || 0)" 
+                                                    <span v-else-if="(inventory.reorder_level || 0) > 0 && getTotalQuantity(inventory) === ((inventory.reorder_level || 0) + ((inventory.reorder_level || 0) * 0.3))" 
                                                           class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full font-medium">
                                                         Low Stock
+                                                    </span>
+                                                    <span v-else-if="(inventory.reorder_level || 0) > 0 && getTotalQuantity(inventory) <= (inventory.reorder_level || 0)" 
+                                                          class="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full font-medium">
+                                                        Reorder Level
                                                     </span>
                                                     <span v-else 
                                                           class="px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full font-medium">
@@ -984,6 +995,17 @@ function getResults(page = 1) {
                                 <div class="ml-3 flex flex-col flex-1">
                                     <span class="text-lg font-bold text-red-700">{{ outOfStockCount }}</span>
                                     <span class="text-xs font-medium text-red-600">Out of Stock</span>
+                                </div>
+                            </div>
+
+                            <!-- Low Stock + Reorder Level Card -->
+                            <div class="flex items-center rounded-lg bg-gradient-to-r from-purple-50 to-purple-100 p-3 shadow-md border border-purple-200">
+                                <div class="flex-shrink-0">
+                                    <img src="/assets/images/low_stock_reorder.png" class="w-8 h-8" alt="Low Stock + Reorder Level" />
+                                </div>
+                                <div class="ml-3 flex flex-col flex-1">
+                                    <span class="text-lg font-bold text-purple-700">{{ lowStockReorderLevelCount }}</span>
+                                    <span class="text-xs font-medium text-purple-600">Low Stock + Reorder Level</span>
                                 </div>
                             </div>
                         </div>
