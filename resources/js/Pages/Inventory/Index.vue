@@ -570,7 +570,46 @@ function testStatusFilter() {
     }
 }
 
-// Computed properties for inventory status counts
+// Validate status calculations against backend data
+function validateStatusCalculations() {
+    console.log('🔍 Validating Status Calculations...');
+    
+    const backendCounts = {
+        inStock: inStockCount.value,
+        lowStock: lowStockCount.value,
+        lowStockReorderLevel: lowStockReorderLevelCount.value,
+        outOfStock: outOfStockCount.value,
+        totalNeedsReorder: totalNeedsReorderCount.value,
+        totalItems: (inStockCount.value + lowStockCount.value + lowStockReorderLevelCount.value + outOfStockCount.value)
+    };
+    
+    const rawBackendData = props.inventoryStatusCounts || [];
+    
+    console.log('📊 Backend Counts (Computed):', backendCounts);
+    console.log('📊 Raw Backend Data:', rawBackendData);
+    
+    // Check if totals match
+    const calculatedTotal = backendCounts.inStock + backendCounts.lowStock + backendCounts.lowStockReorderLevel + backendCounts.outOfStock;
+    console.log('📊 Calculated Total from Backend:', calculatedTotal);
+    console.log('📊 Total Items (Backend):', backendCounts.totalItems);
+    console.log('📊 Match:', calculatedTotal === backendCounts.totalItems ? '✅' : '❌');
+    
+    // Show current page items for comparison
+    if (props.inventories?.data) {
+        const currentPageCounts = {
+            inStock: props.inventories.data.filter(item => getInventoryStatus(item) === 'in_stock').length,
+            lowStock: props.inventories.data.filter(item => getInventoryStatus(item) === 'low_stock').length,
+            lowStockReorderLevel: props.inventories.data.filter(item => getInventoryStatus(item) === 'low_stock_reorder_level').length,
+            outOfStock: props.inventories.data.filter(item => getInventoryStatus(item) === 'out_of_stock').length,
+            totalItems: props.inventories.data.length
+        };
+        
+        console.log('📋 Current Page Counts (for comparison):', currentPageCounts);
+        console.log('📋 Note: Current page counts may differ from backend totals due to pagination');
+    }
+}
+
+// Computed properties for inventory status counts - from backend data (not paginated)
 const inStockCount = computed(() => {
     if (!props.inventoryStatusCounts || !Array.isArray(props.inventoryStatusCounts)) return 0;
     const stat = props.inventoryStatusCounts.find(s => s.status === 'in_stock');
@@ -610,6 +649,16 @@ const outOfStockCount = computed(() => {
     if (!props.inventoryStatusCounts || !Array.isArray(props.inventoryStatusCounts)) return 0;
     const stat = props.inventoryStatusCounts.find(s => s.status === 'out_of_stock');
     return stat ? stat.count : 0;
+});
+
+// Total count of all items that need reordering - from backend data
+const totalNeedsReorderCount = computed(() => {
+    if (!props.inventoryStatusCounts || !Array.isArray(props.inventoryStatusCounts)) return 0;
+    // Sum of low_stock, low_stock_reorder_level, and out_of_stock
+    const lowStockCount = props.inventoryStatusCounts.find(s => s.status === 'low_stock')?.count || 0;
+    const lowStockReorderLevelCount = props.inventoryStatusCounts.find(s => s.status === 'low_stock_reorder_level')?.count || 0;
+    const outOfStockCount = props.inventoryStatusCounts.find(s => s.status === 'out_of_stock')?.count || 0;
+    return lowStockCount + lowStockReorderLevelCount + outOfStockCount;
 });
 
 function getResults(page = 1) {
@@ -852,7 +901,7 @@ onUnmounted(() => {
                     
                     <!-- Status Counts Debug -->
                     <div class="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-                        <h5 class="text-sm font-medium text-blue-700 mb-2">Status Counts Debug</h5>
+                        <h5 class="text-sm font-medium text-blue-700 mb-2">Status Counts Debug (Backend Data)</h5>
                         <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
                             <div>
                                 <span class="font-medium text-blue-600">In Stock:</span>
@@ -876,7 +925,16 @@ onUnmounted(() => {
                             </div>
                         </div>
                         <div class="mt-2 text-xs text-blue-600">
-                            <span class="font-medium">Raw Data:</span> {{ JSON.stringify(props.inventoryStatusCounts) }}
+                            <span class="font-medium">Total Needs Reorder:</span> {{ totalNeedsReorderCount }}
+                        </div>
+                        <div class="mt-2 text-xs text-blue-600">
+                            <span class="font-medium">Raw Backend Data:</span> {{ JSON.stringify(props.inventoryStatusCounts) }}
+                        </div>
+                        <div class="mt-2 text-xs text-blue-600">
+                            <span class="font-medium">Total Inventory Items (Backend):</span> {{ (inStockCount + lowStockCount + lowStockReorderLevelCount + outOfStockCount) }}
+                        </div>
+                        <div class="mt-2 text-xs text-blue-600">
+                            <span class="font-medium">Current Page Items:</span> {{ props.inventories?.data?.length || 0 }}
                         </div>
                     </div>
                     
@@ -905,6 +963,10 @@ onUnmounted(() => {
                             <button @click="testStatusFilter" 
                                 class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
                                 Test Status Filter
+                            </button>
+                            <button @click="validateStatusCalculations" 
+                                class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700">
+                                Validate Calculations
                             </button>
                             <button @click="console.log('Status Filter Debug:', { status: status.value, inventories: props.inventories?.data })" 
                                 class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
