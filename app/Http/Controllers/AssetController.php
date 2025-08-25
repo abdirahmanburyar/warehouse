@@ -82,7 +82,7 @@ class AssetController extends Controller
             $assetItems->where('asset_type_id', $request->type_id);
         }
         if ($request->filled('assignee_id')) {
-            $assetItems->where('assignee_id', $itemData['assignee_id']);
+            $assetItems->where('assignee_id', $request->input('assignee_id'));
         }
         if ($request->filled('acquisition_from') || $request->filled('acquisition_to')) {
             $from = $request->input('acquisition_from');
@@ -136,6 +136,8 @@ class AssetController extends Controller
         $categories = AssetCategory::select('id','name')->get();
         $types = AssetType::select('id','name','asset_category_id')->get();
         $assignees = Assignee::select('id','name')->get();
+
+        Log::info($assetItems);
         
         return inertia('Assets/Index', [
             'locations' => $locations,
@@ -1025,6 +1027,126 @@ class AssetController extends Controller
             ]);
             
             return back()->withErrors(['error' => 'Failed to load asset item history: ' . $th->getMessage()]);
+        }
+    }
+
+    /**
+     * Download the asset import template
+     */
+    public function downloadTemplate()
+    {
+        try {
+            $headers = [
+                'Asset Tag*',
+                'Asset Name*',
+                'Serial Number',
+                'Category*',
+                'Type*',
+                'Fund Source*',
+                'Region*',
+                'Location*',
+                'Sub Location*',
+                'Assignee',
+                'Status',
+                'Original Value',
+                'Acquisition Date',
+                'Asset Number'
+            ];
+
+            $sampleData = [
+                [
+                    'ASSET-001',
+                    'Laptop Dell XPS 13',
+                    'SN123456789',
+                    'Electronics',
+                    'Laptop',
+                    'Government Budget',
+                    'Mogadishu',
+                    'Main Office',
+                    'IT Department',
+                    'John Doe',
+                    'active',
+                    '1200.00',
+                    '2024-01-15',
+                    'ASSET-001'
+                ],
+                [
+                    'ASSET-002',
+                    'Office Chair',
+                    'SN987654321',
+                    'Furniture',
+                    'Office Chair',
+                    'Donor Fund',
+                    'Hargeisa',
+                    'Branch Office',
+                    'Reception',
+                    'Jane Smith',
+                    'active',
+                    '250.00',
+                    '2024-01-20',
+                    'ASSET-002'
+                ]
+            ];
+
+            $filename = 'assets_import_template_' . date('Y-m-d_H-i-s') . '.xlsx';
+            
+            return Excel::download(new class($headers, $sampleData) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings {
+                private $data;
+                private $headers;
+
+                public function __construct($headers, $data)
+                {
+                    $this->headers = $headers;
+                    $this->data = $data;
+                }
+
+                public function array(): array
+                {
+                    return $this->data;
+                }
+
+                public function headings(): array
+                {
+                    return $this->headers;
+                }
+            }, $filename);
+
+        } catch (\Throwable $th) {
+            logger()->error('Failed to download asset template: ' . $th->getMessage());
+            return back()->withErrors(['error' => 'Failed to download template: ' . $th->getMessage()]);
+        }
+    }
+
+    /**
+     * Import assets from Excel file
+     */
+    public function import(Request $request)
+    {
+        try {
+            $request->validate([
+                'file' => 'required|file|mimes:xlsx,xls|max:10240', // 10MB max
+            ]);
+
+            $file = $request->file('file');
+            
+            // Import the file
+            Excel::import(new AssetsImport(), $file);
+
+            return back()->with('success', 'Assets imported successfully!');
+
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = $e->failures();
+            $errors = [];
+            
+            foreach ($failures as $failure) {
+                $errors[] = "Row " . ($failure->row() - 1) . ": " . implode(', ', $failure->errors());
+            }
+            
+            return back()->withErrors(['import_errors' => $errors]);
+            
+        } catch (\Throwable $th) {
+            logger()->error('Failed to import assets: ' . $th->getMessage());
+            return back()->withErrors(['error' => 'Failed to import assets: ' . $th->getMessage()]);
         }
     }
 }

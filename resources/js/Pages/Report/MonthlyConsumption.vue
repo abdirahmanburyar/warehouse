@@ -927,7 +927,8 @@ async function downloadTemplate() {
     }
 }
 
-// Single AMC per row, prefer backend value
+// Single AMC per row using new 70% deviation screening logic
+// This implements the exact formula: find 3 months that pass ≤70% deviation threshold
 function calculateScreenedAMC(row) {
     const backend = props.amcByProduct?.[row.product_id]?.amc;
     if (typeof backend === 'number' && !isNaN(backend)) {
@@ -1041,11 +1042,8 @@ function calculateScreenedAMC(row) {
 
 // Calculate average monthly consumption for a product (legacy function for compatibility)
 function calculateAverage(row) {
-    // This function is kept for compatibility but now uses the last group's AMC
-    if (monthGroups.value.length === 0) return 'N/A';
-    
-    const lastGroup = monthGroups.value[monthGroups.value.length - 1];
-    return calculateGroupAMC(row, lastGroup);
+    // This function now uses the new screened AMC calculation
+    return calculateScreenedAMC(row);
 }
 
 // Export data to Excel

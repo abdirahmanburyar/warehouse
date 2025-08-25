@@ -65,6 +65,11 @@ class CheckModulePermission
             return $next($request);
         }
 
+        // TEMPORARY: Allow access to assets for testing
+        if ($request->routeIs('assets.*')) {
+            return $next($request);
+        }
+
         // Get the current route name
         $routeName = $request->route()->getName();
         

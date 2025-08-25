@@ -596,6 +596,10 @@ Route::controller(LocationController::class)
             // Asset Transfer Routes
             Route::post('/{asset}/transfer', 'transferAsset')->name('assets.transfer');
 
+            // Asset Bulk Upload Routes
+            Route::get('/template/download', 'downloadTemplate')->name('assets.template.download');
+            Route::post('/import', 'import')->name('assets.import');
+
             // Asset History Routes
             Route::get('/asset-items/{assetItem}/history', 'showHistory')->name('assets.history.index');
             Route::get('/asset-items/{assetItem}/detailed-history', 'showAssetItemHistory')->name('assets.items.history.index');
