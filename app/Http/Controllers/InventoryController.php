@@ -94,38 +94,48 @@ class InventoryController extends Controller
 			
 			// Apply status filter after data is loaded and calculated
 			if ($statusFilter) {
-				$filteredCollection = $products->getCollection()->filter(function ($product) use ($statusFilter) {
-					$totalQuantity = $product->items->sum('quantity');
-					$reorderLevel = $product->reorder_level;
-					
-					switch ($statusFilter) {
-						case 'in_stock':
-							if ($reorderLevel <= 0) {
-								return $totalQuantity > 0;
+				try {
+					$filteredCollection = $products->getCollection()->filter(function ($product) use ($statusFilter) {
+						try {
+							$totalQuantity = $product->items->sum('quantity');
+							$reorderLevel = $product->reorder_level ?? 0;
+							
+							switch ($statusFilter) {
+								case 'in_stock':
+									if ($reorderLevel <= 0) {
+										return $totalQuantity > 0;
+									}
+									$lowStockThreshold = $reorderLevel * 1.3;
+									return $totalQuantity > $lowStockThreshold;
+									
+								case 'low_stock':
+									if ($reorderLevel <= 0) return false;
+									$lowStockThreshold = $reorderLevel * 1.3;
+									return $totalQuantity > $reorderLevel && $totalQuantity <= $lowStockThreshold;
+									
+								case 'low_stock_reorder_level':
+									if ($reorderLevel <= 0) return false;
+									return $totalQuantity > 1 && $totalQuantity <= $reorderLevel;
+									
+								case 'out_of_stock':
+									return $totalQuantity <= 0;
+									
+								default:
+									return true;
 							}
-							$lowStockThreshold = $reorderLevel * 1.3;
-							return $totalQuantity > $lowStockThreshold;
-							
-						case 'low_stock':
-							if ($reorderLevel <= 0) return false;
-							$lowStockThreshold = $reorderLevel * 1.3;
-							return $totalQuantity > $reorderLevel && $totalQuantity <= $lowStockThreshold;
-							
-						case 'low_stock_reorder_level':
-							if ($reorderLevel <= 0) return false;
-							return $totalQuantity > 1 && $totalQuantity <= $reorderLevel;
-							
-						case 'out_of_stock':
-							return $totalQuantity <= 0;
-							
-						default:
-							return true;
-					}
-				});
-				
-				// Update the collection and pagination
-				$products->setCollection($filteredCollection);
-				$products->setTotal($filteredCollection->count());
+						} catch (\Exception $e) {
+							Log::warning('[INVENTORY-FILTER] Error filtering product ' . ($product->id ?? 'unknown') . ': ' . $e->getMessage());
+							return false; // Exclude problematic products
+						}
+					});
+					
+					// Update the collection and pagination
+					$products->setCollection($filteredCollection);
+					$products->setTotal($filteredCollection->count());
+				} catch (\Exception $e) {
+					Log::error('[INVENTORY-FILTER] Error applying status filter: ' . $e->getMessage());
+					// Continue without filtering if there's an error
+				}
 			}
 	
 
@@ -144,70 +154,43 @@ class InventoryController extends Controller
 				[ 'status' => 'out_of_stock', 'count' => 0 ],
 			];
 	
-			// Use optimized database queries to calculate status counts
-			// Get total quantities for all products in one query
-			$quantities = DB::table('products')
-				->leftJoin('inventory_items', 'products.id', '=', 'inventory_items.product_id')
-				->select('products.id', DB::raw('COALESCE(SUM(inventory_items.quantity), 0) as total_quantity'))
-				->groupBy('products.id')
-				->get()
-				->keyBy('id');
+			// Calculate status counts using the Product model methods for reliability
+			$allProducts = Product::with(['items', 'warehouseAmcs'])->get();
 			
-			// Get reorder levels for all products using a simpler approach
-			$reorderLevels = DB::table('products')
-				->leftJoin('warehouse_amcs', 'products.id', '=', 'warehouse_amcs.product_id')
-				->select('products.id')
-				->selectRaw('
-					CASE 
-						WHEN COUNT(CASE WHEN warehouse_amcs.quantity > 0 THEN 1 END) < 3 THEN 0
-						ELSE (
-							SELECT ROUND(
-								(AVG(quantity) * 3) + ((MAX(quantity) - AVG(quantity)) * 3), 
-								2
-							)
-							FROM (
-								SELECT quantity
-								FROM warehouse_amcs wa2 
-								WHERE wa2.product_id = products.id 
-								AND wa2.quantity > 0
-								ORDER BY month_year DESC
-								LIMIT 10
-							) as recent_consumption
-						)
-					END as reorder_level
-				')
-				->groupBy('products.id')
-				->get()
-				->keyBy('id');
+
 	
 
 	
-			// Calculate status counts using the pre-calculated data
-			foreach ($quantities as $productId => $quantityData) {
-				$totalQuantity = $quantityData->total_quantity;
-				$reorderLevel = $reorderLevels->get($productId)?->reorder_level ?? 0;
-				
-
-				
-				if ($totalQuantity <= 0) {
-					$statusCounts[3]['count']++; // out_of_stock
-				} elseif ($reorderLevel <= 0) {
-					// No reorder level set, default to in stock
-					$statusCounts[0]['count']++; // in_stock
-				} else {
-					// Calculate the low stock threshold (reorder level + 30%)
-					$lowStockThreshold = $reorderLevel * 1.3;
+			// Calculate status counts using the Product model methods
+			foreach ($allProducts as $product) {
+				try {
+					$totalQuantity = $product->items->sum('quantity');
+					$metrics = $product->calculateInventoryMetrics();
+					$reorderLevel = $metrics['reorder_level'];
 					
-					if ($totalQuantity > 1 && $totalQuantity <= $reorderLevel) {
-						// Items at or below reorder level but more than 1 (2 to 9,000 in your example)
-						$statusCounts[2]['count']++; // low_stock_reorder_level
-					} elseif ($totalQuantity <= $lowStockThreshold) {
-						// Items between reorder level and reorder level + 30% (9,001 to 11,700 in your example)
-						$statusCounts[1]['count']++; // low_stock
-					} else {
-						// Items above reorder level + 30% (above 11,700 in your example)
+					if ($totalQuantity <= 0) {
+						$statusCounts[3]['count']++; // out_of_stock
+					} elseif ($reorderLevel <= 0) {
+						// No reorder level set, default to in stock
 						$statusCounts[0]['count']++; // in_stock
+					} else {
+						// Calculate the low stock threshold (reorder level + 30%)
+						$lowStockThreshold = $reorderLevel * 1.3;
+						
+						if ($totalQuantity > 1 && $totalQuantity <= $reorderLevel) {
+							// Items at or below reorder level but more than 1 (2 to 9,000 in your example)
+							$statusCounts[2]['count']++; // low_stock_reorder_level
+						} elseif ($totalQuantity <= $lowStockThreshold) {
+							// Items between reorder level and reorder level + 30% (9,001 to 11,700 in your example)
+							$statusCounts[1]['count']++; // low_stock
+						} else {
+							// Items above reorder level + 30% (above 11,700 in your example)
+							$statusCounts[0]['count']++; // in_stock
+						}
 					}
+				} catch (\Exception $e) {
+					Log::warning('[INVENTORY-COUNT] Error counting status for product ' . ($product->id ?? 'unknown') . ': ' . $e->getMessage());
+					// Skip problematic products in counting
 				}
 			}
 	
