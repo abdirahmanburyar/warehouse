@@ -164,7 +164,6 @@ class InventoryController extends Controller
 				]
 			];
 
-			// Use a simpler, faster approach - get quantities first, then calculate reorder levels in batches
 			$allProductsData = DB::table('products')
 				->leftJoin('inventory_items', 'products.id', '=', 'inventory_items.product_id')
 				->select(
@@ -174,7 +173,6 @@ class InventoryController extends Controller
 				->groupBy('products.id')
 				->get();
 
-			// Get reorder levels in a separate, optimized query
 			$reorderLevels = DB::table('warehouse_amcs')
 				->select(
 					'product_id',
@@ -188,42 +186,31 @@ class InventoryController extends Controller
 				->get()
 				->keyBy('product_id');
 
-			// Calculate status counts efficiently
 			foreach ($allProductsData as $product) {
 				$totalQuantity = (float) $product->total_quantity;
 				
-				// Get reorder level from the pre-calculated data
 				$reorderLevel = 0;
 				if ($reorderLevels->has($product->id)) {
 					$amcData = $reorderLevels->get($product->id);
 					$reorderLevel = ($amcData->amc * 3) + $amcData->buffer_stock;
 				}
 				
-				// Check if completely out of stock first
 				if ($totalQuantity <= 0) {
-					$statusCounts[3]['count']++; // out_of_stock (index 3)
+					$statusCounts[3]['count']++;
 				} elseif ($reorderLevel <= 0) {
-					// No reorder level set, default to in stock
-					$statusCounts[0]['count']++; // in_stock (index 0)
+					$statusCounts[0]['count']++;
 				} else {
-					// Calculate the low stock threshold (reorder level + 30%)
 					$lowStockThreshold = $reorderLevel * 1.3;
 					
 					if ($totalQuantity <= $reorderLevel) {
-						// Items at or below reorder level (1 to 9,000 in your example)
-						$statusCounts[2]['count']++; // low_stock_reorder_level (index 2)
+						$statusCounts[2]['count']++;
 					} elseif ($totalQuantity <= $lowStockThreshold) {
-						// Items between reorder level and reorder level + 30% (9,001 to 11,700 in your example)
-						$statusCounts[1]['count']++; // low_stock (index 1)
+						$statusCounts[1]['count']++;
 					} else {
-						// Items above reorder level + 30% (above 11,700 in your example)
-						$statusCounts[0]['count']++; // in_stock (index 0)
+						$statusCounts[0]['count']++;
 					}
 				}
 			}
-
-
-
 
 
 			return Inertia::render('Inventory/Index', [

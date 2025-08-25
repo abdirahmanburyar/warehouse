@@ -38,7 +38,6 @@ const per_page = ref(props.filters?.per_page || 25);
 
 const isLoading = ref(false);
 const filterTimeout = ref(null);
-const showDebug = ref(false); // Toggle for debug information
 
 // Modal states
 const showLegend = ref(false);
@@ -81,16 +80,7 @@ const applyFilters = () => {
         if (per_page.value) query.per_page = per_page.value;
         if (props.filters?.page) query.page = props.filters.page;
 
-        console.log('🔍 Applying filters:', query);
-        console.log('📊 Current filter values:', {
-            search: search.value,
-            location: location.value,
-            warehouse: warehouse.value,
-            category: category.value,
-            status: status.value,
-            per_page: per_page.value,
-            page: props.filters?.page
-        });
+
 
         isLoading.value = true;
 
@@ -107,7 +97,6 @@ const applyFilters = () => {
             ],
             onFinish: () => {
                 isLoading.value = false;
-                console.log('✅ Filters applied successfully');
             },
             onError: (errors) => {
                 isLoading.value = false;
@@ -168,13 +157,11 @@ function formatQty(qty) {
     }
 
     if (isNaN(num) || !isFinite(num)) {
-        console.warn(`Invalid quantity value: ${qty}, defaulting to 0`);
         return '0';
     }
 
     // Ensure negative quantities are handled properly
     if (num < 0) {
-        console.warn(`Negative quantity detected: ${num}, treating as 0`);
         return '0';
     }
 
@@ -279,7 +266,6 @@ const clearFilters = () => {
         ],
         onFinish: () => {
             isLoading.value = false;
-            console.log('✅ Filters cleared successfully');
         },
         onError: (errors) => {
             isLoading.value = false;
@@ -556,62 +542,7 @@ function needsReorder(inventory) {
     return status === 'low_stock_reorder_level' || status === 'low_stock' || status === 'out_of_stock';
 }
 
-// Test status filter functionality
-function testStatusFilter() {
-    console.log('🔍 Testing Status Filter...');
-    console.log('Selected Status:', status.value);
-    console.log('Total Inventories:', props.inventories?.data?.length || 0);
-    
-    if (status.value) {
-        const filteredItems = props.inventories?.data?.filter(item => getInventoryStatus(item) === status.value) || [];
-        console.log('Filtered Items Count:', filteredItems.length);
-        console.log('Filtered Items:', filteredItems.map(item => ({
-            name: item.product?.name || item.name,
-            status: getInventoryStatus(item),
-            totalQuantity: getTotalQuantity(item)
-        })));
-    }
-}
 
-// Validate status calculations against backend data
-function validateStatusCalculations() {
-    console.log('🔍 Validating Status Calculations...');
-    
-    const backendCounts = {
-        inStock: inStockCount.value,
-        lowStock: lowStockCount.value,
-        lowStockReorderLevel: lowStockReorderLevelCount.value,
-        combinedReorderLevel: combinedReorderLevelCount.value,
-        outOfStock: outOfStockCount.value,
-        totalNeedsReorder: totalNeedsReorderCount.value,
-        totalItems: (inStockCount.value + lowStockCount.value + lowStockReorderLevelCount.value + outOfStockCount.value)
-    };
-    
-    const rawBackendData = props.inventoryStatusCounts || [];
-    
-    console.log('📊 Backend Counts (Computed):', backendCounts);
-    console.log('📊 Raw Backend Data:', rawBackendData);
-    
-    // Check if totals match
-    const calculatedTotal = backendCounts.inStock + backendCounts.lowStock + backendCounts.lowStockReorderLevel + backendCounts.outOfStock;
-    console.log('📊 Calculated Total from Backend:', calculatedTotal);
-    console.log('📊 Total Items (Backend):', backendCounts.totalItems);
-    console.log('📊 Match:', calculatedTotal === backendCounts.totalItems ? '✅' : '❌');
-    
-    // Show current page items for comparison
-    if (props.inventories?.data) {
-        const currentPageCounts = {
-            inStock: props.inventories.data.filter(item => getInventoryStatus(item) === 'in_stock').length,
-            lowStock: props.inventories.data.filter(item => getInventoryStatus(item) === 'low_stock').length,
-            lowStockReorderLevel: props.inventories.data.filter(item => getInventoryStatus(item) === 'low_stock_reorder_level').length,
-            outOfStock: props.inventories.data.filter(item => getInventoryStatus(item) === 'out_of_stock').length,
-            totalItems: props.inventories.data.length
-        };
-        
-        console.log('📋 Current Page Counts (for comparison):', currentPageCounts);
-        console.log('📋 Note: Current page counts may differ from backend totals due to pagination');
-    }
-}
 
 // Computed properties for inventory status counts - from backend data (not paginated)
 const inStockCount = computed(() => {
@@ -864,16 +795,6 @@ onUnmounted(() => {
                             <option value="100">100 per page</option>
                             <option value="200">200 per page</option>
                         </select>
-                        <button @click="showDebug = !showDebug"
-                            class="px-2 py-2 bg-gray-100 text-gray-700 rounded-full flex items-center gap-2 hover:bg-gray-200 transition-colors border border-gray-200"
-                            title="Toggle Debug Info">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Debug
-                        </button>
                         <button @click="showLegend = true"
                             class="px-2 py-2 bg-blue-100 text-blue-700 rounded-full flex items-center gap-2 hover:bg-blue-200 transition-colors border border-blue-200"
                             title="Icon Legend">
@@ -883,131 +804,6 @@ onUnmounted(() => {
                                     d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
                             </svg>
                         </button>
-                    </div>
-                </div>
-                
-                <!-- Debug Information -->
-                <div v-if="showDebug" class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <h4 class="text-sm font-medium text-gray-700 mb-2">Debug Information</h4>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                        <div>
-                            <span class="font-medium text-gray-600">Search:</span>
-                            <span class="ml-2 text-gray-800">{{ search || 'None' }}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium text-gray-600">Location:</span>
-                            <span class="ml-2 text-gray-800">{{ location || 'None' }}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium text-gray-600">Warehouse:</span>
-                            <span class="ml-2 text-gray-800">{{ warehouse || 'None' }}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium text-gray-600">Category:</span>
-                            <span class="ml-2 text-gray-800">{{ category || 'None' }}</span>
-                        </div>
-
-                        <div>
-                            <span class="font-medium text-gray-600">Status:</span>
-                            <span class="ml-2 text-gray-800">{{ status || 'None' }}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium text-gray-600">Per Page:</span>
-                            <span class="ml-2 text-gray-800">{{ per_page }}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium text-gray-600">Current Page:</span>
-                            <span class="ml-2 text-gray-800">{{ props.filters?.page || 1 }}</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Status Counts Debug -->
-                    <div class="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-                        <h5 class="text-sm font-medium text-blue-700 mb-2">Status Counts Debug</h5>
-                        <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
-                            <div>
-                                <span class="font-medium text-blue-600">In Stock:</span>
-                                <span class="ml-2 text-blue-800">{{ calculatedInStockCount }}</span>
-                                <span class="ml-1 text-gray-500">(Backend: {{ inStockCount }})</span>
-                            </div>
-                            <div>
-                                <span class="font-medium text-blue-600">Low Stock:</span>
-                                <span class="ml-2 text-blue-800">{{ calculatedLowStockCount }}</span>
-                                <span class="ml-1 text-gray-500">(Backend: {{ lowStockCount }})</span>
-                            </div>
-                            <div>
-                                <span class="font-medium text-blue-600">Low Stock + Reorder Level:</span>
-                                <span class="ml-2 text-blue-800">{{ calculatedLowStockReorderLevelCount }}</span>
-                                <span class="ml-1 text-gray-500">(Backend: {{ lowStockReorderLevelCount }})</span>
-                            </div>
-                            <div>
-                                <span class="font-medium text-blue-600">Combined Reorder Level:</span>
-                                <span class="ml-2 text-blue-800">{{ combinedReorderLevelCount }}</span>
-                            </div>
-                            <div>
-                                <span class="font-medium text-blue-600">Out of Stock:</span>
-                                <span class="ml-2 text-blue-800">{{ calculatedOutOfStockCount }}</span>
-                                <span class="ml-1 text-gray-500">(Backend: {{ outOfStockCount }})</span>
-                            </div>
-                        </div>
-                        <div class="mt-2 text-xs text-blue-600">
-                            <span class="font-medium">Total Needs Reorder:</span> {{ totalNeedsReorderCount }}
-                        </div>
-                        <div class="mt-2 text-xs text-blue-600">
-                            <span class="font-medium">Raw Backend Data:</span> {{ JSON.stringify(props.inventoryStatusCounts) }}
-                        </div>
-                        <div class="mt-2 text-xs text-blue-600">
-                            <span class="font-medium">Total Inventory Items (Calculated):</span> {{ (calculatedInStockCount + calculatedLowStockCount + calculatedLowStockReorderLevelCount + calculatedOutOfStockCount) }}
-                        </div>
-                        <div class="mt-2 text-xs text-blue-600">
-                            <span class="font-medium">Total Inventory Items (Backend):</span> {{ (inStockCount + lowStockCount + lowStockReorderLevelCount + outOfStockCount) }}
-                        </div>
-                        <div class="mt-2 text-xs text-blue-600">
-                            <span class="font-medium">Current Page Items:</span> {{ props.inventories?.data?.length || 0 }}
-                        </div>
-                    </div>
-                    
-                    <!-- Status Filter Debug -->
-                    <div class="mt-4 p-3 bg-green-50 rounded border border-green-200">
-                        <h5 class="text-sm font-medium text-green-700 mb-2">Status Filter Debug</h5>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                            <div>
-                                <span class="font-medium text-green-600">Selected Status:</span>
-                                <span class="ml-2 text-green-800">{{ status || 'None' }}</span>
-                            </div>
-                            <div>
-                                <span class="font-medium text-green-600">Filter Applied:</span>
-                                <span class="ml-2 text-green-800">{{ status ? 'Yes' : 'No' }}</span>
-                            </div>
-                            <div>
-                                <span class="font-medium text-green-600">Total Items:</span>
-                                <span class="ml-2 text-green-800">{{ props.inventories?.data?.length || 0 }}</span>
-                            </div>
-                            <div>
-                                <span class="font-medium text-green-600">Filtered Items:</span>
-                                <span class="ml-2 text-green-800">{{ props.inventories?.data?.filter(item => getInventoryStatus(item) === status)?.length || 0 }}</span>
-                            </div>
-                        </div>
-                        <div class="mt-3 flex gap-2">
-                            <button @click="testStatusFilter" 
-                                class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
-                                Test Status Filter
-                            </button>
-                            <button @click="validateStatusCalculations" 
-                                class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700">
-                                Validate Calculations
-                            </button>
-                            <button @click="console.log('Status Filter Debug:', { status: status.value, inventories: props.inventories?.data })" 
-                                class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
-                                Log Data
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-2 text-xs text-gray-500">
-                        <span class="font-medium">Active Filters:</span> {{ hasActiveFilters ? 'Yes' : 'No' }} | 
-                        <span class="font-medium">Loading:</span> {{ isLoading ? 'Yes' : 'No' }} | 
-                        <span class="font-medium">Timeout:</span> {{ filterTimeout ? 'Active' : 'None' }}
                     </div>
                 </div>
             </div>
