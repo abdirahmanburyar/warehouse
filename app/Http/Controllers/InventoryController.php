@@ -81,6 +81,7 @@ class InventoryController extends Controller
 			}
 
 			// Apply status filter
+			// Apply status filter
 			if ($request->filled('status')) {
 				switch ($request->status) {
 					case 'in_stock':
@@ -88,12 +89,76 @@ class InventoryController extends Controller
 						$productQuery->whereHas('items', fn($q) => $q->where('quantity', '>', 0));
 						break;
 					case 'low_stock':
-						// Products where reorder level is higher than 30% of total quantity
-						// This will be filtered in the frontend after AMC calculation
+						// Products where quantity is between reorder level and reorder level + 30%
+						$productQuery->whereRaw('(
+							SELECT COALESCE(SUM(inventory_items.quantity), 0)
+							FROM inventory_items 
+							WHERE inventory_items.product_id = products.id
+						) > (
+							SELECT COALESCE(
+								(
+									SELECT (amc * 3) + buffer_stock
+									FROM (
+										SELECT 
+											AVG(quantity) as amc,
+											(MAX(quantity) - AVG(quantity)) * 3 as buffer_stock
+										FROM warehouse_amcs 
+										WHERE product_id = products.id 
+										AND quantity > 0
+										AND month_year >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+										GROUP BY product_id
+										HAVING COUNT(*) >= 3
+									) amc_calc
+								), 0
+							)
+						) AND (
+							SELECT COALESCE(SUM(inventory_items.quantity), 0)
+							FROM inventory_items 
+							WHERE inventory_items.product_id = products.id
+						) <= (
+							SELECT COALESCE(
+								(
+									SELECT (amc * 3) + buffer_stock
+									FROM (
+										SELECT 
+											AVG(quantity) as amc,
+											(MAX(quantity) - AVG(quantity)) * 3 as buffer_stock
+										FROM warehouse_amcs 
+										WHERE product_id = products.id 
+										AND quantity > 0
+										AND month_year >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+										GROUP BY product_id
+										HAVING COUNT(*) >= 3
+									) amc_calc
+								), 0
+							) * 1.3
+						)');
 						break;
 					case 'low_stock_reorder_level':
 						// Products where quantity <= reorder level
-						// This will be filtered in the frontend after AMC calculation
+						// Use a subquery to calculate reorder level and filter by it
+						$productQuery->whereRaw('(
+							SELECT COALESCE(SUM(inventory_items.quantity), 0)
+							FROM inventory_items 
+							WHERE inventory_items.product_id = products.id
+						) <= (
+							SELECT COALESCE(
+								(
+									SELECT (amc * 3) + buffer_stock
+									FROM (
+										SELECT 
+											AVG(quantity) as amc,
+											(MAX(quantity) - AVG(quantity)) * 3 as buffer_stock
+										FROM warehouse_amcs 
+										WHERE product_id = products.id 
+										AND quantity > 0
+										AND month_year >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+										GROUP BY product_id
+										HAVING COUNT(*) >= 3
+									) amc_calc
+								), 0
+							)
+						)');
 						break;
 					case 'out_of_stock':
 						// Products with total quantity = 0 (no items or all items have 0 quantity)
@@ -126,6 +191,14 @@ class InventoryController extends Controller
 						});
 						break;
 				}
+			}
+
+			// Apply status filtering after we have the status data
+			if ($request->filled('status')) {
+				$inventoriesData = $inventoriesData->filter(function($inventory) use ($request) {
+					$status = $inventory['status'];
+					return $status === $request->status;
+				});
 			}
 
 			// Replace the products collection with our filtered and transformed data
@@ -450,18 +523,11 @@ class InventoryController extends Controller
 
 		// Get products with inventory (for in stock calculation)
 		$productsWithInventory = $productQuery->whereHas('inventories.items', function($query) {
-			$query->where('inventory_items.quantity', '>', 0);
+			$query->where('inventory_items.quantity', '>=', 0);
 		})->count();
 
 		// Out of stock = total products - products with inventory
 		$statusCounts['out_of_stock'] = $totalProducts - $productsWithInventory;
-
-		// Log the calculation for debugging
-		Log::info('Status count calculation', [
-			'total_products' => $totalProducts,
-			'products_with_inventory' => $productsWithInventory,
-			'out_of_stock_calculated' => $statusCounts['out_of_stock']
-		]);
 
 		// For the remaining counts, get products that have inventory and calculate their status
 		$productsWithQuantity = $productQuery->whereHas('inventories.items', function($query) {
