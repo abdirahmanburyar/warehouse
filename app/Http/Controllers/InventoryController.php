@@ -113,7 +113,7 @@ class InventoryController extends Controller
 							
 						case 'low_stock_reorder_level':
 							if ($reorderLevel <= 0) return false;
-							return $totalQuantity > 0 && $totalQuantity <= $reorderLevel;
+							return $totalQuantity > 1 && $totalQuantity <= $reorderLevel;
 							
 						case 'out_of_stock':
 							return $totalQuantity <= 0;
@@ -198,8 +198,8 @@ class InventoryController extends Controller
 					// Calculate the low stock threshold (reorder level + 30%)
 					$lowStockThreshold = $reorderLevel * 1.3;
 					
-					if ($totalQuantity <= $reorderLevel) {
-						// Items at or below reorder level (1 to 9,000 in your example)
+					if ($totalQuantity > 1 && $totalQuantity <= $reorderLevel) {
+						// Items at or below reorder level but more than 1 (2 to 9,000 in your example)
 						$statusCounts[2]['count']++; // low_stock_reorder_level
 					} elseif ($totalQuantity <= $lowStockThreshold) {
 						// Items between reorder level and reorder level + 30% (9,001 to 11,700 in your example)
