@@ -808,6 +808,8 @@ onUnmounted(() => {
                 </div>
             </div>
 
+
+
             <!-- Table and Sidebar -->
             <div class="grid grid-cols-1 lg:grid-cols-8 gap-6">
                 <!-- Main Table -->
@@ -905,50 +907,54 @@ onUnmounted(() => {
                                 <template v-else v-for="inventory in props.inventories.data" :key="inventory.id">
                                     <!-- Show all products, but handle 0-quantity items differently -->
                                     <template v-if="inventory.items && inventory.items.length > 0">
-                                        <!-- Show items with quantity > 0 -->
-                                        <tr v-for="(item, itemIndex) in inventory.items.filter(item => (item.quantity || 0) > 0)"
+                                        <!-- Show all items including 0 quantity -->
+                                        <tr v-for="(item, itemIndex) in inventory.items"
                                             :key="`${inventory.id}-${item.id}`"
                                             class="hover:bg-gray-50 transition-colors duration-150 border-b items-center"
                                             style="border-bottom: 1px solid #B7C6E6;">
                                             <!-- Item Name - only on first row for this inventory -->
                                             <td v-if="itemIndex === 0"
-                                                :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
+                                                :rowspan="inventory.items.length"
                                                 class="px-3 py-2 text-xs font-medium text-gray-800 align-middle items-center">
                                                 {{ inventory.name }}</td>
 
                                             <!-- Category - only on first row for this inventory -->
                                             <td v-if="itemIndex === 0"
-                                                :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
+                                                :rowspan="inventory.items.length"
                                                 class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{
                                                     inventory.category?.name }}</td>
 
                                             <!-- UoM - only on first row for this inventory -->
                                             <td v-if="itemIndex === 0"
-                                                :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
+                                                :rowspan="inventory.items.length"
                                                 class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{
-                                                inventory.items[0].uom }}</td>
+                                                inventory.items[0]?.uom || 'No UoM' }}</td>
 
                                             <!-- QTY -->
                                             <td
-                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle"
+                                                :class="(item.quantity || 0) > 0 ? 'text-gray-900' : 'text-gray-400'">
                                                 {{ formatQty(item.quantity || 0) }}</td>
 
                                             <!-- Batch Number -->
                                             <td
-                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">
-                                                {{ item.batch_number }}</td>
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle"
+                                                :class="(item.quantity || 0) > 0 ? 'text-gray-900' : 'text-gray-400'">
+                                                {{ item.batch_number || 'No Batch' }}</td>
 
                                             <!-- Expiry Date -->
                                             <td
-                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">
-                                                {{ formatDate(item.expiry_date) }}</td>
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle"
+                                                :class="(item.quantity || 0) > 0 ? 'text-gray-900' : 'text-gray-400'">
+                                                {{ formatDate(item.expiry_date) || 'No Expiry' }}</td>
 
                                             <!-- Location -->
                                             <td
-                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-900">
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle"
+                                                :class="(item.quantity || 0) > 0 ? 'text-gray-900' : 'text-gray-400'">
                                                 <div class="flex items-center justify-center space-x-2">
-                                                    <span>{{ item.location }}</span>
-                                                    <button @click="openEditLocationModal(item, inventory)"
+                                                    <span>{{ item.location || 'No Location' }}</span>
+                                                    <button v-if="(item.quantity || 0) > 0" @click="openEditLocationModal(item, inventory)"
                                                         class="p-1 bg-green-50 text-green-600 hover:bg-green-100 rounded-full"
                                                         title="Edit Location">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
@@ -963,7 +969,7 @@ onUnmounted(() => {
 
                                             <!-- Total QTY on Hand - only on first row for this inventory -->
                                             <td v-if="itemIndex === 0"
-                                                :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
+                                                :rowspan="inventory.items.length"
                                                 class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                                 <div class="flex items-center justify-center">
                                                     <span class="font-medium text-lg">{{
@@ -973,7 +979,7 @@ onUnmounted(() => {
 
                                             <!-- Status - only on first row for this inventory -->
                                             <td v-if="itemIndex === 0"
-                                                :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
+                                                :rowspan="inventory.items.length"
                                                 class="px-3 py-2 text-xs text-gray-800 text-center align-middle">
                                                 <div class="flex items-center justify-center space-x-2 w-full">
                                                     <!-- Main status icon -->
@@ -1026,7 +1032,7 @@ onUnmounted(() => {
 
                                             <!-- Reorder Level - only on first row for this inventory -->
                                             <td v-if="itemIndex === 0"
-                                                :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
+                                                :rowspan="inventory.items.length"
                                                 class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                                 <div class="flex flex-col items-center space-y-1">
                                                     <div class="font-medium">{{ formatQty(inventory.reorder_level || 0) }}</div>
@@ -1035,7 +1041,7 @@ onUnmounted(() => {
 
                                             <!-- Actions - only on first row for this inventory -->
                                             <td v-if="itemIndex === 0"
-                                                :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
+                                                :rowspan="inventory.items.length"
                                                 class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                                 <div class="flex flex-col items-center justify-center space-y-2">
                                                     <!-- Reorder Button for Low Stock, Reorder Level, and Out of Stock Items -->

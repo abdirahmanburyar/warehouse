@@ -42,27 +42,6 @@ class InventoryController extends Controller
 					'category:id,name',
 					'dosage:id,name',
 					'items.warehouse:id,name'
-				])
-				->addSelect([
-					'reorder_level' => DB::raw('(
-						SELECT CASE 
-							WHEN COUNT(CASE WHEN wa.quantity > 0 THEN 1 END) < 3 THEN 0
-							ELSE ROUND(
-								(AVG(wa.quantity) * 3) + ((MAX(wa.quantity) - AVG(wa.quantity)) * 3), 
-								2
-							)
-							END
-						FROM warehouse_amcs wa
-						WHERE wa.product_id = products.id
-					)'),
-					'amc' => DB::raw('(
-						SELECT CASE 
-							WHEN COUNT(CASE WHEN wa.quantity > 0 THEN 1 END) < 3 THEN 0
-							ELSE ROUND(AVG(wa.quantity), 2)
-							END
-						FROM warehouse_amcs wa
-						WHERE wa.product_id = products.id
-					)')
 				]);
 	
 			// Apply filters
@@ -143,15 +122,23 @@ class InventoryController extends Controller
 				}
 			}
 	
-			// Paginate
+						// Paginate
 			$products = $productQuery->paginate(
 				$request->input('per_page', 25),
 				['*'],
 				'page',
 				$request->input('page', 1)
 			)->withQueryString();
-	
+
 			$products->setPath(url()->current());
+			
+			// Add reorder_level and amc to each product using the Product model methods
+			$products->getCollection()->transform(function ($product) {
+				$metrics = $product->calculateInventoryMetrics();
+				$product->reorder_level = $metrics['reorder_level'];
+				$product->amc = $metrics['amc'];
+				return $product;
+			});
 	
 
 	
