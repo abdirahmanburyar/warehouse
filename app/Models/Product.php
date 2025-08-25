@@ -574,20 +574,33 @@ class Product extends Model
         $metrics = $this->calculateInventoryMetrics();
         
         // Calculate the current status based on total quantity and reorder level
+        // EXACTLY matching the frontend getInventoryStatus logic
         $totalQuantity = $inventoryItems->sum('quantity');
         $reorderLevel = $metrics['reorder_level'];
         
         $status = 'in_stock'; // default
+        
+        // Check if completely out of stock first
         if ($totalQuantity <= 0) {
             $status = 'out_of_stock';
-        } elseif ($reorderLevel > 0 && $totalQuantity <= $reorderLevel) {
-            // Items at or below reorder level (1 to 9,000 in your example)
-            $status = 'low_stock_reorder_level';
-        } elseif ($reorderLevel > 0 && $totalQuantity <= ($reorderLevel * 1.3)) {
-            // Items between reorder level and reorder level + 30% (9,001 to 11,700 in your example)
-            $status = 'low_stock';
+        } elseif ($reorderLevel <= 0) {
+            // No reorder level set, default to in stock
+            $status = 'in_stock';
+        } else {
+            // Calculate the low stock threshold (reorder level + 30%)
+            $lowStockThreshold = $reorderLevel * 1.3;
+            
+            if ($totalQuantity <= $reorderLevel) {
+                // Items at or below reorder level (1 to 9,000 in your example)
+                $status = 'low_stock_reorder_level';
+            } elseif ($totalQuantity <= $lowStockThreshold) {
+                // Items between reorder level and reorder level + 30% (9,001 to 11,700 in your example)
+                $status = 'low_stock';
+            } else {
+                // Items above reorder level + 30% (above 11,700 in your example)
+                $status = 'in_stock';
+            }
         }
-        // else: in_stock (above reorder level + 30%)
         
         return [
             'id' => $this->id,

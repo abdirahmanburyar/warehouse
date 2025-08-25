@@ -164,52 +164,67 @@ class InventoryController extends Controller
 				]
 			];
 
-			// Use a single optimized query to get all products with their total quantities and reorder levels
+			// Use a simpler, faster approach - get quantities first, then calculate reorder levels in batches
 			$allProductsData = DB::table('products')
 				->leftJoin('inventory_items', 'products.id', '=', 'inventory_items.product_id')
 				->select(
 					'products.id',
-					DB::raw('COALESCE(SUM(inventory_items.quantity), 0) as total_quantity'),
-					DB::raw('(
-						SELECT COALESCE(
-							(
-								SELECT (amc * 3) + buffer_stock
-								FROM (
-									SELECT 
-										AVG(quantity) as amc,
-										(MAX(quantity) - AVG(quantity)) * 3 as buffer_stock
-									FROM warehouse_amcs 
-									WHERE product_id = products.id 
-									AND quantity > 0
-									AND month_year >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-									GROUP BY product_id
-									HAVING COUNT(*) >= 3
-								) amc_calc
-							), 0
-						)
-					) as reorder_level')
+					DB::raw('COALESCE(SUM(inventory_items.quantity), 0) as total_quantity')
 				)
 				->groupBy('products.id')
 				->get();
 
-			// Calculate status counts from the optimized query results
+			// Get reorder levels in a separate, optimized query
+			$reorderLevels = DB::table('warehouse_amcs')
+				->select(
+					'product_id',
+					DB::raw('AVG(quantity) as amc'),
+					DB::raw('(MAX(quantity) - AVG(quantity)) * 3 as buffer_stock')
+				)
+				->where('quantity', '>', 0)
+				->where('month_year', '>=', DB::raw('DATE_SUB(NOW(), INTERVAL 6 MONTH)'))
+				->groupBy('product_id')
+				->havingRaw('COUNT(*) >= 3')
+				->get()
+				->keyBy('product_id');
+
+			// Calculate status counts efficiently
 			foreach ($allProductsData as $product) {
 				$totalQuantity = (float) $product->total_quantity;
-				$reorderLevel = (float) $product->reorder_level;
 				
+				// Get reorder level from the pre-calculated data
+				$reorderLevel = 0;
+				if ($reorderLevels->has($product->id)) {
+					$amcData = $reorderLevels->get($product->id);
+					$reorderLevel = ($amcData->amc * 3) + $amcData->buffer_stock;
+				}
+				
+				// Check if completely out of stock first
 				if ($totalQuantity <= 0) {
 					$statusCounts[3]['count']++; // out_of_stock (index 3)
-				} elseif ($reorderLevel > 0 && $totalQuantity <= $reorderLevel) {
-					// Items at or below reorder level (1 to 9,000 in your example)
-					$statusCounts[2]['count']++; // low_stock_reorder_level (index 2)
-				} elseif ($reorderLevel > 0 && $totalQuantity <= ($reorderLevel * 1.3)) {
-					// Items between reorder level and reorder level + 30% (9,001 to 11,700 in your example)
-					$statusCounts[1]['count']++; // low_stock (index 1)
-				} else {
-					// Items above reorder level + 30% (above 11,700 in your example)
+				} elseif ($reorderLevel <= 0) {
+					// No reorder level set, default to in stock
 					$statusCounts[0]['count']++; // in_stock (index 0)
+				} else {
+					// Calculate the low stock threshold (reorder level + 30%)
+					$lowStockThreshold = $reorderLevel * 1.3;
+					
+					if ($totalQuantity <= $reorderLevel) {
+						// Items at or below reorder level (1 to 9,000 in your example)
+						$statusCounts[2]['count']++; // low_stock_reorder_level (index 2)
+					} elseif ($totalQuantity <= $lowStockThreshold) {
+						// Items between reorder level and reorder level + 30% (9,001 to 11,700 in your example)
+						$statusCounts[1]['count']++; // low_stock (index 1)
+					} else {
+						// Items above reorder level + 30% (above 11,700 in your example)
+						$statusCounts[0]['count']++; // in_stock (index 0)
+					}
 				}
 			}
+
+
+
+
 
 			return Inertia::render('Inventory/Index', [
 				'inventories' => InventoryResource::collection($products),  // Pass products directly with subquery data
