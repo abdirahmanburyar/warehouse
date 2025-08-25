@@ -71,56 +71,8 @@ class InventoryController extends Controller
 				$productQuery->whereHas('items.warehouse', fn($q) => $q->where('name', $request->warehouse));
 			}
 	
-			// Status filter using same formula
-			if ($request->filled('status')) {
-				switch ($request->status) {
-					case 'in_stock':
-						$productQuery->whereHas('items', fn($q) => $q->where('quantity', '>', 0));
-						break;
-	
-					case 'low_stock':
-						$productQuery->whereRaw('
-							(
-								SELECT COALESCE(SUM(ii.quantity), 0)
-								FROM inventory_items ii
-								WHERE ii.product_id = products.id
-							) <= (
-								SELECT COALESCE((
-									SELECT ((AVG(wa.quantity) * 3) + ((MAX(wa.quantity) - AVG(wa.quantity)) * 3)) * 1.3
-									FROM warehouse_amcs wa
-									WHERE wa.product_id = products.id
-									AND wa.quantity > 0
-									AND wa.month_year >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-									HAVING COUNT(*) >= 3
-								), 0)
-							)
-						');
-						break;
-	
-					case 'low_stock_reorder_level':
-						$productQuery->whereRaw('
-							(
-								SELECT COALESCE(SUM(ii.quantity), 0)
-								FROM inventory_items ii
-								WHERE ii.product_id = products.id
-							) <= (
-								SELECT COALESCE((
-									SELECT (AVG(wa.quantity) * 3) + ((MAX(wa.quantity) - AVG(wa.quantity)) * 3)
-									FROM warehouse_amcs wa
-									WHERE wa.product_id = products.id
-									AND wa.quantity > 0
-									AND wa.month_year >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-									HAVING COUNT(*) >= 3
-								), 0)
-							)
-						');
-						break;
-	
-					case 'out_of_stock':
-						$productQuery->whereDoesntHave('items', fn($q) => $q->where('quantity', '>', 0));
-						break;
-				}
-			}
+			// Status filter - will be applied after data is loaded
+			$statusFilter = $request->filled('status') ? $request->status : null;
 	
 						// Paginate
 			$products = $productQuery->paginate(
@@ -139,6 +91,42 @@ class InventoryController extends Controller
 				$product->amc = $metrics['amc'];
 				return $product;
 			});
+			
+			// Apply status filter after data is loaded and calculated
+			if ($statusFilter) {
+				$filteredCollection = $products->getCollection()->filter(function ($product) use ($statusFilter) {
+					$totalQuantity = $product->items->sum('quantity');
+					$reorderLevel = $product->reorder_level;
+					
+					switch ($statusFilter) {
+						case 'in_stock':
+							if ($reorderLevel <= 0) {
+								return $totalQuantity > 0;
+							}
+							$lowStockThreshold = $reorderLevel * 1.3;
+							return $totalQuantity > $lowStockThreshold;
+							
+						case 'low_stock':
+							if ($reorderLevel <= 0) return false;
+							$lowStockThreshold = $reorderLevel * 1.3;
+							return $totalQuantity > $reorderLevel && $totalQuantity <= $lowStockThreshold;
+							
+						case 'low_stock_reorder_level':
+							if ($reorderLevel <= 0) return false;
+							return $totalQuantity > 0 && $totalQuantity <= $reorderLevel;
+							
+						case 'out_of_stock':
+							return $totalQuantity <= 0;
+							
+						default:
+							return true;
+					}
+				});
+				
+				// Update the collection and pagination
+				$products->setCollection($filteredCollection);
+				$products->setTotal($filteredCollection->count());
+			}
 	
 
 	
