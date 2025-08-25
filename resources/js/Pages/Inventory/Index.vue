@@ -553,6 +553,23 @@ function needsReorder(inventory) {
     return status === 'low_stock_reorder_level' || status === 'low_stock' || status === 'out_of_stock';
 }
 
+// Test status filter functionality
+function testStatusFilter() {
+    console.log('🔍 Testing Status Filter...');
+    console.log('Selected Status:', status.value);
+    console.log('Total Inventories:', props.inventories?.data?.length || 0);
+    
+    if (status.value) {
+        const filteredItems = props.inventories?.data?.filter(item => getInventoryStatus(item) === status.value) || [];
+        console.log('Filtered Items Count:', filteredItems.length);
+        console.log('Filtered Items:', filteredItems.map(item => ({
+            name: item.product?.name || item.name,
+            status: getInventoryStatus(item),
+            totalQuantity: getTotalQuantity(item)
+        })));
+    }
+}
+
 // Computed properties for inventory status counts
 const inStockCount = computed(() => {
     if (!props.inventoryStatusCounts || !Array.isArray(props.inventoryStatusCounts)) return 0;
@@ -690,11 +707,11 @@ onUnmounted(() => {
                     <div class="col-span-1 min-w-0">
                         <select v-model="status"
                             class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="">All Statuses</option>
-                            <option value="in_stock">In Stock</option>
-                            <option value="low_stock">Low Stock</option>
-                            <option value="low_stock_reorder_level">Low Stock + Reorder Level</option>
-                            <option value="out_of_stock">Out of Stock</option>
+                            <option value="">All Statuses ({{ props.inventories?.data?.length || 0 }})</option>
+                            <option value="in_stock">In Stock ({{ inStockCount }})</option>
+                            <option value="low_stock">Low Stock ({{ lowStockCount }})</option>
+                            <option value="low_stock_reorder_level">Low Stock + Reorder Level ({{ lowStockReorderLevelCount }})</option>
+                            <option value="out_of_stock">Out of Stock ({{ outOfStockCount }})</option>
                         </select>
                     </div>
                 </div>
@@ -847,7 +864,7 @@ onUnmounted(() => {
                             </div>
                             <div>
                                 <span class="font-medium text-blue-600">Reorder Level:</span>
-                                <span class="ml-2 text-blue-800">{{ reorderLevelCount }}</span>
+                                <span class="ml-2 text-gray-800">{{ reorderLevelCount }}</span>
                             </div>
                             <div>
                                 <span class="font-medium text-blue-600">Low Stock + Reorder:</span>
@@ -860,6 +877,39 @@ onUnmounted(() => {
                         </div>
                         <div class="mt-2 text-xs text-blue-600">
                             <span class="font-medium">Raw Data:</span> {{ JSON.stringify(props.inventoryStatusCounts) }}
+                        </div>
+                    </div>
+                    
+                    <!-- Status Filter Debug -->
+                    <div class="mt-4 p-3 bg-green-50 rounded border border-green-200">
+                        <h5 class="text-sm font-medium text-green-700 mb-2">Status Filter Debug</h5>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                            <div>
+                                <span class="font-medium text-green-600">Selected Status:</span>
+                                <span class="ml-2 text-green-800">{{ status || 'None' }}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium text-green-600">Filter Applied:</span>
+                                <span class="ml-2 text-green-800">{{ status ? 'Yes' : 'No' }}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium text-green-600">Total Items:</span>
+                                <span class="ml-2 text-green-800">{{ props.inventories?.data?.length || 0 }}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium text-green-600">Filtered Items:</span>
+                                <span class="ml-2 text-green-800">{{ props.inventories?.data?.filter(item => getInventoryStatus(item) === status)?.length || 0 }}</span>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex gap-2">
+                            <button @click="testStatusFilter" 
+                                class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
+                                Test Status Filter
+                            </button>
+                            <button @click="console.log('Status Filter Debug:', { status: status.value, inventories: props.inventories?.data })" 
+                                class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
+                                Log Data
+                            </button>
                         </div>
                     </div>
                     
