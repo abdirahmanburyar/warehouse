@@ -36,258 +36,208 @@ class InventoryController extends Controller
 	public function index(Request $request)
 	{
 		try {
-			// Get ALL products (including those without inventory) with their relationships
+			// Base query with relationships
 			$productQuery = Product::query()
 				->with([
 					'category:id,name',
 					'dosage:id,name',
-					'items.warehouse:id,name'  // Direct relationship with InventoryItem
+					'items.warehouse:id,name'
+				])
+				->addSelect([
+					'reorder_level' => DB::raw('(
+						SELECT CASE 
+							WHEN COUNT(CASE WHEN wa.quantity > 0 THEN 1 END) < 3 THEN 0
+							ELSE ROUND(
+								(AVG(wa.quantity) * 3) + ((MAX(wa.quantity) - AVG(wa.quantity)) * 3), 
+								2
+							)
+							END
+						FROM warehouse_amcs wa
+						WHERE wa.product_id = products.id
+					)'),
+					'amc' => DB::raw('(
+						SELECT CASE 
+							WHEN COUNT(CASE WHEN wa.quantity > 0 THEN 1 END) < 3 THEN 0
+							ELSE ROUND(AVG(wa.quantity), 2)
+							END
+						FROM warehouse_amcs wa
+						WHERE wa.product_id = products.id
+					)')
 				]);
-
-            // reorder level calculation will be here
-
-			// Apply search filter
+	
+			// Apply filters
 			if ($request->filled('search')) {
 				$search = $request->search;
 				$productQuery->where(function($q) use ($search) {
 					$q->where('products.name', 'like', "%{$search}%")
 					  ->orWhereHas('items', function($sub) use ($search) {
-						  $sub->where(function($w) use ($search){
+						  $sub->where(function($w) use ($search) {
 							  $w->where('barcode', 'like', "%{$search}%")
 								->orWhere('batch_number', 'like', "%{$search}%");
 						  });
 					  });
 				});
 			}
-
-			// Apply category filter
+	
 			if ($request->filled('category')) {
 				$productQuery->whereHas('category', fn($q) => $q->where('name', $request->category));
 			}
-
-			// Apply dosage filter
 			if ($request->filled('dosage')) {
 				$productQuery->whereHas('dosage', fn($q) => $q->where('name', $request->dosage));
 			}
-
-			// Apply location filter
 			if ($request->filled('location')) {
 				$productQuery->whereHas('items', fn($q) => $q->where('location', $request->location));
 			}
-
-			// Apply warehouse filter
 			if ($request->filled('warehouse')) {
 				$productQuery->whereHas('items.warehouse', fn($q) => $q->where('name', $request->warehouse));
 			}
-
-			// Apply status filter
-			// Apply status filter
+	
+			// Status filter using same formula
 			if ($request->filled('status')) {
 				switch ($request->status) {
 					case 'in_stock':
-						// Products with total quantity > 0
 						$productQuery->whereHas('items', fn($q) => $q->where('quantity', '>', 0));
 						break;
+	
 					case 'low_stock':
-						// Products where quantity is between reorder level and reorder level + 30%
-						$productQuery->whereRaw('(
-							SELECT COALESCE(SUM(inventory_items.quantity), 0)
-							FROM inventory_items 
-							WHERE inventory_items.product_id = products.id
-						) > (
-							SELECT COALESCE(
-								(
-									SELECT (amc * 3) + buffer_stock
-									FROM (
-										SELECT 
-											AVG(quantity) as amc,
-											(MAX(quantity) - AVG(quantity)) * 3 as buffer_stock
-										FROM warehouse_amcs 
-										WHERE product_id = products.id 
-										AND quantity > 0
-										AND month_year >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-										GROUP BY product_id
-										HAVING COUNT(*) >= 3
-									) amc_calc
-								), 0
+						$productQuery->whereRaw('
+							(
+								SELECT COALESCE(SUM(ii.quantity), 0)
+								FROM inventory_items ii
+								WHERE ii.product_id = products.id
+							) <= (
+								SELECT COALESCE((
+									SELECT ((AVG(wa.quantity) * 3) + ((MAX(wa.quantity) - AVG(wa.quantity)) * 3)) * 1.3
+									FROM warehouse_amcs wa
+									WHERE wa.product_id = products.id
+									AND wa.quantity > 0
+									AND wa.month_year >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+									HAVING COUNT(*) >= 3
+								), 0)
 							)
-						) AND (
-							SELECT COALESCE(SUM(inventory_items.quantity), 0)
-							FROM inventory_items 
-							WHERE inventory_items.product_id = products.id
-						) <= (
-							SELECT COALESCE(
-								(
-									SELECT (amc * 3) + buffer_stock
-									FROM (
-										SELECT 
-											AVG(quantity) as amc,
-											(MAX(quantity) - AVG(quantity)) * 3 as buffer_stock
-										FROM warehouse_amcs 
-										WHERE product_id = products.id 
-										AND quantity > 0
-										AND month_year >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-										GROUP BY product_id
-										HAVING COUNT(*) >= 3
-									) amc_calc
-								), 0
-							) * 1.3
-						)');
+						');
 						break;
+	
 					case 'low_stock_reorder_level':
-						// Products where quantity <= reorder level
-						// Use a subquery to calculate reorder level and filter by it
-						$productQuery->whereRaw('(
-							SELECT COALESCE(SUM(inventory_items.quantity), 0)
-							FROM inventory_items 
-							WHERE inventory_items.product_id = products.id
-						) <= (
-							SELECT COALESCE(
-								(
-									SELECT (amc * 3) + buffer_stock
-									FROM (
-										SELECT 
-											AVG(quantity) as amc,
-											(MAX(quantity) - AVG(quantity)) * 3 as buffer_stock
-										FROM warehouse_amcs 
-										WHERE product_id = products.id 
-										AND quantity > 0
-										AND month_year >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-										GROUP BY product_id
-										HAVING COUNT(*) >= 3
-									) amc_calc
-								), 0
+						$productQuery->whereRaw('
+							(
+								SELECT COALESCE(SUM(ii.quantity), 0)
+								FROM inventory_items ii
+								WHERE ii.product_id = products.id
+							) <= (
+								SELECT COALESCE((
+									SELECT (AVG(wa.quantity) * 3) + ((MAX(wa.quantity) - AVG(wa.quantity)) * 3)
+									FROM warehouse_amcs wa
+									WHERE wa.product_id = products.id
+									AND wa.quantity > 0
+									AND wa.month_year >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+									HAVING COUNT(*) >= 3
+								), 0)
 							)
-						)');
+						');
 						break;
+	
 					case 'out_of_stock':
-						// Products with total quantity = 0 (no items or all items have 0 quantity)
 						$productQuery->whereDoesntHave('items', fn($q) => $q->where('quantity', '>', 0));
 						break;
 				}
 			}
+	
+			// Paginate
+			$products = $productQuery->paginate(
+				$request->input('per_page', 25),
+				['*'],
+				'page',
+				$request->input('page', 1)
+			)->withQueryString();
+	
+			$products->setPath(url()->current());
+	
 
-			// Paginate products
-			$products = $productQuery->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
-            ->withQueryString();
-            $products->setPath(url()->current()); // Force Laravel to use full URLs
-
-			// Transform products using the accessor method to get inventory structure with calculated AMC
-			$inventoriesData = $products->getCollection()->map(function($product) {
-				return $product->inventory_structure;
-			});
-
-			// Apply status filtering after transformation
-			if ($request->filled('status')) {
-				switch ($request->status) {
-					case 'low_stock':
-						$inventoriesData = $inventoriesData->filter(function($inventory) {
-							return $inventory['status'] === 'low_stock';
-						});
-						break;
-					case 'low_stock_reorder_level':
-						$inventoriesData = $inventoriesData->filter(function($inventory) {
-							return $inventory['status'] === 'low_stock_reorder_level';
-						});
-						break;
-				}
-			}
-
-			// Apply status filtering after we have the status data
-			if ($request->filled('status')) {
-				$inventoriesData = $inventoriesData->filter(function($inventory) use ($request) {
-					$status = $inventory['status'];
-					return $status === $request->status;
-				});
-			}
-
-			// Replace the products collection with our filtered and transformed data
-			$products->setCollection($inventoriesData);
-
-			// Get filter options
+	
+			// Filters data
 			$categories = Category::orderBy('name')->pluck('name')->toArray();
 			$dosages = Dosage::orderBy('name')->pluck('name')->toArray();
 			$locations = Location::orderBy('location')->pluck('location')->toArray();
 			$warehouses = Warehouse::orderBy('name')->pluck('name')->toArray();
-
-			// Ensure all are arrays and not empty
-			$categories = is_array($categories) ? $categories : [];
-			$dosages = is_array($dosages) ? $dosages : [];
-			$locations = is_array($locations) ? $locations : [];
-			$warehouses = is_array($warehouses) ? $warehouses : [];
-
-			// Calculate inventory status counts efficiently for ALL products
-			// Array indices: 0=in_stock, 1=low_stock, 2=low_stock_reorder_level, 3=out_of_stock
+	
+			// Status counts
 			$statusCounts = [
-				[
-					'status' => 'in_stock',
-					'count' => 0
-				],
-				[
-					'status' => 'low_stock',
-					'count' => 0
-				],
-				[
-					'status' => 'low_stock_reorder_level',
-					'count' => 0
-				],
-				[
-					'status' => 'out_of_stock',
-					'count' => 0
-				]
+				[ 'status' => 'in_stock', 'count' => 0 ],
+				[ 'status' => 'low_stock', 'count' => 0 ],
+				[ 'status' => 'low_stock_reorder_level', 'count' => 0 ],
+				[ 'status' => 'out_of_stock', 'count' => 0 ],
 			];
-
-			$allProductsData = DB::table('products')
+	
+			// Use optimized database queries to calculate status counts
+			// Get total quantities for all products in one query
+			$quantities = DB::table('products')
 				->leftJoin('inventory_items', 'products.id', '=', 'inventory_items.product_id')
-				->select(
-					'products.id',
-					DB::raw('COALESCE(SUM(inventory_items.quantity), 0) as total_quantity')
-				)
+				->select('products.id', DB::raw('COALESCE(SUM(inventory_items.quantity), 0) as total_quantity'))
 				->groupBy('products.id')
-				->get();
-
-			$reorderLevels = DB::table('warehouse_amcs')
-				->select(
-					'product_id',
-					DB::raw('AVG(quantity) as amc'),
-					DB::raw('(MAX(quantity) - AVG(quantity)) * 3 as buffer_stock')
-				)
-				->where('quantity', '>', 0)
-				->where('month_year', '>=', DB::raw('DATE_SUB(NOW(), INTERVAL 6 MONTH)'))
-				->groupBy('product_id')
-				->havingRaw('COUNT(*) >= 3')
 				->get()
-				->keyBy('product_id');
+				->keyBy('id');
+			
+			// Get reorder levels for all products using a simpler approach
+			$reorderLevels = DB::table('products')
+				->leftJoin('warehouse_amcs', 'products.id', '=', 'warehouse_amcs.product_id')
+				->select('products.id')
+				->selectRaw('
+					CASE 
+						WHEN COUNT(CASE WHEN warehouse_amcs.quantity > 0 THEN 1 END) < 3 THEN 0
+						ELSE (
+							SELECT ROUND(
+								(AVG(quantity) * 3) + ((MAX(quantity) - AVG(quantity)) * 3), 
+								2
+							)
+							FROM (
+								SELECT quantity
+								FROM warehouse_amcs wa2 
+								WHERE wa2.product_id = products.id 
+								AND wa2.quantity > 0
+								ORDER BY month_year DESC
+								LIMIT 10
+							) as recent_consumption
+						)
+					END as reorder_level
+				')
+				->groupBy('products.id')
+				->get()
+				->keyBy('id');
+	
 
-			foreach ($allProductsData as $product) {
-				$totalQuantity = (float) $product->total_quantity;
+	
+			// Calculate status counts using the pre-calculated data
+			foreach ($quantities as $productId => $quantityData) {
+				$totalQuantity = $quantityData->total_quantity;
+				$reorderLevel = $reorderLevels->get($productId)?->reorder_level ?? 0;
 				
-				$reorderLevel = 0;
-				if ($reorderLevels->has($product->id)) {
-					$amcData = $reorderLevels->get($product->id);
-					$reorderLevel = ($amcData->amc * 3) + $amcData->buffer_stock;
-				}
+
 				
 				if ($totalQuantity <= 0) {
-					$statusCounts[3]['count']++;
+					$statusCounts[3]['count']++; // out_of_stock
 				} elseif ($reorderLevel <= 0) {
-					$statusCounts[0]['count']++;
+					// No reorder level set, default to in stock
+					$statusCounts[0]['count']++; // in_stock
 				} else {
+					// Calculate the low stock threshold (reorder level + 30%)
 					$lowStockThreshold = $reorderLevel * 1.3;
 					
 					if ($totalQuantity <= $reorderLevel) {
-						$statusCounts[2]['count']++;
+						// Items at or below reorder level (1 to 9,000 in your example)
+						$statusCounts[2]['count']++; // low_stock_reorder_level
 					} elseif ($totalQuantity <= $lowStockThreshold) {
-						$statusCounts[1]['count']++;
+						// Items between reorder level and reorder level + 30% (9,001 to 11,700 in your example)
+						$statusCounts[1]['count']++; // low_stock
 					} else {
-						$statusCounts[0]['count']++;
+						// Items above reorder level + 30% (above 11,700 in your example)
+						$statusCounts[0]['count']++; // in_stock
 					}
 				}
 			}
-
-
+	
 			return Inertia::render('Inventory/Index', [
-				'inventories' => InventoryResource::collection($products),  // Pass products directly with subquery data
+				'inventories' => InventoryResource::collection($products),
 				'inventoryStatusCounts' => $statusCounts,
 				'filters' => $request->only(['search', 'per_page', 'page', 'category', 'dosage', 'status', 'location', 'warehouse']),
 				'category' => $categories,
@@ -295,16 +245,16 @@ class InventoryController extends Controller
 				'locations' => $locations,
 				'warehouses' => $warehouses,
 			]);
-
+	
 		} catch (\Exception $e) {
 			Log::error('[INVENTORY-ERROR] Error in index method: ' . $e->getMessage(), [
 				'exception' => $e,
 				'request' => $request->all()
 			]);
-
+	
 			return back()->withErrors(['error' => 'An error occurred while loading inventory data.']);
 		}
-	}
+	}	
 
 	/**
 	 * Apply status filter to the product query

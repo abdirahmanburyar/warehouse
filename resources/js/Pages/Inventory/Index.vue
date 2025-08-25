@@ -914,13 +914,13 @@ onUnmounted(() => {
                                             <td v-if="itemIndex === 0"
                                                 :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
                                                 class="px-3 py-2 text-xs font-medium text-gray-800 align-middle items-center">
-                                                {{ inventory.product?.name || inventory.name }}</td>
+                                                {{ inventory.name }}</td>
 
                                             <!-- Category - only on first row for this inventory -->
                                             <td v-if="itemIndex === 0"
                                                 :rowspan="inventory.items.filter(item => (item.quantity || 0) > 0).length"
                                                 class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{
-                                                    inventory.product?.category?.name || inventory.category?.name }}</td>
+                                                    inventory.category?.name }}</td>
 
                                             <!-- UoM - only on first row for this inventory -->
                                             <td v-if="itemIndex === 0"
@@ -1063,11 +1063,11 @@ onUnmounted(() => {
                                             <!-- Item Name -->
                                             <td
                                                 class="px-3 py-2 text-xs font-medium text-gray-800 align-middle items-center">
-                                                {{ inventory.product?.name || inventory.name }}</td>
+                                                {{ inventory.name }}</td>
 
                                             <!-- Category -->
                                             <td class="px-3 py-2 text-xs text-gray-700 align-middle items-center">{{
-                                                inventory.product?.category?.name || inventory.category?.name }}</td>
+                                                inventory.category?.name }}</td>
 
                                             <!-- UoM -->
                                             <td class="px-3 py-2 text-xs text-gray-700 align-middle items-center">
