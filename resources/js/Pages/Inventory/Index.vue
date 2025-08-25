@@ -507,14 +507,17 @@ const getInventoryStatus = (inventory) => {
         return 'in_stock';
     }
     
+    // Calculate the low stock threshold (reorder level + 30%)
+    const lowStockThreshold = reorderLevel * 1.3;
+    
     if (totalQuantity <= reorderLevel) {
-        // At or below reorder level - this is BOTH low stock AND reorder level
+        // Items at or below reorder level (1 to 9,000 in your example)
         return 'low_stock_reorder_level';
-    } else if (totalQuantity <= (reorderLevel * 1.3)) {
-        // Between reorder level and reorder level + 30% - low stock only
+    } else if (totalQuantity <= lowStockThreshold) {
+        // Items between reorder level and reorder level + 30% (9,001 to 11,700 in your example)
         return 'low_stock';
     } else {
-        // Above reorder level + 30% - in stock, no reorder needed
+        // Items above reorder level + 30% (above 11,700 in your example)
         return 'in_stock';
     }
 };
@@ -578,6 +581,7 @@ function validateStatusCalculations() {
         inStock: inStockCount.value,
         lowStock: lowStockCount.value,
         lowStockReorderLevel: lowStockReorderLevelCount.value,
+        combinedReorderLevel: combinedReorderLevelCount.value,
         outOfStock: outOfStockCount.value,
         totalNeedsReorder: totalNeedsReorderCount.value,
         totalItems: (inStockCount.value + lowStockCount.value + lowStockReorderLevelCount.value + outOfStockCount.value)
@@ -622,33 +626,51 @@ const lowStockCount = computed(() => {
     return stat ? stat.count : 0;
 });
 
-const reorderLevelCount = computed(() => {
-    if (!props.inventoryStatusCounts || !Array.isArray(props.inventoryStatusCounts)) return 0;
-    const stat = props.inventoryStatusCounts.find(s => s.status === 'reorder_level');
-    return stat ? stat.count : 0;
-});
-
 const lowStockReorderLevelCount = computed(() => {
     if (!props.inventoryStatusCounts || !Array.isArray(props.inventoryStatusCounts)) return 0;
     const stat = props.inventoryStatusCounts.find(s => s.status === 'low_stock_reorder_level');
     return stat ? stat.count : 0;
 });
 
-// Combined count for Low Stock + Reorder Level (items that are both low stock AND at reorder level)
-const combinedLowStockReorderLevelCount = computed(() => {
-    return lowStockCount.value + lowStockReorderLevelCount.value;
-});
 
-const reorderLevelOnlyCount = computed(() => {
-    if (!props.inventoryStatusCounts || !Array.isArray(props.inventoryStatusCounts)) return 0;
-    const stat = props.inventoryStatusCounts.find(s => s.status === 'reorder_level');
-    return stat ? stat.count : 0;
-});
+
+
+
+
 
 const outOfStockCount = computed(() => {
     if (!props.inventoryStatusCounts || !Array.isArray(props.inventoryStatusCounts)) return 0;
     const stat = props.inventoryStatusCounts.find(s => s.status === 'out_of_stock');
     return stat ? stat.count : 0;
+});
+
+// Combined count for debugging - shows both old and new status names
+const combinedReorderLevelCount = computed(() => {
+    if (!props.inventoryStatusCounts || !Array.isArray(props.inventoryStatusCounts)) return 0;
+    const reorderLevel = props.inventoryStatusCounts.find(s => s.status === 'low_stock_reorder_level')?.count || 0;
+    const lowStockReorderLevel = props.inventoryStatusCounts.find(s => s.status === 'low_stock_reorder_level')?.count || 0;
+    return reorderLevel + lowStockReorderLevel;
+});
+
+// Calculate counts directly from inventory data for accuracy
+const calculatedInStockCount = computed(() => {
+    if (!props.inventories?.data || !Array.isArray(props.inventories.data)) return 0;
+    return props.inventories.data.filter(inventory => getInventoryStatus(inventory) === 'in_stock').length;
+});
+
+const calculatedLowStockCount = computed(() => {
+    if (!props.inventories?.data || !Array.isArray(props.inventories.data)) return 0;
+    return props.inventories.data.filter(inventory => getInventoryStatus(inventory) === 'low_stock').length;
+});
+
+const calculatedReorderLevelCount = computed(() => {
+    if (!props.inventories?.data || !Array.isArray(props.inventories.data)) return 0;
+    return props.inventories.data.filter(inventory => getInventoryStatus(inventory) === 'low_stock_reorder_level').length;
+});
+
+const calculatedOutOfStockCount = computed(() => {
+    if (!props.inventories?.data || !Array.isArray(props.inventories.data)) return 0;
+    return props.inventories.data.filter(inventory => getInventoryStatus(inventory) === 'out_of_stock').length;
 });
 
 // Total count of all items that need reordering - from backend data
@@ -901,27 +923,31 @@ onUnmounted(() => {
                     
                     <!-- Status Counts Debug -->
                     <div class="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-                        <h5 class="text-sm font-medium text-blue-700 mb-2">Status Counts Debug (Backend Data)</h5>
+                        <h5 class="text-sm font-medium text-blue-700 mb-2">Status Counts Debug</h5>
                         <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
                             <div>
                                 <span class="font-medium text-blue-600">In Stock:</span>
-                                <span class="ml-2 text-blue-800">{{ inStockCount }}</span>
+                                <span class="ml-2 text-blue-800">{{ calculatedInStockCount }}</span>
+                                <span class="ml-1 text-gray-500">(Backend: {{ inStockCount }})</span>
                             </div>
                             <div>
                                 <span class="font-medium text-blue-600">Low Stock:</span>
-                                <span class="ml-2 text-blue-800">{{ lowStockCount }}</span>
+                                <span class="ml-2 text-blue-800">{{ calculatedLowStockCount }}</span>
+                                <span class="ml-1 text-gray-500">(Backend: {{ lowStockCount }})</span>
                             </div>
                             <div>
-                                <span class="font-medium text-blue-600">Reorder Level:</span>
-                                <span class="ml-2 text-gray-800">{{ reorderLevelCount }}</span>
+                                <span class="font-medium text-blue-600">Low Stock + Reorder Level:</span>
+                                <span class="ml-2 text-blue-800">{{ calculatedLowStockReorderLevelCount }}</span>
+                                <span class="ml-1 text-gray-500">(Backend: {{ lowStockReorderLevelCount }})</span>
                             </div>
                             <div>
-                                <span class="font-medium text-blue-600">Low Stock + Reorder:</span>
-                                <span class="ml-2 text-blue-800">{{ combinedLowStockReorderLevelCount }}</span>
+                                <span class="font-medium text-blue-600">Combined Reorder Level:</span>
+                                <span class="ml-2 text-blue-800">{{ combinedReorderLevelCount }}</span>
                             </div>
                             <div>
                                 <span class="font-medium text-blue-600">Out of Stock:</span>
-                                <span class="ml-2 text-blue-800">{{ outOfStockCount }}</span>
+                                <span class="ml-2 text-blue-800">{{ calculatedOutOfStockCount }}</span>
+                                <span class="ml-1 text-gray-500">(Backend: {{ outOfStockCount }})</span>
                             </div>
                         </div>
                         <div class="mt-2 text-xs text-blue-600">
@@ -929,6 +955,9 @@ onUnmounted(() => {
                         </div>
                         <div class="mt-2 text-xs text-blue-600">
                             <span class="font-medium">Raw Backend Data:</span> {{ JSON.stringify(props.inventoryStatusCounts) }}
+                        </div>
+                        <div class="mt-2 text-xs text-blue-600">
+                            <span class="font-medium">Total Inventory Items (Calculated):</span> {{ (calculatedInStockCount + calculatedLowStockCount + calculatedLowStockReorderLevelCount + calculatedOutOfStockCount) }}
                         </div>
                         <div class="mt-2 text-xs text-blue-600">
                             <span class="font-medium">Total Inventory Items (Backend):</span> {{ (inStockCount + lowStockCount + lowStockReorderLevelCount + outOfStockCount) }}
@@ -1218,7 +1247,7 @@ onUnmounted(() => {
                                                         class="flex flex-col items-center">
                                                         <button
                                                             class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center border-2 border-blue-200 hover:bg-blue-200 transition-colors"
-                                                            title="Reorder - {{ getInventoryStatus(inventory) === 'low_stock' ? 'Low Stock' : getInventoryStatus(inventory) === 'reorder_level' ? 'Reorder Level' : 'Out of Stock' }}">
+                                                            title="Reorder - {{ getInventoryStatus(inventory) === 'low_stock' ? 'Low Stock' : getInventoryStatus(inventory) === 'low_stock_reorder_level' ? 'Low Stock + Reorder Level' : 'Out of Stock' }}">
                                                             <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                                             </svg>
@@ -1347,7 +1376,7 @@ onUnmounted(() => {
                                                         class="flex flex-col items-center">
                                                         <button
                                                             class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center border-2 border-blue-200 hover:bg-blue-200 transition-colors"
-                                                            title="Reorder - {{ getInventoryStatus(inventory) === 'low_stock' ? 'Low Stock' : getInventoryStatus(inventory) === 'reorder_level' ? 'Reorder Level' : 'Out of Stock' }}">
+                                                            title="Reorder - {{ getInventoryStatus(inventory) === 'low_stock' ? 'Low Stock' : getInventoryStatus(inventory) === 'low_stock_reorder_level' ? 'Low Stock + Reorder Level' : 'Out of Stock' }}">
                                                             <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                                             </svg>
@@ -1413,7 +1442,7 @@ onUnmounted(() => {
                                         alt="Reorder Level" />
                                 </div>
                                 <div class="ml-3 flex flex-col flex-1">
-                                    <span class="text-lg font-bold text-blue-700">{{ combinedLowStockReorderLevelCount }}</span>
+                                    <span class="text-lg font-bold text-blue-700">{{ lowStockReorderLevelCount }}</span>
                                     <span class="text-xs font-medium text-blue-600">Low Stock + Reorder Level</span>
                                 </div>
                             </div>

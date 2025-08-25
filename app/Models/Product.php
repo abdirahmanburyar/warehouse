@@ -581,18 +581,13 @@ class Product extends Model
         if ($totalQuantity <= 0) {
             $status = 'out_of_stock';
         } elseif ($reorderLevel > 0 && $totalQuantity <= $reorderLevel) {
-            $status = 'reorder_level';
-        } elseif ($reorderLevel > 0 && $totalQuantity < ($reorderLevel / 0.3)) {
-            // Low Stock: when reorder level is higher than 30% of current quantity
-            // This means: reorder_level > (total_quantity * 0.3)
-            // Or: total_quantity < (reorder_level / 0.3)
+            // Items at or below reorder level (1 to 9,000 in your example)
+            $status = 'low_stock_reorder_level';
+        } elseif ($reorderLevel > 0 && $totalQuantity <= ($reorderLevel * 1.3)) {
+            // Items between reorder level and reorder level + 30% (9,001 to 11,700 in your example)
             $status = 'low_stock';
         }
-        
-        // Add a special status for items that are both low stock AND at reorder level
-        if ($reorderLevel > 0 && $totalQuantity <= $reorderLevel && $totalQuantity < ($reorderLevel / 0.3)) {
-            $status = 'low_stock_reorder_level';
-        }
+        // else: in_stock (above reorder level + 30%)
         
         return [
             'id' => $this->id,

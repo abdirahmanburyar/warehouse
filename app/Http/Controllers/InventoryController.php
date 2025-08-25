@@ -144,6 +144,7 @@ class InventoryController extends Controller
 			$warehouses = is_array($warehouses) ? $warehouses : [];
 
 			// Calculate inventory status counts efficiently for ALL products
+			// Array indices: 0=in_stock, 1=low_stock, 2=low_stock_reorder_level, 3=out_of_stock
 			$statusCounts = [
 				[
 					'status' => 'in_stock',
@@ -151,10 +152,6 @@ class InventoryController extends Controller
 				],
 				[
 					'status' => 'low_stock',
-					'count' => 0
-				],
-				[
-					'status' => 'reorder_level',
 					'count' => 0
 				],
 				[
@@ -201,15 +198,16 @@ class InventoryController extends Controller
 				$reorderLevel = (float) $product->reorder_level;
 				
 				if ($totalQuantity <= 0) {
-					$statusCounts[4]['count']++; // out_of_stock
-				} elseif ($reorderLevel > 0 && $totalQuantity <= $reorderLevel && $totalQuantity < ($reorderLevel / 0.3)) {
-					$statusCounts[3]['count']++; // low_stock_reorder_level
+					$statusCounts[3]['count']++; // out_of_stock (index 3)
 				} elseif ($reorderLevel > 0 && $totalQuantity <= $reorderLevel) {
-					$statusCounts[2]['count']++; // reorder_level
-				} elseif ($reorderLevel > 0 && $totalQuantity < ($reorderLevel / 0.3)) {
-					$statusCounts[1]['count']++; // low_stock
+					// Items at or below reorder level (1 to 9,000 in your example)
+					$statusCounts[2]['count']++; // low_stock_reorder_level (index 2)
+				} elseif ($reorderLevel > 0 && $totalQuantity <= ($reorderLevel * 1.3)) {
+					// Items between reorder level and reorder level + 30% (9,001 to 11,700 in your example)
+					$statusCounts[1]['count']++; // low_stock (index 1)
 				} else {
-					$statusCounts[0]['count']++; // in_stock
+					// Items above reorder level + 30% (above 11,700 in your example)
+					$statusCounts[0]['count']++; // in_stock (index 0)
 				}
 			}
 
