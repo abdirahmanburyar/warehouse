@@ -177,7 +177,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Asset Location</label>
                             <Multiselect
                                 v-model="locationFilter"
                                 :options="locationOptions"
@@ -285,7 +285,7 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
                                             <path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.273 1.765 11.842 11.842 0 00.757.433c.112.057.218.11.281.14l.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clip-rule="evenodd" />
                                         </svg>
-                                        <span>Location</span>
+                                        <span>Asset Location</span>
                                     </div>
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
@@ -700,7 +700,7 @@
                                                         <div class="ml-3">
                                                             <p class="text-sm text-blue-700">
                                                                 <strong>Note:</strong> This transfer will only change the assignee and status of the asset item. 
-                                                                The asset's location (region, location, sub-location) will remain unchanged to avoid affecting other asset items under the same asset.
+                                                                The asset's location (region, asset location, sub-location) will remain unchanged to avoid affecting other asset items under the same asset.
                                                             </p>
                                                         </div>
                                                     </div>
@@ -1039,7 +1039,7 @@
                                         </DialogTitle>
                                         <div class="mt-2">
                                             <p class="text-sm text-gray-600 mb-4">
-                                                Upload an Excel file (.xlsx) to import multiple assets at once. Make sure to use the correct template format.
+                                                Upload an Excel file (.xlsx) to import multiple assets at once. The Excel file should include all required fields: Asset Tag, Asset Name, Category, Type, Fund Source, Region, Asset Location, and Sub Location. Make sure to use the correct template format.
                                             </p>
                                             
                                             <!-- File Upload Area -->
@@ -1066,6 +1066,28 @@
                                                         </div>
                                                         <p v-if="!selectedFile" class="text-xs text-gray-500">Excel files only (.xlsx, .xls)</p>
                                                         <p v-if="selectedFile" class="text-xs text-green-600">File selected successfully!</p>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Smart Import Tips -->
+                                                <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                                    <div class="flex">
+                                                        <div class="flex-shrink-0">
+                                                            <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                                            </svg>
+                                                        </div>
+                                                        <div class="ml-3">
+                                                            <h3 class="text-sm font-medium text-blue-800">Smart Import Tips</h3>
+                                                            <div class="mt-2 text-sm text-blue-700">
+                                                                <ul class="list-disc pl-5 space-y-1">
+                                                                    <li>The system will automatically create new Regions, Fund Sources, Asset Locations, and Sub Locations if they don't exist</li>
+                                                                    <li>Assignees must already exist in the system - they won't be created automatically</li>
+                                                                    <li>Download the template to see the exact format required</li>
+                                                                    <li>All required fields are clearly marked in the template</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -1262,7 +1284,7 @@ function openTransferModal(asset) {
     console.log('AssetItem data:', asset);
     console.log('Asset assignee:', asset.assignee);
     
-    // Note: We're not updating location during transfers, so we don't need to populate these
+                    // Note: We're not updating asset location during transfers, so we don't need to populate these
     // transferData.region = asset.region || null;
     // transferData.asset_location = asset.asset_location || null;
     // transferData.sub_location = asset.sub_location || null;
@@ -1290,7 +1312,7 @@ const onAssigneeClear = () => {
     transferData.assignee = null;
 };
 
-// Note: Location-related functions removed since we're not updating location during transfers
+                // Note: Asset Location-related functions removed since we're not updating location during transfers
 
 const createAssignee = async (e) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
@@ -1377,7 +1399,7 @@ const locationFilter = ref(null);
 const subLocationFilter = ref(null);
 const subLocationOptions = ref([]);
 
-// Note: filteredSubLocationOptions removed since we're not using location fields in transfers
+                // Note: filteredSubLocationOptions removed since we're not using asset location fields in transfers
 const fundSourceFilter = ref(null);
 const categoryFilter = ref(null);
 const typeFilter = ref(null);
@@ -1446,7 +1468,7 @@ onMounted(async () => {
             const reg = props.regions.find(r => String(r.id) === String(regionId));
             if (reg) regionFilter.value = reg;
         }
-        // Location and Sub-location (dependent)
+                        // Asset Location and Sub-location (dependent)
         const locationId = params.get('location_id');
         if (locationId && Array.isArray(props.locations)) {
             const loc = props.locations.find(l => String(l.id) === String(locationId));
@@ -1467,7 +1489,7 @@ onMounted(async () => {
 
 const regionOptions = computed(() => props.regions || []);
 
-// Location options: show all locations (not filtered by region since they're independent)
+                // Asset Location options: show all asset locations (not filtered by region since they're independent)
 const locationOptions = computed(() => props.locations || []);
 
 // Clear dependent filters when region changes
@@ -1529,10 +1551,10 @@ async function transferAsset() {
             transfer_date: transferData.transfer_date,
             assignment_notes: transferData.assignment_notes,
             assignee_name: transferData.assignee.name,
-            // Note: We're not updating the asset's location during transfers
+                            // Note: We're not updating the asset's asset location during transfers
             // as it would affect all asset items under that asset
-            // If you need to update location, set update_asset_location: true
-            // and include the location fields below
+                            // If you need to update asset location, set update_asset_location: true
+                            // and include the asset location fields below
         });
 
         console.log('Transfer response:', response.data);
@@ -1560,7 +1582,7 @@ function getResults(page = 1) {
     props.filters.page = page;
 }
 
-// Watch for location change to load sub-locations
+                // Watch for asset location change to load sub-locations
 watch(
     () => locationFilter.value,
     async (newLocation) => {

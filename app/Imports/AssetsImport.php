@@ -52,9 +52,13 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
                         'asset_location_id' => $assetLocation->id,
                     ]);
 
+                    // Validate assignee exists (don't create new ones)
                     $assignee = null;
                     if (!empty($row['assignee'])) {
-                        $assignee = Assignee::firstOrCreate(['name' => trim($row['assignee'])]);
+                        $assignee = Assignee::where('name', trim($row['assignee']))->first();
+                        if (!$assignee) {
+                            throw new \Exception("Assignee '{$row['assignee']}' not found. Please create the assignee first or use an existing one.");
+                        }
                     }
 
                     // Parse acquisition date
@@ -71,7 +75,6 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
 
                     // Create the asset
                     $asset = Asset::create([
-                        'asset_number' => $row['asset_number'] ?? null,
                         'acquisition_date' => $acquisitionDate,
                         'fund_source_id' => $fundSource->id,
                         'region_id' => $region->id,

@@ -1037,20 +1037,19 @@ class AssetController extends Controller
     {
         try {
             $headers = [
-                'Asset Tag*',
-                'Asset Name*',
+                'Asset Tag',
+                'Asset Name',
                 'Serial Number',
-                'Category*',
-                'Type*',
-                'Fund Source*',
-                'Region*',
-                'Location*',
-                'Sub Location*',
+                'Category',
+                'Type',
+                'Fund Source',
+                'Region',
+                'Asset Location',
+                'Sub Location',
                 'Assignee',
                 'Status',
                 'Original Value',
-                'Acquisition Date',
-                'Asset Number'
+                'Acquisition Date'
             ];
 
             $sampleData = [
@@ -1067,8 +1066,7 @@ class AssetController extends Controller
                     'John Doe',
                     'active',
                     '1200.00',
-                    '2024-01-15',
-                    'ASSET-001'
+                    '2024-01-15'
                 ],
                 [
                     'ASSET-002',
@@ -1083,8 +1081,7 @@ class AssetController extends Controller
                     'Jane Smith',
                     'active',
                     '250.00',
-                    '2024-01-20',
-                    'ASSET-002'
+                    '2024-01-20'
                 ]
             ];
 
