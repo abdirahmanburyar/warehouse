@@ -18,12 +18,6 @@
                             </ul>
                         </div>
                         
-                        <div v-if="hasPermissionTo('system-settings') || hasPermissionTo('manage-system') || hasPermissionTo('view-system')">
-                            <h3 class="text-lg font-medium mb-2">Inventory Management</h3>
-                            <ul class="space-y-2">
-                                <li><Link :href="route('settings.reorder-levels.index')" class="text-gray-600 hover:text-indigo-600">Reorder Levels</Link></li>
-                            </ul>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -39,24 +33,6 @@
                             <ul class="space-y-2">
                                 <li><Link :href="route('settings.logistics.companies.index')" class="text-gray-600 hover:text-indigo-600">Logistic Companies</Link></li>
                                 <li><Link :href="route('settings.drivers.index')" class="text-gray-600 hover:text-indigo-600">Manage Drivers</Link></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Permission Management -->
-            <div v-if="hasPermissionTo('permission-manage') || hasPermissionTo('manage-system')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h2 class="text-xl font-semibold mb-4 border-b pb-2">Permission Management</h2>
-                    
-                    <div class="space-y-6">
-                        <div>
-                            <h3 class="text-lg font-medium mb-2">Access Control</h3>
-                            <ul class="space-y-2">
-                                <li><a href="#" class="text-gray-600 hover:text-indigo-600">User Permissions</a></li>
-                                <li><a href="#" class="text-gray-600 hover:text-indigo-600">Role Management</a></li>
-                                <li><a href="#" class="text-gray-600 hover:text-indigo-600">Permission Groups</a></li>
                             </ul>
                         </div>
                     </div>

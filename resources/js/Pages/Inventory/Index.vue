@@ -563,12 +563,6 @@ const lowStockReorderLevelCount = computed(() => {
     return stat ? stat.count : 0;
 });
 
-
-
-
-
-
-
 const outOfStockCount = computed(() => {
     if (!props.inventoryStatusCounts || !Array.isArray(props.inventoryStatusCounts)) return 0;
     const stat = props.inventoryStatusCounts.find(s => s.status === 'out_of_stock');
