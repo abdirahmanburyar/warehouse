@@ -128,7 +128,16 @@ class Product extends Model
     }
 
     /**
-     * Calculate AMC using percentage deviation screening (same logic as WarehouseAmcController)
+     * Calculate AMC using exact 70% deviation screening formula
+     * Formula: Find 3 consecutive months that pass ≤70% deviation threshold
+     * Example: Jan=3000, Feb=2000, Mar=3000, Apr=6000, May=2500, Jun=300
+     * Step 1: Take closest 3 months (Jun=300, May=2500, Apr=6000)
+     * Step 2: Calculate average: (300+2500+6000)/3 = 2933
+     * Step 3: Check each month: |300-2933|/2933*100 = 89.7% > 70% (FAILED)
+     * Step 4: Reselect 3 months including passed ones: May=2500, Apr=6000, Mar=3000
+     * Step 5: Calculate average: (2500+6000+3000)/3 = 3833
+     * Step 6: Check each month: |2500-3833|/3833*100 = 34.8% ≤ 70% (PASSED)
+     * Step 7: Final AMC = 3833
      */
     public function calculateAMC()
     {
@@ -148,100 +157,100 @@ class Product extends Model
             $quantities = $consumptionsWithMonth->pluck('quantity')->values();
             $months = $consumptionsWithMonth->pluck('month_year')->values();
             
-            // Start with the 3 most recent months
+            // Apply the exact AMC screening formula step by step
             $selectedMonths = [];
+            $foundValidGroup = false;
             $passedMonths = [];
-            $failedMonths = [];
             
-            // Initial selection: 3 most recent months
-            for ($i = 0; $i < 3; $i++) {
-                $selectedMonths[] = [
-                    'month' => $months[$i],
-                    'quantity' => $quantities[$i]
-                ];
-            }
-            
-            $attempt = 1;
-            $maxAttempts = 10; // Prevent infinite loops
-            
-            while ($attempt <= $maxAttempts) {
-                // Calculate average of selected months
-                $average = collect($selectedMonths)->avg('quantity');
-                
-                // Check each month's deviation
-                $allPassed = true;
-                $newPassedMonths = [];
-                $newFailedMonths = [];
-                
-                foreach ($selectedMonths as $monthData) {
-                    $quantity = $monthData['quantity'];
-                    $deviation = abs($quantity - $average) / $average * 100;
+            // Step 1: Start with the closest 3 months (first 3 in our sorted array)
+            if ($quantities->count() >= 3) {
+                // Step 2: Try to find 3 consecutive months that all pass the 70% threshold
+                for ($startIndex = 0; $startIndex <= $quantities->count() - 3 && !$foundValidGroup; $startIndex++) {
+                    $testGroup = [];
+                    for ($i = 0; $i < 3; $i++) {
+                        $testGroup[] = [
+                            'month' => $months[$startIndex + $i],
+                            'quantity' => $quantities[$startIndex + $i]
+                        ];
+                    }
                     
-                    if ($deviation <= 70) {
-                        // Month passed screening
-                        $newPassedMonths[] = $monthData;
-                    } else {
-                        // Month failed screening
-                        $newFailedMonths[] = $monthData;
-                        $allPassed = false;
+                    $groupSum = collect($testGroup)->sum('quantity');
+                    $groupAverage = $groupSum / 3;
+                    
+                    // Step 3: Check if all months in this group pass the 70% threshold
+                    $allPass = true;
+                    $currentPassedMonths = [];
+                    
+                    foreach ($testGroup as $monthData) {
+                        $quantity = $monthData['quantity'];
+                        $deviation = abs($quantity - $groupAverage);
+                        $percentage = $groupAverage > 0 ? ($deviation / $groupAverage) * 100 : 0;
+                        
+                        if ($percentage <= 70) {
+                            $currentPassedMonths[] = $monthData;
+                        } else {
+                            $allPass = false;
+                        }
+                    }
+                    
+                    if ($allPass) {
+                        // All 3 months passed, use this group
+                        $selectedMonths = $testGroup;
+                        $foundValidGroup = true;
+                        break;
+                    } else if (count($currentPassedMonths) > 0) {
+                        // Some months passed, keep track of them for potential use
+                        if (count($currentPassedMonths) > count($passedMonths)) {
+                            $passedMonths = $currentPassedMonths;
+                        }
                     }
                 }
                 
-                // Add newly passed months to the global passed list
-                foreach ($newPassedMonths as $monthData) {
-                    if (!collect($passedMonths)->contains('month', $monthData['month'])) {
-                        $passedMonths[] = $monthData;
+                // Step 4: If no valid group of 3 found, try to find a group including passed months
+                if (!$foundValidGroup && count($passedMonths) > 0) {
+                    // Try to find 3 months that work together, including the passed ones
+                    for ($startIndex = 0; $startIndex <= $quantities->count() - 3; $startIndex++) {
+                        $testGroup = [];
+                        for ($i = 0; $i < 3; $i++) {
+                            $testGroup[] = [
+                                'month' => $months[$startIndex + $i],
+                                'quantity' => $quantities[$startIndex + $i]
+                            ];
+                        }
+                        
+                        $groupSum = collect($testGroup)->sum('quantity');
+                        $groupAverage = $groupSum / 3;
+                        
+                        // Check if this group passes
+                        $allPass = true;
+                        foreach ($testGroup as $monthData) {
+                            $quantity = $monthData['quantity'];
+                            $deviation = abs($quantity - $groupAverage);
+                            $percentage = $groupAverage > 0 ? ($deviation / $groupAverage) * 100 : 0;
+                            
+                            if ($percentage > 70) {
+                                $allPass = false;
+                            }
+                        }
+                        
+                        if ($allPass) {
+                            $selectedMonths = $testGroup;
+                            $foundValidGroup = true;
+                            break;
+                        }
                     }
                 }
                 
-                // Add newly failed months to the global failed list
-                foreach ($newFailedMonths as $monthData) {
-                    if (!collect($failedMonths)->contains('month', $monthData['month'])) {
-                        $failedMonths[] = $monthData;
+                // Step 5: If still no valid group, use the best available months
+                if (!$foundValidGroup && count($selectedMonths) === 0) {
+                    // Use the first 3 months as fallback
+                    for ($i = 0; $i < 3; $i++) {
+                        $selectedMonths[] = [
+                            'month' => $months[$i],
+                            'quantity' => $quantities[$i]
+                        ];
                     }
                 }
-                
-                // If all months passed, we're done
-                if ($allPassed) {
-                    break;
-                }
-                
-                // If we have 3 or more passed months, use them
-                if (count($passedMonths) >= 3) {
-                    $selectedMonths = array_slice($passedMonths, 0, 3);
-                    break;
-                }
-                
-                // Need to reselect months including passed ones
-                $newSelection = [];
-                
-                // First, include all passed months
-                foreach ($passedMonths as $monthData) {
-                    $newSelection[] = $monthData;
-                }
-                
-                // Then add more months from the original list until we have 3
-                $monthIndex = 0;
-                while (count($newSelection) < 3 && $monthIndex < count($quantities)) {
-                    $monthData = [
-                        'month' => $months[$monthIndex],
-                        'quantity' => $quantities[$monthIndex]
-                    ];
-                    
-                    // Only add if not already in selection and not in failed months
-                    $alreadySelected = collect($newSelection)->contains('month', $monthData['month']);
-                    $isFailed = collect($failedMonths)->contains('month', $monthData['month']);
-                    
-                    if (!$alreadySelected && !$isFailed) {
-                        $newSelection[] = $monthData;
-                    }
-                    
-                    $monthIndex++;
-                }
-                
-                // Update selected months for next iteration
-                $selectedMonths = $newSelection;
-                $attempt++;
             }
             
             // Calculate final AMC
@@ -260,7 +269,7 @@ class Product extends Model
 
     /**
      * Calculate buffer stock: (Max AMC - AMC) × 3
-     * Max AMC is the highest value from the selected months that passed screening
+     * Max AMC is the highest value from the selected months that passed 70% deviation screening
      */
     public function calculateBufferStock()
     {

@@ -532,7 +532,7 @@ class WarehouseAmcController extends Controller
     }
 
     /**
-     * Calculate AMC using percentage deviation screening
+     * Calculate AMC using exact 70% deviation screening formula
      */
     private function calculateAMC($productId, $monthYears)
     {

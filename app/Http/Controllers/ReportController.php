@@ -382,11 +382,22 @@ class ReportController extends Controller
                         ];
                     }
 
-                    // Screening AMC: skip only the real current month if present, include first two, then screen <=70% deviation
+                    // AMC calculation using exact 70% deviation screening formula
+                    // Formula: Find 3 consecutive months that pass ≤70% deviation threshold
+                    // Example: Jan=3000, Feb=2000, Mar=3000, Apr=6000, May=2500, Jun=300
+                    // Step 1: Take closest 3 months (Jun=300, May=2500, Apr=6000)
+                    // Step 2: Calculate average: (300+2500+6000)/3 = 2933
+                    // Step 3: Check each month: |300-2933|/2933*100 = 89.7% > 70% (FAILED)
+                    // Step 4: Reselect 3 months including passed ones: May=2500, Apr=6000, Mar=3000
+                    // Step 5: Calculate average: (2500+6000+3000)/3 = 3833
+                    // Step 6: Check each month: |2500-3833|/3833*100 = 34.8% ≤ 70% (PASSED)
+                    // Step 7: Final AMC = 3833
+                    
                     $eligibleMonths = [];
                     $processedMonths = [];
                     $monthsCount = count($monthsData);
 
+                    // Skip current month if present
                     $startIndex = 0;
                     if ($monthsCount > 0) {
                         $currentMonthY = Carbon::now()->format('Y-m');
@@ -395,48 +406,231 @@ class ReportController extends Controller
                         }
                     }
 
-                    for ($index = $startIndex; $index < $monthsCount && count($eligibleMonths) < 3; $index++) {
-                        $currentMonth = $monthsData[$index];
-                        $monthName = $currentMonth->month_year;
-                        $currentQuantity = (float) $currentMonth->quantity;
-
-                        if (count($eligibleMonths) < 2) {
-                            $eligibleMonths[] = $currentMonth;
-                            $processedMonths[] = [
-                                'month' => $monthName,
-                                'quantity' => $currentQuantity,
-                                'status' => 'included',
-                                'reason' => 'First 2 eligible months - no screening applied',
-                            ];
-                            continue;
+                    // Apply the exact AMC screening formula step by step
+                    if ($monthsCount >= 3) {
+                        // Step 1: Start with the closest 3 months
+                        $currentGroup = array_slice($monthsData, $startIndex, 3);
+                        $foundValidGroup = false;
+                        $passedMonths = [];
+                        
+                        // Step 2: Try to find 3 consecutive months that all pass the 70% threshold
+                        for ($startIdx = $startIndex; $startIdx <= $monthsCount - 3 && !$foundValidGroup; $startIdx++) {
+                            $testGroup = array_slice($monthsData, $startIdx, 3);
+                            $groupSum = 0;
+                            foreach ($testGroup as $item) {
+                                $groupSum += (float) $item->quantity;
+                            }
+                            $groupAverage = $groupSum / 3;
+                            
+                            // Step 3: Check if all months in this group pass the 70% threshold
+                            $allPass = true;
+                            $currentPassedMonths = [];
+                            
+                            foreach ($testGroup as $item) {
+                                $quantity = (float) $item->quantity;
+                                $deviation = abs($quantity - $groupAverage);
+                                $percentage = $groupAverage > 0 ? ($deviation / $groupAverage) * 100 : 0;
+                                
+                                if ($percentage <= 70) {
+                                    $currentPassedMonths[] = $item;
+                                } else {
+                                    $allPass = false;
+                                }
+                            }
+                            
+                            if ($allPass) {
+                                // All 3 months passed, use this group
+                                $eligibleMonths = $testGroup;
+                                $foundValidGroup = true;
+                                
+                                // Log the selected months
+                                foreach ($testGroup as $item) {
+                                    $processedMonths[] = [
+                                        'month' => $item->month_year,
+                                        'quantity' => (float) $item->quantity,
+                                        'status' => 'included',
+                                        'reason' => "All 3 months passed 70% screening - AMC = " . round($groupAverage, 2),
+                                        'deviation_percentage' => 0,
+                                        'group_average' => round($groupAverage, 2),
+                                    ];
+                                }
+                                break;
+                            } else if (count($currentPassedMonths) > 0) {
+                                // Some months passed, keep track of them for potential use
+                                if (count($currentPassedMonths) > count($passedMonths)) {
+                                    $passedMonths = $currentPassedMonths;
+                                }
+                            }
                         }
+                        
+                        // Step 4: If no valid group of 3 found, try to find a group including passed months
+                        if (!$foundValidGroup && count($passedMonths) > 0) {
+                            // According to the formula: reselect 3 months including passed ones
 
-                        $recent1 = $eligibleMonths[count($eligibleMonths) - 1];
-                        $recent2 = $eligibleMonths[count($eligibleMonths) - 2];
-                        $averageOfRecent = ((float) $recent1->quantity + (float) $recent2->quantity) / 2;
+                            
+                            // Get the passed months and find additional months to make a group of 3
+                            $passedMonthIds = array_map(function($item) {
+                                return $item->month_year;
+                            }, $passedMonths);
+                            
+                            // Try to find a group that includes the passed months
+                            // Start from the beginning and look for any 3 consecutive months that pass
+                            for ($startIdx = $startIndex; $startIdx <= $monthsCount - 3; $startIdx++) {
+                                $testGroup = array_slice($monthsData, $startIdx, 3);
+                                
+                                // Check if this group contains at least some of the passed months
+                                $groupMonthIds = array_map(function($item) {
+                                    return $item->month_year;
+                                }, $testGroup);
+                                
+                                $hasPassedMonths = count(array_intersect($passedMonthIds, $groupMonthIds)) > 0;
+                                
+                                if ($hasPassedMonths) {
+                                    $groupSum = 0;
+                                    foreach ($testGroup as $item) {
+                                        $groupSum += (float) $item->quantity;
+                                    }
+                                    $groupAverage = $groupSum / 3;
+                                    
 
-                        $percentDifference = $averageOfRecent > 0
-                            ? round(abs(($currentQuantity - $averageOfRecent) / $averageOfRecent) * 100, 2)
-                            : ($currentQuantity > 0 ? 100 : 0);
+                                    
+                                    // Check if this group passes
+                                    $allPass = true;
+                                    foreach ($testGroup as $item) {
+                                        $quantity = (float) $item->quantity;
+                                        $deviation = abs($quantity - $groupAverage);
+                                        $percentage = $groupAverage > 0 ? ($deviation / $groupAverage) * 100 : 0;
+                                        
 
-                        if ($percentDifference <= 70) {
-                            $eligibleMonths[] = $currentMonth;
+                                        
+                                        if ($percentage > 70) {
+                                            $allPass = false;
+                                        }
+                                    }
+                                    
+                                    if ($allPass) {
+
+                                        
+                                        $eligibleMonths = $testGroup;
+                                        $foundValidGroup = true;
+                                        
+                                        // Log the selected months
+                                        foreach ($testGroup as $item) {
+                                            $processedMonths[] = [
+                                                'month' => $item->month_year,
+                                                'quantity' => (float) $item->quantity,
+                                                'status' => 'included',
+                                                'reason' => "Reselected group passed 70% screening - AMC = " . round($groupAverage, 2),
+                                                'deviation_percentage' => 0,
+                                                'group_average' => round($groupAverage, 2),
+                                            ];
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // If still no valid group found, try a different approach:
+                            // Look for any 3 months that pass screening, not necessarily consecutive
+                            if (!$foundValidGroup) {
+
+                                
+                                // Get all months that could potentially work together
+                                $allMonths = array_slice($monthsData, $startIndex);
+                                
+                                // Try different combinations of 3 months
+                                for ($i = 0; $i <= count($allMonths) - 3; $i++) {
+                                    for ($j = $i + 1; $j <= count($allMonths) - 2; $j++) {
+                                        for ($k = $j + 1; $k <= count($allMonths) - 1; $k++) {
+                                            $testGroup = [$allMonths[$i], $allMonths[$j], $allMonths[$k]];
+                                            $groupSum = 0;
+                                            foreach ($testGroup as $item) {
+                                                $groupSum += (float) $item->quantity;
+                                            }
+                                            $groupAverage = $groupSum / 3;
+                                            
+
+                                            
+                                            // Check if this group passes
+                                            $allPass = true;
+                                            foreach ($testGroup as $item) {
+                                                $quantity = (float) $item->quantity;
+                                                $deviation = abs($quantity - $groupAverage);
+                                                $percentage = $groupAverage > 0 ? ($deviation / $groupAverage) * 100 : 0;
+                                                
+                                                if ($percentage > 70) {
+                                                    $allPass = false;
+                                                }
+                                            }
+                                            
+                                            if ($allPass) {
+
+                                                
+                                                $eligibleMonths = $testGroup;
+                                                $foundValidGroup = true;
+                                                
+                                                // Log the selected months
+                                                foreach ($testGroup as $item) {
+                                                    $processedMonths[] = [
+                                                        'month' => $item->month_year,
+                                                        'quantity' => (float) $item->quantity,
+                                                        'status' => 'included',
+                                                        'reason' => "Alternative group passed 70% screening - AMC = " . round($groupAverage, 2),
+                                                        'deviation_percentage' => 0,
+                                                        'group_average' => round($groupAverage, 2),
+                                                    ];
+                                                }
+                                                break 3; // Break out of all 3 loops
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Step 5: If still no valid group, use the best available months
+                        if (!$foundValidGroup && count($eligibleMonths) === 0) {
+
+                            
+                            // Use the first 3 months as fallback
+                            $eligibleMonths = array_slice($monthsData, $startIndex, 3);
+                            
+                            // Log the fallback months
+                            foreach ($eligibleMonths as $item) {
+                                $processedMonths[] = [
+                                    'month' => $item->month_year,
+                                    'quantity' => (float) $item->quantity,
+                                    'status' => 'included',
+                                    'reason' => "Fallback - using first 3 available months",
+                                    'deviation_percentage' => 0,
+                                    'group_average' => 0,
+                                ];
+                            }
+                        }
+                    } else if ($monthsCount === 2) {
+                        // If only 2 months available
+                        $eligibleMonths = array_slice($monthsData, $startIndex, 2);
+                        foreach ($eligibleMonths as $item) {
                             $processedMonths[] = [
-                                'month' => $monthName,
-                                'quantity' => $currentQuantity,
+                                'month' => $item->month_year,
+                                'quantity' => (float) $item->quantity,
                                 'status' => 'included',
-                                'reason' => "Deviation {$percentDifference}% ≤ 70%",
-                                'deviation_percentage' => $percentDifference,
-                                'average_of_recent_2' => round($averageOfRecent, 2),
+                                'reason' => "Only 2 months available - no screening applied",
+                                'deviation_percentage' => 0,
+                                'group_average' => 0,
                             ];
-                        } else {
+                        }
+                    } else if ($monthsCount === 1) {
+                        // If only 1 month available
+                        $eligibleMonths = array_slice($monthsData, $startIndex, 1);
+                        foreach ($eligibleMonths as $item) {
                             $processedMonths[] = [
-                                'month' => $monthName,
-                                'quantity' => $currentQuantity,
-                                'status' => 'excluded',
-                                'reason' => "Deviation {$percentDifference}% > 70% - continuing search",
-                                'deviation_percentage' => $percentDifference,
-                                'average_of_recent_2' => round($averageOfRecent, 2),
+                                'month' => $item->month_year,
+                                'quantity' => (float) $item->quantity,
+                                'status' => 'included',
+                                'reason' => "Only 1 month available - no screening applied",
+                                'deviation_percentage' => 0,
+                                'group_average' => 0,
                             ];
                         }
                     }
@@ -450,7 +644,7 @@ class ReportController extends Controller
                                 'month' => $currentMonth->month_year,
                                 'quantity' => (float) $currentMonth->quantity,
                                 'status' => 'excluded',
-                                'reason' => 'Current month - excluded from AMC calculation',
+                                'reason' => 'Current month - excluded from AMC calculation using 70% deviation screening',
                             ]);
                         }
                     }
