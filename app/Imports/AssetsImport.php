@@ -137,7 +137,7 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
                     }
 
                     // Map status to valid enum values
-                    $status = $this->mapStatus($row['status'] ?? 'pending_approval');
+                    $status = "in_use";
 
                     // Create the asset
                     $asset = Asset::create([
@@ -146,7 +146,7 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
                         'region_id' => $region->id,
                         'asset_location_id' => $assetLocation->id,
                         'sub_location_id' => $subLocation->id,
-                        'status' => 'in_use', // Asset status is set to in_use by default when importing
+                        'status' => $status,
                         'submitted_by' => $this->userId,
                         'submitted_at' => now(),
                     ]);
