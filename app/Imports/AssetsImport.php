@@ -35,28 +35,20 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
     }
 
     public function collection(Collection $rows)
-    {
-        Log::info("🚀 Starting import with " . $rows->count() . " rows");
-        
+    {        
         // Log the first row to see what columns we're actually getting
         if ($rows->count() > 0) {
             $firstRow = $rows->first();
-            Log::info("📋 First row column names: " . json_encode(array_keys($firstRow->toArray())));
-            Log::info("📋 First row data: " . json_encode($firstRow->toArray()));
             
             // Log data types for debugging
             foreach ($firstRow as $key => $value) {
                 $type = is_object($value) ? get_class($value) : gettype($value);
-                Log::info("🔍 Column '{$key}' type: {$type}, value: " . json_encode($value));
             }
         }
         
-        foreach ($rows as $index => $row) {
-            Log::info("📝 Processing row " . ($index + 1) . ": " . json_encode($row));
-            
+        foreach ($rows as $index => $row) {            
             // Custom validation - check required fields
             if (empty($row['asset_tag']) || empty($row['asset_name'])) {
-                Log::warning("⚠️ Skipping row " . ($index + 1) . " - missing asset_tag or asset_name");
                 continue;
             }
             
@@ -70,7 +62,6 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
             }
             
             if (!empty($missingFields)) {
-                Log::warning("⚠️ Skipping row " . ($index + 1) . " - missing required fields: " . implode(', ', $missingFields));
                 continue;
             }
 
@@ -103,9 +94,6 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
                                 'department' => null
                             ]
                         );
-                        Log::info("👤 Assignee: " . $assignee->name . " (ID: " . $assignee->id . ") - " . ($assignee->wasRecentlyCreated ? "Created" : "Found existing"));
-                    } else {
-                        Log::info("👤 No assignee specified");
                     }
 
                     // Parse acquisition date
@@ -118,18 +106,14 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
                             if (is_numeric($dateValue)) {
                                 // Handle Excel date serial numbers
                                 $acquisitionDate = Date::excelToDateTimeObject($dateValue);
-                                Log::info("📅 Excel serial number '{$dateValue}' converted to: " . $acquisitionDate->format('Y-m-d'));
                             } elseif (is_object($dateValue) && method_exists($dateValue, 'format')) {
                                 // Already a DateTime object
                                 $acquisitionDate = \Carbon\Carbon::instance($dateValue);
-                                Log::info("📅 DateTime object converted to: " . $acquisitionDate->format('Y-m-d'));
                             } else {
                                 // Convert to string and parse
                                 $dateString = (string) $dateValue;
                                 $dateString = trim($dateString);
-                                
-                                Log::info("📅 Processing date string: '{$dateString}'");
-                                
+                                                                
                                 // Handle various date formats
                                 if (preg_match('/^\d{1,2}\/\d{1,2}\/\d{4}$/', $dateString)) {
                                     // Format: M/D/YYYY or MM/DD/YYYY
@@ -144,16 +128,12 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
                                     // Try Carbon's automatic parsing for other formats
                                     $acquisitionDate = \Carbon\Carbon::parse($dateString);
                                 }
-                                
-                                Log::info("📅 Parsed date '{$dateString}' to: " . $acquisitionDate->format('Y-m-d'));
                             }
                         } catch (\Exception $e) {
-                            Log::warning("⚠️ Could not parse date '{$row['acquisition_date']}', using current date. Error: " . $e->getMessage());
                             $acquisitionDate = now();
                         }
                     } else {
                         $acquisitionDate = now();
-                        Log::info("📅 No date provided, using current date");
                     }
 
                     // Map status to valid enum values
@@ -166,7 +146,7 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
                         'region_id' => $region->id,
                         'asset_location_id' => $assetLocation->id,
                         'sub_location_id' => $subLocation->id,
-                        'status' => 'pending_approval', // Asset status is always pending_approval initially
+                        'status' => 'in_use', // Asset status is set to in_use by default when importing
                         'submitted_by' => $this->userId,
                         'submitted_at' => now(),
                     ]);
@@ -183,19 +163,13 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
                         'status' => $status,
                         'original_value' => is_numeric($row['original_value']) ? (float)$row['original_value'] : 0,
                     ]);
-
-                    Log::info("✅ Successfully imported asset: {$row['asset_tag']} - {$row['asset_name']}");
                 });
 
             } catch (\Throwable $e) {
-                Log::error("❌ Error importing row " . ($index + 2) . ": {$e->getMessage()}");
-                Log::error("Row data: " . json_encode($row));
                 throw $e;
             }
         }
     }
-
-
 
     public function chunkSize(): int
     {

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('asset_id')->constrained('assets')->onDelete('cascade');
             $table->string('asset_tag')->nullable(); // Physical asset tag
             $table->string('asset_name'); // Asset name
-            $table->string('serial_number')->unique(); // Unique serial number
+            $table->string('serial_number')->nullable(); // Unique serial number
             $table->foreignId('asset_category_id')->constrained('asset_categories');
             $table->foreignId('asset_type_id')->constrained('asset_types');
             $table->foreignId('assignee_id')->nullable()->constrained('assignees')->nullOnDelete();
@@ -32,6 +32,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('asset_items');
+        Schema::enableForeignKeyConstraints();
     }
 };
