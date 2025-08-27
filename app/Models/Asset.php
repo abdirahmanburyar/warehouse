@@ -273,18 +273,27 @@ class Asset extends Model
     public function generateAssetNumber(): string
     {
         $prefix = 'ASSET';
-        $lastAsset = self::where('asset_number', 'like', $prefix . '-%')
-            ->orderBy('asset_number', 'desc')
-            ->first();
-
-        if (!$lastAsset) {
+        
+        // Get all asset numbers that match the pattern and extract the highest number
+        $assetNumbers = self::where('asset_number', 'like', $prefix . '-%')
+            ->pluck('asset_number')
+            ->map(function($assetNumber) use ($prefix) {
+                $numberPart = preg_replace('/^' . preg_quote($prefix . '-', '/') . '/', '', $assetNumber);
+                return (int) $numberPart;
+            })
+            ->filter()
+            ->sort()
+            ->values();
+        
+        if ($assetNumbers->isEmpty()) {
             return $prefix . '-001';
         }
-
-        $lastNumber = (int) str_replace($prefix . '-', '', $lastAsset->asset_number);
-        $nextNumber = $lastNumber + 1;
         
-        return $prefix . '-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        $nextNumber = $assetNumbers->last() + 1;
+        
+        // Use at least 3 digits, but more if needed for the next number
+        $digitCount = max(3, strlen((string)$nextNumber));
+        return $prefix . '-' . str_pad($nextNumber, $digitCount, '0', STR_PAD_LEFT);
     }
 
     /**
