@@ -36,8 +36,20 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
 
     public function collection(Collection $rows)
     {
+        Log::info("🚀 Starting import with " . $rows->count() . " rows");
+        
+        // Log the first row to see what columns we're actually getting
+        if ($rows->count() > 0) {
+            $firstRow = $rows->first();
+            Log::info("📋 First row column names: " . json_encode(array_keys($firstRow->toArray())));
+            Log::info("📋 First row data: " . json_encode($firstRow->toArray()));
+        }
+        
         foreach ($rows as $index => $row) {
+            Log::info("📝 Processing row " . ($index + 1) . ": " . json_encode($row));
+            
             if (empty($row['asset_tag']) || empty($row['asset_name'])) {
+                Log::warning("⚠️ Skipping row " . ($index + 1) . " - missing asset_tag or asset_name");
                 continue;
             }
 
@@ -132,7 +144,7 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
             'asset_location' => 'required|string|max:255',
             'sub_location' => 'required|string|max:255',
             'assignee' => 'nullable|string|max:255',
-            'status' => 'nullable|string|in:active,inactive,maintenance,retired,disposed',
+            'status' => 'nullable|string|max:255',
             'original_value' => 'nullable|numeric|min:0',
             'acquisition_date' => 'nullable|date',
         ];
