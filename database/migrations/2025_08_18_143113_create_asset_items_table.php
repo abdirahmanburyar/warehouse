@@ -20,7 +20,7 @@ return new class extends Migration
             $table->foreignId('asset_category_id')->constrained('asset_categories');
             $table->foreignId('asset_type_id')->constrained('asset_types');
             $table->foreignId('assignee_id')->nullable()->constrained('assignees')->nullOnDelete();
-            $table->enum('status', ['pending_approval', 'in_use', 'maintenance', 'retired', 'disposed'])->default('pending_approval');
+            $table->enum('status', ['pending_approval', 'in_use', 'maintenance', 'retired', 'disposed','Good', 'Non-functional'])->default('pending_approval');
             $table->double('original_value')->nullable()->default(0); // Original purchase value
             $table->timestamps();
             $table->softDeletes();

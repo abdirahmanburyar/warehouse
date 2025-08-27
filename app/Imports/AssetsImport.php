@@ -137,7 +137,7 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
                     }
 
                     // Map status to valid enum values
-                    $status = "in_use";
+                    $status = $this->mapStatus($row['status'] ?? 'in_use');
 
                     // Create the asset
                     $asset = Asset::create([
@@ -182,7 +182,7 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
     private function mapStatus(?string $status): string
     {
         if (empty($status)) {
-            return 'pending_approval';
+            return 'in_use';
         }
 
         $statusMap = [
@@ -194,6 +194,6 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
             'disposed' => 'disposed',
         ];
 
-        return $statusMap[strtolower(trim($status))] ?? 'pending_approval';
+        return $statusMap[strtolower(trim($status))] ?? 'in_use';
     }
 }
