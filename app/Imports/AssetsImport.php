@@ -92,13 +92,20 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
                         'asset_location_id' => $assetLocation->id,
                     ]);
 
-                    // Validate assignee exists (don't create new ones)
+                    // Create or get assignee
                     $assignee = null;
                     if (!empty($row['assignee'])) {
-                        $assignee = Assignee::where('name', trim($row['assignee']))->first();
-                        if (!$assignee) {
-                            throw new \Exception("Assignee '{$row['assignee']}' not found. Please create the assignee first or use an existing one.");
-                        }
+                        $assignee = Assignee::firstOrCreate(
+                            ['name' => trim($row['assignee'])],
+                            [
+                                'email' => null,
+                                'phone' => null,
+                                'department' => null
+                            ]
+                        );
+                        Log::info("👤 Assignee: " . $assignee->name . " (ID: " . $assignee->id . ") - " . ($assignee->wasRecentlyCreated ? "Created" : "Found existing"));
+                    } else {
+                        Log::info("👤 No assignee specified");
                     }
 
                     // Parse acquisition date
