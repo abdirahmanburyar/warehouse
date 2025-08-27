@@ -146,7 +146,7 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
             'assignee' => 'nullable|string|max:255',
             'status' => 'nullable|string|max:255',
             'original_value' => 'nullable|numeric|min:0',
-            'acquisition_date' => 'nullable|date',
+            'acquisition_date' => 'nullable|string|max:255',
         ];
     }
 
