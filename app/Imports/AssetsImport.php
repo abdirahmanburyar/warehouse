@@ -83,13 +83,37 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
                     // Parse acquisition date
                     $acquisitionDate = null;
                     if (!empty($row['acquisition_date'])) {
-                        if (is_numeric($row['acquisition_date'])) {
-                            $acquisitionDate = Date::excelToDateTimeObject($row['acquisition_date']);
-                        } else {
-                            $acquisitionDate = \Carbon\Carbon::parse($row['acquisition_date']);
+                        try {
+                            if (is_numeric($row['acquisition_date'])) {
+                                // Handle Excel date serial numbers
+                                $acquisitionDate = Date::excelToDateTimeObject($row['acquisition_date']);
+                            } else {
+                                $dateString = trim($row['acquisition_date']);
+                                
+                                // Handle various date formats
+                                if (preg_match('/^\d{1,2}\/\d{1,2}\/\d{4}$/', $dateString)) {
+                                    // Format: M/D/YYYY or MM/DD/YYYY
+                                    $acquisitionDate = \Carbon\Carbon::createFromFormat('n/j/Y', $dateString);
+                                } elseif (preg_match('/^\d{4}-\d{1,2}-\d{1,2}$/', $dateString)) {
+                                    // Format: YYYY-MM-DD
+                                    $acquisitionDate = \Carbon\Carbon::parse($dateString);
+                                } elseif (preg_match('/^\d{1,2}-\d{1,2}-\d{4}$/', $dateString)) {
+                                    // Format: M-D-YYYY or MM-DD-YYYY
+                                    $acquisitionDate = \Carbon\Carbon::createFromFormat('n-j-Y', $dateString);
+                                } else {
+                                    // Try Carbon's automatic parsing for other formats
+                                    $acquisitionDate = \Carbon\Carbon::parse($dateString);
+                                }
+                            }
+                            
+                            Log::info("📅 Parsed date '{$row['acquisition_date']}' to: " . $acquisitionDate->format('Y-m-d'));
+                        } catch (\Exception $e) {
+                            Log::warning("⚠️ Could not parse date '{$row['acquisition_date']}', using current date. Error: " . $e->getMessage());
+                            $acquisitionDate = now();
                         }
                     } else {
                         $acquisitionDate = now();
+                        Log::info("📅 No date provided, using current date");
                     }
 
                     // Map status to valid enum values
@@ -166,6 +190,7 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
 
         $statusMap = [
             'active' => 'in_use',
+            'in use' => 'in_use',
             'inactive' => 'pending_approval',
             'maintenance' => 'maintenance',
             'retired' => 'retired',
