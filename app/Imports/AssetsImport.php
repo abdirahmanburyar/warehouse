@@ -23,7 +23,7 @@ use Maatwebsite\Excel\Concerns\SkipsErrors;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, WithValidation, SkipsOnError, ShouldQueue
+class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, SkipsOnError, ShouldQueue
 {
     use SkipsErrors;
 
@@ -43,13 +43,34 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
             $firstRow = $rows->first();
             Log::info("📋 First row column names: " . json_encode(array_keys($firstRow->toArray())));
             Log::info("📋 First row data: " . json_encode($firstRow->toArray()));
+            
+            // Log data types for debugging
+            foreach ($firstRow as $key => $value) {
+                $type = is_object($value) ? get_class($value) : gettype($value);
+                Log::info("🔍 Column '{$key}' type: {$type}, value: " . json_encode($value));
+            }
         }
         
         foreach ($rows as $index => $row) {
             Log::info("📝 Processing row " . ($index + 1) . ": " . json_encode($row));
             
+            // Custom validation - check required fields
             if (empty($row['asset_tag']) || empty($row['asset_name'])) {
                 Log::warning("⚠️ Skipping row " . ($index + 1) . " - missing asset_tag or asset_name");
+                continue;
+            }
+            
+            // Validate other required fields
+            $requiredFields = ['category', 'type', 'fund_source', 'region', 'asset_location', 'sub_location'];
+            $missingFields = [];
+            foreach ($requiredFields as $field) {
+                if (empty($row[$field])) {
+                    $missingFields[] = $field;
+                }
+            }
+            
+            if (!empty($missingFields)) {
+                Log::warning("⚠️ Skipping row " . ($index + 1) . " - missing required fields: " . implode(', ', $missingFields));
                 continue;
             }
 
@@ -84,11 +105,23 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
                     $acquisitionDate = null;
                     if (!empty($row['acquisition_date'])) {
                         try {
-                            if (is_numeric($row['acquisition_date'])) {
+                            $dateValue = $row['acquisition_date'];
+                            
+                            // Handle different data types that Excel might send
+                            if (is_numeric($dateValue)) {
                                 // Handle Excel date serial numbers
-                                $acquisitionDate = Date::excelToDateTimeObject($row['acquisition_date']);
+                                $acquisitionDate = Date::excelToDateTimeObject($dateValue);
+                                Log::info("📅 Excel serial number '{$dateValue}' converted to: " . $acquisitionDate->format('Y-m-d'));
+                            } elseif (is_object($dateValue) && method_exists($dateValue, 'format')) {
+                                // Already a DateTime object
+                                $acquisitionDate = \Carbon\Carbon::instance($dateValue);
+                                Log::info("📅 DateTime object converted to: " . $acquisitionDate->format('Y-m-d'));
                             } else {
-                                $dateString = trim($row['acquisition_date']);
+                                // Convert to string and parse
+                                $dateString = (string) $dateValue;
+                                $dateString = trim($dateString);
+                                
+                                Log::info("📅 Processing date string: '{$dateString}'");
                                 
                                 // Handle various date formats
                                 if (preg_match('/^\d{1,2}\/\d{1,2}\/\d{4}$/', $dateString)) {
@@ -97,16 +130,16 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
                                 } elseif (preg_match('/^\d{4}-\d{1,2}-\d{1,2}$/', $dateString)) {
                                     // Format: YYYY-MM-DD
                                     $acquisitionDate = \Carbon\Carbon::parse($dateString);
-                                } elseif (preg_match('/^\d{1,2}-\d{1,2}-\d{4}$/', $dateString)) {
-                                    // Format: M-D-YYYY or MM-DD-YYYY
-                                    $acquisitionDate = \Carbon\Carbon::createFromFormat('n-j-Y', $dateString);
+                                } elseif (preg_match('/^\d{1,2}-\d{1,2}\/\d{4}$/', $dateString)) {
+                                    // Format: M-D/YYYY or MM-DD/YYYY
+                                    $acquisitionDate = \Carbon\Carbon::createFromFormat('n-j/Y', $dateString);
                                 } else {
                                     // Try Carbon's automatic parsing for other formats
                                     $acquisitionDate = \Carbon\Carbon::parse($dateString);
                                 }
+                                
+                                Log::info("📅 Parsed date '{$dateString}' to: " . $acquisitionDate->format('Y-m-d'));
                             }
-                            
-                            Log::info("📅 Parsed date '{$row['acquisition_date']}' to: " . $acquisitionDate->format('Y-m-d'));
                         } catch (\Exception $e) {
                             Log::warning("⚠️ Could not parse date '{$row['acquisition_date']}', using current date. Error: " . $e->getMessage());
                             $acquisitionDate = now();
@@ -155,24 +188,7 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
         }
     }
 
-    public function rules(): array
-    {
-        return [
-            'asset_tag' => 'required|string|max:255',
-            'asset_name' => 'required|string|max:255',
-            'serial_number' => 'nullable|string|max:255',
-            'category' => 'required|string|max:255',
-            'type' => 'required|string|max:255',
-            'fund_source' => 'required|string|max:255',
-            'region' => 'required|string|max:255',
-            'asset_location' => 'required|string|max:255',
-            'sub_location' => 'required|string|max:255',
-            'assignee' => 'nullable|string|max:255',
-            'status' => 'nullable|string|max:255',
-            'original_value' => 'nullable|numeric|min:0',
-            'acquisition_date' => 'nullable|string|max:255',
-        ];
-    }
+
 
     public function chunkSize(): int
     {
