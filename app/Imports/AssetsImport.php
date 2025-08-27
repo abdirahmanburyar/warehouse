@@ -69,10 +69,14 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
                 DB::transaction(function () use ($row, $index) {
                     // Create or get related models
                     $category = AssetCategory::firstOrCreate(['name' => trim($row['category'])]);
-                    $type = AssetType::firstOrCreate([
-                        'name' => trim($row['type']),
-                        'asset_category_id' => $category->id
-                    ]);
+                    // Check if AssetType exists by name first, then create if needed
+                    $type = AssetType::where('name', trim($row['type']))->first();
+                    if (!$type) {
+                        $type = AssetType::create([
+                            'name' => trim($row['type']),
+                            'asset_category_id' => $category->id
+                        ]);
+                    }
                     
                     $region = Region::firstOrCreate(['name' => trim($row['region'])]);
                     $fundSource = FundSource::firstOrCreate(['name' => trim($row['fund_source'])]);
