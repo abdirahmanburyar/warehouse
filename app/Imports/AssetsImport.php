@@ -27,6 +27,13 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
 {
     use SkipsErrors;
 
+    protected $userId;
+
+    public function __construct($userId = null)
+    {
+        $this->userId = $userId ?? auth()->id();
+    }
+
     public function collection(Collection $rows)
     {
         foreach ($rows as $index => $row) {
@@ -46,7 +53,7 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
                     $region = Region::firstOrCreate(['name' => trim($row['region'])]);
                     $fundSource = FundSource::firstOrCreate(['name' => trim($row['fund_source'])]);
                     
-                    $assetLocation = AssetLocation::firstOrCreate(['name' => trim($row['location'])]);
+                    $assetLocation = AssetLocation::firstOrCreate(['name' => trim($row['asset_location'])]);
                     $subLocation = SubLocation::firstOrCreate([
                         'name' => trim($row['sub_location']),
                         'asset_location_id' => $assetLocation->id,
@@ -73,6 +80,9 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
                         $acquisitionDate = now();
                     }
 
+                    // Map status to valid enum values
+                    $status = $this->mapStatus($row['status'] ?? 'pending_approval');
+
                     // Create the asset
                     $asset = Asset::create([
                         'acquisition_date' => $acquisitionDate,
@@ -80,7 +90,8 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
                         'region_id' => $region->id,
                         'asset_location_id' => $assetLocation->id,
                         'sub_location_id' => $subLocation->id,
-                        'submitted_by' => auth()->id(),
+                        'status' => 'pending_approval', // Asset status is always pending_approval initially
+                        'submitted_by' => $this->userId,
                         'submitted_at' => now(),
                     ]);
 
@@ -89,11 +100,11 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
                         'asset_id' => $asset->id,
                         'asset_tag' => trim($row['asset_tag']),
                         'asset_name' => trim($row['asset_name']),
-                        'serial_number' => trim($row['serial_number'] ?? ''),
+                        'serial_number' => !empty($row['serial_number']) ? trim($row['serial_number']) : 'SN-' . uniqid(),
                         'asset_category_id' => $category->id,
                         'asset_type_id' => $type->id,
                         'assignee_id' => $assignee?->id,
-                        'status' => $row['status'] ?? 'active',
+                        'status' => $status,
                         'original_value' => is_numeric($row['original_value']) ? (float)$row['original_value'] : 0,
                     ]);
 
@@ -118,7 +129,7 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
             'type' => 'required|string|max:255',
             'fund_source' => 'required|string|max:255',
             'region' => 'required|string|max:255',
-            'location' => 'required|string|max:255',
+            'asset_location' => 'required|string|max:255',
             'sub_location' => 'required|string|max:255',
             'assignee' => 'nullable|string|max:255',
             'status' => 'nullable|string|in:active,inactive,maintenance,retired,disposed',
@@ -130,5 +141,25 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Wi
     public function chunkSize(): int
     {
         return 50;
+    }
+
+    /**
+     * Map user-friendly status to valid enum values
+     */
+    private function mapStatus(?string $status): string
+    {
+        if (empty($status)) {
+            return 'pending_approval';
+        }
+
+        $statusMap = [
+            'active' => 'in_use',
+            'inactive' => 'pending_approval',
+            'maintenance' => 'maintenance',
+            'retired' => 'retired',
+            'disposed' => 'disposed',
+        ];
+
+        return $statusMap[strtolower(trim($status))] ?? 'pending_approval';
     }
 }

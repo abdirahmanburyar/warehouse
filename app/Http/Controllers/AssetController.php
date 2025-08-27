@@ -1126,8 +1126,8 @@ class AssetController extends Controller
 
             $file = $request->file('file');
             
-            // Import the file
-            Excel::import(new AssetsImport(), $file);
+            // Import the file with current user ID
+            Excel::import(new AssetsImport(auth()->id()), $file);
 
             return back()->with('success', 'Assets imported successfully!');
 

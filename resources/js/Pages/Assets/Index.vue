@@ -1590,7 +1590,7 @@ watch(
         subLocationOptions.value = [];
 
         if (newLocation && newLocation.id) {
-            // Fetch sub-locations for the selected location
+            // Fetch sub-locations for the selected asset location
             try {
                 const response = await axios.get(
                     route("assets.locations.sub-locations", newLocation.id)
