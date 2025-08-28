@@ -259,293 +259,140 @@
                     <p class="text-gray-500">No assets match your current filters.</p>
                 </div>
 
-                <div v-else class="relative bg-white/90 backdrop-blur-sm rounded-xl shadow-sm ring-1 ring-gray-200/70">
-                    <table class="min-w-full table-fixed divide-y divide-gray-200">
-                        <colgroup>
-                            <col style="width:30%" />
-                            <col style="width:18%" />
-                            <col style="width:12%" />
-                            <col style="width:12%" />
-                            <col style="width:12%" />
-                            <col style="width:10%" />
-                            <col style="width:6%" />
-                        </colgroup>
+                <div v-else class="relative bg-white/90 backdrop-blur-sm rounded-xl shadow-sm ring-1 ring-gray-200/70 overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
                         <thead class="sticky top-0 z-[1] bg-gradient-to-r from-slate-800 to-slate-700 text-white shadow">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
-                                    <div class="flex items-center space-x-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-                                            <path fill-rule="evenodd" d="M4.25 2A2.25 2.25 0 002 4.25v11.5A2.25 2.25 0 004.25 18h11.5A2.25 2.25 0 0018 15.75V4.25A2.25 2.25 0 0015.75 2H4.25zM15 5.75a.75.75 0 00-1.5 0v8.5a.75.75 0 001.5 0v-8.5zm-8.5 6a.75.75 0 01.75-.75h5a.75.75 0 010 1.5h-5a.75.75 0 01-.75-.75zm0 2.5a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
-                                        </svg>
-                                        <span>Asset Information</span>
-                                    </div>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                    <span>Asset Number</span>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
-                                    <div class="flex items-center space-x-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-                                            <path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.273 1.765 11.842 11.842 0 00.757.433c.112.057.218.11.281.14l.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clip-rule="evenodd" />
-                                        </svg>
-                                        <span>Asset Location</span>
-                                    </div>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                    <span>Asset Name</span>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
-                                    <div class="flex items-center space-x-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-                                            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 13.293A1 1 0 013 12.586V4z" clip-rule="evenodd" />
-                                        </svg>
-                                        <span>Category</span>
-                                    </div>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                    <span>Serial Number</span>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
-                                    <div class="flex items-center space-x-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-                                            <path fill-rule="evenodd" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M2.25 6.75h.008v.008H2.25V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM2.25 12h.008v.008H2.25V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM2.25 17.25h.008v.008H2.25v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" clip-rule="evenodd" />
-                                        </svg>
-                                        <span>Type</span>
-                                    </div>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                    <span>Category</span>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
-                                    <div class="flex items-center space-x-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.236 4.53L8.107 10.5a.75.75 0 00-1.214 1.029l1.5 2.25a.75.75 0 001.214-.15l4-5.75z" clip-rule="evenodd" />
-                                        </svg>
-                                        <span>Asset Status</span>
-                                    </div>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                    <span>Type</span>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600 last:border-r-0">
-                                    <div class="flex items-center space-x-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-                                            <path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clip-rule="evenodd" />
-                                        </svg>
-                                        <span>Purchase Date</span>
-                                    </div>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                    <span>Status</span>
                                 </th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-white capitalize tracking-wider border-r border-slate-600 last:border-r-0">
-                                    <div class="flex items-center space-x-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-                                            <path d="M10.75 10.818v2.614A3.13 3.13 0 0011.888 13c.482-.315.612-.648.612-.875 0-.227-.13-.56-.612-.875a3.13 3.13 0 00-1.138-.432zM8.33 8.62c.053.055.115.11.184.164.208.16.46.284.736.363V6.603a2.45 2.45 0 00-.35.13c-.14.065-.27.143-.386.233-.377.292-.514.627-.514.909 0 .184.058.39.202.592.037.051.08.102.128.152z" />
-                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-6a.75.75 0 01.75.75v.316a3.78 3.78 0 011.653.713c.426.33.744.74.925 1.2a.75.75 0 01-1.395.55 1.35 1.35 0 00-.447-.563 2.187 2.187 0 00-.736-.363V9.3c.698.093 1.383.32 1.959.696.787.514 1.29 1.27 1.29 2.13 0 .86-.504 1.616-1.29 2.13-.576.377-1.261.603-1.959.696v.299a.75.75 0 11-1.5 0v-.3c-.697-.092-1.382-.318-1.958-.695C5.896 13.744 5.25 12.845 5.25 12.26c0-.686.647-1.484 1.342-1.997.576-.377 1.261-.603 1.958-.696V6.934a2.187 2.187 0 00-.736.363 1.35 1.35 0 00-.447.563.75.75 0 11-1.395-.55c.181-.46.499-.87.925-1.2A3.78 3.78 0 018.25 5.25V4.75A.75.75 0 0110 4z" clip-rule="evenodd" />
-                                        </svg>
-                                        <span>Financial Details</span>
-                                    </div>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                    <span>Assignee</span>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider last:border-r-0">
-                                    <div class="flex items-center space-x-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-                                            <path d="M10 3.75a2 2 0 10-4 0 2 2 0 004 0zM17.25 4.5a.75.75 0 000-1.5h-5.5a.75.75 0 000 1.5h5.5zM5 3.75a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75zM8.25 8a2 2 0 100-4 2 2 0 000 4zM17.25 7.5a.75.75 0 000-1.5h-5.5a.75.75 0 000 1.5h5.5zM5 6.75a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75zM8.25 12a2 2 0 100-4 2 2 0 000 4zM17.25 11.5a.75.75 0 000-1.5h-5.5a.75.75 0 000 1.5h5.5zM5 10.75a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75z" />
-                                        </svg>
-                                        <span>Actions</span>
-                                    </div>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                    <span>Region</span>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                    <span>Location</span>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                    <span>Sub Location</span>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                    <span>Acquisition Date</span>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                    <span>Original Value</span>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                    <span>Fund Source</span>
+                                </th>
+
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider">
+                                    <span>Actions</span>
                                 </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-100">
                             <tr v-for="asset in props.assets.data" :key="asset.id"
                                  class="odd:bg-white even:bg-gray-50/60 hover:bg-indigo-50 transition-colors duration-150 border-b border-gray-100 group">
-                                <td class="px-6 py-3 align-top border-r border-gray-100 last:border-r-0">
-                                    <div class="flex items-center">
-                                        <div class="ml-4 flex-1">
-                                            <div class="flex flex-col">
-                                                <div class="text-sm font-semibold text-gray-900">
-                                                    {{ asset.name || asset.asset_tag }}
-                                                </div>
-                                                <Link :href="route('assets.show', asset.asset_number)" v-if="asset.tag_no" class="text-xs text-gray-500">Tag: {{ asset.tag_no }}</Link>
-                                            </div>
-                                <div class="flex items-center space-x-3 mt-2 text-sm">
-                                                <span class="text-sm font-medium text-gray-600">S/N:</span>
-                                                <span class="text-sm text-gray-900">{{ asset.serial_number
-                                                    || 'N/A' }}
-                                                </span>
-                                            </div>
-                                            <div class="flex items-center space-x-2 mt-1">
-                                                <div class="text-sm text-gray-500">
-                                                    <span class="font-medium">Assigned:</span>
-                                                </div>
-                                                <!-- Assignment Status Indicator -->
-                                                <div class="flex items-center text-xs">
-                                                    <span
-                                                        class="inline-flex items-center text-sm text-green-700">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                            fill="currentColor" class="w-4 h-4 mr-1">
-                                                            <path
-                                                                d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" />
-                                                        </svg>
-                                                        {{ asset.assignee?.name || 'N/A' }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                <td class="px-4 py-3 align-top border-r border-gray-100">
+                                    <div class="text-sm font-semibold text-gray-900">
+                                        {{ asset.asset_number || 'N/A' }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-3 align-top border-r border-gray-100 last:border-r-0">
-                                    <div class="space-y-2">
-                                        <!-- Location Hierarchy with Indicators -->
-                                        <div class="flex items-center space-x-2">
-                                            <div class="flex items-center space-x-2">
-                                                <!-- Region Indicator -->
-                                                <div class="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 shadow-sm" title="Region"></div>
-                                                <div class="text-xs font-medium text-gray-900">{{ asset.region?.name
-                                                    || 'N/A' }}</div>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center space-x-2 pl-5">
-                                            <div class="flex items-center space-x-2">
-                                                <!-- Location Indicator -->
-                                                <div class="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-green-500 to-green-600 shadow-sm" title="Location">
-                                                </div>
-                                                <div class="text-xs text-gray-700">{{ asset.asset_location?.name || 'N/A'
-                                                    }}</div>
-                                            </div>
-                                        </div>
-                                        <div v-if="asset.sub_location?.name"
-                                            class="flex items-center space-x-2 pl-10">
-                                            <div class="flex items-center space-x-2">
-                                                <!-- Sub-location Indicator -->
-                                                <div class="w-2 h-2 rounded-full bg-gradient-to-r from-gray-400 to-gray-500 shadow-sm"
-                                                    title="Sub-location"></div>
-                                                <div class="text-xs text-gray-500">{{ asset.sub_location?.name || 'N/A' }}
-                                                </div>
-                                            </div>
-                                        </div>
+                                <td class="px-4 py-3 align-top border-r border-gray-100">
+                                    <div class="text-sm font-semibold text-gray-900">
+                                        {{ asset.name || asset.asset_tag || 'N/A' }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-3 align-top border-r border-gray-100 last:border-r-0">
-                                    <div class="space-y-2">
-                                        <div class="flex items-center space-x-2">
-                                            <div class="p-2 bg-gradient-to-r from-purple-100 to-purple-200 rounded-lg shadow-sm">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-purple-600">
-                                                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 13.293A1 1 0 013 12.586V4z" clip-rule="evenodd" />
-                                                </svg>
-                                            </div>
-                                            <div class="text-sm font-semibold text-gray-900">
-                                                {{ asset.category?.name || 'N/A' }}
-                                            </div>
-                                        </div>
+                                <td class="px-4 py-3 align-top border-r border-gray-100">
+                                    <div class="text-sm text-gray-900">
+                                        {{ asset.serial_number || 'N/A' }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-3 align-top border-r border-gray-100">
-                                    <div class="space-y-2">
-                                        <div class="flex items-center space-x-2">
-                                            <div class="p-2 bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg shadow-sm">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-blue-600">
-                                                    <path fill-rule="evenodd" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M2.25 6.75h.008v.008H2.25V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM2.25 12h.008v.008H2.25V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM2.25 17.25h.008v.008H2.25v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" clip-rule="evenodd" />
-                                                </svg>
-                                            </div>
-                                            <div class="text-sm font-semibold text-gray-900">
-                                                {{ asset.type?.name || 'N/A' }}
-                                            </div>
-                                        </div>
+                                <td class="px-4 py-3 align-top border-r border-gray-100">
+                                    <div class="text-sm text-gray-900">
+                                        {{ asset.category?.name || 'N/A' }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-3 align-top border-r border-gray-100">
-                                    <div class="space-y-2">
-                                        <div class="flex items-center space-x-2">
-                                            <span :class="{
-                                                'bg-green-100 text-green-800': asset.status === 'active' || asset.status === 'in_use',
-                                                'bg-yellow-100 text-yellow-800': asset.status === 'pending_approval',
-                                                'bg-orange-100 text-orange-800': asset.status === 'maintenance',
-                                                'bg-red-100 text-red-800': asset.status === 'disposed' || asset.status === 'retired',
-                                                'bg-gray-100 text-gray-800': !['active', 'in_use', 'pending_approval', 'maintenance', 'disposed', 'retired'].includes(asset.status)
-                                            }"
-                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                                <span v-if="asset.status === 'pending_approval'"
-                                                    class="w-2 h-2 bg-yellow-400 rounded-full mr-1 animate-pulse"></span>
-                                                <span
-                                                    v-else-if="asset.status === 'active' || asset.status === 'in_use'"
-                                                    class="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
-                                                <span v-else-if="asset.status === 'maintenance'"
-                                                    class="w-2 h-2 bg-orange-400 rounded-full mr-1 animate-pulse"></span>
-                                                <span v-else class="w-2 h-2 bg-gray-400 rounded-full mr-1"></span>
-                                                {{ formatStatus(asset.status) }}
-                                            </span>
-                                            <!-- Maintenance Due Indicator -->
-                                            <span v-if="isMaintenanceDue(asset)"
-                                                class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
-                                                title="Maintenance Due">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                    fill="currentColor" class="w-3 h-3 mr-1">
-                                                    <path fill-rule="evenodd"
-                                                        d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-                                                        clip-rule="evenodd" />
-                                                </svg>
-                                                Maint
-                                            </span>
-                                        </div>
-                                        <div v-if="asset.submitted_for_approval"
-                                            class="flex items-center space-x-1">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                fill="currentColor" class="w-4 h-4 text-yellow-500">
-                                                <path fill-rule="evenodd"
-                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.236 4.53L8.107 10.5a.75.75 0 00-1.214 1.029l1.5 2.25a.75.75 0 001.214-.15l4-5.75z"
-                                                    clip-rule="evenodd" />
-                                            </svg>
-                                            <span class="text-xs text-yellow-600">
-                                                Submitted {{ formatDate(asset.submitted_at) }}
-                                            </span>
-                                        </div>
+                                <td class="px-4 py-3 align-top border-r border-gray-100">
+                                    <div class="text-sm text-gray-900">
+                                        {{ asset.type?.name || 'N/A' }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-3 align-top border-r border-gray-100">
-                                    <div class="space-y-2">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="p-2 bg-gradient-to-r from-slate-100 to-slate-200 rounded-lg shadow-sm">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                    fill="currentColor" class="w-4 h-4 text-slate-600">
-                                                    <path fill-rule="evenodd"
-                                                        d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z"
-                                                        clip-rule="evenodd" />
-                                                </svg>
-                                            </div>
-                                            <div class="text-sm font-semibold text-gray-900">
-                                                {{ formatDate(asset.acquisition_date) }}
-                                            </div>
-                                        </div>
-                                        <div v-if="getAssetAge(asset) > 0" class="flex items-center space-x-2 pl-9">
-                                            <div class="w-2 h-2 rounded-full bg-amber-400"></div>
-                                            <span class="text-xs font-medium text-amber-700">
-                                                {{ getAssetAge(asset) }} years old
-                                            </span>
-                                        </div>
+                                <td class="px-4 py-3 align-top border-r border-gray-100">
+                                    <span :class="{
+                                        'bg-green-100 text-green-800': asset.status === 'active' || asset.status === 'in_use',
+                                        'bg-yellow-100 text-yellow-800': asset.status === 'pending_approval',
+                                        'bg-orange-100 text-orange-800': asset.status === 'maintenance',
+                                        'bg-red-100 text-red-800': asset.status === 'disposed' || asset.status === 'retired',
+                                        'bg-gray-100 text-gray-800': !['active', 'in_use', 'pending_approval', 'maintenance', 'disposed', 'retired'].includes(asset.status)
+                                    }"
+                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                                        <span v-if="asset.status === 'pending_approval'"
+                                            class="w-2 h-2 bg-yellow-400 rounded-full mr-1 animate-pulse"></span>
+                                        <span
+                                            v-else-if="asset.status === 'active' || asset.status === 'in_use'"
+                                            class="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                                        <span v-else-if="asset.status === 'maintenance'"
+                                            class="w-2 h-2 bg-orange-400 rounded-full mr-1 animate-pulse"></span>
+                                        <span v-else class="w-2 h-2 bg-gray-400 rounded-full mr-1"></span>
+                                        {{ formatStatus(asset.status) }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 align-top border-r border-gray-100">
+                                    <div class="text-sm text-gray-900">
+                                        {{ asset.assignee?.name || 'N/A' }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-5 border-r border-gray-100">
-                                    <div class="space-y-3">
-                                        <div class="flex items-center space-x-0">
-                                            <div class="p-2 bg-gradient-to-r from-emerald-100 to-emerald-200 rounded-lg shadow-sm">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-emerald-600">
-                                                    <path d="M10.75 10.818v2.614A3.13 3.13 0 0011.888 13c.482-.315.612-.648.612-.875 0-.227-.13-.56-.612-.875a3.13 3.13 0 00-1.138-.432zM8.33 8.62c.053.055.115.11.184.164.208.16.46.284.736.363V6.603a2.45 2.45 0 00-.35.13c-.14.065-.27.143-.386.233-.377.292-.514.627-.514.909 0 .184.058.39.202.592.037.051.08.102.128.152z" />
-                                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-6a.75.75 0 01.75.75v.316a3.78 3.78 0 011.653.713c.426.33.744.74.925 1.2a.75.75 0 01-1.395.55 1.35 1.35 0 00-.447-.563 2.187 2.187 0 00-.736-.363V9.3c.698.093 1.383.32 1.959.696.787.514 1.29 1.27 1.29 2.13 0 .86-.504 1.616-1.29 2.13-.576.377-1.261.603-1.959.696v.299a.75.75 0 11-1.5 0v-.3c-.697-.092-1.382-.318-1.958-.695C5.896 13.744 5.25 12.845 5.25 12.26c0-.686.647-1.484 1.342-1.997.576-.377 1.261-.603 1.958-.696V6.934a2.187 2.187 0 00-.736.363 1.35 1.35 0 00-.447.563.75.75 0 11-1.395-.55c.181-.46.499-.87.925-1.2A3.78 3.78 0 018.25 5.25V4.75A.75.75 0 0110 4z" clip-rule="evenodd" />
-                                                </svg>
-                                            </div>
-                                            <div class="text-lg font-bold text-gray-900">
-                                                ${{ parseFloat(asset.original_value || 0).toLocaleString() }}
-                                            </div>
-                                            <!-- Critical Asset Indicator -->
-                                            <span v-if="isCriticalAsset(asset)" 
-                                                  class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 shadow-sm"
-                                                  title="Critical Asset">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                    fill="currentColor" class="w-3 h-3 mr-1">
-                                                    <path fill-rule="evenodd"
-                                                        d="M9.661 2.237a.531.531 0 01.678 0 11.947 11.947 0 007.078 2.749.5.5 0 01.479.425c.069.52.104 1.05.104 1.589 0 5.162-3.26 9.563-7.834 11.256a.48.48 0 01-.332 0C5.26 16.564 2 12.162 2 7c0-.539.035-1.07.104-1.589a.5.5 0 01.48-.425 11.947 11.947 0 007.077-2.749zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z"
-                                                        clip-rule="evenodd" />
-                                                </svg>
-                                                Critical
-                                            </span>
-                                        </div>
-                                        <div class="flex items-center space-x-2 pl-9">
-                                            <div class="w-2 h-2 rounded-full bg-blue-400"></div>
-                                            <div class="text-sm font-medium text-gray-600">{{ asset.fund_source?.name || 'N/A'
-                                                }}</div>
-                                        </div>
+                                <td class="px-4 py-3 align-top border-r border-gray-100">
+                                    <div class="text-sm text-gray-900">
+                                        {{ asset.region?.name || 'N/A' }}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 align-top border-r border-gray-100">
+                                    <div class="text-sm text-gray-900">
+                                        {{ asset.asset_location?.name || 'N/A' }}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 align-top border-r border-gray-100">
+                                    <div class="text-sm text-gray-900">
+                                        {{ asset.sub_location?.name || 'N/A' }}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 align-top border-r border-gray-100">
+                                    <div class="text-sm text-gray-900">
+                                        {{ formatDate(asset.acquisition_date) }}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 align-top border-r border-gray-100">
+                                    <div class="text-sm text-gray-900">
+                                        ${{ parseFloat(asset.original_value || 0).toLocaleString() }}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 align-top border-r border-gray-100">
+                                    <div class="text-sm text-gray-900">
+                                        {{ asset.fund_source?.name || 'N/A' }}
                                     </div>
                                 </td>
 
-                                    <!-- Files Column -->
-                                    
-
-                                    <!-- Actions Dropdown Column -->
-                                    <td class="px-6 py-3 relative align-top last:border-r-0">
+                                <td class="px-4 py-3 align-top">
                                         <div class="relative dropdown-container">
                                             <button @click.stop="toggleDropdown(asset.id)" 
                                                 class="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 text-gray-700 hover:text-gray-900 text-xs font-medium rounded-md border border-gray-200 transition-all duration-200 group-hover:shadow-sm">
