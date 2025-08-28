@@ -69,8 +69,26 @@ class AssetDocumentController extends Controller
                 ],
             ]);
 
+            // Return JSON response for AJAX requests
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Document uploaded successfully.',
+                    'document' => $document
+                ]);
+            }
+
             return redirect()->route('asset.documents.index')
                 ->with('success', 'Document uploaded successfully.');
+        }
+
+        // Return JSON response for AJAX requests
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No file was uploaded.',
+                'errors' => ['file' => ['No file was uploaded.']]
+            ], 422);
         }
 
         return back()->withErrors(['file' => 'No file was uploaded.']);
@@ -135,7 +153,7 @@ class AssetDocumentController extends Controller
             ->with('success', 'Document updated successfully.');
     }
 
-    public function destroy(AssetDocument $document)
+    public function destroy(Request $request, AssetDocument $document)
     {
         // Delete physical file
         if ($document->file_path) {
@@ -143,6 +161,14 @@ class AssetDocumentController extends Controller
         }
         
         $document->delete();
+
+        // Return JSON response for AJAX requests
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Document deleted successfully.'
+            ]);
+        }
 
         return redirect()->route('asset.documents.index')
             ->with('success', 'Document deleted successfully.');
@@ -158,5 +184,15 @@ class AssetDocumentController extends Controller
             $document->file_path,
             $document->file_name
         );
+    }
+
+    public function preview(AssetDocument $document)
+    {
+        if (!$document->file_path || !Storage::disk('public')->exists($document->file_path)) {
+            abort(404, 'File not found.');
+        }
+
+        // Serve the file content for preview (browser will handle display)
+        return response()->file(Storage::disk('public')->path($document->file_path));
     }
 }

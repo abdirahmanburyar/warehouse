@@ -1,7 +1,17 @@
 <template>
-    <AuthenticatedLayout :title="props.pageTitle" :description="props.pageDescription" img="/assets/images/asset-header.png">
+    <AuthenticatedLayout :title="computedPageTitle" :description="computedPageDescription" img="/assets/images/asset-header.png">
         <div v-if="props.error">
             {{ props.error }}
+        </div>
+        <div v-else-if="!props.asset">
+            <div class="text-center py-12">
+                <div class="text-gray-500 text-lg">Asset not found or has been deleted.</div>
+                <div class="text-sm text-gray-400 mt-2">Debug: Asset ID from URL: {{ page.url.split('/').pop() }}</div>
+                <div class="text-sm text-gray-400 mt-2">Debug: Props received: {{ JSON.stringify(props) }}</div>
+                <Link :href="route('assets.index')" class="mt-4 inline-block text-blue-600 hover:text-blue-800">
+                    Back to Assets
+                </Link>
+            </div>
         </div>
         <div v-else>
             <!-- Header Section -->
@@ -305,7 +315,13 @@
                 </div>
             </div>
 
-            {{ props.asset.documents }}
+            <div class="px-6">
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-col gap-2">
+                        <h3 class="text-lg font-semibold text-gray-800">Documents</h3>
+                    </div>
+                </div>
+            </div>
 
             <!-- Asset Status Actions -->
             <div class="mt-8 mb-6 bg-white rounded-lg shadow-sm mx-6">
@@ -433,18 +449,243 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Asset Documents Section -->
+            <div class="px-6 py-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="p-2 bg-blue-100 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-blue-600">
+                                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">Asset Documents</h3>
+                                    <p class="text-sm text-gray-600">Manage and view asset-related documents</p>
+                                </div>
+                            </div>
+                            <button @click="showUploadModal = true" 
+                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2">
+                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                Upload Document
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Documents List -->
+                    <div class="p-6">
+                        <div v-if="!props.asset.documents || props.asset.documents.length === 0" class="text-center py-12">
+                            <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-8 h-8 text-gray-400">
+                                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">No documents uploaded</h3>
+                            <p class="text-gray-500 mb-4">Upload documents related to this asset to keep them organized and accessible.</p>
+                            <button @click="showUploadModal = true" 
+                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2">
+                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                Upload First Document
+                            </button>
+                        </div>
+
+                        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div v-for="document in props.asset.documents" :key="document.id" 
+                                class="bg-gray-50 rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <!-- Document Type Icon -->
+                                        <div class="p-2 rounded-lg" :class="getDocumentIconClass(document)">
+                                            <svg v-if="document.mime_type && document.mime_type.startsWith('image/')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                                            </svg>
+                                            <svg v-else-if="(document.mime_type && document.mime_type === 'application/pdf') || (document.file_name && document.file_name.toLowerCase().endsWith('.pdf'))" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                            </svg>
+                                            <svg v-else-if="(document.mime_type && (document.mime_type.startsWith('text/') || document.mime_type.includes('document'))) || (document.file_name && document.file_name.toLowerCase().match(/\.(doc|docx|txt|rtf)$/))" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                            </svg>
+                                            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-sm font-medium text-gray-900 truncate">{{ document.file_name }}</h4>
+                                            <p class="text-xs text-gray-500">{{ document.document_type || 'Document' }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-1">
+                                        <button @click="previewDocument(document)" 
+                                            class="p-1 text-gray-400 hover:text-blue-600 transition-colors" 
+                                            title="Preview">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        </button>
+                                        <a :href="route('asset.documents.download', document.id)" 
+                                            class="p-1 text-gray-400 hover:text-green-600 transition-colors" 
+                                            title="Download">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        </a>
+                                        <button @click="deleteDocument(document.id)" 
+                                            class="p-1 text-gray-400 hover:text-red-600 transition-colors" 
+                                            title="Delete">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between text-xs text-gray-500">
+                                        <span>{{ formatFileSize(document.file_size) }}</span>
+                                        <span>{{ formatDate(document.created_at) }}</span>
+                                    </div>
+                                    <p v-if="document.description" class="text-xs text-gray-600 line-clamp-2">{{ document.description }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Upload Modal -->
+            <div v-if="showUploadModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" @click="closeUploadModal">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4" @click.stop>
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                        <h3 class="text-lg font-medium text-gray-900">Upload Document</h3>
+                        <button @click="closeUploadModal" class="text-gray-400 hover:text-gray-600">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <form @submit.prevent="uploadDocument" class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Document Type</label>
+                            <input v-model="uploadForm.document_type" type="text" required 
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500" 
+                                placeholder="e.g., Invoice, Warranty, Manual, Contract, Receipt, etc." />
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea v-model="uploadForm.description" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Describe the document..."></textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">File</label>
+                            <input type="file" @change="handleFileSelect" required accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500" />
+                            <p class="text-xs text-gray-500 mt-1">Supported formats: PDF, Word, Excel, PowerPoint, Images</p>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3 pt-4">
+                            <button type="button" @click="closeUploadModal" 
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                                Cancel
+                            </button>
+                            <button type="submit" :disabled="uploading" 
+                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50">
+                                <svg v-if="uploading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                {{ uploading ? 'Uploading...' : 'Upload' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Preview Modal -->
+        <div v-if="showPreviewModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" @click="closePreviewModal">
+            <div class="bg-white w-full h-full overflow-hidden" @click.stop>
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">{{ selectedDocument?.file_name }}</h3>
+                        <p class="text-sm text-gray-500">{{ selectedDocument?.document_type }} • {{ formatFileSize(selectedDocument?.file_size) }}</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <a :href="route('asset.documents.download', selectedDocument?.id)" 
+                            class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Download
+                        </a>
+                        <button @click="closePreviewModal" class="text-gray-400 hover:text-gray-600">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-6 overflow-auto h-full">
+                    <!-- Image Preview -->
+                    <div v-if="isImageFile(selectedDocument)" class="text-center">
+                        <img :src="route('asset.documents.preview', selectedDocument.id)" 
+                             :alt="selectedDocument.file_name"
+                             class="max-w-full max-h-[70vh] object-contain mx-auto rounded-lg shadow-lg" />
+                    </div>
+                    
+                    <!-- PDF Preview -->
+                    <div v-else-if="isPdfFile(selectedDocument)" class="w-full h-full">
+                        <iframe :src="route('asset.documents.preview', selectedDocument.id)" 
+                                class="w-full h-full border border-gray-200"
+                                frameborder="0">
+                            <p>Your browser does not support PDF preview. 
+                                <a :href="route('asset.documents.download', selectedDocument.id)" class="text-blue-600 hover:text-blue-800 underline">
+                                    Click here to download the PDF
+                                </a>
+                            </p>
+                        </iframe>
+                    </div>
+                    
+
+                    
+                    <!-- Other Document Types -->
+                    <div v-else class="bg-gray-50 p-4 rounded-lg text-center">
+                        <div class="text-gray-500 mb-4">
+                            <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p class="text-lg font-medium">{{ selectedDocument?.file_name }}</p>
+                            <p class="text-sm">{{ selectedDocument?.document_type || 'Document' }}</p>
+                        </div>
+                        <div class="text-sm text-gray-600 space-y-2">
+                            <p><strong>File Type:</strong> {{ selectedDocument?.mime_type || 'Unknown' }}</p>
+                            <p><strong>File Size:</strong> {{ formatFileSize(selectedDocument?.file_size) }}</p>
+                            <p v-if="selectedDocument?.description"><strong>Description:</strong> {{ selectedDocument.description }}</p>
+                            <p class="text-gray-500 mt-4">This file type cannot be previewed directly. Please download it to view the contents.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Link } from "@inertiajs/vue3";
-import { ref } from "vue";
+import { Link, usePage } from "@inertiajs/vue3";
+import { ref, computed } from "vue";
 import { router } from "@inertiajs/vue3";
 import axios from "axios";
 import Swal from "sweetalert2";
 
+const page = usePage();
 const props = defineProps({
     asset: Object,
     pageTitle: String,
@@ -452,12 +693,21 @@ const props = defineProps({
     error: String,
 });
 
+// Computed properties for page title and description
+const computedPageTitle = computed(() => {
+    return props.pageTitle || (props.asset ? `Asset Details - ${props.asset.asset_number}` : 'Asset Details');
+});
+
+const computedPageDescription = computed(() => {
+    return props.pageDescription || (props.asset ? `View detailed information for asset: ${props.asset.asset_number}` : 'View detailed information for asset');
+});
+
 // Loading states for different actions
 const isReviewing = ref(false);
 const isApproving = ref(false);
 const isRejecting = ref(false);
 const isRestoring = ref(false);
-const isActivating = ref(false);
+
 
 // Status classes for styling
 const statusClasses = {
@@ -479,6 +729,17 @@ const assetStatusOrder = [
 const showHistoryModal = ref(false);
 const selectedItem = ref(null);
 
+// State for document management
+const showUploadModal = ref(false);
+const showPreviewModal = ref(false);
+const selectedDocument = ref(null);
+const uploading = ref(false);
+const uploadForm = ref({
+    document_type: '',
+    description: '',
+    file: null
+});
+
 // Helper function to format dates
 const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -499,6 +760,27 @@ const formatDateTime = (dateString) => {
         hour: '2-digit',
         minute: '2-digit'
     });
+};
+
+// Helper function to format file size
+const formatFileSize = (bytes) => {
+    if (!bytes) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+// Helper functions to detect file types
+const isImageFile = (document) => {
+    if (!document?.mime_type) return false;
+    return document.mime_type.startsWith('image/');
+};
+
+const isPdfFile = (document) => {
+    if (!document) return false;
+    return (document.mime_type === 'application/pdf') || 
+           (document.file_name && document.file_name.toLowerCase().endsWith('.pdf'));
 };
 
 // Get status classes for asset items
@@ -523,6 +805,100 @@ const openHistoryModal = (item) => {
 const closeHistoryModal = () => {
     showHistoryModal.value = false;
     selectedItem.value = null;
+};
+
+// Document management functions
+const handleFileSelect = (event) => {
+    uploadForm.value.file = event.target.files[0];
+};
+
+const getDocumentIconClass = (document) => {
+    const mimeType = document.mime_type || '';
+    const fileName = document.file_name || '';
+    
+    if (mimeType.startsWith('image/')) {
+        return 'bg-green-100 text-green-600';
+    } else if (mimeType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
+        return 'bg-red-100 text-red-600';
+    } else if (mimeType.startsWith('text/') || 
+               mimeType.includes('document') || 
+               fileName.toLowerCase().match(/\.(doc|docx|txt|rtf)$/)) {
+        return 'bg-blue-100 text-blue-600';
+    } else {
+        return 'bg-gray-100 text-gray-600';
+    }
+};
+
+const uploadDocument = async () => {
+    if (!uploadForm.value.file || !uploadForm.value.document_type) {
+        return;
+    }
+
+    uploading.value = true;
+    const formData = new FormData();
+    formData.append('file', uploadForm.value.file);
+    formData.append('document_type', uploadForm.value.document_type);
+    formData.append('description', uploadForm.value.description);
+    formData.append('asset_id', props.asset.id);
+
+    try {
+        const response = await axios.post(route('asset.documents.store', props.asset.id), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        if (response.data.success) {
+            // Refresh the page to show new document
+            router.get(route('assets.show', props.asset.id));
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        // Handle error (you can add a toast notification here)
+    } finally {
+        uploading.value = false;
+        closeUploadModal();
+    }
+};
+
+const previewDocument = (document) => {
+    selectedDocument.value = document;
+    showPreviewModal.value = true;
+};
+
+const closePreviewModal = () => {
+    showPreviewModal.value = false;
+    selectedDocument.value = null;
+};
+
+const deleteDocument = async (documentId) => {
+    if (confirm('Are you sure you want to delete this document?')) {
+        try {
+            const response = await axios.delete(route('asset.documents.destroy', documentId));
+            if (response.data.success) {
+                // Refresh the page to update documents list
+                router.get(route('assets.show', props.asset.id));
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            // Handle error
+        }
+    }
+};
+
+const closeUploadModal = () => {
+    showUploadModal.value = false;
+    // Reset form
+    uploadForm.value = {
+        document_type: '',
+        description: '',
+        file: null
+    };
+    // Reset file input
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+        fileInput.value = '';
+    }
 };
 
 // Review asset function with Swal confirmation
@@ -791,9 +1167,7 @@ const changeAssetStatus = (newStatus) => {
         case 'pending_approval':
             restoreAsset();
             break;
-        case 'in_use':
-            activateAsset();
-            break;
+
         default:
             console.log(`Unknown status: ${newStatus}`);
     }

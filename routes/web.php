@@ -23,6 +23,7 @@ use App\Http\Controllers\DispatchController;
 use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\AssetController;
+use App\Http\Controllers\AssetDocumentController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\LiquidateDisposalController;
@@ -613,6 +614,12 @@ Route::controller(LocationController::class)
             Route::post('/{asset}/review', 'review')->name('assets.review');
             Route::post('/{asset}/restore', 'restore')->name('assets.restore');
             Route::post('/bulk-approve', 'bulkApprove')->name('assets.bulk-approve');
+
+            // Asset Document Routes
+            Route::post('/{asset}/documents', [AssetDocumentController::class, 'store'])->name('asset.documents.store');
+            Route::delete('/documents/{document}', [AssetDocumentController::class, 'destroy'])->name('asset.documents.destroy');
+            Route::get('/documents/{document}/download', [AssetDocumentController::class, 'download'])->name('asset.documents.download');
+            Route::get('/documents/{document}/preview', [AssetDocumentController::class, 'preview'])->name('asset.documents.preview');
         });
 
 
