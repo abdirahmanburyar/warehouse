@@ -932,7 +932,8 @@ class AssetController extends Controller
                 'assetItems.category',
                 'assetItems.type'
             ])
-            ->find($asset);
+            ->where('asset_number', $asset)
+            ->first();
 
             return Inertia::render('Assets/Show', [
                 'asset' => $assetWithRelations,
