@@ -919,7 +919,7 @@ class AssetController extends Controller
         try {
             // Get the asset with its relationships
             $assetWithRelations =  Asset::with([
-                'assetItems',
+                'assetItems.assetHistory.performer',
                 'region',
                 'assetLocation',
                 'subLocation',

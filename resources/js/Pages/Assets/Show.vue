@@ -4,6 +4,7 @@
             {{ props.error }}
         </div>
         <div v-else>
+            {{ props.asset }}
             <!-- Header Section -->
             <div class="px-6 py-4 border-b border-gray-200">
                 <div class="flex items-center justify-between">
@@ -44,8 +45,8 @@
                 <!-- Basic Asset Information -->
                 <div class="bg-gray-50 rounded-lg p-4 space-y-2">
                     <h2 class="text-lg font-medium text-gray-900">
-                        Asset Details
-                    </h2>
+            Asset Details
+        </h2>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <p class="text-xs font-medium text-gray-500">Asset Number</p>
@@ -233,11 +234,12 @@
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Status</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Assignee</th>
                             <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">Original Value</th>
+                            <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">History</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="props.asset.asset_items.length === 0">
-                            <td colspan="8" class="px-3 py-3 text-center text-gray-500 border-b" style="border-bottom: 1px solid #B7C6E6;">
+                            <td colspan="9" class="px-3 py-3 text-center text-gray-500 border-b" style="border-bottom: 1px solid #B7C6E6;">
                                 No asset items found.
                             </td>
                         </tr>
@@ -259,9 +261,70 @@
                             </td>
                             <td class="px-3 py-3 text-xs text-gray-900">{{ item.assignee.name }}</td>
                             <td class="px-3 py-3 text-xs text-gray-900">${{ item.original_value }}</td>
+                            <td class="px-3 py-3 text-xs text-center">
+                                <button @click="openHistoryModal(item)" 
+                                    class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors duration-150">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    History
+                                </button>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Asset Item History Modal -->
+            <div v-if="showHistoryModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+                    <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                        <h3 class="text-lg font-medium text-gray-900">
+                            Asset Item History - {{ selectedItem?.asset_tag }}
+                        </h3>
+                        <button @click="closeHistoryModal" class="text-gray-500 hover:text-gray-700">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="p-6 overflow-y-auto max-h-[70vh]">
+                        <div v-if="selectedItem?.asset_history && selectedItem.asset_history.length > 0" class="space-y-4">
+                            <div v-for="(history, index) in selectedItem.asset_history" :key="index" 
+                                class="border-l-4 border-blue-500 pl-4 py-2">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <span class="text-sm font-semibold text-gray-900">{{ history.action }}</span>
+                                            <span class="text-xs text-gray-500">•</span>
+                                            <span class="text-xs text-gray-500">{{ formatDateTime(history.performed_at) }}</span>
+                                        </div>
+                                        <p v-if="history.notes" class="text-sm text-gray-700 mb-2">{{ history.notes }}</p>
+                                        <div class="flex items-center space-x-2 text-xs text-gray-500">
+                                            <span>By: {{ history.performer?.name || 'Unknown' }}</span>
+                                            <span v-if="history.action_type" class="px-2 py-1 bg-gray-100 rounded-full">
+                                                {{ history.action_type }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="text-center py-8 text-gray-500">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No history found</h3>
+                            <p class="mt-1 text-sm text-gray-500">This asset item doesn't have any history records yet.</p>
+                        </div>
+                    </div>
+                    <div class="p-4 border-t border-gray-200 flex justify-end">
+                        <button @click="closeHistoryModal" 
+                            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors duration-150">
+                            Close
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Asset Status Actions -->
@@ -271,62 +334,121 @@
                 </h3>
                 <div class="flex items-start mb-6">
                     <div class="flex flex-wrap items-center justify-center gap-4 px-1 py-2">
-                        <!-- Review button -->
-                        <div class="relative" v-if="props.asset.status === 'pending_approval'">
+                        <!-- Review button - shows when actionable or completed -->
+                        <div class="relative" v-if="props.asset.status === 'pending_approval' || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('reviewed')">
                             <div class="flex flex-col">
                                 <button @click="changeAssetStatus('reviewed')" 
-                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] bg-yellow-500 hover:bg-yellow-600">
-                                    <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
-                                    <span class="text-sm font-bold text-white">Review</span>
+                                    :disabled="isReviewing || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('reviewed')"
+                                    :class="[
+                                        assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('reviewed')
+                                            ? 'bg-green-500'
+                                            : 'bg-yellow-500 hover:bg-yellow-600'
+                                    ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    <svg v-if="isReviewing" class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <img v-else src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
+                                    <span class="text-sm font-bold text-white">{{
+                                        assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf("reviewed")
+                                            ? "Reviewed"
+                                            : isReviewing
+                                                ? "Please Wait..."
+                                                : "Review"
+                                    }}</span>
                                 </button>
+                                <span v-show="props.asset?.reviewed_at" class="text-sm text-gray-600">
+                                    {{ formatDateTime(props.asset?.reviewed_at) }}
+                                </span>
+                                <span v-show="props.asset?.reviewed_by" class="text-sm text-gray-600">
+                                    By {{ props.asset?.reviewed_by?.name }}
+                                </span>
                             </div>
-                            <div class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+                            <div v-if="props.asset.status === 'pending_approval'"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
 
-                        <!-- Approve button -->
-                        <div class="relative" v-if="props.asset.status === 'reviewed'">
+                        <!-- Approve button - shows when actionable or completed -->
+                        <div class="relative" v-if="props.asset.status === 'reviewed' || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('approved')">
                             <div class="flex flex-col">
                                 <button @click="changeAssetStatus('approved')" 
-                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] bg-yellow-500 hover:bg-yellow-600">
-                                    <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
-                                    <span class="text-sm font-bold text-white">Approve</span>
+                                    :disabled="isApproving || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('approved')"
+                                    :class="[
+                                        assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('approved')
+                                            ? 'bg-green-500'
+                                            : 'bg-yellow-500 hover:bg-yellow-600'
+                                    ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    <svg v-if="isApproving" class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <img v-else src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
+                                    <span class="text-sm font-bold text-white">{{
+                                        assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf("approved")
+                                            ? "Approved"
+                                            : isApproving ? "Please Wait..." : "Approve"
+                                    }}</span>
                                 </button>
+                                <span v-show="props.asset?.approved_at" class="text-sm text-gray-600">
+                                    {{ formatDateTime(props.asset?.approved_at) }}
+                                </span>
+                                <span v-show="props.asset?.approved_by" class="text-sm text-gray-600">
+                                    By {{ props.asset?.approved_by?.name }}
+                                </span>
                             </div>
-                            <div class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+                            <div v-if="props.asset.status === 'reviewed'"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
 
-                        <!-- Activate button -->
-                        <div class="relative" v-if="props.asset.status === 'approved'">
-                            <div class="flex flex-col">
-                                <button @click="changeAssetStatus('in_use')" 
-                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] bg-yellow-500 hover:bg-yellow-600">
-                                    <img src="/assets/images/inprocess.png" class="w-5 h-5 mr-2" alt="Activate" />
-                                    <span class="text-sm font-bold text-white">Activate</span>
-                                </button>
-                            </div>
-                            <div class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
-                        </div>
-
-                        <!-- Reject button -->
-                        <div class="relative" v-if="props.asset.status === 'pending_approval' || props.asset.status === 'reviewed'">
+                        <!-- Reject button - only shows when actionable -->
+                        <div class="relative" v-if="(props.asset.status === 'pending_approval' || props.asset.status === 'reviewed') && props.asset.status !== 'rejected'">
                             <div class="flex flex-col">
                                 <button @click="changeAssetStatus('rejected')" 
+                                    :disabled="isRejecting"
                                     class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] bg-red-500 hover:bg-red-600">
-                                    <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
-                                    <span class="text-sm font-bold text-white">Reject</span>
+                                    <svg v-if="isRejecting" class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <img v-else src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
+                                    <span class="text-sm font-bold text-white">{{ isRejecting ? 'Please Wait...' : 'Reject' }}</span>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Restore button -->
+                        <!-- Rejected status display - shows when rejected -->
+                        <div class="relative" v-if="props.asset.status === 'rejected'">
+                            <div class="flex flex-col">
+                                <button disabled
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] bg-red-500">
+                                    <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Rejected" />
+                                    <span class="text-sm font-bold text-white">Rejected</span>
+                                </button>
+                                <span v-show="props.asset?.rejected_at" class="text-sm text-gray-600">
+                                    {{ formatDateTime(props.asset?.rejected_at) }}
+                                </span>
+                                <span v-show="props.asset?.rejected_by" class="text-sm text-gray-600">
+                                    By {{ props.asset?.rejected_by?.name }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Restore button - shows when rejected -->
                         <div class="relative" v-if="props.asset.status === 'rejected'">
                             <div class="flex flex-col">
                                 <button @click="changeAssetStatus('pending_approval')" 
+                                    :disabled="isRestoring"
                                     class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] bg-green-500 hover:bg-green-600">
-                                    <img src="/assets/images/restore.jpg" class="w-5 h-5 mr-2" alt="Restore" />
-                                    <span class="text-sm font-bold text-white">Restore</span>
+                                    <svg v-if="isRestoring" class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <img v-else src="/assets/images/restore.jpg" class="w-5 h-5 mr-2" alt="Restore" />
+                                    <span class="text-sm font-bold text-white">{{ isRestoring ? 'Restoring...' : 'Restore' }}</span>
                                 </button>
                             </div>
+                            <div v-if="props.asset.status === 'rejected'"
+                                class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
                     </div>
                 </div>
@@ -338,6 +460,10 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Link } from "@inertiajs/vue3";
+import { ref } from "vue";
+import { router } from "@inertiajs/vue3";
+import axios from "axios";
+import Swal from "sweetalert2";
 
 const props = defineProps({
     asset: Object,
@@ -345,6 +471,13 @@ const props = defineProps({
     pageDescription: String,
     error: String,
 });
+
+// Loading states for different actions
+const isReviewing = ref(false);
+const isApproving = ref(false);
+const isRejecting = ref(false);
+const isRestoring = ref(false);
+const isActivating = ref(false);
 
 // Status classes for styling
 const statusClasses = {
@@ -363,6 +496,10 @@ const assetStatusOrder = [
     "approved",
     "in_use",
 ];
+
+// State for history modal
+const showHistoryModal = ref(false);
+const selectedItem = ref(null);
 
 // Helper function to format dates
 const formatDate = (dateString) => {
@@ -398,10 +535,289 @@ const getStatusClasses = (status) => {
     return statusClassMap[status] || 'bg-gray-100 text-gray-800';
 };
 
-// Change asset status function
+// Open history modal
+const openHistoryModal = (item) => {
+    selectedItem.value = item;
+    showHistoryModal.value = true;
+};
+
+// Close history modal
+const closeHistoryModal = () => {
+    showHistoryModal.value = false;
+    selectedItem.value = null;
+};
+
+// Review asset function with Swal confirmation
+const reviewAsset = async () => {
+    const result = await Swal.fire({
+        title: 'Review Asset',
+        text: 'Are you sure you want to review this asset?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, Review it!',
+        cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            isReviewing.value = true;
+            const response = await axios.post(route('assets.review', props.asset.id));
+            
+            if (response.data.success) {
+                Swal.fire(
+                    'Reviewed!',
+                    'Asset has been reviewed successfully.',
+                    'success'
+                ).then(() => {
+                    // Refresh the page to show updated status
+                    router.get(route('assets.show', props.asset.id));
+                });
+            } else {
+                Swal.fire(
+                    'Error!',
+                    response.data.message || 'Failed to review asset',
+                    'error'
+                );
+            }
+        } catch (error) {
+            console.error('Review error:', error);
+            Swal.fire(
+                'Error!',
+                error.response?.data?.message || 'Failed to review asset',
+                'error'
+            );
+        } finally {
+            isReviewing.value = false;
+        }
+    }
+};
+
+// Approve asset function with Swal confirmation
+const approveAsset = async () => {
+    const result = await Swal.fire({
+        title: 'Approve Asset',
+        text: 'Are you sure you want to approve this asset?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, Approve it!',
+        cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            isApproving.value = true;
+            const response = await axios.post(route('assets.approve', props.asset.id));
+            
+            if (response.data.success) {
+                Swal.fire(
+                    'Approved!',
+                    'Asset has been approved successfully.',
+                    'success'
+                ).then(() => {
+                    // Refresh the page to show updated status
+                    router.get(route('assets.show', props.asset.id));
+                });
+            } else {
+                Swal.fire(
+                    'Error!',
+                    response.data.message || 'Failed to approve asset',
+                    'error'
+                );
+            }
+        } catch (error) {
+            console.error('Approve error:', error);
+            Swal.fire(
+                'Error!',
+                error.response?.data?.message || 'Failed to approve asset',
+                'error'
+            );
+        } finally {
+            isApproving.value = false;
+        }
+    }
+};
+
+// Reject asset function with Swal confirmation
+const rejectAsset = async () => {
+    const { value: rejectionReason } = await Swal.fire({
+        title: 'Reject Asset',
+        text: 'Please provide a reason for rejection:',
+        input: 'textarea',
+        inputPlaceholder: 'Enter rejection reason...',
+        inputAttributes: {
+            'aria-label': 'Type your rejection reason here'
+        },
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Reject Asset',
+        cancelButtonText: 'Cancel',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'You need to provide a rejection reason!';
+            }
+        }
+    });
+
+    if (rejectionReason) {
+        try {
+            isRejecting.value = true;
+            const response = await axios.post(route('assets.reject', props.asset.id), {
+                rejection_reason: rejectionReason
+            });
+            
+            if (response.data.success) {
+                Swal.fire(
+                    'Rejected!',
+                    'Asset has been rejected successfully.',
+                    'success'
+                ).then(() => {
+                    // Refresh the page to show updated status
+                    router.get(route('assets.show', props.asset.id));
+                });
+            } else {
+                Swal.fire(
+                    'Error!',
+                    response.data.message || 'Failed to reject asset',
+                    'error'
+                );
+            }
+        } catch (error) {
+            console.error('Reject error:', error);
+            Swal.fire(
+                'Error!',
+                error.response?.data?.message || 'Failed to reject asset',
+                'error'
+            );
+        } finally {
+            isRejecting.value = false;
+        }
+    }
+};
+
+// Restore asset function with Swal confirmation
+const restoreAsset = async () => {
+    const result = await Swal.fire({
+        title: 'Restore Asset',
+        text: 'Are you sure you want to restore this asset to pending approval?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, Restore it!',
+        cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            isRestoring.value = true;
+            const response = await axios.post(route('assets.restore', props.asset.id));
+            
+            if (response.data.success) {
+                Swal.fire(
+                    'Restored!',
+                    'Asset has been restored successfully.',
+                    'success'
+                ).then(() => {
+                    // Refresh the page to show updated status
+                    router.get(route('assets.show', props.asset.id));
+                });
+            } else {
+                Swal.fire(
+                    'Error!',
+                    response.data.message || 'Failed to restore asset',
+                    'error'
+                );
+            }
+        } catch (error) {
+            console.error('Restore error:', error);
+            Swal.fire(
+                'Error!',
+                error.response?.data?.message || 'Failed to restore asset',
+                'error'
+            );
+        } finally {
+            isRestoring.value = false;
+        }
+    }
+};
+
+// Activate asset function with Swal confirmation
+const activateAsset = async () => {
+    const result = await Swal.fire({
+        title: 'Activate Asset',
+        text: 'Are you sure you want to activate this asset and put it in use?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, Activate it!',
+        cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            isActivating.value = true;
+            // You might need to create a custom endpoint for this or use a general update method
+            const response = await axios.patch(route('assets.update', props.asset.id), {
+                status: 'in_use',
+                activated_by: auth()?.id(),
+                activated_at: new Date().toISOString()
+            });
+            
+            if (response.data.success) {
+                Swal.fire(
+                    'Activated!',
+                    'Asset has been activated successfully.',
+                    'success'
+                ).then(() => {
+                    // Refresh the page to show updated status
+                    router.get(route('assets.show', props.asset.id));
+                });
+            } else {
+                Swal.fire(
+                    'Error!',
+                    response.data.message || 'Failed to activate asset',
+                    'error'
+                );
+            }
+        } catch (error) {
+            console.error('Activate error:', error);
+            Swal.fire(
+                'Error!',
+                error.response?.data?.message || 'Failed to activate asset',
+                'error'
+            );
+        } finally {
+            isActivating.value = false;
+        }
+    }
+};
+
+// Change asset status function - now properly calls the specific functions
 const changeAssetStatus = (newStatus) => {
-    // This would typically make an API call to update the asset status
-    console.log(`Changing asset status to: ${newStatus}`);
-    // You can implement the actual status change logic here
+    switch (newStatus) {
+        case 'reviewed':
+            reviewAsset();
+            break;
+        case 'approved':
+            approveAsset();
+            break;
+        case 'rejected':
+            rejectAsset();
+            break;
+        case 'pending_approval':
+            restoreAsset();
+            break;
+        case 'in_use':
+            activateAsset();
+            break;
+        default:
+            console.log(`Unknown status: ${newStatus}`);
+    }
 };
 </script>
