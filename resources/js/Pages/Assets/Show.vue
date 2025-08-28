@@ -692,7 +692,7 @@
                             </div>
                             <div v-if="record.completed_date && record.maintenance_range > 0">
                                 <span class="font-medium">Next Due:</span>
-                                <p>{{ formatDate(record.getNextMaintenanceDate ? record.getNextMaintenanceDate() : 'N/A') }}</p>
+                                <p>{{ getNextMaintenanceDate(record) ? formatDate(getNextMaintenanceDate(record)) : 'N/A' }}</p>
                             </div>
                         </div>
                         
@@ -944,6 +944,23 @@ const formatFileSize = (bytes) => {
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+// Helper function to calculate next maintenance date
+const getNextMaintenanceDate = (record) => {
+    if (!record.completed_date || record.maintenance_range === 0) {
+        return null;
+    }
+    
+    try {
+        const completedDate = new Date(record.completed_date);
+        const nextDate = new Date(completedDate);
+        nextDate.setMonth(nextDate.getMonth() + record.maintenance_range);
+        return nextDate;
+    } catch (error) {
+        console.error('Error calculating next maintenance date:', error);
+        return null;
+    }
 };
 
 // Helper functions to detect file types

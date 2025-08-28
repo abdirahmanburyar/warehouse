@@ -7,7 +7,6 @@ use App\Models\AssetMaintenance;
 use App\Models\Asset;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
-use App\Notifications\AssetMaintenanceDue;
 
 class GenerateMaintenanceSchedules extends Command
 {
@@ -21,57 +20,31 @@ class GenerateMaintenanceSchedules extends Command
         $scheduled = 0;
         $notifications = 0;
 
-        // Get all recurring maintenance records that need next scheduling
-        $recurringMaintenance = AssetMaintenance::where('is_recurring', true)
-            ->where('auto_schedule', true)
-            ->where(function ($query) {
-                $query->whereNull('next_scheduled_date')
-                      ->orWhere('next_scheduled_date', '<=', now());
-            })
+        // Get all completed recurring maintenance records that need next scheduling
+        $recurringMaintenance = AssetMaintenance::where('maintenance_range', '>', 0)
+            ->whereNotNull('completed_date')
             ->get();
 
         foreach ($recurringMaintenance as $maintenance) {
-            // Calculate next scheduled date
-            $lastDate = $maintenance->scheduled_date;
-            if ($maintenance->next_scheduled_date) {
-                $lastDate = $maintenance->next_scheduled_date;
-            }
-
-            $nextDate = Carbon::parse($lastDate)->addMonths($maintenance->recurrence_interval);
+            // Calculate next due date based on completed_date + maintenance_range
+            $nextDueDate = Carbon::parse($maintenance->completed_date)->addMonths($maintenance->maintenance_range);
             
-            // Update the next scheduled date
-            $maintenance->update(['next_scheduled_date' => $nextDate]);
-            
-            // Create a new maintenance record for the next cycle
-            $newMaintenance = AssetMaintenance::create([
-                'asset_id' => $maintenance->asset_id,
-                'maintenance_type' => $maintenance->maintenance_type,
-                'description' => $maintenance->description,
-                'scheduled_date' => $nextDate,
-                'cost' => $maintenance->cost,
-                'performed_by' => $maintenance->performed_by,
-                'notes' => $maintenance->notes,
-                'is_recurring' => true,
-                'recurrence_interval' => $maintenance->recurrence_interval,
-                'auto_schedule' => true,
-                'notification_recipients' => $maintenance->notification_recipients,
-                'reminder_days_before' => $maintenance->reminder_days_before,
-                'status' => AssetMaintenance::STATUS_SCHEDULED,
-                'metadata' => [
-                    'created_by' => $maintenance->performed_by,
-                    'created_at' => now()->toISOString(),
-                    'parent_maintenance_id' => $maintenance->id,
-                ],
-            ]);
+            // Check if next maintenance is due (within 30 days or overdue)
+            if ($nextDueDate->isPast() || $nextDueDate->diffInDays(now()) <= 30) {
+                // Create a new maintenance record for the next cycle
+                $newMaintenance = AssetMaintenance::create([
+                    'asset_id' => $maintenance->asset_id,
+                    'maintenance_type' => $maintenance->maintenance_type,
+                    'maintenance_range' => $maintenance->maintenance_range,
+                    'created_by' => $maintenance->created_by,
+                    // completed_date is null for new scheduled maintenance
+                ]);
 
-            $scheduled++;
+                $scheduled++;
 
-            // Send notifications to recipients
-            if (!empty($maintenance->notification_recipients)) {
-                foreach ($maintenance->notification_recipients as $email) {
-                    $this->sendMaintenanceNotification($email, $newMaintenance);
-                    $notifications++;
-                }
+                // Send notification to asset owner/concerned people
+                $this->sendMaintenanceNotification($newMaintenance);
+                $notifications++;
             }
         }
 
@@ -84,56 +57,105 @@ class GenerateMaintenanceSchedules extends Command
         return 0;
     }
 
-    private function sendMaintenanceNotification($email, $maintenance)
+    private function sendMaintenanceNotification($maintenance)
     {
         try {
-            Mail::raw("New maintenance scheduled for asset: {$maintenance->asset->asset_number}\n\n" .
-                     "Type: {$maintenance->maintenance_type}\n" .
-                     "Description: {$maintenance->description}\n" .
-                     "Scheduled Date: {$maintenance->scheduled_date->format('Y-m-d')}\n" .
-                     "Asset: {$maintenance->asset->asset_number}\n\n" .
-                     "Please review and take necessary action.", function ($message) use ($email, $maintenance) {
-                $message->to($email)
-                        ->subject("New Maintenance Scheduled: {$maintenance->asset->asset_number}");
-            });
+            $asset = Asset::find($maintenance->asset_id);
+            if (!$asset) return;
+
+            // Get asset owner or concerned people (you can customize this logic)
+            $recipients = $this->getMaintenanceRecipients($asset, $maintenance);
+            
+            foreach ($recipients as $email) {
+                $assetUrl = url(route('assets.show', $asset->id));
+                Mail::raw("New maintenance scheduled for asset: {$asset->asset_tag}\n\n" .
+                         "Type: {$maintenance->maintenance_type}\n" .
+                         "Range: Every {$maintenance->maintenance_range} month(s)\n" .
+                         "Asset: {$asset->asset_tag}\n" .
+                         "Asset Name: {$asset->name}\n\n" .
+                         "View Asset: {$assetUrl}\n\n" .
+                         "Please review and take necessary action.", function ($message) use ($email, $asset) {
+                    $message->to($email)
+                            ->subject("New Maintenance Scheduled: {$asset->asset_tag}");
+                });
+            }
         } catch (\Exception $e) {
-            $this->error("Failed to send notification to {$email}: " . $e->getMessage());
+            $this->error("Failed to send notification: " . $e->getMessage());
         }
     }
 
     private function sendMaintenanceReminders()
     {
-        $maintenanceDueSoon = AssetMaintenance::where('status', AssetMaintenance::STATUS_SCHEDULED)
-            ->where('scheduled_date', '<=', now()->addDays(30))
-            ->where('scheduled_date', '>', now())
-            ->get();
+        // Get maintenance records that are due soon (based on completed_date + maintenance_range)
+        $maintenanceDueSoon = AssetMaintenance::where('maintenance_range', '>', 0)
+            ->whereNotNull('completed_date')
+            ->get()
+            ->filter(function ($maintenance) {
+                $nextDueDate = Carbon::parse($maintenance->completed_date)->addMonths($maintenance->maintenance_range);
+                return $nextDueDate->diffInDays(now()) <= 30 && $nextDueDate->isFuture();
+            });
 
         foreach ($maintenanceDueSoon as $maintenance) {
-            if (!empty($maintenance->notification_recipients)) {
-                foreach ($maintenance->notification_recipients as $email) {
-                    $this->sendReminderEmail($email, $maintenance);
-                }
+            $asset = Asset::find($maintenance->asset_id);
+            if (!$asset) continue;
+
+            $nextDueDate = Carbon::parse($maintenance->completed_date)->addMonths($maintenance->maintenance_range);
+            $daysUntil = $nextDueDate->diffInDays(now());
+            
+            $recipients = $this->getMaintenanceRecipients($asset, $maintenance);
+            
+            foreach ($recipients as $email) {
+                $this->sendReminderEmail($email, $maintenance, $asset, $daysUntil);
             }
         }
     }
 
-    private function sendReminderEmail($email, $maintenance)
+    private function sendReminderEmail($email, $maintenance, $asset, $daysUntil)
     {
         try {
-            $daysUntil = now()->diffInDays($maintenance->scheduled_date);
-            
-            Mail::raw("Maintenance Reminder for asset: {$maintenance->asset->asset_number}\n\n" .
+            $assetUrl = url(route('assets.show', $asset->id));
+            Mail::raw("Maintenance Reminder for asset: {$asset->asset_tag}\n\n" .
                      "Type: {$maintenance->maintenance_type}\n" .
-                     "Description: {$maintenance->description}\n" .
-                     "Scheduled Date: {$maintenance->scheduled_date->format('Y-m-d')}\n" .
-                     "Days Until Due: {$daysUntil}\n\n" .
-                     "Please ensure maintenance is completed on time.", function ($message) use ($email, $maintenance) {
+                     "Range: Every {$maintenance->maintenance_range} month(s)\n" .
+                     "Next Due Date: " . Carbon::parse($maintenance->completed_date)->addMonths($maintenance->maintenance_range)->format('Y-m-d') . "\n" .
+                     "Days Until Due: {$daysUntil}\n" .
+                     "Asset: {$asset->asset_tag}\n" .
+                     "Asset Name: {$asset->name}\n\n" .
+                     "View Asset: {$assetUrl}\n\n" .
+                     "Please ensure maintenance is completed on time.", function ($message) use ($email, $asset, $daysUntil) {
                 $message->to($email)
-                        ->subject("Maintenance Reminder: {$maintenance->asset->asset_number} - Due in {$daysUntil} days");
+                        ->subject("Maintenance Reminder: {$asset->asset_tag} - Due in {$daysUntil} days");
             });
         } catch (\Exception $e) {
             $this->error("Failed to send reminder to {$email}: " . $e->getMessage());
         }
+    }
+
+    private function getMaintenanceRecipients($asset, $maintenance = null)
+    {
+        // Customize this method to get the right people to notify
+        $recipients = [];
+        
+        // 1. Always include the maintenance creator's email
+        if ($maintenance && $maintenance->created_by) {
+            $creator = \App\Models\User::find($maintenance->created_by);
+            if ($creator && $creator->email) {
+                $recipients[] = $creator->email;
+            }
+        }
+        
+        // 2. Include asset owner/creator email if available
+        if ($asset->created_by) {
+            $assetOwner = \App\Models\User::find($asset->created_by);
+            if ($assetOwner && $assetOwner->email) {
+                $recipients[] = $assetOwner->email;
+            }
+        }
+        
+        // 3. Add default maintenance team emails (customize as needed)
+        $recipients[] = 'maintenance@example.com';
+        
+        return array_unique($recipients);
     }
 }
 
