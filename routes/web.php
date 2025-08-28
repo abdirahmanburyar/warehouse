@@ -24,6 +24,7 @@ use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssetDocumentController;
+use App\Http\Controllers\AssetMaintenanceController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\LiquidateDisposalController;
@@ -620,7 +621,21 @@ Route::controller(LocationController::class)
             Route::delete('/documents/{document}', [AssetDocumentController::class, 'destroy'])->name('asset.documents.destroy');
             Route::get('/documents/{document}/download', [AssetDocumentController::class, 'download'])->name('asset.documents.download');
             Route::get('/documents/{document}/preview', [AssetDocumentController::class, 'preview'])->name('asset.documents.preview');
+
+            // Asset Maintenance Routes
+            Route::get('/{asset}/maintenance', [AssetMaintenanceController::class, 'index'])->name('asset.maintenance.index');
+            Route::post('/{asset}/maintenance', [AssetMaintenanceController::class, 'store'])->name('asset.maintenance.store');
+            Route::get('/maintenance/{maintenance}/edit', [AssetMaintenanceController::class, 'edit'])->name('asset.maintenance.edit');
+            Route::put('/maintenance/{maintenance}', [AssetMaintenanceController::class, 'update'])->name('asset.maintenance.update');
+            Route::delete('/maintenance/{maintenance}', [AssetMaintenanceController::class, 'destroy'])->name('asset.maintenance.destroy');
+            Route::post('/maintenance/{maintenance}/mark-in-progress', [AssetMaintenanceController::class, 'markInProgress'])->name('asset.maintenance.mark-in-progress');
+            Route::post('/maintenance/{maintenance}/mark-completed', [AssetMaintenanceController::class, 'markCompleted'])->name('asset.maintenance.mark-completed');
+            Route::post('/maintenance/{maintenance}/cancel', [AssetMaintenanceController::class, 'cancel'])->name('asset.maintenance.cancel');
+            Route::post('/maintenance/{maintenance}/reschedule', [AssetMaintenanceController::class, 'reschedule'])->name('asset.maintenance.reschedule');
+            Route::get('/{asset}/maintenance/list', [AssetMaintenanceController::class, 'getAssetMaintenance'])->name('asset.maintenance.list');
         });
+
+
 
 
 

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Carbon\Carbon;
 
 class AssetMaintenance extends Model
 {
@@ -14,227 +15,125 @@ class AssetMaintenance extends Model
     protected $table = 'asset_maintenance';
 
     protected $fillable = [
-        'asset_item_id',
+        'asset_id',
         'maintenance_type',
-        'description',
-        'scheduled_date',
         'completed_date',
-        'status',
-        'cost',
-        'performed_by',
-        'notes',
-        'metadata',
+        'created_by',
+        'maintenance_range',
     ];
 
     protected $casts = [
-        'scheduled_date' => 'date',
         'completed_date' => 'date',
-        'cost' => 'decimal:2',
-        'metadata' => 'array',
     ];
 
     // Relationships
-    public function assetItem(): BelongsTo
+    public function asset(): BelongsTo
     {
-        return $this->belongsTo(AssetItem::class);
+        return $this->belongsTo(Asset::class);
     }
 
-    public function performedBy(): BelongsTo
+    public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'performed_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
-    // Constants
-    const STATUS_SCHEDULED = 'scheduled';
-    const STATUS_IN_PROGRESS = 'in_progress';
-    const STATUS_COMPLETED = 'completed';
-    const STATUS_CANCELLED = 'cancelled';
+    // Maintenance range constants
+    const RANGE_ONE_TIME = 0;
+    const RANGE_1_MONTH = 1;
+    const RANGE_2_MONTHS = 2;
+    const RANGE_3_MONTHS = 3;
+    const RANGE_6_MONTHS = 6;
+    const RANGE_12_MONTHS = 12;
 
-    public static function getStatuses(): array
+    public static function getMaintenanceRanges(): array
     {
         return [
-            self::STATUS_SCHEDULED => 'Scheduled',
-            self::STATUS_IN_PROGRESS => 'In Progress',
-            self::STATUS_COMPLETED => 'Completed',
-            self::STATUS_CANCELLED => 'Cancelled',
-        ];
-    }
-
-    const TYPE_PREVENTIVE = 'preventive';
-    const TYPE_CORRECTIVE = 'corrective';
-    const TYPE_EMERGENCY = 'emergency';
-    const TYPE_PREDICTIVE = 'predictive';
-
-    public static function getMaintenanceTypes(): array
-    {
-        return [
-            self::TYPE_PREVENTIVE => 'Preventive',
-            self::TYPE_CORRECTIVE => 'Corrective',
-            self::TYPE_EMERGENCY => 'Emergency',
-            self::TYPE_PREDICTIVE => 'Predictive',
+            self::RANGE_ONE_TIME => 'One-time',
+            self::RANGE_1_MONTH => 'Every 1 Month',
+            self::RANGE_2_MONTHS => 'Every 2 Months',
+            self::RANGE_3_MONTHS => 'Every 3 Months',
+            self::RANGE_6_MONTHS => 'Every 6 Months',
+            self::RANGE_12_MONTHS => 'Every 12 Months',
         ];
     }
 
     // Helper methods
-    public function isScheduled(): bool
-    {
-        return $this->status === self::STATUS_SCHEDULED;
-    }
-
-    public function isInProgress(): bool
-    {
-        return $this->status === self::STATUS_IN_PROGRESS;
-    }
-
-    public function isCompleted(): bool
-    {
-        return $this->status === self::STATUS_COMPLETED;
-    }
-
-    public function isCancelled(): bool
-    {
-        return $this->status === self::STATUS_CANCELLED;
-    }
-
-    public function isOverdue(): bool
-    {
-        return $this->isScheduled() && $this->scheduled_date && $this->scheduled_date->isPast();
-    }
-
-    public function isUpcoming(): bool
-    {
-        return $this->isScheduled() && $this->scheduled_date && $this->scheduled_date->isFuture();
-    }
-
-    public function getDaysUntilScheduled(): int
-    {
-        if (!$this->scheduled_date || !$this->isScheduled()) {
-            return 0;
-        }
-        
-        return $this->scheduled_date->diffInDays(now());
-    }
-
-    public function getDaysSinceCompleted(): int
-    {
-        if (!$this->completed_date || !$this->isCompleted()) {
-            return 0;
-        }
-        
-        return $this->completed_date->diffInDays(now());
-    }
-
-    public function markInProgress()
-    {
-        $this->update(['status' => self::STATUS_IN_PROGRESS]);
-        return $this;
-    }
-
-    public function markCompleted($notes = null)
-    {
-        $this->update([
-            'status' => self::STATUS_COMPLETED,
-            'completed_date' => now(),
-            'notes' => $notes,
-        ]);
-        return $this;
-    }
-
-    public function cancel($notes = null)
-    {
-        $this->update([
-            'status' => self::STATUS_CANCELLED,
-            'notes' => $notes,
-        ]);
-        return $this;
-    }
-
-    public function reschedule($newDate)
-    {
-        $this->update(['scheduled_date' => $newDate]);
-        return $this;
-    }
-
-    public function getFormattedCost(): string
-    {
-        return $this->cost ? '$' . number_format($this->cost, 2) : 'N/A';
-    }
-
     public function getAssetName(): string
     {
-        return $this->assetItem->asset_name ?? 'Unknown Asset';
+        return $this->asset->asset_number ?? 'Unknown Asset';
     }
 
     public function getAssetNumber(): string
     {
-        return $this->assetItem->getAssetNumber() ?? 'Unknown';
+        return $this->asset->asset_number ?? 'Unknown';
     }
 
-    public function getPerformerName(): string
+    public function getCreatedByName(): string
     {
-        return $this->performedBy->name ?? 'Unknown';
+        return $this->createdBy->name ?? 'Unknown';
+    }
+
+    public function getMaintenanceRangeText(): string
+    {
+        $range = $this->maintenance_range;
+        if ($range === 0) return 'One-time';
+        if ($range === 1) return 'Every 1 Month';
+        if ($range === 2) return 'Every 2 Months';
+        if ($range === 3) return 'Every 3 Months';
+        if ($range === 6) return 'Every 6 Months';
+        if ($range === 12) return 'Every 12 Months';
+        return "Every {$range} Month(s)";
+    }
+
+    public function getNextMaintenanceDate(): ?string
+    {
+        if (!$this->completed_date || $this->maintenance_range === 0) {
+            return null;
+        }
+        
+        return Carbon::parse($this->completed_date)->addMonths($this->maintenance_range)->format('Y-m-d');
+    }
+
+    public function isMaintenanceDue(): bool
+    {
+        if (!$this->completed_date || $this->maintenance_range === 0) {
+            return false;
+        }
+        
+        $nextDue = Carbon::parse($this->completed_date)->addMonths($this->maintenance_range);
+        return $nextDue->isPast();
     }
 
     // Scopes
-    public function scopeByStatus($query, $status)
-    {
-        return $query->where('status', $status);
-    }
-
     public function scopeByType($query, $type)
     {
         return $query->where('maintenance_type', $type);
     }
 
-    public function scopeScheduled($query)
+    public function scopeByAsset($query, $assetId)
     {
-        return $query->where('status', self::STATUS_SCHEDULED);
+        return $query->where('asset_id', $assetId);
     }
 
-    public function scopeInProgress($query)
+    public function scopeByRange($query, $range)
     {
-        return $query->where('status', self::STATUS_IN_PROGRESS);
+        return $query->where('maintenance_range', $range);
     }
 
-    public function scopeCompleted($query)
+    public function scopeByCreator($query, $creatorId)
     {
-        return $query->where('status', self::STATUS_COMPLETED);
+        return $query->where('created_by', $creatorId);
     }
 
-    public function scopeCancelled($query)
+    public function scopeDueForMaintenance($query)
     {
-        return $query->where('status', self::STATUS_CANCELLED);
+        return $query->whereNotNull('completed_date')
+                    ->where('maintenance_range', '>', 0)
+                    ->whereRaw('DATE_ADD(completed_date, INTERVAL maintenance_range MONTH) <= CURDATE()');
     }
 
-    public function scopeOverdue($query)
+    public function scopeCompletedInRange($query, $startDate, $endDate)
     {
-        return $query->where('status', self::STATUS_SCHEDULED)
-                    ->where('scheduled_date', '<', now());
-    }
-
-    public function scopeUpcoming($query)
-    {
-        return $query->where('status', self::STATUS_SCHEDULED)
-                    ->where('scheduled_date', '>=', now());
-    }
-
-    public function scopeByAssetItem($query, $assetItemId)
-    {
-        return $query->where('asset_item_id', $assetItemId);
-    }
-
-    public function scopeByPerformer($query, $performerId)
-    {
-        return $query->where('performed_by', $performerId);
-    }
-
-    public function scopeByDateRange($query, $startDate, $endDate)
-    {
-        return $query->whereBetween('scheduled_date', [$startDate, $endDate]);
-    }
-
-    public function scopeByCostRange($query, $minCost, $maxCost)
-    {
-        return $query->whereBetween('cost', [$minCost, $maxCost]);
+        return $query->whereBetween('completed_date', [$startDate, $endDate]);
     }
 }

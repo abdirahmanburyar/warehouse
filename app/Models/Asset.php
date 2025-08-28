@@ -65,6 +65,11 @@ class Asset extends Model
         return $this->hasMany(AssetDocument::class);
     }
 
+    public function maintenance(): HasMany
+    {
+        return $this->hasMany(AssetMaintenance::class);
+    }
+
     public function fundSource(): BelongsTo
     {
         return $this->belongsTo(FundSource::class, 'fund_source_id');

@@ -13,16 +13,11 @@ return new class extends Migration
     {
         Schema::create('asset_maintenance', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('asset_item_id')->constrained('asset_items')->onDelete('cascade');
+            $table->foreignId('asset_id')->constrained('assets')->onDelete('cascade');
             $table->string('maintenance_type'); // Type of maintenance (preventive, corrective, etc.)
-            $table->text('description'); // Description of the maintenance work
-            $table->date('scheduled_date')->nullable(); // When maintenance is scheduled
             $table->date('completed_date')->nullable(); // When maintenance was completed
-            $table->enum('status', ['scheduled', 'in_progress', 'completed', 'cancelled'])->default('scheduled');
-            $table->double('cost')->nullable()->default(0); // Cost of maintenance
-            $table->foreignId('performed_by')->nullable()->constrained('assignees')->nullOnDelete(); // Who performed the maintenance
-            $table->text('notes')->nullable(); // Additional notes
-            $table->json('metadata')->nullable(); // Additional metadata
+            $table->foreignId('created_by')->constrained('users')->onDelete('cascade'); // Who created the maintenance record
+            $table->integer('maintenance_range')->default(0); // Every X months (0=one-time, 1, 2, 3, 6, 12, etc.)
             $table->timestamps();
             $table->softDeletes();
         });
