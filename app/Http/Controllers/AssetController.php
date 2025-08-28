@@ -919,6 +919,7 @@ class AssetController extends Controller
         try {
             // Get the asset with its relationships
             $assetWithRelations =  Asset::with([
+                'documents',
                 'assetItems.assetHistory.performer',
                 'region',
                 'assetLocation',

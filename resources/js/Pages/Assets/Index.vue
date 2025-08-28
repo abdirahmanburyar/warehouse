@@ -165,6 +165,12 @@
                         </div>
 
                         <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fund Source</label>
+                            <Multiselect v-model="fundSourceFilter" :options="props.fundSources || []" placeholder="All Fund Sources"
+                                label="name" track-by="id" :show-labels="false" :close-on-select="true" />
+                        </div>
+
+                        <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Assignee</label>
                             <Multiselect v-model="assigneeFilter" :options="props.assignees || []" placeholder="All Assignees"
                                 label="name" track-by="id" :show-labels="false" :close-on-select="true" />

@@ -50,14 +50,6 @@
                             <p class="text-xs text-gray-900 font-semibold">{{ props.asset.asset_number }}</p>
                         </div>
                         <div>
-                            <p class="text-xs font-medium text-gray-500">Asset Tag</p>
-                            <p class="text-xs text-gray-900">
-                                <Link :href="route('assets.show', props.asset.asset_number)" class="text-blue-600 hover:text-blue-800 underline">
-                                    {{ props.asset.asset_tag || 'N/A' }}
-                                </Link>
-                            </p>
-                        </div>
-                        <div>
                             <p class="text-xs font-medium text-gray-500">Acquisition Date</p>
                             <p class="text-xs text-gray-900">{{ formatDate(props.asset.acquisition_date) }}</p>
                         </div>
@@ -312,6 +304,8 @@
                     </div>
                 </div>
             </div>
+
+            {{ props.asset.documents }}
 
             <!-- Asset Status Actions -->
             <div class="mt-8 mb-6 bg-white rounded-lg shadow-sm mx-6">
