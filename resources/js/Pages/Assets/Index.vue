@@ -259,12 +259,12 @@
                     <p class="text-gray-500">No assets match your current filters.</p>
                 </div>
 
-                <div v-else class="relative bg-white/90 backdrop-blur-sm rounded-xl shadow-sm ring-1 ring-gray-200/70 overflow-x-auto">
+                <div v-else class="relative bg-white/90 backdrop-blur-sm rounded-xl shadow-sm ring-1 ring-gray-200/70">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="sticky top-0 z-[1] bg-gradient-to-r from-slate-800 to-slate-700 text-white shadow">
                             <tr>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
-                                    <span>Asset Number</span>
+                                    <span>Asset Tag</span>
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
                                     <span>Asset Name</span>
@@ -308,31 +308,33 @@
                                 </th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-100">
+                        <tbody class="bg-white divide-y divide-y divide-gray-100">
                             <tr v-for="asset in props.assets.data" :key="asset.id"
                                  class="odd:bg-white even:bg-gray-50/60 hover:bg-indigo-50 transition-colors duration-150 border-b border-gray-100 group">
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
-                                    <div class="text-sm font-semibold text-gray-900">
-                                        {{ asset.asset_number || 'N/A' }}
+                                    <div class="text-xs text-gray-900">
+                                        <Link :href="route('assets.show', asset.asset_number)" class="text-blue-600 hover:text-blue-800 underline">
+                                            {{ asset.asset_tag || 'N/A' }}
+                                        </Link>
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
-                                    <div class="text-sm font-semibold text-gray-900">
+                                    <div class="text-xs font-semibold text-gray-900">
                                         {{ asset.name || asset.asset_tag || 'N/A' }}
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
-                                    <div class="text-sm text-gray-900">
+                                    <div class="text-xs text-gray-900">
                                         {{ asset.serial_number || 'N/A' }}
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
-                                    <div class="text-sm text-gray-900">
+                                    <div class="text-xs text-gray-900">
                                         {{ asset.category?.name || 'N/A' }}
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
-                                    <div class="text-sm text-gray-900">
+                                    <div class="text-xs text-gray-900">
                                         {{ asset.type?.name || 'N/A' }}
                                     </div>
                                 </td>
@@ -357,37 +359,37 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
-                                    <div class="text-sm text-gray-900">
+                                    <div class="text-xs text-gray-900">
                                         {{ asset.assignee?.name || 'N/A' }}
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
-                                    <div class="text-sm text-gray-900">
+                                    <div class="text-xs text-gray-900">
                                         {{ asset.region?.name || 'N/A' }}
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
-                                    <div class="text-sm text-gray-900">
+                                    <div class="text-xs text-gray-900">
                                         {{ asset.asset_location?.name || 'N/A' }}
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
-                                    <div class="text-sm text-gray-900">
+                                    <div class="text-xs text-gray-900">
                                         {{ asset.sub_location?.name || 'N/A' }}
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
-                                    <div class="text-sm text-gray-900">
+                                    <div class="text-xs text-gray-900">
                                         {{ formatDate(asset.acquisition_date) }}
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
-                                    <div class="text-sm text-gray-900">
+                                    <div class="text-xs text-gray-900">
                                         ${{ parseFloat(asset.original_value || 0).toLocaleString() }}
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
-                                    <div class="text-sm text-gray-900">
+                                    <div class="text-xs text-gray-900">
                                         {{ asset.fund_source?.name || 'N/A' }}
                                     </div>
                                 </td>
@@ -403,7 +405,8 @@
                                             
                                             <!-- Dropdown Menu -->
                                             <div v-if="activeDropdown === asset.id" 
-                                                class="absolute right-0 z-10 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1">
+                                                class="absolute right-0 z-[9999] w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1"
+                                                :class="getDropdownPosition(asset.id)">
 
                                                 <Link :href="route('assets.edit', asset.asset_id || asset.asset?.id)"
                                                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
@@ -1280,6 +1283,21 @@ function toggleDropdown(assetId) {
 
 function closeDropdown() {
     activeDropdown.value = null;
+}
+
+// Function to determine dropdown position to avoid overlapping with pagination
+function getDropdownPosition(assetId) {
+    // Check if this is one of the last few rows (likely to overlap with pagination)
+    const assetIndex = props.assets.data.findIndex(asset => asset.id === assetId);
+    const totalAssets = props.assets.data.length;
+    
+    // If it's in the last 3 rows, position dropdown above the button
+    if (assetIndex >= totalAssets - 3) {
+        return 'bottom-full mb-2'; // Position above with margin bottom
+    }
+    
+    // Default position below the button
+    return 'top-full mt-2'; // Position below with margin top
 }
 
 // Close dropdown when clicking outside

@@ -29,9 +29,7 @@
                                 <!-- Rejected Icon -->
                                 <img v-else-if="props.asset.status === 'rejected'" src="/assets/images/rejected.png"
                                     class="w-4 h-4" alt="Rejected" />
-                                <!-- In Use Icon -->
-                                <img v-else-if="props.asset.status === 'in_use'" src="/assets/images/inprocess.png"
-                                    class="w-4 h-4" alt="In Use" />
+
                             </span>
                             {{ props.asset.status.replace('_', ' ').toUpperCase() }}
                         </span>
@@ -50,6 +48,14 @@
                         <div>
                             <p class="text-xs font-medium text-gray-500">Asset Number</p>
                             <p class="text-xs text-gray-900 font-semibold">{{ props.asset.asset_number }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-gray-500">Asset Tag</p>
+                            <p class="text-xs text-gray-900">
+                                <Link :href="route('assets.show', props.asset.asset_number)" class="text-blue-600 hover:text-blue-800 underline">
+                                    {{ props.asset.asset_tag || 'N/A' }}
+                                </Link>
+                            </p>
                         </div>
                         <div>
                             <p class="text-xs font-medium text-gray-500">Acquisition Date</p>
@@ -195,26 +201,7 @@
                                 ">Approved</span>
                         </div>
 
-                        <!-- In Use -->
-                        <div class="flex flex-col items-center">
-                            <div class="w-14 h-14 rounded-full border-4 flex items-center justify-center z-10" :class="[
-                                assetStatusOrder.indexOf(props.asset.status) >=
-                                    assetStatusOrder.indexOf('in_use')
-                                    ? 'bg-white border-green-500'
-                                    : 'bg-white border-gray-200',
-                            ]">
-                                <img src="/assets/images/inprocess.png" class="w-7 h-7" alt="In Use" :class="assetStatusOrder.indexOf(props.asset.status) >=
-                                    assetStatusOrder.indexOf('in_use')
-                                    ? ''
-                                    : 'opacity-40'
-                                    " />
-                            </div>
-                            <span class="mt-3 text-xs font-bold" :class="assetStatusOrder.indexOf(props.asset.status) >=
-                                assetStatusOrder.indexOf('in_use')
-                                ? 'text-green-600'
-                                : 'text-gray-500'
-                                ">In Use</span>
-                        </div>
+
                     </div>
                 </div>
             </div>
@@ -483,7 +470,6 @@ const statusClasses = {
     pending_approval: "bg-yellow-100 text-yellow-800 rounded-full font-bold",
     reviewed: "bg-green-100 text-green-800 rounded-full font-bold",
     approved: "bg-green-100 text-green-800 rounded-full font-bold",
-    in_use: "bg-blue-100 text-blue-800 rounded-full font-bold",
     rejected: "bg-red-100 text-red-800 rounded-full font-bold",
     default: "bg-gray-100 text-gray-800 rounded-full font-bold",
 };
@@ -493,7 +479,6 @@ const assetStatusOrder = [
     "pending_approval",
     "reviewed",
     "approved",
-    "in_use",
 ];
 
 // State for history modal
