@@ -919,6 +919,7 @@ class AssetController extends Controller
         try {
             // Get the asset with its relationships
             $assetWithRelations =  Asset::with([
+                'assetItems',
                 'region',
                 'assetLocation',
                 'subLocation',
@@ -936,9 +937,10 @@ class AssetController extends Controller
             return Inertia::render('Assets/Show', [
                 'asset' => $assetWithRelations,
                 'pageTitle' => 'Asset Details',
-                'pageDescription' => 'View detailed information for asset: ' . $asset->asset_number
+                'pageDescription' => 'View detailed information for asset: ' . $assetWithRelations->asset_number
             ]);
         } catch (\Throwable $th) {
+            logger()->error('Failed to show asset: ' . $th->getMessage());
             return back()->withErrors(['error' => 'Failed to load asset: ' . $th->getMessage()]);
         }
     }
