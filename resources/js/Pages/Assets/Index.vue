@@ -1646,9 +1646,17 @@ const clearFilters = () => {
     selectedStatus.value = null;
     regionFilter.value = null;
     locationFilter.value = null;
+    subLocationFilter.value = null;
     selectedSubLocations.value = [];
     subLocationOptions.value = [];
     fundSourceFilter.value = null;
+    categoryFilter.value = null;
+    typeFilter.value = null;
+    assigneeFilter.value = null;
+    acquisitionFrom.value = '';
+    acquisitionTo.value = '';
+    createdFrom.value = '';
+    createdTo.value = '';
     props.filters.page = 1;
     reloadAssets();
 };
