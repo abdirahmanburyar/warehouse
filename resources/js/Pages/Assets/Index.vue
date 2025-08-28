@@ -349,7 +349,7 @@
                                                 <div class="text-sm font-semibold text-gray-900">
                                                     {{ asset.name || asset.asset_tag }}
                                                 </div>
-                                                <div v-if="asset.tag_no" class="text-xs text-gray-500">Tag: {{ asset.tag_no }}</div>
+                                                <Link :href="route('assets.show', asset.id)" v-if="asset.tag_no" class="text-xs text-gray-500">Tag: {{ asset.tag_no }}</Link>
                                             </div>
                                 <div class="flex items-center space-x-3 mt-2 text-sm">
                                                 <span class="text-sm font-medium text-gray-600">S/N:</span>

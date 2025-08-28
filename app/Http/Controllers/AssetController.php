@@ -914,11 +914,11 @@ class AssetController extends Controller
     /**
      * Show the details of an asset.
      */
-    public function show(Asset $asset)
+    public function show(Request $request, $asset)
     {
         try {
             // Get the asset with its relationships
-            $assetWithRelations = $asset->load([
+            $assetWithRelations =  Asset::with([
                 'region',
                 'assetLocation',
                 'subLocation',
@@ -930,26 +930,15 @@ class AssetController extends Controller
                 'assetItems.assignee',
                 'assetItems.category',
                 'assetItems.type'
-            ]);
-
-            // Get all assets for the dropdown
-            $allAssets = Asset::with(['region', 'assetLocation', 'subLocation'])
-                ->orderBy('asset_number')
-                ->get();
+            ])
+            ->find($asset);
 
             return Inertia::render('Assets/Show', [
-                'assetItem' => $assetWithRelations,
-                'assets' => $allAssets,
+                'asset' => $assetWithRelations,
                 'pageTitle' => 'Asset Details',
                 'pageDescription' => 'View detailed information for asset: ' . $asset->asset_number
             ]);
         } catch (\Throwable $th) {
-            logger()->error('Failed to show asset: ' . $th->getMessage(), [
-                'asset_id' => $asset->id ?? 'unknown',
-                'user_id' => auth()->id(),
-                'trace' => $th->getTraceAsString()
-            ]);
-            
             return back()->withErrors(['error' => 'Failed to load asset: ' . $th->getMessage()]);
         }
     }

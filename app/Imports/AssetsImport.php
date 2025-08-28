@@ -12,12 +12,12 @@ use App\Models\AssetLocation;
 use App\Models\SubLocation;
 use App\Models\Assignee;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
+
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Maatwebsite\Excel\Concerns\WithValidation;
+
 use Maatwebsite\Excel\Concerns\SkipsOnError;
 use Maatwebsite\Excel\Concerns\SkipsErrors;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
@@ -36,15 +36,7 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
 
     public function collection(Collection $rows)
     {        
-        // Log the first row to see what columns we're actually getting
-        if ($rows->count() > 0) {
-            $firstRow = $rows->first();
-            
-            // Log data types for debugging
-            foreach ($firstRow as $key => $value) {
-                $type = is_object($value) ? get_class($value) : gettype($value);
-            }
-        }
+
         
         foreach ($rows as $index => $row) {            
             // Custom validation - check required fields
