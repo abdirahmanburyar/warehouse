@@ -51,16 +51,15 @@ class AssetMaintenanceController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, Asset $asset)
     {
         $request->validate([
-            'asset_id' => 'required|exists:assets,id',
             'maintenance_type' => 'required|string|max:255',
             'maintenance_range' => 'required|integer|min:0|max:60',
         ]);
 
         $maintenance = AssetMaintenance::create([
-            'asset_id' => $request->asset_id,
+            'asset_id' => $asset->id,
             'maintenance_type' => $request->maintenance_type,
             'maintenance_range' => $request->maintenance_range,
             'created_by' => auth()->id(),
@@ -96,13 +95,11 @@ class AssetMaintenanceController extends Controller
     public function update(Request $request, AssetMaintenance $maintenance)
     {
         $request->validate([
-            'asset_id' => 'required|exists:assets,id',
             'maintenance_type' => 'required|string|max:255',
             'maintenance_range' => 'required|integer|min:0|max:60',
         ]);
 
         $maintenance->update([
-            'asset_id' => $request->asset_id,
             'maintenance_type' => $request->maintenance_type,
             'maintenance_range' => $request->maintenance_range,
         ]);

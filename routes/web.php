@@ -623,16 +623,13 @@ Route::controller(LocationController::class)
             Route::get('/documents/{document}/preview', [AssetDocumentController::class, 'preview'])->name('asset.documents.preview');
 
             // Asset Maintenance Routes
-            Route::get('/{asset}/maintenance', [AssetMaintenanceController::class, 'index'])->name('asset.maintenance.index');
-            Route::post('/{asset}/maintenance', [AssetMaintenanceController::class, 'store'])->name('asset.maintenance.store');
-            Route::get('/maintenance/{maintenance}/edit', [AssetMaintenanceController::class, 'edit'])->name('asset.maintenance.edit');
-            Route::put('/maintenance/{maintenance}', [AssetMaintenanceController::class, 'update'])->name('asset.maintenance.update');
-            Route::delete('/maintenance/{maintenance}', [AssetMaintenanceController::class, 'destroy'])->name('asset.maintenance.destroy');
-            Route::post('/maintenance/{maintenance}/mark-in-progress', [AssetMaintenanceController::class, 'markInProgress'])->name('asset.maintenance.mark-in-progress');
-            Route::post('/maintenance/{maintenance}/mark-completed', [AssetMaintenanceController::class, 'markCompleted'])->name('asset.maintenance.mark-completed');
-            Route::post('/maintenance/{maintenance}/cancel', [AssetMaintenanceController::class, 'cancel'])->name('asset.maintenance.cancel');
-            Route::post('/maintenance/{maintenance}/reschedule', [AssetMaintenanceController::class, 'reschedule'])->name('asset.maintenance.reschedule');
-            Route::get('/{asset}/maintenance/list', [AssetMaintenanceController::class, 'getAssetMaintenance'])->name('asset.maintenance.list');
+Route::get('/{asset}/maintenance', [AssetMaintenanceController::class, 'index'])->name('asset.maintenance.index');
+Route::post('/{asset}/maintenance', [AssetMaintenanceController::class, 'store'])->name('asset.maintenance.store');
+Route::get('/maintenance/{maintenance}/edit', [AssetMaintenanceController::class, 'edit'])->name('asset.maintenance.edit');
+Route::put('/maintenance/{maintenance}', [AssetMaintenanceController::class, 'update'])->name('asset.maintenance.update');
+Route::delete('/maintenance/{maintenance}', [AssetMaintenanceController::class, 'destroy'])->name('asset.maintenance.destroy');
+Route::post('/maintenance/{maintenance}/mark-completed', [AssetMaintenanceController::class, 'markCompleted'])->name('asset.maintenance.mark-completed');
+Route::get('/{asset}/maintenance/list', [AssetMaintenanceController::class, 'getAssetMaintenance'])->name('asset.maintenance.list');
         });
 
 
