@@ -4,7 +4,6 @@
             {{ props.error }}
         </div>
         <div v-else>
-            {{ props.asset }}
             <!-- Header Section -->
             <div class="px-6 py-4 border-b border-gray-200">
                 <div class="flex items-center justify-between">
