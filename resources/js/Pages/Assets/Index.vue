@@ -1,6 +1,8 @@
 <template>
     <AuthenticatedLayout title="Asset Management" description="Comprehensive asset tracking and approval system"
         img="/assets/images/asset-header.png">
+
+
         <div class="space-y-6">
             <!-- Header Section with Stats -->
             <div class="bg-white shadow-xl rounded-2xl">
@@ -40,7 +42,7 @@
                             </Link>
 
                             <!-- Bulk Upload Buttons -->
-                            <button @click="downloadTemplate"
+                            <button v-if="page.props.auth.can.asset_export" @click="downloadTemplate"
                                 class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                                     class="w-4 h-4 mr-2">
@@ -49,7 +51,7 @@
                                 Download Template
                             </button>
 
-                            <button @click="showBulkUploadModal = true"
+                            <button v-if="page.props.auth.can.asset_bulk_import" @click="showBulkUploadModal = true"
                                 class="inline-flex items-center px-4 py-2 border border-white/50 text-sm font-medium rounded-md text-white hover:bg-white/10 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                                     class="w-4 h-4 mr-2">
@@ -450,7 +452,7 @@
                                                 class="absolute right-0 z-[9999] w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1"
                                                 :class="getDropdownPosition(asset.id)">
 
-                                                <Link :href="route('assets.edit', asset.asset_id || asset.asset?.id)"
+                                                <Link v-if="page.props.auth.can.asset_edit" :href="route('assets.edit', asset.asset_id || asset.asset?.id)"
                                                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-gray-600">
                                                         <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
@@ -458,7 +460,7 @@
                                                     Edit Asset
                                                 </Link>
                                                 
-                                                <Link :href="route('assets.history.index', asset.id)"
+                                                <Link v-if="page.props.auth.can.asset_view" :href="route('assets.history.index', asset.id)"
                                                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                                                     title="View asset item history">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-green-600">
@@ -469,7 +471,7 @@
                                                 
                                                 <div class="border-t border-gray-100"></div>
                                                 
-                                                <button @click="openTransferModal(asset); closeDropdown()"
+                                                <button v-if="page.props.auth.can.asset_manage" @click="openTransferModal(asset); closeDropdown()"
                                                     class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-blue-600">
                                                         <path fill-rule="evenodd" d="M13.2 2.24a.75.75 0 00.04 1.06L15.54 5H9.5a7 7 0 000 14h.75a.75.75 0 000-1.5H9.5A5.5 5.5 0 019.5 6.5h6.04l-2.3 1.7a.75.75 0 001.02 1.1l3.5-2.6a.75.75 0 000-1.2l-3.5-2.6a.75.75 0 00-1.06.04z" clip-rule="evenodd" />
@@ -477,10 +479,10 @@
                                                     Transfer Asset
                                                 </button>
                                                 
-                                                <button @click="openRetirementModal(asset); closeDropdown()"
+                                                <button v-if="page.props.auth.can.asset_manage" @click="openRetirementModal(asset); closeDropdown()"
                                                     class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2 text-orange-600">
-                                                        <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 11-.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807c1.123 0 2.087-.816 2.285-1.917l.841-10.52.149.023a.75.75 0 11-.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
+                                                        <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 11-.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807c1.123 0 2.087-.816 2.285-1.917l.841-10.52.149.023a.75.75 0 11-.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4zM8.58 7.72a.75.75 0 00-1.5.06l.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
                                                     </svg>
                                                     Retire Asset
                                                 </button>

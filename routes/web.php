@@ -803,12 +803,20 @@ Route::get('/{asset}/maintenance/list', [AssetMaintenanceController::class, 'get
         Route::get('/reorder-levels/import/format', [ReorderLevelController::class, 'getImportFormat'])->name('settings.reorder-levels.import.format');
         
         // Asset Depreciation Settings
-        Route::resource('asset-depreciation', AssetDepreciationSettingsController::class);
-        Route::post('asset-depreciation/{setting}/toggle-status', [AssetDepreciationSettingsController::class, 'toggleStatus'])->name('asset-depreciation.toggle-status');
-        Route::post('asset-depreciation/install-defaults', [AssetDepreciationSettingsController::class, 'installDefaults'])->name('asset-depreciation.install-defaults');
-        Route::post('asset-depreciation/reset-to-defaults', [AssetDepreciationSettingsController::class, 'resetToDefaults'])->name('asset-depreciation.reset-to-defaults');
-        Route::get('asset-depreciation/export', [AssetDepreciationSettingsController::class, 'export'])->name('asset-depreciation.export');
-        Route::get('asset-depreciation/configuration', [AssetDepreciationSettingsController::class, 'getConfiguration'])->name('asset-depreciation.configuration');
+        Route::resource('asset-depreciation', AssetDepreciationSettingsController::class)->names([
+            'index' => 'settings.asset-depreciation.index',
+            'create' => 'settings.asset-depreciation.create',
+            'store' => 'settings.asset-depreciation.store',
+            'show' => 'settings.asset-depreciation.show',
+            'edit' => 'settings.asset-depreciation.edit',
+            'update' => 'settings.asset-depreciation.update',
+            'destroy' => 'settings.asset-depreciation.destroy',
+        ]);
+        Route::post('asset-depreciation/{setting}/toggle-status', [AssetDepreciationSettingsController::class, 'toggleStatus'])->name('settings.asset-depreciation.toggle-status');
+        Route::post('asset-depreciation/install-defaults', [AssetDepreciationSettingsController::class, 'installDefaults'])->name('settings.asset-depreciation.install-defaults');
+        Route::post('asset-depreciation/reset-to-defaults', [AssetDepreciationSettingsController::class, 'resetToDefaults'])->name('settings.asset-depreciation.reset-to-defaults');
+        Route::get('asset-depreciation/export', [AssetDepreciationSettingsController::class, 'export'])->name('settings.asset-depreciation.export');
+        Route::get('asset-depreciation/configuration', [AssetDepreciationSettingsController::class, 'getConfiguration'])->name('settings.asset-depreciation.configuration');
     });
 
 

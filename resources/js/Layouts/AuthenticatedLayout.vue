@@ -257,7 +257,7 @@
                 </Link>
                 <!-- Assets Menu -->
                 <Link
-                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'asset-view') || page.props.auth.isAdmin"
+                    v-if="page.props.auth.can.asset_view || page.props.auth.isAdmin"
                     :href="route('assets.index')"
                     class="menu-item"
                     :class="{ active: route().current('assets.*') }"

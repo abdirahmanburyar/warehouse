@@ -1,4 +1,7 @@
 <template>
+<AuthenticatedLayout title="Asset Depreciation Settings" description="Configure depreciation methods, useful life, and category-specific overrides" img="/assets/images/asset-header.png">
+
+
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
     <div class="bg-white shadow">
@@ -205,11 +208,13 @@
       </div>
     </div>
   </div>
+</AuthenticatedLayout>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 
 const props = defineProps({
   settings: Object,
