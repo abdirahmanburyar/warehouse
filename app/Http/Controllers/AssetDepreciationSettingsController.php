@@ -111,12 +111,35 @@ class AssetDepreciationSettingsController extends Controller
     }
 
     /**
+     * Display the specified setting
+     */
+    public function show(AssetDepreciationSetting $asset_depreciation)
+    {
+        return Inertia::render('Settings/AssetDepreciation/Show', [
+            'setting' => $asset_depreciation,
+            'categories' => [
+                'default' => 'Default Settings',
+                'category_override' => 'Category Overrides',
+                'method' => 'Depreciation Methods',
+                'system' => 'System Settings',
+            ],
+            'types' => [
+                'integer' => 'Integer',
+                'float' => 'Decimal',
+                'string' => 'Text',
+                'boolean' => 'Yes/No',
+                'json' => 'JSON Data',
+            ],
+        ]);
+    }
+
+    /**
      * Show the form for editing the specified setting
      */
-    public function edit(AssetDepreciationSetting $setting)
+    public function edit(AssetDepreciationSetting $asset_depreciation)
     {
         return Inertia::render('Settings/AssetDepreciation/Edit', [
-            'setting' => $setting,
+            'setting' => $asset_depreciation,
             'categories' => [
                 'default' => 'Default Settings',
                 'category_override' => 'Category Overrides',
@@ -142,10 +165,10 @@ class AssetDepreciationSettingsController extends Controller
     /**
      * Update the specified setting
      */
-    public function update(Request $request, AssetDepreciationSetting $setting)
+    public function update(Request $request, AssetDepreciationSetting $asset_depreciation)
     {
         $request->validate([
-            'key' => 'required|string|max:255|unique:asset_depreciation_settings,key,' . $setting->id,
+            'key' => 'required|string|max:255|unique:asset_depreciation_settings,key,' . $asset_depreciation->id,
             'value' => 'required',
             'type' => ['required', Rule::in(['integer', 'float', 'string', 'boolean', 'json'])],
             'description' => 'nullable|string|max:1000',
@@ -154,9 +177,9 @@ class AssetDepreciationSettingsController extends Controller
         ]);
 
         try {
-            $oldValue = $setting->value;
+            $oldValue = $asset_depreciation->value;
             
-            $setting->update([
+            $asset_depreciation->update([
                 'key' => $request->key,
                 'value' => $request->value,
                 'type' => $request->type,
@@ -166,7 +189,7 @@ class AssetDepreciationSettingsController extends Controller
             ]);
 
             Log::info('Asset depreciation setting updated', [
-                'key' => $setting->key,
+                'key' => $asset_depreciation->key,
                 'old_value' => $oldValue,
                 'new_value' => $request->value,
                 'updated_by' => auth()->id(),
@@ -178,7 +201,7 @@ class AssetDepreciationSettingsController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to update asset depreciation setting', [
                 'error' => $e->getMessage(),
-                'setting_id' => $setting->id,
+                'setting_id' => $asset_depreciation->id,
                 'data' => $request->all(),
             ]);
 
@@ -189,13 +212,13 @@ class AssetDepreciationSettingsController extends Controller
     /**
      * Remove the specified setting
      */
-    public function destroy(AssetDepreciationSetting $setting)
+    public function destroy(AssetDepreciationSetting $asset_depreciation)
     {
         try {
-            $setting->delete();
+            $asset_depreciation->delete();
 
             Log::info('Asset depreciation setting deleted', [
-                'key' => $setting->key,
+                'key' => $asset_depreciation->key,
                 'deleted_by' => auth()->id(),
             ]);
 
@@ -205,7 +228,7 @@ class AssetDepreciationSettingsController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to delete asset depreciation setting', [
                 'error' => $e->getMessage(),
-                'setting_id' => $setting->id,
+                'setting_id' => $asset_depreciation->id,
             ]);
 
             return back()->withErrors(['error' => 'Failed to delete setting: ' . $e->getMessage()]);
@@ -215,17 +238,17 @@ class AssetDepreciationSettingsController extends Controller
     /**
      * Toggle setting active status
      */
-    public function toggleStatus(AssetDepreciationSetting $setting)
+    public function toggleStatus(AssetDepreciationSetting $asset_depreciation)
     {
         try {
-            $setting->update([
-                'is_active' => !$setting->is_active
+            $asset_depreciation->update([
+                'is_active' => !$asset_depreciation->is_active
             ]);
 
-            $status = $setting->is_active ? 'enabled' : 'disabled';
+            $status = $asset_depreciation->is_active ? 'enabled' : 'disabled';
 
             Log::info('Asset depreciation setting status toggled', [
-                'key' => $setting->key,
+                'key' => $asset_depreciation->key,
                 'new_status' => $status,
                 'toggled_by' => auth()->id(),
             ]);
@@ -235,7 +258,7 @@ class AssetDepreciationSettingsController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to toggle asset depreciation setting status', [
                 'error' => $e->getMessage(),
-                'setting_id' => $setting->id,
+                'setting_id' => $asset_depreciation->id,
             ]);
 
             return back()->withErrors(['error' => 'Failed to toggle setting status: ' . $e->getMessage()]);
@@ -321,44 +344,19 @@ class AssetDepreciationSettingsController extends Controller
     private function getAssetCategories()
     {
         // This would typically come from your AssetCategory model
-        // For now, returning common categories
+        // For now, returning common categories as array of objects
         return [
-            'computers' => 'Computers & Technology',
-            'furniture' => 'Furniture & Fixtures',
-            'vehicles' => 'Vehicles & Transportation',
-            'buildings' => 'Buildings & Structures',
-            'machinery' => 'Machinery & Equipment',
-            'office_equipment' => 'Office Equipment',
-            'tools' => 'Tools & Instruments',
-            'software' => 'Software & Licenses',
-            'land' => 'Land & Real Estate',
-            'intangible' => 'Intangible Assets',
+            ['id' => 'computers', 'name' => 'Computers & Technology'],
+            ['id' => 'furniture', 'name' => 'Furniture & Fixtures'],
+            ['id' => 'vehicles', 'name' => 'Vehicles & Transportation'],
+            ['id' => 'buildings', 'name' => 'Buildings & Structures'],
+            ['id' => 'machinery', 'name' => 'Machinery & Equipment'],
+            ['id' => 'office_equipment', 'name' => 'Office Equipment'],
+            ['id' => 'tools', 'name' => 'Tools & Instruments'],
+            ['id' => 'software', 'name' => 'Software & Licenses'],
+            ['id' => 'land', 'name' => 'Land & Real Estate'],
+            ['id' => 'intangible', 'name' => 'Intangible Assets'],
         ];
     }
 
-    /**
-     * Get current configuration for API access
-     */
-    public function getConfiguration()
-    {
-        try {
-            $config = AssetDepreciationSetting::getConfigurationArray();
-            
-            return response()->json([
-                'success' => true,
-                'data' => $config,
-                'timestamp' => now()->toISOString(),
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Failed to get asset depreciation configuration', [
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'error' => 'Failed to get configuration: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
 }

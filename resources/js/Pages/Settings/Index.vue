@@ -22,7 +22,6 @@
                             <h3 class="text-lg font-medium mb-2">Asset Management</h3>
                             <ul class="space-y-2">
                                 <li><Link :href="route('settings.asset-depreciation.index')" class="text-gray-600 hover:text-indigo-600">Asset Depreciation Settings</Link></li>
-                                <li><Link :href="route('settings.asset-depreciation.configuration')" class="text-gray-600 hover:text-indigo-600">Depreciation Configuration</Link></li>
                             </ul>
                         </div>
                         

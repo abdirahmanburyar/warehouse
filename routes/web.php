@@ -812,11 +812,11 @@ Route::get('/{asset}/maintenance/list', [AssetMaintenanceController::class, 'get
             'update' => 'settings.asset-depreciation.update',
             'destroy' => 'settings.asset-depreciation.destroy',
         ]);
-        Route::post('asset-depreciation/{setting}/toggle-status', [AssetDepreciationSettingsController::class, 'toggleStatus'])->name('settings.asset-depreciation.toggle-status');
+        Route::post('asset-depreciation/{asset_depreciation}/toggle-status', [AssetDepreciationSettingsController::class, 'toggleStatus'])->name('settings.asset-depreciation.toggle-status');
         Route::post('asset-depreciation/install-defaults', [AssetDepreciationSettingsController::class, 'installDefaults'])->name('settings.asset-depreciation.install-defaults');
         Route::post('asset-depreciation/reset-to-defaults', [AssetDepreciationSettingsController::class, 'resetToDefaults'])->name('settings.asset-depreciation.reset-to-defaults');
         Route::get('asset-depreciation/export', [AssetDepreciationSettingsController::class, 'export'])->name('settings.asset-depreciation.export');
-        Route::get('asset-depreciation/configuration', [AssetDepreciationSettingsController::class, 'getConfiguration'])->name('settings.asset-depreciation.configuration');
+
     });
 
 

@@ -49,7 +49,7 @@
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Success/Error Messages -->
-      <div v-if="$page.props.flash.success" class="mb-6 bg-green-50 border border-green-200 rounded-md p-4">
+      <div v-if="page.props.flash.success" class="mb-6 bg-green-50 border border-green-200 rounded-md p-4">
         <div class="flex">
           <div class="flex-shrink-0">
             <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
@@ -57,12 +57,12 @@
             </svg>
           </div>
           <div class="ml-3">
-            <p class="text-sm font-medium text-green-800">{{ $page.props.flash.success }}</p>
+            <p class="text-sm font-medium text-green-800">{{ page.props.flash.success }}</p>
           </div>
         </div>
       </div>
 
-      <div v-if="$page.props.flash.error" class="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+      <div v-if="page.props.flash.error" class="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
         <div class="flex">
           <div class="flex-shrink-0">
             <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
@@ -70,7 +70,7 @@
             </svg>
           </div>
           <div class="ml-3">
-            <p class="text-sm font-medium text-red-800">{{ $page.props.flash.error }}</p>
+            <p class="text-sm font-medium text-red-800">{{ page.props.flash.error }}</p>
           </div>
         </div>
       </div>
@@ -136,7 +136,7 @@
                   </button>
                   
                   <Link
-                    :href="route('settings.asset-depreciation.edit', setting.id)"
+                                                :href="route('settings.asset-depreciation.edit', { asset_depreciation: setting.id })"
                     class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
                   >
                     Edit
@@ -213,8 +213,10 @@
 
 <script setup>
 import { ref } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+const page = usePage();
+
 
 const props = defineProps({
   settings: Object,
@@ -254,13 +256,13 @@ const deleteSetting = (setting) => {
 
 const confirmDelete = () => {
   if (settingToDelete.value) {
-    router.delete(route('settings.asset-depreciation.destroy', settingToDelete.value.id))
+            router.delete(route('settings.asset-depreciation.destroy', { asset_depreciation: settingToDelete.value.id }))
     showDeleteModal.value = false
     settingToDelete.value = null
   }
 }
 
 const toggleStatus = (setting) => {
-  router.post(route('settings.asset-depreciation.toggle-status', setting.id))
+          router.post(route('settings.asset-depreciation.toggle-status', { asset_depreciation: setting.id }))
 }
 </script>
