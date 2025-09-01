@@ -331,14 +331,16 @@
                 <div class="flex items-start mb-6">
                     <div class="flex flex-wrap items-center justify-center gap-4 px-1 py-2">
                         <!-- Review button - shows when actionable or completed -->
-                        <div class="relative" v-if="(props.asset.status === 'pending_approval' || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('reviewed')) && (page.props.auth.can.asset_review || page.props.auth.isAdmin)">
+                        <div class="relative" v-if="props.asset.status === 'pending_approval' || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('reviewed')">
                             <div class="flex flex-col">
                                 <button @click="changeAssetStatus('reviewed')" 
-                                    :disabled="isReviewing || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('reviewed')"
+                                    :disabled="isReviewing || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('reviewed') || !(page.props.auth.can.asset_review || page.props.auth.isAdmin)"
                                     :class="[
                                         assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('reviewed')
                                             ? 'bg-green-500'
-                                            : 'bg-yellow-500 hover:bg-yellow-600'
+                                            : !(page.props.auth.can.asset_review || page.props.auth.isAdmin)
+                                                ? 'bg-gray-400 cursor-not-allowed'
+                                                : 'bg-yellow-500 hover:bg-yellow-600'
                                     ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <svg v-if="isReviewing" class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -359,20 +361,25 @@
                                 <span v-show="props.asset?.reviewed_by" class="text-sm text-gray-600">
                                     By {{ props.asset?.reviewed_by?.name }}
                                 </span>
+                                <span v-show="!(page.props.auth.can.asset_review || page.props.auth.isAdmin)" class="text-xs text-gray-500 italic">
+                                    Requires review permission
+                                </span>
                             </div>
                             <div v-if="props.asset.status === 'pending_approval'"
                                 class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
 
                         <!-- Approve button - shows when actionable or completed -->
-                        <div class="relative" v-if="(props.asset.status === 'reviewed' || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('approved')) && (page.props.auth.can.asset_approve || page.props.auth.isAdmin)">
+                        <div class="relative" v-if="props.asset.status === 'reviewed' || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('approved')">
                             <div class="flex flex-col">
                                 <button @click="changeAssetStatus('approved')" 
-                                    :disabled="isApproving || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('approved')"
+                                    :disabled="isApproving || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('approved') || !(page.props.auth.can.asset_approve || page.props.auth.isAdmin)"
                                     :class="[
                                         assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('approved')
                                             ? 'bg-green-500'
-                                            : 'bg-yellow-500 hover:bg-yellow-600'
+                                            : !(page.props.auth.can.asset_approve || page.props.auth.isAdmin)
+                                                ? 'bg-gray-400 cursor-not-allowed'
+                                                : 'bg-yellow-500 hover:bg-yellow-600'
                                     ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <svg v-if="isApproving" class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -391,17 +398,24 @@
                                 <span v-show="props.asset?.approved_by" class="text-sm text-gray-600">
                                     By {{ props.asset?.approved_by?.name }}
                                 </span>
+                                <span v-show="!(page.props.auth.can.asset_approve || page.props.auth.isAdmin)" class="text-xs text-gray-500 italic">
+                                    Requires approval permission
+                                </span>
                             </div>
                             <div v-if="props.asset.status === 'reviewed'"
                                 class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
 
                         <!-- Reject button - only shows when actionable -->
-                        <div class="relative" v-if="(props.asset.status === 'pending_approval' || props.asset.status === 'reviewed') && props.asset.status !== 'rejected' && (page.props.auth.can.asset_approve || page.props.auth.isAdmin)">
+                        <div class="relative" v-if="(props.asset.status === 'pending_approval' || props.asset.status === 'reviewed') && props.asset.status !== 'rejected'">
                             <div class="flex flex-col">
                                 <button @click="changeAssetStatus('rejected')" 
-                                    :disabled="isRejecting"
-                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] bg-red-500 hover:bg-red-600">
+                                    :disabled="isRejecting || !(page.props.auth.can.asset_approve || page.props.auth.isAdmin)"
+                                    :class="[
+                                        !(page.props.auth.can.asset_approve || page.props.auth.isAdmin)
+                                            ? 'bg-gray-400 cursor-not-allowed'
+                                            : 'bg-red-500 hover:bg-red-600'
+                                    ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <svg v-if="isRejecting" class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -409,6 +423,9 @@
                                     <img v-else src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
                                     <span class="text-sm font-bold text-white">{{ isRejecting ? 'Please Wait...' : 'Reject' }}</span>
                                 </button>
+                                <span v-show="!(page.props.auth.can.asset_approve || page.props.auth.isAdmin)" class="text-xs text-gray-500 italic text-center">
+                                    Requires approval permission
+                                </span>
                             </div>
                         </div>
 
@@ -430,11 +447,15 @@
                         </div>
 
                         <!-- Restore button - shows when rejected -->
-                        <div class="relative" v-if="props.asset.status === 'rejected' && (page.props.auth.can.asset_approve || page.props.auth.isAdmin)">
+                        <div class="relative" v-if="props.asset.status === 'rejected'">
                             <div class="flex flex-col">
                                 <button @click="changeAssetStatus('pending_approval')" 
-                                    :disabled="isRestoring"
-                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] bg-green-500 hover:bg-green-600">
+                                    :disabled="isRestoring || !(page.props.auth.can.asset_approve || page.props.auth.isAdmin)"
+                                    :class="[
+                                        !(page.props.auth.can.asset_approve || page.props.auth.isAdmin)
+                                            ? 'bg-gray-400 cursor-not-allowed'
+                                            : 'bg-green-500 hover:bg-green-600'
+                                    ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <svg v-if="isRestoring" class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -442,6 +463,9 @@
                                     <img v-else src="/assets/images/restore.jpg" class="w-5 h-5 mr-2" alt="Restore" />
                                     <span class="text-sm font-bold text-white">{{ isRestoring ? 'Restoring...' : 'Restore' }}</span>
                                 </button>
+                                <span v-show="!(page.props.auth.can.asset_approve || page.props.auth.isAdmin)" class="text-xs text-gray-500 italic text-center">
+                                    Requires approval permission
+                                </span>
                             </div>
                             <div v-if="props.asset.status === 'rejected'"
                                 class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
