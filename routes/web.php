@@ -41,6 +41,7 @@ use App\Http\Controllers\DriverController;
 use App\Http\Controllers\ReasonController;
 use App\Http\Controllers\ReorderLevelController;
 use App\Http\Controllers\WarehouseAmcController;
+use App\Http\Controllers\AssetDepreciationSettingsController;
 use Maatwebsite\Excel\Facades\Excel;
 
 // Welcome route - accessible without authentication
@@ -800,6 +801,14 @@ Route::get('/{asset}/maintenance/list', [AssetMaintenanceController::class, 'get
         Route::delete('/reorder-levels/{reorderLevel}', [ReorderLevelController::class, 'destroy'])->name('settings.reorder-levels.destroy');
         Route::post('/reorder-levels/import', [ReorderLevelController::class, 'importExcel'])->name('settings.reorder-levels.import');
         Route::get('/reorder-levels/import/format', [ReorderLevelController::class, 'getImportFormat'])->name('settings.reorder-levels.import.format');
+        
+        // Asset Depreciation Settings
+        Route::resource('asset-depreciation', AssetDepreciationSettingsController::class);
+        Route::post('asset-depreciation/{setting}/toggle-status', [AssetDepreciationSettingsController::class, 'toggleStatus'])->name('asset-depreciation.toggle-status');
+        Route::post('asset-depreciation/install-defaults', [AssetDepreciationSettingsController::class, 'installDefaults'])->name('asset-depreciation.install-defaults');
+        Route::post('asset-depreciation/reset-to-defaults', [AssetDepreciationSettingsController::class, 'resetToDefaults'])->name('asset-depreciation.reset-to-defaults');
+        Route::get('asset-depreciation/export', [AssetDepreciationSettingsController::class, 'export'])->name('asset-depreciation.export');
+        Route::get('asset-depreciation/configuration', [AssetDepreciationSettingsController::class, 'getConfiguration'])->name('asset-depreciation.configuration');
     });
 
 

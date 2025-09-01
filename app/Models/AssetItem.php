@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\AssetHistory;
+use Illuminate\Support\Facades\Log;
 
 class AssetItem extends Model
 {
@@ -126,14 +127,104 @@ class AssetItem extends Model
 
     public function getCurrentValue(): float
     {
-        $depreciation = $this->depreciation()->latest()->first();
+        $depreciation = $this->getDepreciationRecord();
         return $depreciation ? $depreciation->current_value : $this->original_value;
     }
 
     public function getDepreciationAmount(): float
     {
-        $depreciation = $this->depreciation()->latest()->first();
+        $depreciation = $this->getDepreciationRecord();
         return $depreciation ? $depreciation->accumulated_depreciation : 0;
+    }
+
+    /**
+     * Get or create the single depreciation record for this asset
+     */
+    public function getDepreciationRecord(): ?AssetDepreciation
+    {
+        return $this->depreciation()->latest()->first();
+    }
+
+    /**
+     * Ensure only one depreciation record exists and update it
+     */
+    public function ensureSingleDepreciationRecord(): AssetDepreciation
+    {
+        // Get all depreciation records
+        $depreciationRecords = $this->depreciation()->orderBy('created_at')->get();
+        
+        if ($depreciationRecords->count() > 1) {
+            // Keep the first (oldest) record and delete the rest
+            $mainRecord = $depreciationRecords->first();
+            
+            // Delete duplicate records
+            $this->depreciation()
+                ->where('id', '!=', $mainRecord->id)
+                ->delete();
+            
+            Log::info("Cleaned up duplicate depreciation records for asset item {$this->id}, kept record {$mainRecord->id}");
+            
+            return $mainRecord;
+        }
+        
+        if ($depreciationRecords->count() === 1) {
+            return $depreciationRecords->first();
+        }
+        
+        // No records exist, create one
+        return $this->createInitialDepreciationRecord();
+    }
+
+    /**
+     * Create initial depreciation record
+     */
+    private function createInitialDepreciationRecord(): AssetDepreciation
+    {
+        // Get configurable values from settings or use sensible defaults
+        $usefulLifeYears = \App\Models\AssetDepreciationSetting::getValue('default_useful_life_years', 5);
+        $salvageValue = \App\Models\AssetDepreciationSetting::getValue('default_salvage_value', 0);
+        $method = \App\Models\AssetDepreciationSetting::getValue('default_method', AssetDepreciation::METHOD_STRAIGHT_LINE);
+        
+        // Check if asset has category-specific overrides
+        if ($this->asset_category_id) {
+            $categoryName = $this->assetCategory->name ?? null;
+            
+            if ($categoryName) {
+                $categoryUsefulLife = \App\Models\AssetDepreciationSetting::getValue('useful_life_years', null, 'category_override', ['asset_category' => strtolower($categoryName)]);
+                $categorySalvageValue = \App\Models\AssetDepreciationSetting::getValue('salvage_value', null, 'category_override', ['asset_category' => strtolower($categoryName)]);
+                
+                if ($categoryUsefulLife !== null) {
+                    $usefulLifeYears = $categoryUsefulLife;
+                }
+                if ($categorySalvageValue !== null) {
+                    $salvageValue = $categorySalvageValue;
+                }
+            }
+        }
+        
+        $depreciableAmount = $this->original_value - $salvageValue;
+        $annualDepreciation = $depreciableAmount / $usefulLifeYears;
+        
+        return $this->depreciation()->create([
+            'original_value' => $this->original_value,
+            'salvage_value' => $salvageValue,
+            'useful_life_years' => $usefulLifeYears,
+            'depreciation_method' => $method,
+            'depreciation_rate' => $annualDepreciation,
+            'current_value' => $this->original_value,
+            'accumulated_depreciation' => 0,
+            'depreciation_start_date' => now(),
+            'last_calculated_date' => now(),
+            'metadata' => [
+                'created_by' => 'system',
+                'created_at' => now()->toISOString(),
+                'auto_created' => true,
+                'source' => 'model_method',
+                'config_source' => 'category_override',
+                'useful_life_years' => $usefulLifeYears,
+                'salvage_value' => $salvageValue,
+            ],
+        ]);
     }
 
     public function getMaintenanceHistory()
@@ -184,16 +275,32 @@ class AssetItem extends Model
 
     public function calculateDepreciation($method = 'straight_line', $usefulLifeYears = 5, $salvageValue = 0)
     {
-        $depreciation = $this->depreciation()->create([
-            'original_value' => $this->original_value,
-            'salvage_value' => $salvageValue,
-            'useful_life_years' => $usefulLifeYears,
-            'depreciation_method' => $method,
-            'current_value' => $this->original_value,
-            'accumulated_depreciation' => 0,
-            'depreciation_start_date' => now(),
-            'last_calculated_date' => now(),
-        ]);
+        // Check if depreciation record already exists
+        $depreciation = $this->depreciation()->latest()->first();
+        
+        if ($depreciation) {
+            // Update existing record
+            $depreciation->update([
+                'original_value' => $this->original_value,
+                'salvage_value' => $salvageValue,
+                'useful_life_years' => $usefulLifeYears,
+                'depreciation_method' => $method,
+                'depreciation_start_date' => now(),
+                'last_calculated_date' => now(),
+            ]);
+        } else {
+            // Create new record only if none exists
+            $depreciation = $this->depreciation()->create([
+                'original_value' => $this->original_value,
+                'salvage_value' => $salvageValue,
+                'useful_life_years' => $usefulLifeYears,
+                'depreciation_method' => $method,
+                'current_value' => $this->original_value,
+                'accumulated_depreciation' => 0,
+                'depreciation_start_date' => now(),
+                'last_calculated_date' => now(),
+            ]);
+        }
 
         // Calculate initial depreciation rate
         switch ($method) {

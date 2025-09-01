@@ -58,6 +58,13 @@ class Kernel extends ConsoleKernel
             ->at('02:00')
             ->appendOutputTo(storage_path('logs/inventory-cleanup.log'))
             ->emailOutputOnFailure(config('mail.admin_address'));
+            
+        // Calculate asset depreciation monthly on the 1st day at 02:00 AM
+        // This ensures depreciation is calculated at the beginning of each month
+        $schedule->command('assets:schedule-depreciation --frequency=monthly --queue')
+            ->monthlyOn(1, '02:00')
+            ->appendOutputTo(storage_path('logs/asset-depreciation.log'))
+            ->emailOutputOnFailure(config('mail.admin_address'));
     }
 
     /**
