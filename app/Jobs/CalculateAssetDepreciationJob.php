@@ -20,17 +20,19 @@ class CalculateAssetDepreciationJob implements ShouldQueue
     public $tries = 3; // Retry 3 times if failed
 
     protected $asOfDate;
-    protected $assetId;
+    protected $assetIds;
     protected $forceRecalculation;
+    protected $dryRun;
 
     /**
      * Create a new job instance.
      */
-    public function __construct(?string $asOfDate = null, ?int $assetId = null, bool $forceRecalculation = false)
+    public function __construct(array $assetIds = [], ?string $asOfDate = null, bool $forceRecalculation = false, bool $dryRun = false)
     {
         $this->asOfDate = $asOfDate ? Carbon::parse($asOfDate) : Carbon::now();
-        $this->assetId = $assetId;
+        $this->assetIds = $assetIds;
         $this->forceRecalculation = $forceRecalculation;
+        $this->dryRun = $dryRun;
     }
 
     /**
@@ -40,56 +42,85 @@ class CalculateAssetDepreciationJob implements ShouldQueue
     {
         Log::info('Starting background depreciation calculation job', [
             'as_of_date' => $this->asOfDate->format('Y-m-d'),
-            'asset_id' => $this->assetId,
-            'force_recalculation' => $this->forceRecalculation
+            'asset_ids_count' => count($this->assetIds),
+            'force_recalculation' => $this->forceRecalculation,
+            'dry_run' => $this->dryRun
         ]);
 
         try {
-            $query = AssetItem::query();
-            
-            if ($this->assetId) {
-                $query->where('id', $this->assetId);
+            if (empty($this->assetIds)) {
+                // Process all assets (existing behavior)
+                $this->processAllAssets();
+            } else {
+                // Process specific chunk of assets
+                $this->processAssetChunk();
             }
-            
-            // Get assets that need depreciation calculation
-            $assets = $query->with(['depreciation' => function($q) {
-                $q->latest();
-            }])->get();
-            
-            $processedCount = 0;
-            $updatedCount = 0;
-            $createdCount = 0;
-            
-            foreach ($assets as $assetItem) {
-                try {
-                    $result = $this->processAssetDepreciation($assetItem);
-                    
-                    if ($result['processed']) {
-                        $processedCount++;
-                        
-                        if ($result['action'] === 'updated') {
-                            $updatedCount++;
-                        } elseif ($result['action'] === 'created') {
-                            $createdCount++;
-                        }
-                    }
-                    
-                } catch (\Exception $e) {
-                    Log::error("Depreciation calculation error for asset {$assetItem->id}: " . $e->getMessage());
-                }
-            }
-            
-            Log::info('Background depreciation calculation completed', [
-                'processed_count' => $processedCount,
-                'updated_count' => $updatedCount,
-                'created_count' => $createdCount,
-                'total_assets' => $assets->count()
-            ]);
             
         } catch (\Exception $e) {
             Log::error('Fatal error in background depreciation calculation: ' . $e->getMessage());
             throw $e;
         }
+    }
+    
+    /**
+     * Process all assets (existing behavior)
+     */
+    private function processAllAssets(): void
+    {
+        $assets = AssetItem::with(['depreciation' => function($q) {
+            $q->latest();
+        }])->get();
+        
+        $this->processAssets($assets);
+    }
+    
+    /**
+     * Process specific chunk of assets
+     */
+    private function processAssetChunk(): void
+    {
+        $assets = AssetItem::whereIn('id', $this->assetIds)
+            ->with(['depreciation' => function($q) {
+                $q->latest();
+            }])->get();
+        
+        $this->processAssets($assets);
+    }
+    
+    /**
+     * Process a collection of assets
+     */
+    private function processAssets($assets): void
+    {
+        $processedCount = 0;
+        $updatedCount = 0;
+        $createdCount = 0;
+        
+        foreach ($assets as $assetItem) {
+            try {
+                $result = $this->processAssetDepreciation($assetItem);
+                
+                if ($result['processed']) {
+                    $processedCount++;
+                    
+                    if ($result['action'] === 'updated') {
+                        $updatedCount++;
+                    } elseif ($result['action'] === 'created') {
+                        $createdCount++;
+                    }
+                }
+                
+            } catch (\Exception $e) {
+                Log::error("Depreciation calculation error for asset {$assetItem->id}: " . $e->getMessage());
+            }
+        }
+        
+        Log::info('Background depreciation calculation completed', [
+            'processed_count' => $processedCount,
+            'updated_count' => $updatedCount,
+            'created_count' => $createdCount,
+            'total_assets' => $assets->count()
+        ]);
     }
     
     /**

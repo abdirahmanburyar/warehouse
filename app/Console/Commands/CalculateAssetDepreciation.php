@@ -20,7 +20,8 @@ class CalculateAssetDepreciation extends Command
                             {--force : Force recalculation of all assets}
                             {--date= : Calculate depreciation as of specific date (YYYY-MM-DD)}
                             {--asset-id= : Calculate depreciation for specific asset only}
-                            {--dry-run : Show what would be calculated without making changes}';
+                            {--dry-run : Show what would be calculated without making changes}
+                            {--chunk-size=1000 : Number of assets to process in each chunk}';
 
     /**
      * The console command description.
@@ -40,6 +41,7 @@ class CalculateAssetDepreciation extends Command
         $forceRecalculation = $this->option('force');
         $assetId = $this->option('asset-id');
         $dryRun = $this->option('dry-run');
+        $chunkSize = $this->option('chunk-size');
         
         $this->info("Calculating depreciation as of: " . $asOfDate->format('Y-m-d'));
         
@@ -48,97 +50,68 @@ class CalculateAssetDepreciation extends Command
         }
         
         try {
-            DB::beginTransaction();
-            
-            $query = AssetItem::query();
-            
             if ($assetId) {
-                $query->where('id', $assetId);
+                // Process single asset
                 $this->info("Processing single asset ID: {$assetId}");
-            }
-            
-            // Get assets that need depreciation calculation
-            $assets = $query->with(['depreciation' => function($q) {
-                $q->latest();
-            }])->get();
-            
-            $this->info("Found {$assets->count()} assets to process");
-            
-            $processedCount = 0;
-            $updatedCount = 0;
-            $createdCount = 0;
-            $errors = [];
-            
-            $progressBar = $this->output->createProgressBar($assets->count());
-            $progressBar->start();
-            
-            foreach ($assets as $assetItem) {
-                try {
-                    $result = $this->processAssetDepreciation($assetItem, $asOfDate, $forceRecalculation, $dryRun);
-                    
+                $asset = AssetItem::find($assetId);
+                if ($asset) {
+                    $result = $this->processAssetDepreciation($asset, $asOfDate, $forceRecalculation, $dryRun);
                     if ($result['processed']) {
-                        $processedCount++;
-                        
-                        if ($result['action'] === 'updated') {
-                            $updatedCount++;
-                        } elseif ($result['action'] === 'created') {
-                            $createdCount++;
-                        }
+                        $this->info("Asset {$assetId} processed successfully!");
+                    } else {
+                        $this->warn("Asset {$assetId} skipped: " . $result['error']);
                     }
-                    
-                    if ($result['error']) {
-                        $errors[] = "Asset {$assetItem->id}: {$result['error']}";
-                    }
-                    
-                } catch (\Exception $e) {
-                    $errors[] = "Asset {$assetItem->id}: " . $e->getMessage();
-                    Log::error("Depreciation calculation error for asset {$assetItem->id}: " . $e->getMessage());
+                } else {
+                    $this->error("Asset ID {$assetId} not found!");
+                    return 1;
                 }
-                
-                $progressBar->advance();
-            }
-            
-            $progressBar->finish();
-            $this->newLine();
-            
-            if (!$dryRun) {
-                DB::commit();
-                $this->info('Depreciation calculation completed successfully!');
             } else {
-                DB::rollBack();
-                $this->warn('Dry run completed - no changes made');
-            }
-            
-            // Display results
-            $this->table(
-                ['Metric', 'Count'],
-                [
-                    ['Total Assets Processed', $processedCount],
-                    ['Depreciation Records Updated', $updatedCount],
-                    ['New Depreciation Records Created', $createdCount],
-                    ['Errors', count($errors)],
-                ]
-            );
-            
-            if (!empty($errors)) {
-                $this->error('Errors encountered:');
-                foreach (array_slice($errors, 0, 10) as $error) {
-                    $this->error("  - {$error}");
-                }
-                
-                if (count($errors) > 10) {
-                    $this->error("  ... and " . (count($errors) - 10) . " more errors");
-                }
+                // Process all assets in chunks via queue
+                $this->processInChunksViaQueue($chunkSize, $asOfDate, $forceRecalculation, $dryRun);
             }
             
         } catch (\Exception $e) {
-            DB::rollBack();
             $this->error('Fatal error during depreciation calculation: ' . $e->getMessage());
             Log::error('Fatal error in depreciation calculation: ' . $e->getMessage());
             return 1;
         }
         
         return 0;
+    }
+    
+    /**
+     * Process assets in chunks via queue
+     */
+    private function processInChunksViaQueue(int $chunkSize, Carbon $asOfDate, bool $forceRecalculation, bool $dryRun): void
+    {
+        // Get total count for progress tracking
+        $totalAssets = AssetItem::count();
+        $this->info("Total assets to process: {$totalAssets}");
+        $this->info("Processing in chunks of {$chunkSize} via queue...");
+        
+        $chunkCount = 0;
+        $totalQueued = 0;
+        
+        // Get asset IDs in chunks
+        AssetItem::select('id')
+            ->chunk($chunkSize, function($chunk) use (&$chunkCount, &$totalQueued, $chunkSize, $asOfDate, $forceRecalculation, $dryRun) {
+                $assetIds = $chunk->pluck('id')->toArray();
+                
+                // Dispatch job for this chunk
+                \App\Jobs\CalculateAssetDepreciationJob::dispatch($assetIds, $asOfDate->format('Y-m-d'), $forceRecalculation, $dryRun);
+                
+                $chunkCount++;
+                $totalQueued += count($assetIds);
+                $this->info("Queued chunk #{$chunkCount} with " . count($assetIds) . " assets (Total queued: {$totalQueued})");
+            });
+        
+        $this->info("All {$chunkCount} chunks have been queued for processing!");
+        $this->info("Total assets queued: {$totalQueued}");
+        $this->info("Monitor progress with: php artisan queue:work");
+        
+        if ($dryRun) {
+            $this->warn('DRY RUN MODE - Jobs were queued but will not make changes');
+        }
     }
     
     /**
