@@ -74,6 +74,15 @@ class AssetController extends Controller
             $assetItems->where('status', $request->status);
         }
 
+        // Depreciation filter
+        if ($request->filled('depreciation_filter')) {
+            if ($request->depreciation_filter === 'with_depreciation') {
+                $assetItems->whereHas('depreciation');
+            } elseif ($request->depreciation_filter === 'without_depreciation') {
+                $assetItems->whereDoesntHave('depreciation');
+            }
+        }
+
         // New filters
         if ($request->filled('category_id')) {
             $assetItems->where('asset_category_id', $request->category_id);
@@ -123,7 +132,8 @@ class AssetController extends Controller
             'asset.subLocation:id,name',
             'category:id,name',
             'type:id,name',
-            'assignee:id,name'
+            'assignee:id,name',
+            'depreciation:id,asset_item_id,current_value,accumulated_depreciation,depreciation_method,depreciation_start_date'
         ])
             ->paginate($request->input('per_page', 10), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
@@ -142,7 +152,7 @@ class AssetController extends Controller
         return inertia('Assets/Index', [
             'locations' => $locations,
             'assets' => AssetItemResource::collection($assetItems),
-            'filters' => $request->only('page','per_page','search','region_id','location_id','sub_location_id','fund_source_id','category_id','type_id','assignee_id','acquisition_from','acquisition_to','created_from','created_to','status'),
+            'filters' => $request->only('page','per_page','search','region_id','location_id','sub_location_id','fund_source_id','category_id','type_id','assignee_id','acquisition_from','acquisition_to','created_from','created_to','status','depreciation_filter'),
             'assetsCount' => $count,
             'regions' => Region::get(),
             'fundSources' => FundSource::get(),

@@ -75,6 +75,13 @@ class AssetItemResource extends JsonResource
                 'name' => $this->asset->fundSource->name ?? null,
             ],
             
+            // Depreciation data
+            'depreciation_data' => [
+                'current_value' => $this->getCurrentValue(),
+                'accumulated_depreciation' => $this->getDepreciationAmount(),
+                'has_depreciation' => $this->depreciation()->exists(),
+            ],
+            
             // Computed fields for backward compatibility
             'name' => $this->asset_name,
             'tag_no' => $this->asset_tag,

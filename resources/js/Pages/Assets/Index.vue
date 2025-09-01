@@ -217,6 +217,15 @@
                         </div>
 
                         <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Depreciation</label>
+                            <select v-model="depreciationFilter" class="block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">All Assets</option>
+                                <option value="with_depreciation">With Depreciation</option>
+                                <option value="without_depreciation">Without Depreciation</option>
+                            </select>
+                        </div>
+
+                        <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Acquisition From</label>
                             <input v-model="acquisitionFrom" type="date" class="block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" />
                         </div>
@@ -267,49 +276,48 @@
 
                 <div v-else class="relative bg-white/90 backdrop-blur-sm rounded-xl shadow-sm ring-1 ring-gray-200/70">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="sticky top-0 z-[1] bg-gradient-to-r from-slate-800 to-slate-700 text-white shadow">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
-                                    <span>Asset Tag</span>
+                        <thead>
+                            <tr style="background-color: #F4F7FB;">
+                                <th class="px-3 py-2 text-xs font-bold border-r" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6; border-right-color: #B7C6E6;">
+                                    <span>Asset Tag & Name</span>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
-                                    <span>Asset Name</span>
-                                </th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                <th class="px-3 py-2 text-xs font-bold border-r" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6; border-right-color: #B7C6E6;">
                                     <span>Serial Number</span>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                <th class="px-3 py-2 text-xs font-bold border-r" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6; border-right-color: #B7C6E6;">
                                     <span>Category</span>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                <th class="px-3 py-3 text-xs font-bold border-r" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6; border-right-color: #B7C6E6;">
                                     <span>Type</span>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                <th class="px-3 py-2 text-xs font-bold border-r" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6; border-right-color: #B7C6E6;">
                                     <span>Status</span>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                <th class="px-3 py-2 text-xs font-bold border-r" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6; border-right-color: #B7C6E6;">
                                     <span>Assignee</span>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                <th class="px-3 py-2 text-xs font-bold border-r" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6; border-right-color: #B7C6E6;">
                                     <span>Region</span>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                <th class="px-3 py-2 text-xs font-bold border-r" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6; border-right-color: #B7C6E6;">
                                     <span>Location</span>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                <th class="px-3 py-2 text-xs font-bold border-r" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6; border-right-color: #B7C6E6;">
                                     <span>Sub Location</span>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                <th class="px-3 py-2 text-xs font-bold border-r" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6; border-right-color: #B7C6E6;">
                                     <span>Acquisition Date</span>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                <th class="px-3 py-2 text-xs font-bold border-r" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6; border-right-color: #B7C6E6;">
                                     <span>Original Value</span>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider border-r border-slate-600">
+                                <th class="px-3 py-2 text-xs font-bold border-r" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6; border-right-color: #B7C6E6;">
+                                    <span>Current Value</span>
+                                </th>
+                                <th class="px-3 py-2 text-xs font-bold border-r" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6; border-right-color: #B7C6E6;">
                                     <span>Fund Source</span>
                                 </th>
-
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-white/90 uppercase tracking-wider">
+                                <th class="px-3 py-2 text-xs font-bold" style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;">
                                     <span>Actions</span>
                                 </th>
                             </tr>
@@ -322,11 +330,9 @@
                                         <Link :href="route('assets.show', asset.asset_number)" class="text-blue-600 hover:text-blue-800 underline">
                                             {{ asset.asset_tag || 'N/A' }}
                                         </Link>
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3 align-top border-r border-gray-100">
-                                    <div class="text-xs font-semibold text-gray-900">
-                                        {{ asset.name || asset.asset_tag || 'N/A' }}
+                                        <div class="text-xs font-semibold text-gray-900 mt-1">
+                                            {{ asset.name || asset.asset_tag || 'N/A' }}
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
@@ -391,7 +397,37 @@
                                 </td>
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
                                     <div class="text-xs text-gray-900">
-                                        ${{ parseFloat(asset.original_value || 0).toLocaleString() }}
+                                        {{ formatCurrency(asset.original_value) }}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 align-top border-r border-gray-100">
+                                    <div class="text-xs text-gray-900">
+                                        <div class="font-medium">
+                                            {{ formatCurrency(asset.depreciation_data?.current_value || asset.original_value) }}
+                                        </div>
+                                        <div v-if="asset.depreciation_data?.has_depreciation" class="text-xs text-gray-500 mt-1">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800">
+                                                    Depreciated
+                                                </span>
+                                                <div class="group relative">
+                                                    <svg class="w-4 h-4 text-blue-500 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                                        <div class="text-center">
+                                                            <div class="font-medium">Depreciation Details</div>
+                                                            <div class="mt-1">
+                                                                <div>Original: {{ formatCurrency(asset.original_value) }}</div>
+                                                                <div>Current: {{ formatCurrency(asset.depreciation_data?.current_value) }}</div>
+                                                                <div>Accumulated: {{ formatCurrency(asset.depreciation_data?.accumulated_depreciation) }}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
@@ -1053,6 +1089,14 @@ const formatDate = (date) => {
     return moment(date).format('DD/MM/YYYY');
 };
 
+const formatCurrency = (value) => {
+    if (!value || isNaN(value)) return '$0.00';
+    return '$' + parseFloat(value).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+};
+
 const props = defineProps({
     locations: {
         type: Array,
@@ -1257,6 +1301,7 @@ const subLocationOptions = ref([]);
 
                 // Note: filteredSubLocationOptions removed since we're not using asset location fields in transfers
 const fundSourceFilter = ref(null);
+const depreciationFilter = ref(props.filters?.depreciation_filter || '');
 const categoryFilter = ref(null);
 const typeFilter = ref(null);
 const assigneeFilter = ref(null);
@@ -1497,6 +1542,7 @@ watch(
         () => acquisitionTo.value,
         () => createdFrom.value,
         () => createdTo.value,
+        () => depreciationFilter.value,
     ],
     () => {
         reloadAssets();
@@ -1549,6 +1595,7 @@ function reloadAssets() {
     if (acquisitionTo.value) query.acquisition_to = acquisitionTo.value;
     if (createdFrom.value) query.created_from = createdFrom.value;
     if (createdTo.value) query.created_to = createdTo.value;
+    if (depreciationFilter.value) query.depreciation_filter = depreciationFilter.value;
     router.get(route("assets.index"), query, {
         preserveState: true,
         preserveScroll: true,
@@ -1663,6 +1710,7 @@ const clearFilters = () => {
     acquisitionTo.value = '';
     createdFrom.value = '';
     createdTo.value = '';
+    depreciationFilter.value = '';
     props.filters.page = 1;
     reloadAssets();
 };
