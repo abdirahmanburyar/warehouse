@@ -331,7 +331,7 @@
                 <div class="flex items-start mb-6">
                     <div class="flex flex-wrap items-center justify-center gap-4 px-1 py-2">
                         <!-- Review button - shows when actionable or completed -->
-                        <div class="relative" v-if="props.asset.status === 'pending_approval' || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('reviewed')">
+                        <div class="relative" v-if="(props.asset.status === 'pending_approval' || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('reviewed')) && (page.props.auth.can.asset_review || page.props.auth.isAdmin)">
                             <div class="flex flex-col">
                                 <button @click="changeAssetStatus('reviewed')" 
                                     :disabled="isReviewing || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('reviewed')"
@@ -365,7 +365,7 @@
                         </div>
 
                         <!-- Approve button - shows when actionable or completed -->
-                        <div class="relative" v-if="props.asset.status === 'reviewed' || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('approved')">
+                        <div class="relative" v-if="(props.asset.status === 'reviewed' || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('approved')) && (page.props.auth.can.asset_approve || page.props.auth.isAdmin)">
                             <div class="flex flex-col">
                                 <button @click="changeAssetStatus('approved')" 
                                     :disabled="isApproving || assetStatusOrder.indexOf(props.asset.status) >= assetStatusOrder.indexOf('approved')"
@@ -397,7 +397,7 @@
                         </div>
 
                         <!-- Reject button - only shows when actionable -->
-                        <div class="relative" v-if="(props.asset.status === 'pending_approval' || props.asset.status === 'reviewed') && props.asset.status !== 'rejected'">
+                        <div class="relative" v-if="(props.asset.status === 'pending_approval' || props.asset.status === 'reviewed') && props.asset.status !== 'rejected' && (page.props.auth.can.asset_approve || page.props.auth.isAdmin)">
                             <div class="flex flex-col">
                                 <button @click="changeAssetStatus('rejected')" 
                                     :disabled="isRejecting"
@@ -430,7 +430,7 @@
                         </div>
 
                         <!-- Restore button - shows when rejected -->
-                        <div class="relative" v-if="props.asset.status === 'rejected'">
+                        <div class="relative" v-if="props.asset.status === 'rejected' && (page.props.auth.can.asset_approve || page.props.auth.isAdmin)">
                             <div class="flex flex-col">
                                 <button @click="changeAssetStatus('pending_approval')" 
                                     :disabled="isRestoring"
@@ -466,7 +466,7 @@
                                     <p class="text-sm text-gray-600">Manage and view asset-related documents</p>
                                 </div>
                             </div>
-                            <button @click="showUploadModal = true" 
+                            <button v-if="page.props.auth.can.asset_edit || page.props.auth.isAdmin" @click="showUploadModal = true" 
                                 class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2">
                                     <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
@@ -486,7 +486,7 @@
                             </div>
                             <h3 class="text-lg font-medium text-gray-900 mb-2">No documents uploaded</h3>
                             <p class="text-gray-500 mb-4">Upload documents related to this asset to keep them organized and accessible.</p>
-                            <button @click="showUploadModal = true" 
+                            <button v-if="page.props.auth.can.asset_edit || page.props.auth.isAdmin" @click="showUploadModal = true" 
                                 class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-2">
                                     <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
@@ -536,7 +536,7 @@
                                                 <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                                             </svg>
                                         </a>
-                                        <button @click="deleteDocument(document.id)" 
+                                        <button v-if="page.props.auth.can.asset_edit || page.props.auth.isAdmin" @click="deleteDocument(document.id)" 
                                             class="p-1 text-gray-400 hover:text-red-600 transition-colors" 
                                             title="Delete">
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
@@ -613,7 +613,7 @@
             <div class="px-6 py-4 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-gray-900">Asset Maintenance</h3>
-                    <button @click="showMaintenanceModal = true" 
+                    <button v-if="page.props.auth.can.asset_edit || page.props.auth.isAdmin" @click="showMaintenanceModal = true" 
                             class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -643,7 +643,7 @@
                     <h3 class="mt-2 text-sm font-medium text-gray-900">No maintenance records</h3>
                     <p class="mt-1 text-sm text-gray-500">Get started by creating maintenance for this asset.</p>
                     <div class="mt-6">
-                        <button @click="showMaintenanceModal = true" 
+                        <button v-if="page.props.auth.can.asset_edit || page.props.auth.isAdmin" @click="showMaintenanceModal = true" 
                                 class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             <svg class="w-4 h-2 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -698,7 +698,7 @@
                         
                         <!-- Action Buttons -->
                         <div class="mt-3 pt-3 border-t border-gray-200 flex justify-end space-x-2">
-                            <button v-if="!record.completed_date" 
+                            <button v-if="!record.completed_date && (page.props.auth.can.asset_edit || page.props.auth.isAdmin)" 
                                     @click="markMaintenanceCompleted(record)"
                                     class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
