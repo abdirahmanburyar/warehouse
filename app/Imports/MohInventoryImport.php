@@ -75,7 +75,8 @@ class MohInventoryImport implements
 
         // Parse expiry date - try different column name variations
         $expiryDateValue = $row['expiry_date'] ?? $row['Expiry Date'] ?? $row['EXPIRY_DATE'] ?? $row['expiry'] ?? null;
-        $expiryDate = $this->parseExpiryDate($expiryDateValue);
+        logger()->info('Expiry date value', ['expiry_date_value' => $row]);
+        $expiryDate = $this->parseExpiryDate($row['expiry_date']);
 
         // Create MOH inventory item with flexible column mapping and data cleaning
         $item = MohInventoryItem::create([
