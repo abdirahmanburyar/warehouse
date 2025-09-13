@@ -226,6 +226,13 @@ const getUniqueProducts = (mohInventory) => {
     return uniqueProducts;
 };
 
+// Get total cost for a MOH inventory
+const getTotalCost = (mohInventory) => {
+    return mohInventory.moh_inventory_items?.reduce((total, item) => {
+        return total + (item.total_cost || 0);
+    }, 0) || 0;
+};
+
 // Filter inventory items based on search and filters
 const filteredInventoryItems = computed(() => {
     if (!props.selectedInventory?.moh_inventory_items) return [];
@@ -262,249 +269,251 @@ const filteredInventoryItems = computed(() => {
 
     <AuthenticatedLayout :title="'MOH Inventory'" :description="'Ministry of Health Inventory Management'">
         <div class="py-6">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <!-- Header Section -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6">
-                        <div class="mb-6">
-                            <h2 class="text-2xl font-bold text-gray-900">MOH Inventory</h2>
-                            <p class="text-gray-600">Select a non-approved MOH inventory to view its items</p>
-                        </div>
+            <!-- Header Section -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                <div class="p-6">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900">MOH Inventory</h2>
+                        <p class="text-gray-600">Select a non-approved MOH inventory to view its items</p>
+                    </div>
 
-                        <!-- MOH Inventory Selection -->
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Select MOH Inventory <span class="text-red-500">*</span>
-                            </label>
-                            <select
-                                v-model="selectedInventoryId"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                <option value="">Choose a MOH inventory...</option>
-                                <option v-for="inventory in nonApprovedInventories" :key="inventory.id" :value="inventory.id">
-                                    {{ inventory.uuid || `MOH-${inventory.id}` }} 
-                                    ({{ getTotalItems(inventory) }} items, {{ getTotalQuantity(inventory) }} total qty)
-                                    - {{ getStatusInfo(inventory).text }}
-                                </option>
-                            </select>
-                        </div>
+                    <!-- MOH Inventory Selection -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Select MOH Inventory <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            v-model="selectedInventoryId"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">Choose a MOH inventory...</option>
+                            <option v-for="inventory in nonApprovedInventories" :key="inventory.id" :value="inventory.id">
+                                {{ inventory.uuid || `MOH-${inventory.id}` }} 
+                                ({{ getTotalItems(inventory) }} items, {{ getTotalQuantity(inventory) }} total qty)
+                                - {{ getStatusInfo(inventory).text }}
+                            </option>
+                        </select>
+                    </div>
 
-                        <!-- Upload Section -->
-                        <div class="mb-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h3 class="text-lg font-medium text-gray-900">Import MOH Inventory Items</h3>
-                                    <p class="text-sm text-gray-600">Upload an Excel file to import inventory items</p>
-                                </div>
-                                <div class="flex space-x-3">
-                                    <input
-                                        type="file"
-                                        ref="fileInput"
-                                        @change="handleFileSelect"
-                                        accept=".xlsx,.xls,.csv"
-                                        class="hidden"
-                                    />
-                                    <button
-                                        @click="$refs.fileInput.click()"
-                                        class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                    >
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                        </svg>
-                                        Upload Excel File
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Progress Bar (shown during upload) -->
-                            <div v-if="isUploading || uploadProgress > 0" class="mt-4">
-                                <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
-                                    <span>Uploading and processing...</span>
-                                    <span>{{ uploadProgress }}%</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div 
-                                        class="bg-green-600 h-2 rounded-full transition-all duration-300"
-                                        :style="{ width: uploadProgress + '%' }"
-                                    ></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Filters (only show when inventory is selected) -->
-                        <div v-if="selectedInventory" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <!-- Upload Section -->
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Search Items</label>
+                                <h3 class="text-lg font-medium text-gray-900">Import MOH Inventory Items</h3>
+                                <p class="text-sm text-gray-600">Upload an Excel file to import inventory items</p>
+                            </div>
+                            <div class="flex space-x-3">
                                 <input
-                                    v-model="search"
-                                    type="text"
-                                    placeholder="Search products, batch, barcode..."
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    type="file"
+                                    ref="fileInput"
+                                    @change="handleFileSelect"
+                                    accept=".xlsx,.xls,.csv"
+                                    class="hidden"
                                 />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                                <select
-                                    v-model="category_id"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                >
-                                    <option value="">All Categories</option>
-                                    <option v-for="category in categories" :key="category.id" :value="category.id">
-                                        {{ category.name }}
-                                    </option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
-                                <select
-                                    v-model="dosage_id"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                >
-                                    <option value="">All Dosages</option>
-                                    <option v-for="dosage in dosages" :key="dosage.id" :value="dosage.id">
-                                        {{ dosage.name }}
-                                    </option>
-                                </select>
-                            </div>
-                            <div class="flex items-end">
                                 <button
-                                    @click="clearFilters"
-                                    class="w-full px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                                    @click="$refs.fileInput.click()"
+                                    class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                 >
-                                    Clear Filters
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                    </svg>
+                                    Upload Excel File
                                 </button>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Loading State -->
-                <div v-if="isLoading" class="flex justify-center items-center py-8">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-
-                <!-- Selected Inventory Details -->
-                <div v-else-if="selectedInventory" class="space-y-6">
-                    <!-- Inventory Summary -->
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-medium text-gray-900">Inventory Summary</h3>
-                        </div>
-                        <div class="p-6">
-                            <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
-                                <div>
-                                    <dt class="text-sm font-medium text-gray-500">UUID</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 font-mono">{{ selectedInventory.uuid || `MOH-${selectedInventory.id}` }}</dd>
-                                </div>
-                                <div>
-                                    <dt class="text-sm font-medium text-gray-500">Date</dt>
-                                    <dd class="mt-1 text-sm text-gray-900">{{ selectedInventory.date ? moment(selectedInventory.date).format('MMM DD, YYYY') : 'N/A' }}</dd>
-                                </div>
-                                <div>
-                                    <dt class="text-sm font-medium text-gray-500">Total Items</dt>
-                                    <dd class="mt-1 text-sm text-gray-900">{{ getTotalItems(selectedInventory) }}</dd>
-                                </div>
-                                <div>
-                                    <dt class="text-sm font-medium text-gray-500">Total Quantity</dt>
-                                    <dd class="mt-1 text-sm text-gray-900">{{ getTotalQuantity(selectedInventory) }}</dd>
-                                </div>
-                                <div>
-                                    <dt class="text-sm font-medium text-gray-500">Status</dt>
-                                    <dd class="mt-1">
-                                        <span 
-                                            :class="`inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-${getStatusInfo(selectedInventory).color}-100 text-${getStatusInfo(selectedInventory).color}-800`"
-                                        >
-                                            {{ getStatusInfo(selectedInventory).text }}
-                                        </span>
-                                    </dd>
-                                </div>
+                        
+                        <!-- Progress Bar (shown during upload) -->
+                        <div v-if="isUploading || uploadProgress > 0" class="mt-4">
+                            <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
+                                <span>Uploading and processing...</span>
+                                <span>{{ uploadProgress }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div 
+                                    class="bg-green-600 h-2 rounded-full transition-all duration-300"
+                                    :style="{ width: uploadProgress + '%' }"
+                                ></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Inventory Items Table -->
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-medium text-gray-900">Inventory Items ({{ filteredInventoryItems.length }})</h3>
+                    <!-- Filters (only show when inventory is selected) -->
+                    <div v-if="selectedInventory" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Search Items</label>
+                            <input
+                                v-model="search"
+                                type="text"
+                                placeholder="Search products, batch, barcode..."
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            />
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Warehouse</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UOM</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch Number</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry Date</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Cost</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Cost</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <tr v-for="item in filteredInventoryItems" :key="item.id" class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div>
-                                                <div class="text-sm font-medium text-gray-900">{{ item.product?.name || 'N/A' }}</div>
-                                                <div class="text-sm text-gray-500">{{ item.product?.product_code || 'N/A' }}</div>
-                                                <div class="text-xs text-gray-400">
-                                                    {{ item.product?.category?.name || 'N/A' }} - {{ item.product?.dosage?.name || 'N/A' }}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ item.warehouse?.name || 'N/A' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ item.quantity }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ item.uom || 'N/A' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ item.batch_number || 'N/A' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ item.expiry_date ? moment(item.expiry_date).format('MMM DD, YYYY') : 'N/A' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ item.location || 'N/A' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ item.source || 'N/A' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ formatCurrency(item.unit_cost) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ formatCurrency(item.total_cost) }}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                            <select
+                                v-model="category_id"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                <option value="">All Categories</option>
+                                <option v-for="category in categories" :key="category.id" :value="category.id">
+                                    {{ category.name }}
+                                </option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
+                            <select
+                                v-model="dosage_id"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                <option value="">All Dosages</option>
+                                <option v-for="dosage in dosages" :key="dosage.id" :value="dosage.id">
+                                    {{ dosage.name }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button
+                                @click="clearFilters"
+                                class="w-full px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                            >
+                                Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div v-if="isLoading" class="flex justify-center items-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+
+            <!-- Selected Inventory Details -->
+            <div v-else-if="selectedInventory" class="space-y-6">
+                <!-- Inventory Summary -->
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Inventory Summary</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-6 gap-6">
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">UUID</dt>
+                                <dd class="mt-1 text-sm text-gray-900 font-mono">{{ selectedInventory.uuid || `MOH-${selectedInventory.id}` }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Date</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ selectedInventory.date ? moment(selectedInventory.date).format('MMM DD, YYYY') : 'N/A' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Total Items</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ getTotalItems(selectedInventory) }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Total Quantity</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ getTotalQuantity(selectedInventory) }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Total Cost</dt>
+                                <dd class="mt-1 text-sm text-gray-900 font-semibold">{{ formatCurrency(getTotalCost(selectedInventory)) }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Status</dt>
+                                <dd class="mt-1">
+                                    <span 
+                                        :class="`inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-${getStatusInfo(selectedInventory).color}-100 text-${getStatusInfo(selectedInventory).color}-800`"
+                                    >
+                                        {{ getStatusInfo(selectedInventory).text }}
+                                    </span>
+                                </dd>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Empty State - No Inventory Selected -->
-                <div v-else-if="!selectedInventory" class="text-center py-12">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">No MOH inventory selected</h3>
-                    <p class="mt-1 text-sm text-gray-500">Please select a MOH inventory from the dropdown above to view its items.</p>
+                <!-- Inventory Items Table -->
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Inventory Items ({{ filteredInventoryItems.length }})</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Warehouse</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UOM</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch Number</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Cost</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr v-for="item in filteredInventoryItems" :key="item.id" class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">{{ item.product?.name || 'N/A' }}</div>
+                                            <div class="text-sm text-gray-500">{{ item.product?.product_code || 'N/A' }}</div>
+                                            <div class="text-xs text-gray-400">
+                                                {{ item.product?.category?.name || 'N/A' }} - {{ item.product?.dosage?.name || 'N/A' }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ item.warehouse?.name || 'N/A' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ item.quantity }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ item.uom || 'N/A' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ item.batch_number || 'N/A' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ item.expiry_date ? moment(item.expiry_date).format('MMM DD, YYYY') : 'N/A' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ item.location || 'N/A' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ item.source || 'N/A' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ formatCurrency(item.unit_cost) }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ formatCurrency(item.total_cost) }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+            </div>
 
-                <!-- Empty State - No Non-Approved Inventories -->
-                <div v-else-if="nonApprovedInventories.length === 0" class="text-center py-12">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">No non-approved MOH inventories</h3>
-                    <p class="mt-1 text-sm text-gray-500">All MOH inventories have been approved or there are no MOH inventories available.</p>
-                </div>
+            <!-- Empty State - No Inventory Selected -->
+            <div v-else-if="!selectedInventory" class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No MOH inventory selected</h3>
+                <p class="mt-1 text-sm text-gray-500">Please select a MOH inventory from the dropdown above to view its items.</p>
+            </div>
+
+            <!-- Empty State - No Non-Approved Inventories -->
+            <div v-else-if="nonApprovedInventories.length === 0" class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No non-approved MOH inventories</h3>
+                <p class="mt-1 text-sm text-gray-500">All MOH inventories have been approved or there are no MOH inventories available.</p>
             </div>
         </div>
 
@@ -524,7 +533,7 @@ const filteredInventoryItems = computed(() => {
                                 Selected file: <span class="font-medium">{{ uploadFile?.name }}</span>
                             </p>
                             <p class="text-xs text-gray-400 mt-2">
-                                Expected columns: Item, Category, UoM, source, Quantity, Batch No, Expiry Date, Location, warehouse
+                                Expected columns: Item, Category, UoM, source, Quantity, Batch No, Expiry Date, Location, warehouse, Unit Cost
                             </p>
                             <p class="text-xs text-red-500 mt-1">
                                 <strong>Note:</strong> All products and warehouses must exist in the database before importing.

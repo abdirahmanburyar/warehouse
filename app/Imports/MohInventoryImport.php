@@ -90,14 +90,16 @@ class MohInventoryImport implements
             'notes' => trim($row['notes'] ?? $row['Notes'] ?? $row['NOTES'] ?? '') ?: null,
             'uom' => trim($row['uom'] ?? $row['UoM'] ?? $row['UOM'] ?? $row['unit'] ?? '') ?: null,
             'source' => trim($row['source'] ?? $row['Source'] ?? $row['SOURCE'] ?? '') ?: 'Excel Import',
-            'unit_cost' => (float) ($row['unit_cost'] ?? $row['Unit Cost'] ?? $row['UNIT_COST'] ?? 0),
-            'total_cost' => (float) $quantity * (float) ($row['unit_cost'] ?? $row['Unit Cost'] ?? $row['UNIT_COST'] ?? 0),
+            'unit_cost' => (float) ($row['unit_cost'] ?? $row['Unit Cost'] ?? $row['UNIT_COST'] ?? $row['unit_cost'] ?? $row['UnitCost'] ?? 0),
+            'total_cost' => (float) ($row['unit_cost'] ?? $row['Unit Cost'] ?? $row['UNIT_COST'] ?? $row['unit_cost'] ?? $row['UnitCost'] ?? 0) * (float) $quantity,
         ]);
 
         Log::info('MOH inventory item created', [
             'item_id' => $item->id,
             'product' => $product->name,
-            'quantity' => $item->quantity
+            'quantity' => $item->quantity,
+            'unit_cost' => $item->unit_cost,
+            'total_cost' => $item->total_cost
         ]);
 
         return null;
