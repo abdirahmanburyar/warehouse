@@ -51,40 +51,52 @@ class MohInventoryImport implements
     public function model(array $row)
     {
         try {
-            // Check if required fields are present
-            if (empty($row['item']) || empty($row['quantity'])) {
-                Log::warning('Skipping row due to missing required fields', ['row' => $row]);
+            // Log the row data for debugging
+            Log::info('Processing MOH inventory row', ['row' => $row]);
+            
+            // Check if required fields are present - try different column name variations
+            $itemName = $row['item'] ?? $row['Item'] ?? $row['ITEM'] ?? null;
+            $quantity = $row['quantity'] ?? $row['Quantity'] ?? $row['QUANTITY'] ?? null;
+            
+            if (empty($itemName) || empty($quantity)) {
+                Log::warning('Skipping row due to missing required fields', [
+                    'row' => $row,
+                    'item_name' => $itemName,
+                    'quantity' => $quantity
+                ]);
                 return null;
             }
 
             // Get or create product
-            $product = $this->getOrCreateProduct($row);
+            $product = $this->getOrCreateProduct($row, $itemName);
             if (!$product) {
-                Log::error('Failed to get or create product', ['row' => $row]);
+                Log::error('Failed to get or create product', ['row' => $row, 'item_name' => $itemName]);
                 return null;
             }
 
-            // Get warehouse
-            $warehouse = $this->getWarehouse($row['warehouse'] ?? 'Main Warehouse');
+            // Get warehouse - try different column name variations
+            $warehouseName = $row['warehouse'] ?? $row['Warehouse'] ?? $row['WAREHOUSE'] ?? 'Main Warehouse';
+            $warehouse = $this->getWarehouse($warehouseName);
 
-            // Parse expiry date
-            $expiryDate = $this->parseExpiryDate($row['expiry_date'] ?? null);
+            // Parse expiry date - try different column name variations
+            $expiryDateValue = $row['expiry_date'] ?? $row['Expiry Date'] ?? $row['EXPIRY_DATE'] ?? $row['expiry'] ?? null;
+            $expiryDate = $this->parseExpiryDate($expiryDateValue);
 
-            // Create MOH inventory item
+            // Create MOH inventory item with flexible column mapping
             $item = MohInventoryItem::create([
                 'moh_inventory_id' => $this->mohInventoryId,
                 'product_id' => $product->id,
                 'warehouse_id' => $warehouse->id,
-                'quantity' => (int) $row['quantity'],
+                'quantity' => (int) $quantity,
                 'expiry_date' => $expiryDate,
-                'batch_number' => $row['batch_no'] ?? null,
-                'barcode' => $row['barcode'] ?? null,
-                'location' => $row['location'] ?? null,
-                'notes' => $row['notes'] ?? null,
-                'uom' => $row['uom'] ?? null,
-                'source' => $row['source'] ?? 'Excel Import',
-                'unit_cost' => (float) ($row['unit_cost'] ?? 0),
-                'total_cost' => (float) ($row['quantity']) * (float) ($row['unit_cost'] ?? 0),
+                'batch_number' => $row['batch_no'] ?? $row['Batch No'] ?? $row['BATCH_NO'] ?? $row['batch_number'] ?? null,
+                'barcode' => $row['barcode'] ?? $row['Barcode'] ?? $row['BARCODE'] ?? null,
+                'location' => $row['location'] ?? $row['Location'] ?? $row['LOCATION'] ?? null,
+                'notes' => $row['notes'] ?? $row['Notes'] ?? $row['NOTES'] ?? null,
+                'uom' => $row['uom'] ?? $row['UoM'] ?? $row['UOM'] ?? $row['unit'] ?? null,
+                'source' => $row['source'] ?? $row['Source'] ?? $row['SOURCE'] ?? 'Excel Import',
+                'unit_cost' => (float) ($row['unit_cost'] ?? $row['Unit Cost'] ?? $row['UNIT_COST'] ?? 0),
+                'total_cost' => (float) $quantity * (float) ($row['unit_cost'] ?? $row['Unit Cost'] ?? $row['UNIT_COST'] ?? 0),
             ]);
 
             Log::info('MOH inventory item created', [
@@ -105,32 +117,37 @@ class MohInventoryImport implements
         }
     }
 
-    protected function getOrCreateProduct($row)
+    protected function getOrCreateProduct($row, $itemName)
     {
         // First try to find existing product by name
-        $product = Product::where('name', $row['item'])->first();
+        $product = Product::where('name', $itemName)->first();
         
         if ($product) {
+            Log::info('Found existing product', ['product_id' => $product->id, 'name' => $product->name]);
             return $product;
         }
 
         // If not found, create new product
-        $category = $this->getOrCreateCategory($row['category'] ?? 'General');
-        $dosage = $this->getOrCreateDosage($row['dosage'] ?? 'N/A');
+        $categoryName = $row['category'] ?? $row['Category'] ?? $row['CATEGORY'] ?? 'General';
+        $dosageName = $row['dosage'] ?? $row['Dosage'] ?? $row['DOSAGE'] ?? 'N/A';
+        
+        $category = $this->getOrCreateCategory($categoryName);
+        $dosage = $this->getOrCreateDosage($dosageName);
 
         $product = Product::create([
-            'name' => $row['item'],
-            'product_code' => $this->generateProductCode($row['item']),
+            'name' => $itemName,
+            'product_code' => $this->generateProductCode($itemName),
             'category_id' => $category->id,
             'dosage_id' => $dosage->id,
-            'description' => $row['description'] ?? null,
+            'description' => $row['description'] ?? $row['Description'] ?? $row['DESCRIPTION'] ?? null,
             'is_active' => true,
         ]);
 
         Log::info('New product created for MOH import', [
             'product_id' => $product->id,
             'name' => $product->name,
-            'category' => $category->name
+            'category' => $category->name,
+            'dosage' => $dosage->name
         ]);
 
         return $product;
@@ -232,7 +249,8 @@ class MohInventoryImport implements
             AfterImport::class => function(AfterImport $event) {
                 Log::info('MOH inventory import completed', [
                     'import_id' => $this->importId,
-                    'moh_inventory_id' => $this->mohInventoryId
+                    'moh_inventory_id' => $this->mohInventoryId,
+                    'total_rows_processed' => $event->getConcernable()->getRowCount()
                 ]);
                 
                 // Update cache to indicate completion
