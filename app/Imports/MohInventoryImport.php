@@ -151,119 +151,57 @@ class MohInventoryImport implements
         return $warehouse;
     }
 
-    protected function parseExpiryDate($dateString)
+    protected function parseExpiryDate($expiryDateValue)
     {
-        if (empty($dateString)) {
-            return null;
+        if (empty($expiryDateValue)) {
+            return null; // Return null since the field is nullable
         }
 
         try {
-            // Clean the date string (remove extra spaces, tabs, etc.)
-            $cleanDate = trim($dateString);
-            
-            // Remove any non-printable characters and normalize
-            $cleanDate = preg_replace('/[^\x20-\x7E]/', '', $cleanDate);
-            $cleanDate = trim($cleanDate);
-            
-            Log::info('Parsing expiry date', ['original' => $dateString, 'cleaned' => $cleanDate]);
-            
-            // Try different date formats in order of likelihood
-            $formats = [
-                'd/m/Y',      // 20/02/2028
-                'd-m-Y',      // 20-02-2028
-                'm/d/Y',      // 02/20/2028
-                'm-d-Y',      // 02-20-2028
-                'Y-m-d',      // 2028-02-20
-                'd/m/y',      // 20/02/28
-                'm/d/y',      // 02/20/28
-                'd-m-y',      // 20-02-28
-                'm-d-y',      // 02-20-28
-                'Y/m/d',      // 2028/02/20
-                'Y-m-d H:i:s', // 2028-02-20 00:00:00
-                'd/m/Y H:i:s', // 20/02/2028 00:00:00
-            ];
-            
-            // Special handling for common Excel date formats
-            if (preg_match('/^\d{1,2}\/\d{1,2}\/\d{4}$/', $cleanDate)) {
-                // Format: DD/MM/YYYY or MM/DD/YYYY
-                $parts = explode('/', $cleanDate);
-                if (count($parts) === 3) {
-                    $day = (int)$parts[0];
-                    $month = (int)$parts[1];
-                    $year = (int)$parts[2];
-                    
-                    // Try DD/MM/YYYY first (more common internationally)
-                    if ($day <= 31 && $month <= 12) {
-                        try {
-                            $date = Carbon::createFromDate($year, $month, $day);
-                            if ($date && $date->isValid()) {
-                                Log::info('Successfully parsed date with manual parsing (DD/MM/YYYY)', [
-                                    'original' => $dateString,
-                                    'parsed' => $date->format('Y-m-d')
-                                ]);
-                                return $date->format('Y-m-d');
-                            }
-                        } catch (\Exception $e) {
-                            // Try MM/DD/YYYY
-                            try {
-                                $date = Carbon::createFromDate($year, $day, $month);
-                                if ($date && $date->isValid()) {
-                                    Log::info('Successfully parsed date with manual parsing (MM/DD/YYYY)', [
-                                        'original' => $dateString,
-                                        'parsed' => $date->format('Y-m-d')
-                                    ]);
-                                    return $date->format('Y-m-d');
-                                }
-                            } catch (\Exception $e2) {
-                                // Continue to normal parsing
-                            }
-                        }
-                    }
-                }
+            // Check if it's an Excel serial number (numeric)
+            if (is_numeric($expiryDateValue)) {
+                // Convert Excel serial number to date
+                // Excel dates are days since 1900-01-01
+                $excelDate = (int) $expiryDateValue;
+                $unixTimestamp = ($excelDate - 25569) * 86400; // Convert to Unix timestamp
+                $date = Carbon::createFromTimestamp($unixTimestamp);
+                return $date->format('Y-m-d');
             }
-            
-            foreach ($formats as $format) {
+
+            // Try to parse as "M-y" format (Feb-25, Jun-27) - Default format
+            try {
+                $date = Carbon::createFromFormat('M-y', $expiryDateValue);
+                // Set to first day of the month for month-year format
+                return $date->startOfMonth()->format('Y-m-d');
+            } catch (\Exception $e) {
+                // If M-y format fails, continue to try normal date formats
+                // Don't throw exception, just continue
+            }
+
+            // Try various normal date formats
+            $dateFormats = [
+                'd-m-Y',    // 15-02-2025
+                'Y-m-d',    // 2025-02-15
+                'd/m/Y',    // 15/02/2025
+                'Y/m/d',    // 2025/02/15
+                'm-d-Y',    // 02-15-2025
+                'Y-m-d H:i:s', // 2025-02-15 00:00:00
+                'd-m-Y H:i:s', // 15-02-2025 00:00:00
+            ];
+
+            foreach ($dateFormats as $format) {
                 try {
-                    $date = Carbon::createFromFormat($format, $cleanDate);
-                    if ($date && $date->isValid()) {
-                        Log::info('Successfully parsed date', [
-                            'format' => $format,
-                            'original' => $dateString,
-                            'parsed' => $date->format('Y-m-d')
-                        ]);
-                        return $date->format('Y-m-d');
-                    }
+                    $date = Carbon::createFromFormat($format, $expiryDateValue);
+                    return $date->format('Y-m-d');
                 } catch (\Exception $e) {
                     // Continue to next format
                     continue;
                 }
             }
+            return null;
 
-            // If none work, try Carbon's parse as last resort
-            try {
-                $parsedDate = Carbon::parse($cleanDate);
-                if ($parsedDate && $parsedDate->isValid()) {
-                    Log::info('Successfully parsed date with Carbon::parse', [
-                        'original' => $dateString,
-                        'parsed' => $parsedDate->format('Y-m-d')
-                    ]);
-                    return $parsedDate->format('Y-m-d');
-                }
-            } catch (\Exception $e) {
-                Log::warning('Carbon::parse also failed', ['error' => $e->getMessage()]);
-            }
-            
-            Log::warning('Failed to parse expiry date with all methods', [
-                'date_string' => $dateString,
-                'clean_date' => $cleanDate
-            ]);
-            return null;
         } catch (\Exception $e) {
-            Log::warning('Failed to parse expiry date', [
-                'date_string' => $dateString,
-                'error' => $e->getMessage()
-            ]);
-            return null;
+            return null; // Return null since the field is nullable
         }
     }
 
