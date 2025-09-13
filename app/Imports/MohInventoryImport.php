@@ -55,8 +55,8 @@ class MohInventoryImport implements
             Log::info('Processing MOH inventory row', ['row' => $row]);
             
             // Check if required fields are present - try different column name variations
-            $itemName = $row['item'] ?? $row['Item'] ?? $row['ITEM'] ?? null;
-            $quantity = $row['quantity'] ?? $row['Quantity'] ?? $row['QUANTITY'] ?? null;
+            $itemName = trim($row['item'] ?? $row['Item'] ?? $row['ITEM'] ?? '');
+            $quantity = trim($row['quantity'] ?? $row['Quantity'] ?? $row['QUANTITY'] ?? '');
             
             if (empty($itemName) || empty($quantity)) {
                 Log::warning('Skipping row due to missing required fields', [
@@ -76,25 +76,27 @@ class MohInventoryImport implements
 
             // Get warehouse - try different column name variations
             $warehouseName = $row['warehouse'] ?? $row['Warehouse'] ?? $row['WAREHOUSE'] ?? 'Main Warehouse';
+            // Clean the warehouse name to remove tabs and extra whitespace
+            $warehouseName = trim(preg_replace('/\s+/', ' ', $warehouseName));
             $warehouse = $this->getWarehouse($warehouseName);
 
             // Parse expiry date - try different column name variations
             $expiryDateValue = $row['expiry_date'] ?? $row['Expiry Date'] ?? $row['EXPIRY_DATE'] ?? $row['expiry'] ?? null;
             $expiryDate = $this->parseExpiryDate($expiryDateValue);
 
-            // Create MOH inventory item with flexible column mapping
+            // Create MOH inventory item with flexible column mapping and data cleaning
             $item = MohInventoryItem::create([
                 'moh_inventory_id' => $this->mohInventoryId,
                 'product_id' => $product->id,
                 'warehouse_id' => $warehouse->id,
                 'quantity' => (int) $quantity,
                 'expiry_date' => $expiryDate,
-                'batch_number' => $row['batch_no'] ?? $row['Batch No'] ?? $row['BATCH_NO'] ?? $row['batch_number'] ?? null,
-                'barcode' => $row['barcode'] ?? $row['Barcode'] ?? $row['BARCODE'] ?? null,
-                'location' => $row['location'] ?? $row['Location'] ?? $row['LOCATION'] ?? null,
-                'notes' => $row['notes'] ?? $row['Notes'] ?? $row['NOTES'] ?? null,
-                'uom' => $row['uom'] ?? $row['UoM'] ?? $row['UOM'] ?? $row['unit'] ?? null,
-                'source' => $row['source'] ?? $row['Source'] ?? $row['SOURCE'] ?? 'Excel Import',
+                'batch_number' => trim($row['batch_no'] ?? $row['Batch No'] ?? $row['BATCH_NO'] ?? $row['batch_number'] ?? '') ?: null,
+                'barcode' => trim($row['barcode'] ?? $row['Barcode'] ?? $row['BARCODE'] ?? '') ?: null,
+                'location' => trim($row['location'] ?? $row['Location'] ?? $row['LOCATION'] ?? '') ?: null,
+                'notes' => trim($row['notes'] ?? $row['Notes'] ?? $row['NOTES'] ?? '') ?: null,
+                'uom' => trim($row['uom'] ?? $row['UoM'] ?? $row['UOM'] ?? $row['unit'] ?? '') ?: null,
+                'source' => trim($row['source'] ?? $row['Source'] ?? $row['SOURCE'] ?? '') ?: 'Excel Import',
                 'unit_cost' => (float) ($row['unit_cost'] ?? $row['Unit Cost'] ?? $row['UNIT_COST'] ?? 0),
                 'total_cost' => (float) $quantity * (float) ($row['unit_cost'] ?? $row['Unit Cost'] ?? $row['UNIT_COST'] ?? 0),
             ]);
@@ -128,8 +130,8 @@ class MohInventoryImport implements
         }
 
         // If not found, create new product
-        $categoryName = $row['category'] ?? $row['Category'] ?? $row['CATEGORY'] ?? 'General';
-        $dosageName = $row['dosage'] ?? $row['Dosage'] ?? $row['DOSAGE'] ?? 'N/A';
+        $categoryName = trim($row['category'] ?? $row['Category'] ?? $row['CATEGORY'] ?? 'General');
+        $dosageName = trim($row['dosage'] ?? $row['Dosage'] ?? $row['DOSAGE'] ?? 'N/A');
         
         $category = $this->getOrCreateCategory($categoryName);
         $dosage = $this->getOrCreateDosage($dosageName);
@@ -183,14 +185,27 @@ class MohInventoryImport implements
 
     protected function getWarehouse($warehouseName)
     {
-        $warehouse = Warehouse::where('name', $warehouseName)->first();
+        // Clean the warehouse name (remove tabs, extra spaces, etc.)
+        $cleanName = trim($warehouseName);
+        
+        $warehouse = Warehouse::where('name', $cleanName)->first();
         
         if (!$warehouse) {
             // Create default warehouse if not found
             $warehouse = Warehouse::create([
-                'name' => $warehouseName,
-                'location' => 'Main Location',
-                'is_active' => true
+                'name' => $cleanName,
+                'address' => 'Main Location',
+                'district' => 'Unknown',
+                'region' => 'Unknown',
+                'manager_name' => 'System',
+                'manager_phone' => null,
+                'manager_email' => null,
+                'status' => 'active',
+            ]);
+            
+            Log::info('New warehouse created for MOH import', [
+                'warehouse_id' => $warehouse->id,
+                'name' => $warehouse->name
             ]);
         }
 

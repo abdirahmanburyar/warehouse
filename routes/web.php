@@ -670,6 +670,7 @@ Route::controller(LocationController::class)
         Route::get('/moh-inventory', 'index')->name('inventories.moh-inventory.index');
         Route::post('/moh-inventory/import', 'import')->name('inventories.moh-inventory.import');
         Route::get('/moh-inventory/import-progress', 'getImportProgress')->name('inventories.moh-inventory.import-progress');
+        Route::get('/moh-inventory/test-import', 'testImport')->name('inventories.moh-inventory.test-import');
     });
 
     // API Routes

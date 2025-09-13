@@ -191,4 +191,77 @@ class MohInventoryController extends Controller
         ]);
     }
 
+    /**
+     * Test import functionality
+     */
+    public function testImport(Request $request)
+    {
+        try {
+            // Create a test MOH inventory
+            $mohInventory = MohInventory::create([
+                'uuid' => 'MOH-TEST-' . strtoupper(uniqid()),
+                'date' => now()->toDateString(),
+                'reviewed_at' => null,
+                'reviewed_by' => null,
+                'approved_by' => null,
+                'approved_at' => null,
+            ]);
+
+            // Create a test product
+            $product = Product::first();
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No products found in database'
+                ], 422);
+            }
+
+            // Create a test warehouse
+            $warehouse = Warehouse::first();
+            if (!$warehouse) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No warehouses found in database'
+                ], 422);
+            }
+
+            // Create a test MOH inventory item
+            $item = MohInventoryItem::create([
+                'moh_inventory_id' => $mohInventory->id,
+                'product_id' => $product->id,
+                'warehouse_id' => $warehouse->id,
+                'quantity' => 10,
+                'expiry_date' => now()->addYear()->toDateString(),
+                'batch_number' => 'TEST-BATCH-001',
+                'barcode' => 'TEST-BARCODE-001',
+                'location' => 'Test Location',
+                'notes' => 'Test item created via API',
+                'uom' => 'pcs',
+                'source' => 'Test Import',
+                'unit_cost' => 10.50,
+                'total_cost' => 105.00,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Test import successful',
+                'moh_inventory_id' => $mohInventory->id,
+                'item_id' => $item->id,
+                'product_name' => $product->name,
+                'warehouse_name' => $warehouse->name
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Test import failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Test import failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }
