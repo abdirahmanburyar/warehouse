@@ -153,6 +153,7 @@ class MohInventoryController extends Controller
         // Otherwise, create a new MOH inventory
         $mohInventory = MohInventory::create([
             'uuid' => 'MOH-' . strtoupper(uniqid()),
+            'date' => now()->toDateString(),
             'reviewed_at' => null,
             'reviewed_by' => null,
             'approved_by' => null,

@@ -10,6 +10,7 @@ class MohInventory extends Model
 {
     protected $fillable = [
         'uuid',
+        'date',
         'reviewed_at',
         'reviewed_by',
         'approved_by',
@@ -17,6 +18,7 @@ class MohInventory extends Model
     ];
 
     protected $casts = [
+        'date' => 'date',
         'reviewed_at' => 'datetime',
         'approved_at' => 'datetime',
     ];

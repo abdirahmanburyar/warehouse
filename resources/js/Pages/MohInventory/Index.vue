@@ -387,10 +387,14 @@ const filteredInventoryItems = computed(() => {
                             <h3 class="text-lg font-medium text-gray-900">Inventory Summary</h3>
                         </div>
                         <div class="p-6">
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">UUID</dt>
                                     <dd class="mt-1 text-sm text-gray-900 font-mono">{{ selectedInventory.uuid || `MOH-${selectedInventory.id}` }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Date</dt>
+                                    <dd class="mt-1 text-sm text-gray-900">{{ selectedInventory.date ? moment(selectedInventory.date).format('MMM DD, YYYY') : 'N/A' }}</dd>
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">Total Items</dt>
