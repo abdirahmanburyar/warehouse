@@ -124,6 +124,10 @@ const uploadExcelFile = async () => {
             }, 2000);
         } else {
             toast.error(data.message);
+            // Show detailed error message
+            if (data.message.includes('not found in database')) {
+                toast.error('Import failed: ' + data.message + ' Please add the missing items to the database first.');
+            }
         }
     } catch (error) {
         console.error('Upload error:', error);
@@ -521,6 +525,9 @@ const filteredInventoryItems = computed(() => {
                             </p>
                             <p class="text-xs text-gray-400 mt-2">
                                 Expected columns: Item, Category, UoM, source, Quantity, Batch No, Expiry Date, Location, warehouse
+                            </p>
+                            <p class="text-xs text-red-500 mt-1">
+                                <strong>Note:</strong> All products and warehouses must exist in the database before importing.
                             </p>
                         </div>
                     </div>
