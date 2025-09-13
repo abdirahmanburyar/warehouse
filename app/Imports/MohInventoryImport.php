@@ -161,13 +161,33 @@ class MohInventoryImport implements
             // Clean the date string (remove extra spaces, tabs, etc.)
             $cleanDate = trim($dateString);
             
-            // Try different date formats
-            $formats = ['d/m/Y', 'm/d/Y', 'Y-m-d', 'd-m-Y', 'm-d-Y', 'd/m/y', 'm/d/y'];
+            Log::info('Parsing expiry date', ['original' => $dateString, 'cleaned' => $cleanDate]);
+            
+            // Try different date formats in order of likelihood
+            $formats = [
+                'd/m/Y',      // 20/02/2028
+                'd-m-Y',      // 20-02-2028
+                'm/d/Y',      // 02/20/2028
+                'm-d-Y',      // 02-20-2028
+                'Y-m-d',      // 2028-02-20
+                'd/m/y',      // 20/02/28
+                'm/d/y',      // 02/20/28
+                'd-m-y',      // 20-02-28
+                'm-d-y',      // 02-20-28
+                'Y/m/d',      // 2028/02/20
+                'Y-m-d H:i:s', // 2028-02-20 00:00:00
+                'd/m/Y H:i:s', // 20/02/2028 00:00:00
+            ];
             
             foreach ($formats as $format) {
                 try {
                     $date = Carbon::createFromFormat($format, $cleanDate);
                     if ($date && $date->isValid()) {
+                        Log::info('Successfully parsed date', [
+                            'format' => $format,
+                            'original' => $dateString,
+                            'parsed' => $date->format('Y-m-d')
+                        ]);
                         return $date->format('Y-m-d');
                     }
                 } catch (\Exception $e) {
@@ -177,9 +197,17 @@ class MohInventoryImport implements
             }
 
             // If none work, try Carbon's parse as last resort
-            $parsedDate = Carbon::parse($cleanDate);
-            if ($parsedDate && $parsedDate->isValid()) {
-                return $parsedDate->format('Y-m-d');
+            try {
+                $parsedDate = Carbon::parse($cleanDate);
+                if ($parsedDate && $parsedDate->isValid()) {
+                    Log::info('Successfully parsed date with Carbon::parse', [
+                        'original' => $dateString,
+                        'parsed' => $parsedDate->format('Y-m-d')
+                    ]);
+                    return $parsedDate->format('Y-m-d');
+                }
+            } catch (\Exception $e) {
+                Log::warning('Carbon::parse also failed', ['error' => $e->getMessage()]);
             }
             
             Log::warning('Failed to parse expiry date with all methods', [
