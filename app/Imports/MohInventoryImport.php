@@ -156,18 +156,35 @@ class MohInventoryImport implements
         }
 
         try {
+            // Clean the date string (remove extra spaces, tabs, etc.)
+            $cleanDate = trim($dateString);
+            
             // Try different date formats
-            $formats = ['Y-m-d', 'd/m/Y', 'm/d/Y', 'd-m-Y', 'm-d-Y'];
+            $formats = ['d/m/Y', 'm/d/Y', 'Y-m-d', 'd-m-Y', 'm-d-Y', 'd/m/y', 'm/d/y'];
             
             foreach ($formats as $format) {
-                $date = Carbon::createFromFormat($format, $dateString);
-                if ($date) {
-                    return $date->format('Y-m-d');
+                try {
+                    $date = Carbon::createFromFormat($format, $cleanDate);
+                    if ($date && $date->isValid()) {
+                        return $date->format('Y-m-d');
+                    }
+                } catch (\Exception $e) {
+                    // Continue to next format
+                    continue;
                 }
             }
 
-            // If none work, try Carbon's parse
-            return Carbon::parse($dateString)->format('Y-m-d');
+            // If none work, try Carbon's parse as last resort
+            $parsedDate = Carbon::parse($cleanDate);
+            if ($parsedDate && $parsedDate->isValid()) {
+                return $parsedDate->format('Y-m-d');
+            }
+            
+            Log::warning('Failed to parse expiry date with all methods', [
+                'date_string' => $dateString,
+                'clean_date' => $cleanDate
+            ]);
+            return null;
         } catch (\Exception $e) {
             Log::warning('Failed to parse expiry date', [
                 'date_string' => $dateString,
@@ -194,8 +211,7 @@ class MohInventoryImport implements
             AfterImport::class => function(AfterImport $event) {
                 Log::info('MOH inventory import completed', [
                     'import_id' => $this->importId,
-                    'moh_inventory_id' => $this->mohInventoryId,
-                    'total_rows_processed' => $event->getConcernable()->getRowCount()
+                    'moh_inventory_id' => $this->mohInventoryId
                 ]);
                 
                 // Update cache to indicate completion
