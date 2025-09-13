@@ -161,6 +161,10 @@ class MohInventoryImport implements
             // Clean the date string (remove extra spaces, tabs, etc.)
             $cleanDate = trim($dateString);
             
+            // Remove any non-printable characters and normalize
+            $cleanDate = preg_replace('/[^\x20-\x7E]/', '', $cleanDate);
+            $cleanDate = trim($cleanDate);
+            
             Log::info('Parsing expiry date', ['original' => $dateString, 'cleaned' => $cleanDate]);
             
             // Try different date formats in order of likelihood
@@ -178,6 +182,45 @@ class MohInventoryImport implements
                 'Y-m-d H:i:s', // 2028-02-20 00:00:00
                 'd/m/Y H:i:s', // 20/02/2028 00:00:00
             ];
+            
+            // Special handling for common Excel date formats
+            if (preg_match('/^\d{1,2}\/\d{1,2}\/\d{4}$/', $cleanDate)) {
+                // Format: DD/MM/YYYY or MM/DD/YYYY
+                $parts = explode('/', $cleanDate);
+                if (count($parts) === 3) {
+                    $day = (int)$parts[0];
+                    $month = (int)$parts[1];
+                    $year = (int)$parts[2];
+                    
+                    // Try DD/MM/YYYY first (more common internationally)
+                    if ($day <= 31 && $month <= 12) {
+                        try {
+                            $date = Carbon::createFromDate($year, $month, $day);
+                            if ($date && $date->isValid()) {
+                                Log::info('Successfully parsed date with manual parsing (DD/MM/YYYY)', [
+                                    'original' => $dateString,
+                                    'parsed' => $date->format('Y-m-d')
+                                ]);
+                                return $date->format('Y-m-d');
+                            }
+                        } catch (\Exception $e) {
+                            // Try MM/DD/YYYY
+                            try {
+                                $date = Carbon::createFromDate($year, $day, $month);
+                                if ($date && $date->isValid()) {
+                                    Log::info('Successfully parsed date with manual parsing (MM/DD/YYYY)', [
+                                        'original' => $dateString,
+                                        'parsed' => $date->format('Y-m-d')
+                                    ]);
+                                    return $date->format('Y-m-d');
+                                }
+                            } catch (\Exception $e2) {
+                                // Continue to normal parsing
+                            }
+                        }
+                    }
+                }
+            }
             
             foreach ($formats as $format) {
                 try {
