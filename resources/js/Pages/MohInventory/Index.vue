@@ -48,7 +48,7 @@ const applyFilters = () => {
 
         isLoading.value = true;
 
-        router.get(route("moh-inventory.index"), query, {
+        router.get(route("inventories.moh-inventory.index"), query, {
             preserveState: true,
             preserveScroll: true,
             only: ["nonApprovedInventories", "selectedInventory", "categories", "dosages"],
