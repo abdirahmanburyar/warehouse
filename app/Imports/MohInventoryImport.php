@@ -52,15 +52,10 @@ class MohInventoryImport implements
         Log::info('Processing MOH inventory row', ['row' => $row]);
         
         // Check if required fields are present - try different column name variations
-        $itemName = trim($row['item'] ?? $row['Item'] ?? $row['ITEM'] ?? '');
-        $quantity = trim($row['quantity'] ?? $row['Quantity'] ?? $row['QUANTITY'] ?? '');
+        $itemName = $row['item'] ?? $row['Item'];
+        $quantity = $row['quantity'] ?? $row['Quantity'];
         
         if (empty($itemName) || empty($quantity)) {
-            Log::warning('Skipping row due to missing required fields', [
-                'row' => $row,
-                'item_name' => $itemName,
-                'quantity' => $quantity
-            ]);
             return null;
         }
 
@@ -75,7 +70,6 @@ class MohInventoryImport implements
 
         // Parse expiry date - try different column name variations
         $expiryDateValue = $row['expiry_date'] ?? $row['Expiry Date'] ?? $row['EXPIRY_DATE'] ?? $row['expiry'] ?? null;
-        logger()->info('Expiry date value', ['expiry_date_value' => $row]);
         $expiryDate = $this->parseExpiryDate($row['expiry_date']);
 
         // Create MOH inventory item with flexible column mapping and data cleaning
@@ -94,15 +88,6 @@ class MohInventoryImport implements
             'unit_cost' => (float) ($row['unit_cost'] ?? $row['Unit Cost'] ?? $row['UNIT_COST'] ?? $row['unit_cost'] ?? $row['UnitCost'] ?? 0),
             'total_cost' => (float) ($row['unit_cost'] ?? $row['Unit Cost'] ?? $row['UNIT_COST'] ?? $row['unit_cost'] ?? $row['UnitCost'] ?? 0) * (float) $quantity,
         ]);
-
-        Log::info('MOH inventory item created', [
-            'item_id' => $item->id,
-            'product' => $product->name,
-            'quantity' => $item->quantity,
-            'unit_cost' => $item->unit_cost,
-            'total_cost' => $item->total_cost
-        ]);
-
         return null;
     }
 
@@ -112,16 +97,11 @@ class MohInventoryImport implements
         $product = Product::where('name', $itemName)->first();
         
         if ($product) {
-            Log::info('Found existing product', ['product_id' => $product->id, 'name' => $product->name]);
             return $product;
         }
 
         // If not found, throw exception to stop import
         $errorMessage = "Product '{$itemName}' not found in database. Please add this product first before importing.";
-        Log::error('Product not found during MOH import', [
-            'product_name' => $itemName,
-            'row' => $row
-        ]);
         
         throw new \Exception($errorMessage);
     }
@@ -131,18 +111,12 @@ class MohInventoryImport implements
     {
         // Clean the warehouse name (remove tabs, extra spaces, etc.)
         $cleanName = trim($warehouseName);
-        
-        Log::info('Looking for warehouse', ['original_name' => $warehouseName, 'clean_name' => $cleanName]);
-        
+                
         $warehouse = Warehouse::where('name', $cleanName)->first();
         
         if (!$warehouse) {
             // If not found, throw exception to stop import
             $errorMessage = "Warehouse '{$cleanName}' not found in database. Please add this warehouse first before importing.";
-            Log::error('Warehouse not found during MOH import', [
-                'warehouse_name' => $cleanName,
-                'original_name' => $warehouseName
-            ]);
             
             throw new \Exception($errorMessage);
         } else {
