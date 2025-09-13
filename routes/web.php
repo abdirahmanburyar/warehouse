@@ -26,6 +26,7 @@ use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssetDocumentController;
 use App\Http\Controllers\AssetMaintenanceController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\MohInventoryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\LiquidateDisposalController;
 use App\Http\Controllers\ConsumptionUploadController;
@@ -108,6 +109,8 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     Route::get('/unauthorized', function () {
         return Inertia::render('Unauthorized');
     })->name('unauthorized');
+
+
     
     Route::get('/test-import', function() {
         $import = new IssueQuantityItemsImport('2025-06', 1); // Use a real user ID
@@ -119,6 +122,8 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     // Test route for permission events
     Route::get('/test-permission-event', [\App\Http\Controllers\TestController::class, 'testPermissionEvent'])
         ->name('test.permission-event');
+
+
 
     // Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -575,62 +580,68 @@ Route::controller(LocationController::class)
     // Asset Management Routes
     Route::controller(AssetController::class)
         ->prefix('assets-management')
+        ->middleware(['auth', 'verified'])
         ->group(function () {
-            Route::get('/', 'index')->name('assets.index');
-            Route::get('/create', 'create')->name('assets.create');
-            Route::post('/store', 'store')->name('assets.store');
-            Route::get('/{asset}/edit', 'edit')->name('assets.edit');
-            Route::put('/{asset}', 'update')->name('assets.update');
-            Route::delete('/{asset}', 'destroy')->name('assets.destroy');
+            // View routes - require asset-view permission
+            Route::get('/', 'index')->name('assets.index')->middleware('can:asset-view');
+            Route::get('/{asset}', 'show')->name('assets.show')->middleware('can:asset-view');
+            Route::get('/approvals', 'approvalsIndex')->name('assets.approvals.index')->middleware('can:asset-view');
+            Route::get('/workflow', 'approvalsIndex')->name('assets.workflow.index')->middleware('can:asset-view');
+            Route::get('/asset-items/{assetItem}/history', 'showHistory')->name('assets.history.index')->middleware('can:asset-view');
+            Route::get('/asset-items/{assetItem}/detailed-history', 'showAssetItemHistory')->name('assets.items.history.index')->middleware('can:asset-view');
             
-            // Asset locations routes
-            Route::get('/locations', 'locationIndex')->name('assets.locations.index');
-            Route::get('/sub-locations', 'subLocationIndex')->name('assets.sub-locations.index');
-            Route::get('/locations/{location}/sub-locations', 'getSubLocations')->name('assets.locations.sub-locations');
-            Route::post('/locations/sub-locations', 'storeSubLocation')->name('assets.locations.sub-locations.store');
-            Route::post('/categories/store', 'storeCategory')->name('assets.categories.store');
-            Route::post('/locations/store', 'storeAssetLocation')->name('assets.locations.store');
-            Route::post('/fund-sources/store', 'storeFundSource')->name('assets.fund-sources.store');
-            Route::post('/regions/store', 'storeRegion')->name('assets.regions.store');
+            // Create routes - require asset-create permission
+            Route::get('/create', 'create')->name('assets.create')->middleware('can:asset-create');
+            Route::post('/store', 'store')->name('assets.store')->middleware('can:asset-create');
+            
+            // Edit routes - require asset-edit permission
+            Route::get('/{asset}/edit', 'edit')->name('assets.edit')->middleware('can:asset-edit');
+            Route::put('/{asset}', 'update')->name('assets.update')->middleware('can:asset-edit');
+            
+            // Delete routes - require asset-delete permission
+            Route::delete('/{asset}', 'destroy')->name('assets.destroy')->middleware('can:asset-delete');
+            
+            // Approval routes - require asset-approve permission
+            Route::post('/{asset}/approve', 'approve')->name('assets.approve')->middleware('can:asset-approve');
+            Route::post('/{asset}/reject', 'reject')->name('assets.reject')->middleware('can:asset-approve');
+            Route::post('/{asset}/review', 'review')->name('assets.review')->middleware('can:asset-review');
+            Route::post('/{asset}/restore', 'restore')->name('assets.restore')->middleware('can:asset-approve');
+            Route::post('/bulk-approve', 'bulkApprove')->name('assets.bulk-approve')->middleware('can:asset-approve');
+            
+            // Transfer routes - require asset-manage permission
+            Route::post('/{asset}/transfer', 'transferAsset')->name('assets.transfer')->middleware('can:asset-manage');
+            
+            // Bulk operations - require asset-bulk-import permission
+            Route::get('/template/download', 'downloadTemplate')->name('assets.template.download')->middleware('can:asset-export');
+            Route::post('/import', 'import')->name('assets.import')->middleware('can:asset-bulk-import');
+            
+            // Asset locations routes - require asset-manage permission
+            Route::get('/locations', 'locationIndex')->name('assets.locations.index')->middleware('can:asset-manage');
+            Route::get('/sub-locations', 'subLocationIndex')->name('assets.sub-locations.index')->middleware('can:asset-manage');
+            Route::get('/locations/{location}/sub-locations', 'getSubLocations')->name('assets.locations.sub-locations')->middleware('can:asset-manage');
+            Route::post('/locations/sub-locations', 'storeSubLocation')->name('assets.locations.sub-locations.store')->middleware('can:asset-manage');
+            Route::post('/categories/store', 'storeCategory')->name('assets.categories.store')->middleware('can:asset-manage');
+            Route::post('/locations/store', 'storeAssetLocation')->name('assets.locations.store')->middleware('can:asset-manage');
+            Route::post('/fund-sources/store', 'storeFundSource')->name('assets.fund-sources.store')->middleware('can:asset-manage');
+            Route::post('/regions/store', 'storeRegion')->name('assets.regions.store')->middleware('can:asset-manage');
 
-            // Asset Assignee Routes
-            Route::post('/assignees/store', 'storeAssignee')->name('assets.assignees.store');
+            // Asset Assignee Routes - require asset-manage permission
+            Route::post('/assignees/store', 'storeAssignee')->name('assets.assignees.store')->middleware('can:asset-manage');
 
-            // Asset Transfer Routes
-            Route::post('/{asset}/transfer', 'transferAsset')->name('assets.transfer');
+            // Asset Document Routes - require asset-edit permission
+            Route::post('/{asset}/documents', [AssetDocumentController::class, 'store'])->name('asset.documents.store')->middleware('can:asset-edit');
+            Route::delete('/documents/{document}', [AssetDocumentController::class, 'destroy'])->name('asset.documents.destroy')->middleware('can:asset-edit');
+            Route::get('/documents/{document}/download', [AssetDocumentController::class, 'download'])->name('asset.documents.download')->middleware('can:asset-view');
+            Route::get('/documents/{document}/preview', [AssetDocumentController::class, 'preview'])->name('asset.documents.preview')->middleware('can:asset-view');
 
-            // Asset Bulk Upload Routes
-            Route::get('/template/download', 'downloadTemplate')->name('assets.template.download');
-            Route::post('/import', 'import')->name('assets.import');
-
-            // Asset History Routes
-            Route::get('/asset-items/{assetItem}/history', 'showHistory')->name('assets.history.index');
-            Route::get('/asset-items/{assetItem}/detailed-history', 'showAssetItemHistory')->name('assets.items.history.index');
-
-            // Asset Show Routes
-            Route::get('/approvals', 'approvalsIndex')->name('assets.approvals.index');
-            Route::get('/workflow', 'approvalsIndex')->name('assets.workflow.index');
-            Route::get('/{asset}', 'show')->name('assets.show');
-            Route::post('/{asset}/approve', 'approve')->name('assets.approve');
-            Route::post('/{asset}/reject', 'reject')->name('assets.reject');
-            Route::post('/{asset}/review', 'review')->name('assets.review');
-            Route::post('/{asset}/restore', 'restore')->name('assets.restore');
-            Route::post('/bulk-approve', 'bulkApprove')->name('assets.bulk-approve');
-
-            // Asset Document Routes
-            Route::post('/{asset}/documents', [AssetDocumentController::class, 'store'])->name('asset.documents.store');
-            Route::delete('/documents/{document}', [AssetDocumentController::class, 'destroy'])->name('asset.documents.destroy');
-            Route::get('/documents/{document}/download', [AssetDocumentController::class, 'download'])->name('asset.documents.download');
-            Route::get('/documents/{document}/preview', [AssetDocumentController::class, 'preview'])->name('asset.documents.preview');
-
-            // Asset Maintenance Routes
-Route::get('/{asset}/maintenance', [AssetMaintenanceController::class, 'index'])->name('asset.maintenance.index');
-Route::post('/{asset}/maintenance', [AssetMaintenanceController::class, 'store'])->name('asset.maintenance.store');
-Route::get('/maintenance/{maintenance}/edit', [AssetMaintenanceController::class, 'edit'])->name('asset.maintenance.edit');
-Route::put('/maintenance/{maintenance}', [AssetMaintenanceController::class, 'update'])->name('asset.maintenance.update');
-Route::delete('/maintenance/{maintenance}', [AssetMaintenanceController::class, 'destroy'])->name('asset.maintenance.destroy');
-Route::post('/maintenance/{maintenance}/mark-completed', [AssetMaintenanceController::class, 'markCompleted'])->name('asset.maintenance.mark-completed');
-Route::get('/{asset}/maintenance/list', [AssetMaintenanceController::class, 'getAssetMaintenance'])->name('asset.maintenance.list');
+            // Asset Maintenance Routes - require asset-edit permission
+            Route::get('/{asset}/maintenance', [AssetMaintenanceController::class, 'index'])->name('asset.maintenance.index')->middleware('can:asset-edit');
+            Route::post('/{asset}/maintenance', [AssetMaintenanceController::class, 'store'])->name('asset.maintenance.store')->middleware('can:asset-edit');
+            Route::get('/maintenance/{maintenance}/edit', [AssetMaintenanceController::class, 'edit'])->name('asset.maintenance.edit')->middleware('can:asset-edit');
+            Route::put('/maintenance/{maintenance}', [AssetMaintenanceController::class, 'update'])->name('asset.maintenance.update')->middleware('can:asset-edit');
+            Route::delete('/maintenance/{maintenance}', [AssetMaintenanceController::class, 'destroy'])->name('asset.maintenance.destroy')->middleware('can:asset-edit');
+            Route::post('/maintenance/{maintenance}/mark-completed', [AssetMaintenanceController::class, 'markCompleted'])->name('asset.maintenance.mark-completed')->middleware('can:asset-edit');
+            Route::get('/{asset}/maintenance/list', [AssetMaintenanceController::class, 'getAssetMaintenance'])->name('asset.maintenance.list')->middleware('can:asset-edit');
         });
 
 
@@ -641,16 +652,24 @@ Route::get('/{asset}/maintenance/list', [AssetMaintenanceController::class, 'get
 
     // Inventory Management Routes
     Route::prefix('inventory')->group(function () {
-            Route::get('/', [InventoryController::class, 'index'])->name('inventories.index');
-            Route::get('/create', [InventoryController::class, 'create'])->name('inventories.create');
-            Route::post('/', [InventoryController::class, 'store'])->name('inventories.store');
-            Route::get('/{inventory}/edit', [InventoryController::class, 'edit'])->name('inventories.edit');
-            Route::put('/{inventory}', [InventoryController::class, 'update'])->name('inventories.update');
-            Route::delete('/{inventory}', [InventoryController::class, 'destroy'])->name('inventories.destroy');
-            Route::patch('/update-location', [InventoryController::class, 'updateLocation'])->name('inventories.update-location');
+        Route::get('/', [InventoryController::class, 'index'])->name('inventories.index');
+        Route::get('/create', [InventoryController::class, 'create'])->name('inventories.create');
+        Route::post('/', [InventoryController::class, 'store'])->name('inventories.store');
+        Route::get('/{inventory}/edit', [InventoryController::class, 'edit'])->name('inventories.edit');
+        Route::put('/{inventory}', [InventoryController::class, 'update'])->name('inventories.update');
+        Route::delete('/{inventory}', [InventoryController::class, 'destroy'])->name('inventories.destroy');
+        Route::patch('/update-location', [InventoryController::class, 'updateLocation'])->name('inventories.update-location');
         Route::get('/get-locations', [InventoryController::class, 'getLocations'])->name('inventories.getLocations');
         Route::get('/get-all-locations', [InventoryController::class, 'getAllLocations'])->name('inventories.getAllLocations');
-            Route::post('/import', [InventoryController::class, 'import'])->name('inventories.import');
+        Route::post('/import', [InventoryController::class, 'import'])->name('inventories.import');
+    });
+
+    // - Inventory Management Routes
+    Route::controller(MohInventoryController::class)
+    ->group(function () {
+        Route::get('/moh-inventory', 'index')->name('inventories.moh-inventory.index');
+        Route::post('/moh-inventory/import', 'import')->name('inventories.moh-inventory.import');
+        Route::get('/moh-inventory/import-progress', 'getImportProgress')->name('inventories.moh-inventory.import-progress');
     });
 
     // API Routes

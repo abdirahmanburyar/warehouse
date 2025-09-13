@@ -119,6 +119,7 @@ class Product extends Model
         return $this->hasMany(FacilityInventory::class);
     }
 
+
     /**
      * Get the warehouse AMCs for this product.
      */

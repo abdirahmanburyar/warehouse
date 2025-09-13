@@ -31,4 +31,20 @@ return Application::configure(basePath: dirname(__DIR__))
                 ])->toResponse($request)->setStatusCode(403);
             }
         });
+
+        // Handle authorization exceptions (403 Forbidden)
+        $exceptions->renderable(function (\Illuminate\Auth\Access\AuthorizationException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'error' => 'Access Denied',
+                    'message' => $e->getMessage(),
+                    'required_permission' => $e->getMessage(),
+                ], 403);
+            }
+
+            // For web requests, render the permission denied page directly
+            return Inertia::render('Errors/PermissionDenied', [
+                'permission' => $e->getMessage()
+            ])->toResponse($request)->setStatusCode(403);
+        });
     })->create();

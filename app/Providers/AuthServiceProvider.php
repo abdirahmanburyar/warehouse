@@ -110,6 +110,43 @@ class AuthServiceProvider extends ServiceProvider
             return $user->hasPermissionTo('asset-view') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
         });
 
+        // Asset-specific permission gates
+        Gate::define('asset-view', function ($user) {
+            return $user->hasPermissionTo('asset-view') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
+        });
+
+        Gate::define('asset-create', function ($user) {
+            return $user->hasPermissionTo('asset-create') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system');
+        });
+
+        Gate::define('asset-edit', function ($user) {
+            return $user->hasPermissionTo('asset-edit') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system');
+        });
+
+        Gate::define('asset-delete', function ($user) {
+            return $user->hasPermissionTo('asset-delete') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system');
+        });
+
+        Gate::define('asset-approve', function ($user) {
+            return $user->hasPermissionTo('asset-approve') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system');
+        });
+
+        Gate::define('asset-review', function ($user) {
+            return $user->hasPermissionTo('asset-review') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system');
+        });
+
+        Gate::define('asset-manage', function ($user) {
+            return $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system');
+        });
+
+        Gate::define('asset-bulk-import', function ($user) {
+            return $user->hasPermissionTo('asset-bulk-import') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system');
+        });
+
+        Gate::define('asset-export', function ($user) {
+            return $user->hasPermissionTo('asset-export') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system');
+        });
+
         Gate::define('liquidate-management', function ($user) {
             return $user->hasPermissionTo('liquidate-view') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
         });
