@@ -64,18 +64,22 @@ watch([selectedInventoryId, search, category_id, dosage_id], applyFilters);
 
 // Clear filters
 const clearFilters = () => {
+    console.log('Clearing filters...');
     selectedInventoryId.value = '';
     search.value = '';
     category_id.value = '';
     dosage_id.value = '';
+    console.log('Filters cleared, selectedInventoryId:', selectedInventoryId.value);
 };
 
 // File upload methods
 const handleFileSelect = (event) => {
+    console.log('File selected:', event.target.files[0]);
     const file = event.target.files[0];
     if (file) {
         uploadFile.value = file;
         showUploadModal.value = true;
+        console.log('Modal should show:', showUploadModal.value);
     }
 };
 
@@ -311,7 +315,7 @@ const filteredInventoryItems = computed(() => {
                                     class="hidden"
                                 />
                                 <button
-                                    @click="$refs.fileInput.click()"
+                                    @click="() => { console.log('Upload button clicked'); $refs.fileInput.click(); }"
                                     class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                 >
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
