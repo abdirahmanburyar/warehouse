@@ -569,7 +569,6 @@ class MohInventoryController extends Controller
         try {
             $request->validate([
                 'date' => 'required|date',
-                'notes' => 'nullable|string|max:1000',
                 'items' => 'required|array|min:1',
                 'items.*.product_id' => 'required|exists:products,id',
                 'items.*.quantity' => 'required|numeric|min:0',
@@ -591,7 +590,6 @@ class MohInventoryController extends Controller
             $mohInventory = MohInventory::create([
                 'uuid' => Str::uuid(),
                 'date' => $request->date,
-                'notes' => $request->notes,
                 'created_by' => auth()->id(),
             ]);
 
