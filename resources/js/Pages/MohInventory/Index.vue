@@ -441,7 +441,7 @@ const getTotalItems = (mohInventory) => {
 
 // Open edit modal
 const openEditModal = (item) => {
-    console.log('Item:', item);
+    console.log('Item:', item.location);
     // Check if inventory is approved
     if (props.selectedInventory?.approved_at) {
         Swal.fire({
@@ -457,15 +457,13 @@ const openEditModal = (item) => {
     // Find the location object from the locations array
     // First try to find by location_id, then by location name as fallback
     let locationObject = null;
-        
+    
     if (item.location_id) {
         locationObject = props.locations.find(loc => loc.id === item.location_id);
-        console.log('Found location by ID:', locationObject);
     }
     // If not found by ID, try to find by location name (string)
     if (!locationObject && item.location) {
         locationObject = props.locations.find(loc => loc.location === item.location);
-        console.log('Found location by name:', locationObject);
     }
     
     // If still not found, try to find by exact string match (case insensitive)
@@ -473,10 +471,7 @@ const openEditModal = (item) => {
         locationObject = props.locations.find(loc => 
             loc.location && loc.location.toLowerCase() === item.location.toLowerCase()
         );
-        console.log('Found location by case-insensitive name match:', locationObject);
     }
-
-    console.log('Location object:', item);
     
     editForm.value = {
         id: item.id,
@@ -490,8 +485,8 @@ const openEditModal = (item) => {
         uom: item.uom || '',
         batch_number: item.batch_number || '',
         expiry_date: item.expiry_date ? moment(item.expiry_date).format('YYYY-MM-DD') : '',
-        location_id: item.location_id || null,
-        location: item.location, // Use the found location object
+        location_id: locationObject ? locationObject.id : null,
+        location: locationObject, // Use the found location object
         unit_cost: item.unit_cost || 0,
         total_cost: item.total_cost || 0,
         barcode: item.barcode || ''
@@ -1520,7 +1515,6 @@ const filteredInventoryItems = computed(() => {
 
                                 <!-- Location -->
                                 <div>
-                                    {{editForm}}
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
                                     <Multiselect
                                         v-model="editForm.location"
