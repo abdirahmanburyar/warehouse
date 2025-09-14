@@ -253,7 +253,6 @@ class MohInventoryController extends Controller
                 'batch_number' => 'TEST-BATCH-001',
                 'barcode' => 'TEST-BARCODE-001',
                 'location' => 'Test Location',
-                'notes' => 'Test item created via API',
                 'uom' => 'pcs',
                 'source' => 'Test Import',
                 'unit_cost' => 10.50,
@@ -363,8 +362,7 @@ class MohInventoryController extends Controller
                 'location_id' => 'nullable|exists:locations,id',
                 'unit_cost' => 'nullable|numeric|min:0',
                 'total_cost' => 'nullable|numeric|min:0',
-                'barcode' => 'nullable|string|max:255',
-                'notes' => 'nullable|string',
+                'barcode' => 'nullable|string|max:255'
             ]);
 
             // Get location name from location_id
@@ -385,8 +383,7 @@ class MohInventoryController extends Controller
                 'location' => $locationName,
                 'unit_cost' => $request->unit_cost,
                 'total_cost' => $request->total_cost,
-                'barcode' => $request->barcode,
-                'notes' => $request->notes,
+                'barcode' => $request->barcode
             ]);
 
             Log::info('MOH inventory item updated', [
@@ -491,7 +488,6 @@ class MohInventoryController extends Controller
                             'batch_number' => $mohItem->batch_number,
                             'barcode' => $mohItem->barcode,
                             'location' => $mohItem->location,
-                            'notes' => $mohItem->notes,
                             'uom' => $mohItem->uom,
                             'source' => $mohItem->source,
                             'unit_cost' => $mohItem->unit_cost ? (float) $mohItem->unit_cost : null,
@@ -580,8 +576,7 @@ class MohInventoryController extends Controller
                 'items.*.warehouse_id' => 'required|exists:warehouses,id',
                 'items.*.unit_cost' => 'nullable|numeric|min:0',
                 'items.*.total_cost' => 'nullable|numeric|min:0',
-                'items.*.barcode' => 'nullable|string|max:255',
-                'items.*.notes' => 'nullable|string|max:1000',
+                'items.*.barcode' => 'nullable|string|max:255'
             ]);
 
             DB::beginTransaction();
@@ -617,8 +612,7 @@ class MohInventoryController extends Controller
                     'warehouse_id' => $itemData['warehouse_id'],
                     'unit_cost' => $itemData['unit_cost'],
                     'total_cost' => $totalCost,
-                    'barcode' => $itemData['barcode'],
-                    'notes' => $itemData['notes'],
+                    'barcode' => $itemData['barcode']
                 ]);
             }
 

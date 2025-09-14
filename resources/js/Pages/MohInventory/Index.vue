@@ -73,8 +73,7 @@ const editForm = ref({
 const showCreateModal = ref(false);
 const isCreating = ref(false);
 const createForm = ref({
-    date: new Date().toISOString().split('T')[0], // Today's date
-    notes: ''
+    date: new Date().toISOString().split('T')[0],
 });
 const createItems = ref([]);
 
@@ -549,7 +548,6 @@ const closeCreateModal = () => {
     showCreateModal.value = false;
     createForm.value = {
         date: new Date().toISOString().split('T')[0],
-        notes: ''
     };
     createItems.value = [];
 };
@@ -617,7 +615,6 @@ const createMohInventory = async () => {
         
         const response = await axios.post('/moh-inventory', {
             date: createForm.value.date,
-            notes: createForm.value.notes,
             items: createItems.value
         });
         
@@ -1508,11 +1505,6 @@ const filteredInventoryItems = computed(() => {
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Date *</label>
                                 <input v-model="createForm.date" type="date" required
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                                <input v-model="createForm.notes" type="text" placeholder="Optional notes..."
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                             </div>
                         </div>
