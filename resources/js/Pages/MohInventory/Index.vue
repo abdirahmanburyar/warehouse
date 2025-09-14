@@ -99,6 +99,13 @@ const applyFilters = () => {
 // Watch for changes in filter values
 watch([selectedInventoryId, search, category_id, dosage_id], applyFilters);
 
+// Watch for changes in quantity and unit_cost to calculate total_cost
+watch([() => editForm.value.quantity, () => editForm.value.unit_cost], () => {
+    const quantity = parseFloat(editForm.value.quantity) || 0;
+    const unitCost = parseFloat(editForm.value.unit_cost) || 0;
+    editForm.value.total_cost = (quantity * unitCost).toFixed(2);
+});
+
 // Clear filters
 const clearFilters = () => {
     selectedInventoryId.value = '';
@@ -418,6 +425,12 @@ const openEditModal = (item) => {
         barcode: item.barcode || '',
         notes: item.notes || ''
     };
+    
+    // Calculate total cost based on quantity and unit cost
+    const quantity = parseFloat(editForm.value.quantity) || 0;
+    const unitCost = parseFloat(editForm.value.unit_cost) || 0;
+    editForm.value.total_cost = (quantity * unitCost).toFixed(2);
+    
     showEditModal.value = true;
 };
 
@@ -1287,9 +1300,10 @@ const filteredInventoryItems = computed(() => {
 
                                 <!-- Total Cost -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Cost</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Cost (Calculated)</label>
                                     <input v-model="editForm.total_cost" type="number" step="0.01" min="0" readonly
                                         class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                                    <p class="text-xs text-gray-500 mt-1">Automatically calculated as: Quantity × Unit Cost</p>
                                 </div>
 
                                 <!-- Barcode -->
