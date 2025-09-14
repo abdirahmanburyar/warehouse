@@ -66,7 +66,7 @@ class MohInventoryController extends Controller
                 ->orderBy('name')
                 ->get();
             $warehouses = Warehouse::select('id', 'name')->orderBy('name')->get();
-            $locations = Location::select('id', 'location', 'warehouse')->orderBy('location')->get();
+            $locations = Location::pluck('location')->toArray();
 
             return Inertia::render('MohInventory/Index', [
                 'nonApprovedInventories' => $nonApprovedInventories,
@@ -359,18 +359,11 @@ class MohInventoryController extends Controller
                 'uom' => 'nullable|string|max:255',
                 'batch_number' => 'nullable|string|max:255',
                 'expiry_date' => 'nullable|date',
-                'location_id' => 'nullable|exists:locations,id',
+                'location' => 'nullable|string|max:255',
                 'unit_cost' => 'nullable|numeric|min:0',
                 'total_cost' => 'nullable|numeric|min:0',
                 'barcode' => 'nullable|string|max:255'
             ]);
-
-            // Get location name from location_id
-            $locationName = null;
-            if ($request->location_id) {
-                $location = Location::find($request->location_id);
-                $locationName = $location ? $location->location : null;
-            }
 
             // Update the MOH inventory item
             $mohInventoryItem->update([
@@ -380,7 +373,7 @@ class MohInventoryController extends Controller
                 'uom' => $request->uom,
                 'batch_number' => $request->batch_number,
                 'expiry_date' => $request->expiry_date,
-                'location' => $locationName,
+                'location' => $request->location, // Use location string directly
                 'unit_cost' => $request->unit_cost,
                 'total_cost' => $request->total_cost,
                 'barcode' => $request->barcode
@@ -572,7 +565,7 @@ class MohInventoryController extends Controller
                 'items.*.source' => 'nullable|string|max:255',
                 'items.*.batch_number' => 'nullable|string|max:255',
                 'items.*.expiry_date' => 'nullable|date',
-                'items.*.location_id' => 'nullable|exists:locations,id',
+                'items.*.location' => 'nullable|string|max:255',
                 'items.*.warehouse_id' => 'required|exists:warehouses,id',
                 'items.*.unit_cost' => 'nullable|numeric|min:0',
                 'items.*.total_cost' => 'nullable|numeric|min:0',
@@ -592,13 +585,6 @@ class MohInventoryController extends Controller
             foreach ($request->items as $itemData) {
                 // Calculate total cost if not provided
                 $totalCost = $itemData['total_cost'] ?? ($itemData['quantity'] * ($itemData['unit_cost'] ?? 0));
-                
-                // Get location name from location_id
-                $locationName = null;
-                if ($itemData['location_id']) {
-                    $location = Location::find($itemData['location_id']);
-                    $locationName = $location ? $location->location : null;
-                }
 
                 MohInventoryItem::create([
                     'moh_inventory_id' => $mohInventory->id,
@@ -608,7 +594,7 @@ class MohInventoryController extends Controller
                     'source' => $itemData['source'],
                     'batch_number' => $itemData['batch_number'],
                     'expiry_date' => $itemData['expiry_date'],
-                    'location' => $locationName,
+                    'location' => $itemData['location'], // Use location string directly
                     'warehouse_id' => $itemData['warehouse_id'],
                     'unit_cost' => $itemData['unit_cost'],
                     'total_cost' => $totalCost,

@@ -64,8 +64,7 @@ const editForm = ref({
     uom: '',
     batch_number: '',
     expiry_date: '',
-    location_id: null,
-    location: null, // Store the full location object for multiselect
+    location: "", // Store the full location object for multiselect
     unit_cost: 0,
     total_cost: 0,
     barcode: ''
@@ -146,9 +145,8 @@ watch(() => editForm.value.warehouse, (newWarehouse) => {
 
 // Watch for location selection changes in edit form
 watch(() => editForm.value.location, (newLocation) => {
-    if (newLocation && newLocation.id) {
-        editForm.value.location_id = newLocation.id;
-    }
+    // Location is now a string, so we don't need to extract ID
+    // The location string will be sent directly to the controller
 });
 
 // Clear filters
@@ -441,7 +439,6 @@ const getTotalItems = (mohInventory) => {
 
 // Open edit modal
 const openEditModal = (item) => {
-    console.log('Item:', item.location);
     // Check if inventory is approved
     if (props.selectedInventory?.approved_at) {
         Swal.fire({
@@ -453,40 +450,21 @@ const openEditModal = (item) => {
         });
         return;
     }
-
-    // Find the location object from the locations array
-    // First try to find by location_id, then by location name as fallback
-    let locationObject = null;
-    
-    if (item.location_id) {
-        locationObject = props.locations.find(loc => loc.id === item.location_id);
-    }
-    // If not found by ID, try to find by location name (string)
-    if (!locationObject && item.location) {
-        locationObject = props.locations.find(loc => loc.location === item.location);
-    }
-    
-    // If still not found, try to find by exact string match (case insensitive)
-    if (!locationObject && item.location) {
-        locationObject = props.locations.find(loc => 
-            loc.location && loc.location.toLowerCase() === item.location.toLowerCase()
-        );
-    }
     
     editForm.value = {
         id: item.id,
         product_id: item.product_id || null,
-        product: item.product || null, // Set the full product object for multiselect
+        product: item.product || null,
         product_name: item.product?.name || '',
         warehouse_id: item.warehouse_id || null,
-        warehouse: item.warehouse || null, // Set the full warehouse object for multiselect
+        warehouse: item.warehouse || null,
         warehouse_name: item.warehouse?.name || '',
         quantity: item.quantity || 0,
         uom: item.uom || '',
         batch_number: item.batch_number || '',
         expiry_date: item.expiry_date ? moment(item.expiry_date).format('YYYY-MM-DD') : '',
-        location_id: locationObject ? locationObject.id : null,
-        location: locationObject.location, // Use the found location object
+        location_id: null, // No longer needed since locations are strings
+        location: item.location || null, // Set location string
         unit_cost: item.unit_cost || 0,
         total_cost: item.total_cost || 0,
         barcode: item.barcode || ''
@@ -496,6 +474,7 @@ const openEditModal = (item) => {
     const quantity = parseFloat(editForm.value.quantity) || 0;
     const unitCost = parseFloat(editForm.value.unit_cost) || 0;
     editForm.value.total_cost = (quantity * unitCost).toFixed(2);
+    
     
     showEditModal.value = true;
 };
@@ -513,7 +492,6 @@ const closeEditModal = () => {
         uom: '',
         batch_number: '',
         expiry_date: '',
-        location_id: null,
         location: '',
         unit_cost: 0,
         total_cost: 0,
@@ -536,10 +514,7 @@ const updateMohItem = async () => {
             editForm.value.warehouse_id = editForm.value.warehouse.id;
         }
         
-        // Ensure location_id is set from the location object
-        if (editForm.value.location && editForm.value.location.id) {
-            editForm.value.location_id = editForm.value.location.id;
-        }
+        // Location is now a string, no need to extract ID
         
         // Calculate total cost
         const totalCost = (parseFloat(editForm.value.quantity) || 0) * (parseFloat(editForm.value.unit_cost) || 0);
@@ -552,7 +527,7 @@ const updateMohItem = async () => {
             uom: editForm.value.uom,
             batch_number: editForm.value.batch_number,
             expiry_date: editForm.value.expiry_date,
-            location_id: editForm.value.location_id,
+            location: editForm.value.location, // Send location string directly
             unit_cost: editForm.value.unit_cost,
             total_cost: editForm.value.total_cost,
             barcode: editForm.value.barcode
@@ -624,7 +599,7 @@ const addCreateItem = () => {
         source: '',
         batch_number: '',
         expiry_date: '',
-        location_id: null,
+        location: null, // Location is now a string
         warehouse_id: null,
         unit_cost: 0,
         total_cost: 0,
@@ -644,38 +619,16 @@ const calculateCreateItemTotal = (item) => {
     item.total_cost = (quantity * unitCost).toFixed(2);
 };
 
-// Filter locations by warehouse
+// Filter locations by warehouse - locations are now just strings
 const getFilteredLocations = (warehouseId) => {
-    if (!warehouseId) return [];
-    
-    // Find the selected warehouse
-    const selectedWarehouse = props.warehouses.find(w => w.id == warehouseId);
-    if (!selectedWarehouse) return [];
-    
-    // Filter locations that belong to this warehouse
-    return props.locations.filter(location => 
-        location.warehouse && location.warehouse.toLowerCase() === selectedWarehouse.name.toLowerCase()
-    );
+    // Since locations are now just strings, we can't filter by warehouse
+    // Return all locations for now, or implement warehouse-based filtering differently
+    return props.locations || [];
 };
-
-// Get filtered locations for edit form
-const getEditFilteredLocations = computed(() => {
-    // If no warehouse is selected, show all locations
-    if (!editForm.value.warehouse_id) return props.locations || [];
-    
-    // Find the selected warehouse
-    const selectedWarehouse = props.warehouses.find(w => w.id == editForm.value.warehouse_id);
-    if (!selectedWarehouse) return props.locations || [];
-    
-    // Filter locations that belong to this warehouse
-    return props.locations.filter(location => 
-        location.warehouse && location.warehouse.toLowerCase() === selectedWarehouse.name.toLowerCase()
-    );
-});
 
 // Handle warehouse change - clear location selection
 const filterLocationsByWarehouse = (item) => {
-    item.location_id = null; // Clear location when warehouse changes
+    item.location = null; // Clear location when warehouse changes
 };
 
 const createMohInventory = async () => {
@@ -1027,7 +980,7 @@ const filteredInventoryItems = computed(() => {
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {{ formatCurrency(item.total_cost) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">                                        
                                         <button @click="openEditModal(item)"
                                             :disabled="props.selectedInventory?.approved_at"
                                             :class="[
@@ -1519,7 +1472,6 @@ const filteredInventoryItems = computed(() => {
                                     <Multiselect
                                         v-model="editForm.location"
                                         :options="props.locations"
-                                        :custom-label="location => location.location"
                                         placeholder="Select Location"
                                         :searchable="true"
                                         :allow-empty="true"
@@ -1531,7 +1483,6 @@ const filteredInventoryItems = computed(() => {
                                         :max-height="200"
                                         :loading="false"
                                         :internal-search="true"
-                                        :options-limit="100"
                                         :taggable="false"
                                         :multiple="false"
                                         class="text-sm"
@@ -1741,11 +1692,11 @@ const filteredInventoryItems = computed(() => {
                                                     <!-- Location -->
                                                     <div>
                                                         <label class="block text-xs font-medium text-gray-600 mb-1">Location</label>
-                                                        <select v-model="item.location_id" :disabled="!item.warehouse_id"
-                                                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                                                        <select v-model="item.location"
+                                                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
                                                             <option value="">Select Location</option>
-                                                            <option v-for="location in getFilteredLocations(item.warehouse_id)" :key="location.id" :value="location.id">
-                                                                {{ location.location }}
+                                                            <option v-for="location in props.locations" :key="location" :value="location">
+                                                                {{ location }}
                                                             </option>
                                                         </select>
                                                     </div>
