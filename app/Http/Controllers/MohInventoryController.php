@@ -9,6 +9,8 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Dosage;
 use App\Models\Warehouse;
+use App\Models\Inventory;
+use App\Models\InventoryItem;
 use App\Imports\MohInventoryImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -293,11 +295,17 @@ class MohInventoryController extends Controller
                             'message' => 'MOH inventory must be reviewed before approval'
                         ], 400);
                     }
+                    
+                    // Update MOH inventory status
                     $mohInventory->update([
                         'approved_at' => now(),
                         'approved_by' => $user->id,
                     ]);
-                    $message = 'MOH inventory has been approved successfully';
+                    
+                    // Release items to main inventory tables
+                    $this->releaseItemsToInventory($mohInventory);
+                    
+                    $message = 'MOH inventory has been approved and items released to main inventory successfully';
                     break;
 
                 case 'rejected':
@@ -333,6 +341,124 @@ class MohInventoryController extends Controller
                 'success' => false,
                 'message' => 'An error occurred while updating the status'
             ], 500);
+        }
+    }
+
+    /**
+     * Release approved MOH inventory items to main inventory tables
+     */
+    private function releaseItemsToInventory(MohInventory $mohInventory)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Get all MOH inventory items
+            $mohItems = $mohInventory->mohInventoryItems()->with(['product', 'warehouse'])->get();
+
+            $releasedCount = 0;
+            $errors = [];
+
+            foreach ($mohItems as $mohItem) {
+                try {
+                    // Check if inventory record already exists for this product and warehouse
+                    $inventory = Inventory::where('product_id', $mohItem->product_id)
+                        ->where('warehouse_id', $mohItem->warehouse_id)
+                        ->first();
+
+                    if ($inventory) {
+                        // Update existing inventory quantity
+                        $inventory->increment('quantity', $mohItem->quantity);
+                        
+                        Log::info('Updated existing inventory', [
+                            'inventory_id' => $inventory->id,
+                            'product_id' => $mohItem->product_id,
+                            'warehouse_id' => $mohItem->warehouse_id,
+                            'quantity_added' => $mohItem->quantity,
+                            'new_total' => $inventory->quantity
+                        ]);
+                    } else {
+                        // Create new inventory record
+                        $inventory = Inventory::create([
+                            'product_id' => $mohItem->product_id,
+                            'warehouse_id' => $mohItem->warehouse_id,
+                            'quantity' => $mohItem->quantity,
+                        ]);
+                        
+                        Log::info('Created new inventory record', [
+                            'inventory_id' => $inventory->id,
+                            'product_id' => $mohItem->product_id,
+                            'warehouse_id' => $mohItem->warehouse_id,
+                            'quantity' => $mohItem->quantity
+                        ]);
+                    }
+
+                    // Create inventory item record
+                    $inventoryItem = InventoryItem::create([
+                        'inventory_id' => $inventory->id,
+                        'product_id' => $mohItem->product_id,
+                        'warehouse_id' => $mohItem->warehouse_id,
+                        'quantity' => $mohItem->quantity,
+                        'expiry_date' => $mohItem->expiry_date,
+                        'batch_number' => $mohItem->batch_number,
+                        'barcode' => $mohItem->barcode,
+                        'location' => $mohItem->location,
+                        'notes' => $mohItem->notes,
+                        'uom' => $mohItem->uom,
+                        'unit_cost' => $mohItem->unit_cost,
+                        'total_cost' => $mohItem->total_cost,
+                        'source' => 'MOH Import - ' . $mohInventory->uuid,
+                    ]);
+
+                    $releasedCount++;
+
+                    Log::info('Created inventory item', [
+                        'inventory_item_id' => $inventoryItem->id,
+                        'inventory_id' => $inventory->id,
+                        'moh_inventory_item_id' => $mohItem->id,
+                        'product_name' => $mohItem->product->name,
+                        'warehouse_name' => $mohItem->warehouse->name,
+                        'quantity' => $mohItem->quantity
+                    ]);
+
+                } catch (\Exception $e) {
+                    $errors[] = "Failed to release item {$mohItem->product->name}: " . $e->getMessage();
+                    Log::error('Failed to release MOH inventory item', [
+                        'moh_inventory_item_id' => $mohItem->id,
+                        'product_id' => $mohItem->product_id,
+                        'warehouse_id' => $mohItem->warehouse_id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            if (!empty($errors)) {
+                Log::warning('Some items failed to release', [
+                    'moh_inventory_id' => $mohInventory->id,
+                    'errors' => $errors,
+                    'released_count' => $releasedCount,
+                    'total_items' => $mohItems->count()
+                ]);
+            }
+
+            DB::commit();
+
+            Log::info('MOH inventory items released to main inventory', [
+                'moh_inventory_id' => $mohInventory->id,
+                'released_count' => $releasedCount,
+                'total_items' => $mohItems->count(),
+                'errors_count' => count($errors)
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Failed to release MOH inventory items', [
+                'moh_inventory_id' => $mohInventory->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            throw $e;
         }
     }
 

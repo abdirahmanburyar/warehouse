@@ -5,6 +5,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { useToast } from "vue-toastification";
 import moment from "moment";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 const toast = useToast();
 
@@ -267,6 +268,24 @@ const formatDate = (dateString) => {
 
 // Change MOH inventory status
 const changeStatus = async (inventoryId, status, type) => {
+    // Show confirmation dialog
+    const statusText = status.charAt(0).toUpperCase() + status.slice(1);
+    const confirmResult = await Swal.fire({
+        title: `${statusText} MOH Inventory?`,
+        text: `Are you sure you want to ${status.toLowerCase()} this MOH inventory?`,
+        icon: status === 'rejected' ? 'warning' : 'question',
+        showCancelButton: true,
+        confirmButtonColor: status === 'rejected' ? '#ef4444' : '#3b82f6',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: `Yes, ${statusText}!`,
+        cancelButtonText: 'Cancel',
+        reverseButtons: true
+    });
+
+    if (!confirmResult.isConfirmed) {
+        return;
+    }
+
     isLoading.value = true;
     isType.value[type] = true;
 
@@ -276,18 +295,34 @@ const changeStatus = async (inventoryId, status, type) => {
         });
 
         if (response.data.success) {
-            toast.success(response.data.message || 'Status updated successfully');
+            // Show success confirmation
+            await Swal.fire({
+                title: 'Success!',
+                text: response.data.message || 'Status updated successfully',
+                icon: 'success',
+                confirmButtonColor: '#10b981'
+            });
             
             // Refresh the page to get updated data
             router.reload({
                 only: ['nonApprovedInventories', 'selectedInventory']
             });
         } else {
-            toast.error(response.data.message || 'Failed to update status');
+            await Swal.fire({
+                title: 'Error!',
+                text: response.data.message || 'Failed to update status',
+                icon: 'error',
+                confirmButtonColor: '#ef4444'
+            });
         }
     } catch (error) {
         console.error('Error changing status:', error);
-        toast.error(error.response?.data?.message || 'An error occurred while updating status');
+        await Swal.fire({
+            title: 'Error!',
+            text: error.response?.data?.message || 'An error occurred while updating status',
+            icon: 'error',
+            confirmButtonColor: '#ef4444'
+        });
     } finally {
         isLoading.value = false;
         isType.value[type] = false;
