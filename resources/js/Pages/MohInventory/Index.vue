@@ -117,6 +117,15 @@ watch([() => editForm.value.quantity, () => editForm.value.unit_cost], () => {
     editForm.value.total_cost = (quantity * unitCost).toFixed(2);
 });
 
+// Watch for product selection changes in create items
+watch(createItems, (newItems) => {
+    newItems.forEach(item => {
+        if (item.product && item.product.id) {
+            item.product_id = item.product.id;
+        }
+    });
+}, { deep: true });
+
 // Clear filters
 const clearFilters = () => {
     selectedInventoryId.value = '';
@@ -548,6 +557,7 @@ const closeCreateModal = () => {
 const addCreateItem = () => {
     createItems.value.push({
         product_id: null,
+        product: null, // Store the full product object for multiselect
         quantity: 0,
         uom: '',
         source: '',
@@ -596,9 +606,13 @@ const createMohInventory = async () => {
     try {
         isCreating.value = true;
         
-        // Calculate total costs for all items
+        // Calculate total costs for all items and ensure product_id is set
         createItems.value.forEach(item => {
             calculateCreateItemTotal(item);
+            // Ensure product_id is set from the product object
+            if (item.product && item.product.id) {
+                item.product_id = item.product.id;
+            }
         });
         
         const response = await axios.post('/moh-inventory', {
@@ -1535,7 +1549,7 @@ const filteredInventoryItems = computed(() => {
                                             <!-- Item (Product) -->
                                             <td class="px-3 py-2 border-r border-gray-200" style="width: 400px;">
                                                 <Multiselect
-                                                    v-model="item.product_id"
+                                                    v-model="item.product"
                                                     :options="props.products"
                                                     :custom-label="product => product.name"
                                                     placeholder="Select Product"
