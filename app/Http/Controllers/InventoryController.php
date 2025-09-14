@@ -152,31 +152,8 @@ class InventoryController extends Controller
 			$locations = Location::orderBy('location')->pluck('location')->toArray();
 			$warehouses = Warehouse::orderBy('name')->pluck('name')->toArray();
 	
-			// Status counts
-			$statusCounts = [
-				[ 'status' => 'in_stock', 'count' => 0 ],
-				[ 'status' => 'low_stock', 'count' => 0 ],
-				[ 'status' => 'low_stock_reorder_level', 'count' => 0 ],
-				[ 'status' => 'out_of_stock', 'count' => 0 ],
-			];
-	
-			// Calculate status counts using simplified logic to prevent timeout
-			foreach ($products->getCollection() as $product) {
-				try {
-					$totalQuantity = $product->items->sum('quantity');
-					
-					if ($totalQuantity <= 0) {
-						$statusCounts[3]['count']++; // out_of_stock
-					} elseif ($totalQuantity > 10) {
-						$statusCounts[0]['count']++; // in_stock
-					} else {
-						$statusCounts[1]['count']++; // low_stock
-					}
-				} catch (\Exception $e) {
-					Log::warning('[INVENTORY-COUNT] Error counting status for product ' . ($product->id ?? 'unknown') . ': ' . $e->getMessage());
-					// Skip problematic products in counting
-				}
-			}
+			// Calculate status counts independently of pagination
+			$statusCounts = $this->calculateInventoryStatusCounts($request);
 	
 			return Inertia::render('Inventory/Index', [
 				'inventories' => InventoryResource::collection($products),
@@ -193,10 +170,126 @@ class InventoryController extends Controller
 				'exception' => $e,
 				'request' => $request->all()
 			]);
-	
+
 			return back()->withErrors(['error' => 'An error occurred while loading inventory data.']);
 		}
-	}	
+	}
+
+	/**
+	 * Calculate inventory status counts independently of pagination
+	 */
+	private function calculateInventoryStatusCounts($request)
+	{
+		try {
+			// Use the same query structure as the main index method
+			$productQuery = Product::query()
+				->with([
+					'category:id,name',
+					'dosage:id,name',
+					'items' => function($query) {
+						$query->select('id', 'product_id', 'warehouse_id', 'quantity', 'location', 'batch_number', 'expiry_date', 'uom', 'unit_cost', 'total_cost')
+							  ->with('warehouse:id,name');
+					}
+				]);
+
+			// Apply search filter if provided
+			if ($request->filled('search')) {
+				$search = $request->search;
+				$productQuery->where(function($q) use ($search) {
+					$q->where('products.name', 'like', "%{$search}%")
+					  ->orWhereHas('items', function($sub) use ($search) {
+						  $sub->where(function($w) use ($search) {
+							  $w->where('barcode', 'like', "%{$search}%")
+								->orWhere('batch_number', 'like', "%{$search}%");
+						  });
+					  });
+				});
+			}
+
+			// Apply category filter if provided
+			if ($request->filled('category')) {
+				$productQuery->whereHas('category', fn($q) => $q->where('name', $request->category));
+			}
+
+			// Apply dosage filter if provided
+			if ($request->filled('dosage')) {
+				$productQuery->whereHas('dosage', fn($q) => $q->where('name', $request->dosage));
+			}
+
+			// Apply location filter if provided
+			if ($request->filled('location')) {
+				$productQuery->whereHas('items', fn($q) => $q->where('location', $request->location));
+			}
+
+			// Apply warehouse filter if provided
+			if ($request->filled('warehouse')) {
+				$productQuery->whereHas('items.warehouse', fn($q) => $q->where('name', $request->warehouse));
+			}
+
+			// Get all products that match the filters (no pagination)
+			$allProducts = $productQuery->get();
+
+			// Add reorder_level and amc to each product (same as main query)
+			$allProducts->transform(function ($product) {
+				$product->reorder_level = 0;
+				$product->amc = 0;
+				return $product;
+			});
+
+			// Initialize status counts
+			$statusCounts = [
+				[ 'status' => 'in_stock', 'count' => 0 ],
+				[ 'status' => 'low_stock', 'count' => 0 ],
+				[ 'status' => 'low_stock_reorder_level', 'count' => 0 ],
+				[ 'status' => 'out_of_stock', 'count' => 0 ],
+			];
+
+			// Calculate status counts for all products using the same logic as main query
+			foreach ($allProducts as $product) {
+				try {
+					$totalQuantity = $product->items->sum('quantity');
+					$reorderLevel = $product->reorder_level ?? 0;
+
+					if ($totalQuantity <= 0) {
+						$statusCounts[3]['count']++; // out_of_stock
+					} elseif ($reorderLevel > 0) {
+						$lowStockThreshold = $reorderLevel * 1.3;
+						
+						if ($totalQuantity > $lowStockThreshold) {
+							$statusCounts[0]['count']++; // in_stock
+						} elseif ($totalQuantity > $reorderLevel) {
+							$statusCounts[1]['count']++; // low_stock
+						} else {
+							$statusCounts[2]['count']++; // low_stock_reorder_level
+						}
+					} else {
+						// No reorder level set, use simple threshold
+						if ($totalQuantity > 10) {
+							$statusCounts[0]['count']++; // in_stock
+						} else {
+							$statusCounts[1]['count']++; // low_stock
+						}
+					}
+				} catch (\Exception $e) {
+					Log::warning('[INVENTORY-STATS] Error calculating status for product ' . ($product->id ?? 'unknown') . ': ' . $e->getMessage());
+					// Skip problematic products in counting
+				}
+			}
+
+			return $statusCounts;
+
+		} catch (\Exception $e) {
+			Log::error('[INVENTORY-STATS] Error calculating inventory status counts: ' . $e->getMessage());
+			
+			// Return empty counts if there's an error
+			return [
+				[ 'status' => 'in_stock', 'count' => 0 ],
+				[ 'status' => 'low_stock', 'count' => 0 ],
+				[ 'status' => 'low_stock_reorder_level', 'count' => 0 ],
+				[ 'status' => 'out_of_stock', 'count' => 0 ],
+			];
+		}
+	}
 
 	/**
 	 * Apply status filter to the product query
@@ -399,64 +492,6 @@ class InventoryController extends Controller
 		}
 	}
 
-	/**
-	 * Calculate inventory status counts independently of pagination
-	 */
-	protected function calculateInventoryStatusCounts($productQuery, $request)
-	{
-		$statusCounts = [
-			'in_stock' => 0,
-			'low_stock' => 0,
-			'out_of_stock' => 0
-		];
-
-		// Get total registered products for out of stock calculation
-		$totalProducts = $productQuery->count();
-
-		// Get products with inventory (for in stock calculation)
-		$productsWithInventory = $productQuery->whereHas('inventories.items', function($query) {
-			$query->where('inventory_items.quantity', '>=', 0);
-		})->count();
-
-		// Out of stock = total products - products with inventory
-		$statusCounts['out_of_stock'] = $totalProducts - $productsWithInventory;
-
-		// For the remaining counts, get products that have inventory and calculate their status
-		$productsWithQuantity = $productQuery->whereHas('inventories.items', function($query) {
-			$query->where('inventory_items.quantity', '>', 0);
-		})->get();
-
-		// Now calculate status for each product with inventory
-		foreach ($productsWithQuantity as $product) {
-			// Get total quantity for this product across all inventories
-			$totalQty = $product->inventories->flatMap->items->sum('quantity');
-			
-			// Simplified logic without AMC calculations
-			if ($totalQty > 0) {
-				if ($totalQty > 10) { // Simple threshold for now
-					// In Stock: quantity > 10
-					$statusCounts['in_stock']++;
-				} elseif ($totalQty <= 10) {
-					// Low Stock: quantity <= 10
-					$statusCounts['low_stock']++;
-				}
-			}
-		}
-
-		Log::info('Final status counts', [
-			'status_counts' => $statusCounts
-		]);
-
-		// Transform to the format frontend expects: array of objects with status and count
-		$formattedStatusCounts = collect($statusCounts)->map(function($count, $status) {
-			return [
-				'status' => $status,
-				'count' => $count
-			];
-		})->values();
-
-		return $formattedStatusCounts;
-	}
 
 	/**
 	 * Check if an item needs reorder action (out of stock)

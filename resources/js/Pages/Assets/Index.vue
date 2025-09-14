@@ -333,7 +333,7 @@
                                             {{ asset.asset_tag || 'N/A' }}
                                         </Link>
                                         <div class="text-xs font-semibold text-gray-900 mt-1">
-                                            {{ asset.name || asset.asset_tag || 'N/A' }}
+                                        {{ asset.name || asset.asset_tag || 'N/A' }}
                                         </div>
                                     </div>
                                 </td>

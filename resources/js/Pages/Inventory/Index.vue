@@ -120,6 +120,44 @@ const applyFilters = () => {
     }, 300); // 300ms debounce delay
 };
 
+// Apply pagination changes without refetching statistics
+const applyPagination = (page) => {
+    const query = {};
+    
+    // Include current filter values
+    if (search.value && search.value.trim()) query.search = search.value.trim();
+    if (location.value && location.value !== '') query.location = location.value;
+    if (warehouse.value && warehouse.value !== '') query.warehouse = warehouse.value;
+    if (category.value && category.value !== '') query.category = category.value;
+    if (status.value && status.value !== '') query.status = status.value;
+    if (per_page.value) query.per_page = per_page.value;
+    
+    // Set the new page
+    query.page = page;
+
+    isLoading.value = true;
+
+    router.get(route("inventories.index"), query, {
+        preserveState: true,
+        preserveScroll: true,
+        only: [
+            "inventories",
+            "products",
+            "warehouses",
+            "locations",
+            "category",
+        ],
+        onFinish: () => {
+            isLoading.value = false;
+        },
+        onError: (errors) => {
+            isLoading.value = false;
+            console.error('❌ Pagination error:', errors);
+            toast.error('An error occurred while changing page');
+        }
+    });
+};
+
 // Watch for filter changes with debouncing
 watch(
     [
@@ -609,10 +647,7 @@ const totalNeedsReorderCount = computed(() => {
 });
 
 function getResults(page = 1) {
-    if (props.filters) {
-        props.filters.page = page;
-    }
-    applyFilters();
+    applyPagination(page);
 }
 
 // Cleanup function to clear timeout when component unmounts
