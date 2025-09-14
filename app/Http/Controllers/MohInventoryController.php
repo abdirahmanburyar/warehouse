@@ -335,6 +335,65 @@ class MohInventoryController extends Controller
     }
 
     /**
+     * Update a MOH inventory item
+     */
+    public function updateItem(Request $request, MohInventoryItem $mohInventoryItem)
+    {
+        try {
+            $request->validate([
+                'quantity' => 'required|numeric|min:0',
+                'uom' => 'nullable|string|max:255',
+                'batch_number' => 'nullable|string|max:255',
+                'expiry_date' => 'nullable|date',
+                'location' => 'nullable|string|max:255',
+                'unit_cost' => 'nullable|numeric|min:0',
+                'total_cost' => 'nullable|numeric|min:0',
+                'barcode' => 'nullable|string|max:255',
+                'notes' => 'nullable|string',
+            ]);
+
+            // Update the MOH inventory item
+            $mohInventoryItem->update([
+                'quantity' => $request->quantity,
+                'uom' => $request->uom,
+                'batch_number' => $request->batch_number,
+                'expiry_date' => $request->expiry_date,
+                'location' => $request->location,
+                'unit_cost' => $request->unit_cost,
+                'total_cost' => $request->total_cost,
+                'barcode' => $request->barcode,
+                'notes' => $request->notes,
+            ]);
+
+            Log::info('MOH inventory item updated', [
+                'moh_inventory_item_id' => $mohInventoryItem->id,
+                'moh_inventory_id' => $mohInventoryItem->moh_inventory_id,
+                'product_id' => $mohInventoryItem->product_id,
+                'quantity' => $mohInventoryItem->quantity,
+                'updated_by' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'MOH inventory item updated successfully',
+                'data' => $mohInventoryItem->fresh(['product', 'warehouse'])
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to update MOH inventory item', [
+                'moh_inventory_item_id' => $mohInventoryItem->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update MOH inventory item: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Release approved MOH inventory items to main inventory tables
      */
     private function releaseItemsToInventory(MohInventory $mohInventory)

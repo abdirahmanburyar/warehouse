@@ -43,6 +43,24 @@ const isType = ref({
     is_reject: false
 });
 
+// Edit modal state
+const showEditModal = ref(false);
+const isUpdating = ref(false);
+const editForm = ref({
+    id: null,
+    product_name: '',
+    warehouse_name: '',
+    quantity: 0,
+    uom: '',
+    batch_number: '',
+    expiry_date: '',
+    location: '',
+    unit_cost: 0,
+    total_cost: 0,
+    barcode: '',
+    notes: ''
+});
+
 // Apply filters with debouncing
 const applyFilters = () => {
     if (filterTimeout.value) {
@@ -359,6 +377,103 @@ const getTotalItems = (mohInventory) => {
     return mohInventory.moh_inventory_items?.length || 0;
 };
 
+// Open edit modal
+const openEditModal = (item) => {
+    editForm.value = {
+        id: item.id,
+        product_name: item.product?.name || '',
+        warehouse_name: item.warehouse?.name || '',
+        quantity: item.quantity || 0,
+        uom: item.uom || '',
+        batch_number: item.batch_number || '',
+        expiry_date: item.expiry_date ? moment(item.expiry_date).format('YYYY-MM-DD') : '',
+        location: item.location || '',
+        unit_cost: item.unit_cost || 0,
+        total_cost: item.total_cost || 0,
+        barcode: item.barcode || '',
+        notes: item.notes || ''
+    };
+    showEditModal.value = true;
+};
+
+// Close edit modal
+const closeEditModal = () => {
+    showEditModal.value = false;
+    editForm.value = {
+        id: null,
+        product_name: '',
+        warehouse_name: '',
+        quantity: 0,
+        uom: '',
+        batch_number: '',
+        expiry_date: '',
+        location: '',
+        unit_cost: 0,
+        total_cost: 0,
+        barcode: '',
+        notes: ''
+    };
+};
+
+// Update MOH inventory item
+const updateMohItem = async () => {
+    try {
+        isUpdating.value = true;
+        
+        // Calculate total cost
+        const totalCost = (parseFloat(editForm.value.quantity) || 0) * (parseFloat(editForm.value.unit_cost) || 0);
+        editForm.value.total_cost = totalCost;
+        
+        const response = await axios.put(`/moh-inventory/${editForm.value.id}`, {
+            quantity: editForm.value.quantity,
+            uom: editForm.value.uom,
+            batch_number: editForm.value.batch_number,
+            expiry_date: editForm.value.expiry_date,
+            location: editForm.value.location,
+            unit_cost: editForm.value.unit_cost,
+            total_cost: editForm.value.total_cost,
+            barcode: editForm.value.barcode,
+            notes: editForm.value.notes
+        });
+        
+        if (response.data.success) {
+            // Update the item in the selected inventory
+            if (props.selectedInventory?.moh_inventory_items) {
+                const itemIndex = props.selectedInventory.moh_inventory_items.findIndex(item => item.id === editForm.value.id);
+                if (itemIndex !== -1) {
+                    props.selectedInventory.moh_inventory_items[itemIndex] = {
+                        ...props.selectedInventory.moh_inventory_items[itemIndex],
+                        ...editForm.value
+                    };
+                }
+            }
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: 'MOH inventory item updated successfully',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            
+            closeEditModal();
+        } else {
+            throw new Error(response.data.message || 'Failed to update item');
+        }
+    } catch (error) {
+        console.error('Error updating MOH inventory item:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: error.response?.data?.message || 'Failed to update MOH inventory item',
+            timer: 3000,
+            showConfirmButton: false
+        });
+    } finally {
+        isUpdating.value = false;
+    }
+};
+
 // Check if MOH inventory has review/approval status
 const getStatusInfo = (mohInventory) => {
     if (mohInventory.approved_at) {
@@ -596,6 +711,7 @@ const filteredInventoryItems = computed(() => {
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Cost</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Cost</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -635,6 +751,15 @@ const filteredInventoryItems = computed(() => {
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {{ formatCurrency(item.total_cost) }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <button @click="openEditModal(item)"
+                                            class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                            <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                            Edit
+                                        </button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -1014,6 +1139,123 @@ const filteredInventoryItems = computed(() => {
                         </svg>
                         {{ isUploading ? 'Uploading...' : 'Upload File' }}
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit MOH Inventory Item Modal -->
+        <div v-if="showEditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <!-- Modal Header -->
+                    <div class="flex items-center justify-between pb-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Edit MOH Inventory Item</h3>
+                        <button @click="closeEditModal" class="text-gray-400 hover:text-gray-600">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="mt-4">
+                        <form @submit.prevent="updateMohItem">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Product Name -->
+                                <div class="col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                                    <input v-model="editForm.product_name" type="text" readonly
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                                </div>
+
+                                <!-- Quantity -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
+                                    <input v-model="editForm.quantity" type="number" step="0.01" min="0" required
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+
+                                <!-- UOM -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Unit of Measure</label>
+                                    <input v-model="editForm.uom" type="text"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+
+                                <!-- Batch Number -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Batch Number</label>
+                                    <input v-model="editForm.batch_number" type="text"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+
+                                <!-- Expiry Date -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                                    <input v-model="editForm.expiry_date" type="date"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+
+                                <!-- Location -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                                    <input v-model="editForm.location" type="text"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+
+                                <!-- Warehouse -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse</label>
+                                    <input v-model="editForm.warehouse_name" type="text" readonly
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                                </div>
+
+                                <!-- Unit Cost -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Unit Cost</label>
+                                    <input v-model="editForm.unit_cost" type="number" step="0.01" min="0"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+
+                                <!-- Total Cost -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Cost</label>
+                                    <input v-model="editForm.total_cost" type="number" step="0.01" min="0" readonly
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                                </div>
+
+                                <!-- Barcode -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Barcode</label>
+                                    <input v-model="editForm.barcode" type="text"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+
+                                <!-- Notes -->
+                                <div class="col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                    <textarea v-model="editForm.notes" rows="3"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Modal Footer -->
+                            <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+                                <button type="button" @click="closeEditModal"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    Cancel
+                                </button>
+                                <button type="submit" :disabled="isUpdating"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
+                                    <svg v-if="isUpdating" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    {{ isUpdating ? 'Updating...' : 'Update Item' }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
