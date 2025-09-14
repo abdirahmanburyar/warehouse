@@ -486,7 +486,7 @@ const openEditModal = (item) => {
         batch_number: item.batch_number || '',
         expiry_date: item.expiry_date ? moment(item.expiry_date).format('YYYY-MM-DD') : '',
         location_id: locationObject ? locationObject.id : null,
-        location: locationObject, // Use the found location object
+        location: locationObject.location, // Use the found location object
         unit_cost: item.unit_cost || 0,
         total_cost: item.total_cost || 0,
         barcode: item.barcode || ''
