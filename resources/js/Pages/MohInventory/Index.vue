@@ -642,78 +642,6 @@ const filteredInventoryItems = computed(() => {
                     </div>
                 </div>
 
-            <!-- Status Timeline -->
-            <div v-if="selectedInventory" class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">MOH Inventory Status Timeline</h3>
-                    <p class="text-sm text-gray-500 mt-1">Track the approval progress</p>
-                </div>
-                <div class="px-6 py-4">
-                    <div class="flex items-center justify-center space-x-8">
-                        <!-- Pending -->
-                        <div class="flex flex-col items-center">
-                            <div class="w-12 h-12 rounded-full border-4 flex items-center justify-center z-10" :class="[
-                                selectedInventory.status === 'pending' || selectedInventory.reviewed_at || selectedInventory.approved_at
-                                    ? 'bg-white border-yellow-500'
-                                    : 'bg-white border-gray-200',
-                            ]">
-                                <img src="/assets/images/pending.png" class="w-6 h-6" alt="Pending" :class="selectedInventory.status === 'pending' || selectedInventory.reviewed_at || selectedInventory.approved_at
-                                    ? ''
-                                    : 'opacity-40'
-                                    " />
-                            </div>
-                            <span class="mt-2 text-sm font-medium" :class="selectedInventory.status === 'pending' || selectedInventory.reviewed_at || selectedInventory.approved_at
-                                ? 'text-yellow-600'
-                                : 'text-gray-500'
-                                ">Pending</span>
-                        </div>
-
-                        <!-- Reviewed -->
-                        <div class="flex flex-col items-center">
-                            <div class="w-12 h-12 rounded-full border-4 flex items-center justify-center z-10" :class="[
-                                selectedInventory.reviewed_at || selectedInventory.approved_at
-                                    ? 'bg-white border-orange-500'
-                                    : 'bg-white border-gray-200',
-                            ]">
-                                <img src="/assets/images/review.png" class="w-6 h-6" alt="Reviewed" :class="selectedInventory.reviewed_at || selectedInventory.approved_at
-                                    ? ''
-                                    : 'opacity-40'
-                                    " />
-                            </div>
-                            <span class="mt-2 text-sm font-medium" :class="selectedInventory.reviewed_at || selectedInventory.approved_at
-                                ? 'text-orange-600'
-                                : 'text-gray-500'
-                                ">Reviewed</span>
-                        </div>
-
-                        <!-- Approved -->
-                        <div class="flex flex-col items-center" v-if="selectedInventory.status !== 'rejected'">
-                            <div class="w-12 h-12 rounded-full border-4 flex items-center justify-center z-10" :class="[
-                                selectedInventory.approved_at
-                                    ? 'bg-white border-green-500'
-                                    : 'bg-white border-gray-200',
-                            ]">
-                                <img src="/assets/images/approved.png" class="w-6 h-6" alt="Approved" :class="selectedInventory.approved_at
-                                    ? ''
-                                    : 'opacity-40'
-                                    " />
-                            </div>
-                            <span class="mt-2 text-sm font-medium" :class="selectedInventory.approved_at
-                                ? 'text-green-600'
-                                : 'text-gray-500'
-                                ">Approved</span>
-                        </div>
-
-                        <!-- Rejected -->
-                        <div class="flex flex-col items-center" v-if="selectedInventory.status === 'rejected'">
-                            <div class="w-12 h-12 rounded-full border-4 flex items-center justify-center z-10 bg-white border-red-500">
-                                <img src="/assets/images/rejected.png" class="w-6 h-6" alt="Rejected" />
-                            </div>
-                            <span class="mt-2 text-sm font-medium text-red-600">Rejected</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Approval Actions -->
             <div v-if="selectedInventory" class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
@@ -788,18 +716,16 @@ const filteredInventoryItems = computed(() => {
                             <div v-if="selectedInventory.reviewed_at && !selectedInventory.approved_at" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
 
-                        <!-- Reject Button -->
-                        <div class="relative">
+                        <!-- Reject Button - Only show if not approved -->
+                        <div class="relative" v-if="!selectedInventory.approved_at">
                             <div class="flex flex-col">
                                 <button 
                                     @click="changeStatus(selectedInventory.id, 'rejected', 'is_reject')"
-                                    :disabled="isType['is_reject'] || selectedInventory.approved_at || selectedInventory.status === 'rejected'"
+                                    :disabled="isType['is_reject'] || selectedInventory.status === 'rejected'"
                                     :class="[
                                         selectedInventory.status === 'rejected'
                                             ? 'bg-red-500'
-                                            : selectedInventory.approved_at
-                                                ? 'bg-gray-300 cursor-not-allowed'
-                                                : 'bg-red-500 hover:bg-red-600',
+                                            : 'bg-red-500 hover:bg-red-600',
                                     ]" 
                                     class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />

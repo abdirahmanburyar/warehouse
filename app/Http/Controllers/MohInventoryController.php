@@ -35,7 +35,10 @@ class MohInventoryController extends Controller
                     'mohInventoryItems.product.category:id,name',
                     'mohInventoryItems.product.dosage:id,name',
                     'mohInventoryItems.warehouse:id,name',
-                    'reviewer:id,name'
+                    'reviewer:id,name',
+                    'approver:id,name',
+                    'rejected_by:id,name',
+                    'rejected_by:id,name',
                 ])
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -317,13 +320,6 @@ class MohInventoryController extends Controller
                     $message = 'MOH inventory has been rejected';
                     break;
             }
-
-            Log::info('MOH inventory status changed', [
-                'moh_inventory_id' => $mohInventory->id,
-                'status' => $status,
-                'user_id' => $user->id
-            ]);
-
             return response()->json([
                 'success' => true,
                 'message' => $message,
@@ -331,11 +327,6 @@ class MohInventoryController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error changing MOH inventory status', [
-                'moh_inventory_id' => $mohInventory->id,
-                'status' => $status,
-                'error' => $e->getMessage()
-            ]);
 
             return response()->json([
                 'success' => false,
@@ -360,30 +351,13 @@ class MohInventoryController extends Controller
 
             foreach ($mohItems as $mohItem) {
                 try {
-                    // Debug: Log MOH item details before processing
-                    Log::info('Processing MOH item for release', [
-                        'moh_inventory_item_id' => $mohItem->id,
-                        'product_id' => $mohItem->product_id,
-                        'warehouse_id' => $mohItem->warehouse_id,
-                        'uom' => $mohItem->uom,
-                        'unit_cost' => $mohItem->unit_cost,
-                        'total_cost' => $mohItem->total_cost,
-                        'quantity' => $mohItem->quantity
-                    ]);
-
                     // Check if inventory record already exists for this product
                     $inventory = Inventory::where('product_id', $mohItem->product_id)->first();
 
                     if ($inventory) {
                         // Update existing inventory quantity
                         $inventory->increment('quantity', $mohItem->quantity);
-                        
-                        Log::info('Updated existing inventory', [
-                            'inventory_id' => $inventory->id,
-                            'product_id' => $mohItem->product_id,
-                            'quantity_added' => $mohItem->quantity,
-                            'new_total' => $inventory->quantity
-                        ]);
+                  
                     } else {
                         // Create new inventory record
                         $inventory = Inventory::create([
@@ -391,11 +365,6 @@ class MohInventoryController extends Controller
                             'quantity' => $mohItem->quantity,
                         ]);
                         
-                        Log::info('Created new inventory record', [
-                            'inventory_id' => $inventory->id,
-                            'product_id' => $mohItem->product_id,
-                            'quantity' => $mohItem->quantity
-                        ]);
                     }
 
                     // Create inventory item record with warehouse information
@@ -416,59 +385,15 @@ class MohInventoryController extends Controller
 
                     $releasedCount++;
 
-                    Log::info('Created inventory item', [
-                        'inventory_item_id' => $inventoryItem->id,
-                        'inventory_id' => $inventory->id,
-                        'moh_inventory_item_id' => $mohItem->id,
-                        'product_name' => $mohItem->product->name,
-                        'warehouse_name' => $mohItem->warehouse->name,
-                        'quantity' => $mohItem->quantity,
-                        'uom' => $mohItem->uom,
-                        'unit_cost' => $mohItem->unit_cost,
-                        'total_cost' => $mohItem->total_cost,
-                        'created_uom' => $inventoryItem->uom,
-                        'created_unit_cost' => $inventoryItem->unit_cost,
-                        'created_total_cost' => $inventoryItem->total_cost
-                    ]);
-
                 } catch (\Exception $e) {
                     $errors[] = "Failed to release item {$mohItem->product->name}: " . $e->getMessage();
-                    Log::error('Failed to release MOH inventory item', [
-                        'moh_inventory_item_id' => $mohItem->id,
-                        'product_id' => $mohItem->product_id,
-                        'warehouse_id' => $mohItem->warehouse_id,
-                        'error' => $e->getMessage()
-                    ]);
                 }
             }
-
-            if (!empty($errors)) {
-                Log::warning('Some items failed to release', [
-                    'moh_inventory_id' => $mohInventory->id,
-                    'errors' => $errors,
-                    'released_count' => $releasedCount,
-                    'total_items' => $mohItems->count()
-                ]);
-            }
-
             DB::commit();
-
-            Log::info('MOH inventory items released to main inventory', [
-                'moh_inventory_id' => $mohInventory->id,
-                'released_count' => $releasedCount,
-                'total_items' => $mohItems->count(),
-                'errors_count' => count($errors)
-            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             
-            Log::error('Failed to release MOH inventory items', [
-                'moh_inventory_id' => $mohInventory->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
             throw $e;
         }
     }
