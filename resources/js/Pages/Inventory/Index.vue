@@ -1006,8 +1006,7 @@ onUnmounted(() => {
                                                 </div>
                                             </td>
                                             <td
-                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle"
-                                                :class="(item.quantity || 0) > 0 ? 'text-gray-900' : 'text-gray-400'">
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle">
                                                 {{ item.source }}</td>
 
                                             <!-- Total QTY on Hand - only on first row for this inventory -->
