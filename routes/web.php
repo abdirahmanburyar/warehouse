@@ -752,15 +752,6 @@ Route::controller(LocationController::class)
             Route::get('/warehouse-amc/template', [WarehouseAmcController::class, 'downloadTemplate'])->name('reports.warehouse-amc.template');
     });
 
-    // Approval Routes
-    // Reason Management Routes
-    Route::controller(ReasonController::class)->prefix('reasons')->group(function () {
-        Route::get('/', 'index')->name('reasons.index');
-        Route::post('/store', 'store')->name('reasons.store');
-        Route::delete('/destroy', 'destroy')->name('reasons.destroy');
-        Route::get('/get-reasons', 'getReasons')->name('reasons.get-reasons');
-    });
-
     // MOH Inventory Routes
     Route::controller(MohInventoryController::class)
     ->group(function () {
@@ -771,7 +762,14 @@ Route::controller(LocationController::class)
         Route::post('/moh-inventory/{mohInventory}/change-status', 'changeStatus')->name('inventories.moh-inventory.change-status');
         Route::put('/moh-inventory/{mohInventoryItem}', 'updateItem')->name('inventories.moh-inventory.update-item');
     });
-        
+
+    // Approval Routes
+    // Reason Management Routes
+    Route::controller(ReasonController::class)->prefix('reasons')->group(function () {
+        Route::get('/', 'index')->name('reasons.index');
+        Route::post('/store', 'store')->name('reasons.store');
+        Route::delete('/destroy', 'destroy')->name('reasons.destroy');
+        Route::get('/get-reasons', 'getReasons')->name('reasons.get-reasons');
     });
     
     // Approval Routes
