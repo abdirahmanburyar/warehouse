@@ -37,8 +37,7 @@ class MohInventoryController extends Controller
                     'mohInventoryItems.warehouse:id,name',
                     'reviewer:id,name',
                     'approver:id,name',
-                    'rejected_by:id,name',
-                    'rejected_by:id,name',
+                    'rejectedBy:id,name',
                 ])
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -51,7 +50,8 @@ class MohInventoryController extends Controller
                     'mohInventoryItems.product.dosage:id,name',
                     'mohInventoryItems.warehouse:id,name',
                     'reviewer:id,name',
-                    'approver:id,name'
+                    'approver:id,name',
+                    'rejectedBy:id,name'
                 ])->find($request->inventory_id);
             }
 
@@ -313,7 +313,6 @@ class MohInventoryController extends Controller
 
                 case 'rejected':
                     $mohInventory->update([
-                        'status' => 'rejected',
                         'rejected_at' => now(),
                         'rejected_by' => $user->id,
                     ]);
@@ -323,7 +322,7 @@ class MohInventoryController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => $message,
-                'moh_inventory' => $mohInventory->fresh(['reviewer', 'approver'])
+                'moh_inventory' => $mohInventory->fresh(['reviewer', 'approver', 'rejectedBy'])
             ]);
 
         } catch (\Exception $e) {
