@@ -62,7 +62,7 @@ class MohInventoryController extends Controller
             
             // Get products and locations for edit modal
             $products = Product::with(['category:id,name', 'dosage:id,name'])
-                ->select('id', 'name', 'product_code', 'category_id', 'dosage_id')
+                ->select('id', 'name', 'category_id', 'dosage_id')
                 ->orderBy('name')
                 ->get();
             $warehouses = Warehouse::select('id', 'name')->orderBy('name')->get();
