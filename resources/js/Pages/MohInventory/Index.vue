@@ -63,8 +63,7 @@ const editForm = ref({
     location: '',
     unit_cost: 0,
     total_cost: 0,
-    barcode: '',
-    notes: ''
+    barcode: ''
 });
 
 // Create modal state
@@ -1455,12 +1454,6 @@ const filteredInventoryItems = computed(() => {
                                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                                 </div>
 
-                                <!-- Notes -->
-                                <div class="col-span-2">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                                    <textarea v-model="editForm.notes" rows="3"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"></textarea>
-                                </div>
                             </div>
 
                             <!-- Modal Footer -->
