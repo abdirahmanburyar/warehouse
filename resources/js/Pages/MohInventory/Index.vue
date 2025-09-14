@@ -369,8 +369,7 @@ const filteredInventoryItems = computed(() => {
                         >
                             <option value="">Choose a MOH inventory...</option>
                             <option v-for="inventory in nonApprovedInventories" :key="inventory.id" :value="inventory.id">
-                                {{ inventory.uuid || `MOH-${inventory.id}` }} 
-                                ({{ getTotalItems(inventory) }} items, {{ getTotalQuantity(inventory) }} total qty)
+                                {{ inventory.uuid || `MOH-${inventory.id}` }}, {{ inventory.date ? moment(inventory.date).format('DD/MM/YYYY') : 'N/A' }}
                                 - {{ getStatusInfo(inventory).text }}
                             </option>
                         </select>
