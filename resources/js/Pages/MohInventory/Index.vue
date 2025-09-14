@@ -55,6 +55,7 @@ const isUpdating = ref(false);
 const editForm = ref({
     id: null,
     product_id: null,
+    product: null, // Store the full product object for multiselect
     product_name: '',
     warehouse_id: null,
     warehouse_name: '',
@@ -124,6 +125,13 @@ watch(createItems, (newItems) => {
         }
     });
 }, { deep: true });
+
+// Watch for product selection changes in edit form
+watch(() => editForm.value.product, (newProduct) => {
+    if (newProduct && newProduct.id) {
+        editForm.value.product_id = newProduct.id;
+    }
+});
 
 // Clear filters
 const clearFilters = () => {
@@ -430,6 +438,7 @@ const openEditModal = (item) => {
     editForm.value = {
         id: item.id,
         product_id: item.product_id || null,
+        product: item.product || null, // Set the full product object for multiselect
         product_name: item.product?.name || '',
         warehouse_id: item.warehouse_id || null,
         warehouse_name: item.warehouse?.name || '',
@@ -477,6 +486,11 @@ const closeEditModal = () => {
 const updateMohItem = async () => {
     try {
         isUpdating.value = true;
+        
+        // Ensure product_id is set from the product object
+        if (editForm.value.product && editForm.value.product.id) {
+            editForm.value.product_id = editForm.value.product.id;
+        }
         
         // Calculate total cost
         const totalCost = (parseFloat(editForm.value.quantity) || 0) * (parseFloat(editForm.value.unit_cost) || 0);
@@ -1384,13 +1398,27 @@ const filteredInventoryItems = computed(() => {
                                 <!-- Product Name -->
                                 <div class="col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
-                                    <select v-model="editForm.product_id" required
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="">Select Product</option>
-                                        <option v-for="product in props.products" :key="product.id" :value="product.id">
-                                            {{ product.name }}
-                                        </option>
-                                    </select>
+                                    <Multiselect
+                                        v-model="editForm.product"
+                                        :options="props.products"
+                                        :custom-label="product => product.name"
+                                        placeholder="Select Product"
+                                        :searchable="true"
+                                        :allow-empty="false"
+                                        :close-on-select="true"
+                                        :clear-on-select="false"
+                                        :preserve-search="false"
+                                        :preserve-scroll="true"
+                                        :show-labels="false"
+                                        :max-height="200"
+                                        :loading="false"
+                                        :internal-search="true"
+                                        :options-limit="100"
+                                        :taggable="false"
+                                        :multiple="false"
+                                        :required="true"
+                                        class="text-sm"
+                                    />
                                 </div>
 
                                 <!-- Quantity -->
