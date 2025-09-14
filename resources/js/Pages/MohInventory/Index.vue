@@ -1474,8 +1474,8 @@ const filteredInventoryItems = computed(() => {
 
         <!-- Create MOH Inventory Modal -->
         <div v-if="showCreateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div class="relative mx-auto p-5 border w-full h-full shadow-lg bg-white">
-                <div class="h-full flex flex-col">
+            <div class="relative mx-auto p-5 border w-full h-full max-h-screen shadow-lg bg-white my-8">
+                <div class="h-full max-h-screen flex flex-col">
                     <!-- Modal Header -->
                     <div class="flex items-center justify-between pb-4 border-b border-gray-200 flex-shrink-0">
                         <h3 class="text-lg font-medium text-gray-900">Create New MOH Inventory</h3>
@@ -1486,7 +1486,7 @@ const filteredInventoryItems = computed(() => {
                         </button>
                     </div>
 
-                    <form @submit.prevent="createMohInventory" class="flex flex-col h-full">
+                    <form @submit.prevent="createMohInventory" class="flex flex-col flex-1 min-h-0">
                         <!-- Basic Information -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 mt-4">
                             <div>
@@ -1497,7 +1497,7 @@ const filteredInventoryItems = computed(() => {
                         </div>
 
                         <!-- Items Table -->
-                        <div class="flex-1 flex flex-col mb-6">
+                        <div class="flex-1 flex flex-col mb-6 min-h-0">
                             <div class="flex items-center justify-between mb-4 flex-shrink-0">
                                 <h4 class="text-md font-medium text-gray-900">Inventory Items</h4>
                                 <button type="button" @click="addCreateItem"
@@ -1509,14 +1509,14 @@ const filteredInventoryItems = computed(() => {
                                 </button>
                             </div>
 
-                            <div class="flex-1 overflow-auto">
-                                <table class="min-w-full divide-y divide-gray-200" style="min-width: 1800px;">
+                            <div class="flex-1 overflow-auto min-h-0">
+                                <table class="min-w-full divide-y divide-gray-200" style="min-width: 1500px;">
                                     <thead class="bg-gray-50 sticky top-0">
                                         <tr>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" style="width: 600px;">Item *</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" style="width: 150px;">UoM</th>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" style="width: 400px;">Item *</th>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" style="width: 180px;">UoM</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" style="width: 250px;">Source</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-24">Quantity *</th>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" style="width: 180px;">Quantity *</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" style="width: 200px;">Batch & Expiry</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" style="width: 300px;">Warehouse & Location *</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" style="width: 200px;">Costs</th>
@@ -1526,7 +1526,7 @@ const filteredInventoryItems = computed(() => {
                                     <tbody class="bg-white divide-y divide-gray-200">
                                         <tr v-for="(item, index) in createItems" :key="index" class="hover:bg-gray-50">
                                             <!-- Item (Product) -->
-                                            <td class="px-3 py-2 border-r border-gray-200" style="width: 600px;">
+                                            <td class="px-3 py-2 border-r border-gray-200" style="width: 400px;">
                                                 <Multiselect
                                                     v-model="item.product_id"
                                                     :options="props.products"
@@ -1551,7 +1551,7 @@ const filteredInventoryItems = computed(() => {
                                             </td>
 
                                             <!-- UoM -->
-                                            <td class="px-3 py-2 border-r border-gray-200" style="width: 150px;">
+                                            <td class="px-3 py-2 border-r border-gray-200" style="width: 180px;">
                                                 <input v-model="item.uom" type="text"
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
                                             </td>
@@ -1563,7 +1563,7 @@ const filteredInventoryItems = computed(() => {
                                             </td>
 
                                             <!-- Quantity -->
-                                            <td class="px-3 py-2 border-r border-gray-200 w-24">
+                                            <td class="px-3 py-2 border-r border-gray-200" style="width: 180px;">
                                                 <input v-model="item.quantity" type="number" step="0.01" min="0" required
                                                     @input="calculateCreateItemTotal(item)"
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
@@ -1649,23 +1649,23 @@ const filteredInventoryItems = computed(() => {
                                 </table>
                             </div>
                         </div>
-
-                        <!-- Modal Footer -->
-                        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 flex-shrink-0">
-                            <button type="button" @click="closeCreateModal"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                Cancel
-                            </button>
-                            <button type="submit" :disabled="isCreating"
-                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
-                                <svg v-if="isCreating" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                {{ isCreating ? 'Creating...' : 'Create MOH Inventory' }}
-                            </button>
-                        </div>
                     </form>
+
+                    <!-- Modal Footer -->
+                    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 flex-shrink-0">
+                        <button type="button" @click="closeCreateModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Cancel
+                        </button>
+                        <button type="button" @click="createMohInventory" :disabled="isCreating"
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
+                            <svg v-if="isCreating" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            {{ isCreating ? 'Creating...' : 'Create MOH Inventory' }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
