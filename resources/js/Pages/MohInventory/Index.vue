@@ -6,6 +6,9 @@ import { useToast } from "vue-toastification";
 import moment from "moment";
 import axios from "axios";
 import Swal from "sweetalert2";
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.css";
+import "@/Components/multiselect.css";
 
 const toast = useToast();
 
@@ -1524,13 +1527,27 @@ const filteredInventoryItems = computed(() => {
                                         <tr v-for="(item, index) in createItems" :key="index" class="hover:bg-gray-50">
                                             <!-- Item (Product) -->
                                             <td class="px-3 py-2 border-r border-gray-200" style="width: 600px;">
-                                                <select v-model="item.product_id" required
-                                                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
-                                                    <option value="">Select Product</option>
-                                                    <option v-for="product in props.products" :key="product.id" :value="product.id">
-                                                        {{ product.name }}
-                                                    </option>
-                                                </select>
+                                                <Multiselect
+                                                    v-model="item.product_id"
+                                                    :options="props.products"
+                                                    :custom-label="product => product.name"
+                                                    placeholder="Select Product"
+                                                    :searchable="true"
+                                                    :allow-empty="false"
+                                                    :close-on-select="true"
+                                                    :clear-on-select="false"
+                                                    :preserve-search="false"
+                                                    :preserve-scroll="true"
+                                                    :show-labels="false"
+                                                    :max-height="200"
+                                                    :loading="false"
+                                                    :internal-search="true"
+                                                    :options-limit="100"
+                                                    :taggable="false"
+                                                    :multiple="false"
+                                                    :required="true"
+                                                    class="text-sm"
+                                                />
                                             </td>
 
                                             <!-- UoM -->
