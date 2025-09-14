@@ -78,7 +78,8 @@ class MohInventoryController extends Controller
                 'locations' => $locations,
                 'filters' => $request->only(['inventory_id', 'search', 'category_id', 'dosage_id']),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            logger()->error('Error loading MOH inventory: ' . $e->getMessage());
             return back()->with('error', 'Error loading MOH inventory: ' . $e->getMessage());
         }
     }

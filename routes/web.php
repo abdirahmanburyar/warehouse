@@ -646,7 +646,6 @@ Route::controller(LocationController::class)
             Route::get('/{asset}/maintenance/list', [AssetMaintenanceController::class, 'getAssetMaintenance'])->name('asset.maintenance.list')->middleware('can:asset-edit');
         });
 
-
     // Inventory Management Routes
     Route::prefix('inventory')->group(function () {
         Route::get('/', [InventoryController::class, 'index'])->name('inventories.index');
