@@ -454,7 +454,15 @@ const openEditModal = (item) => {
     }
 
     // Find the location object from the locations array
-    const locationObject = item.location_id ? props.locations.find(loc => loc.id === item.location_id) : null;
+    // First try to find by location_id, then by location name as fallback
+    let locationObject = null;
+    if (item.location_id) {
+        locationObject = props.locations.find(loc => loc.id === item.location_id);
+    }
+    // If not found by ID, try to find by location name (string)
+    if (!locationObject && item.location) {
+        locationObject = props.locations.find(loc => loc.location === item.location);
+    }
     
     editForm.value = {
         id: item.id,
@@ -643,6 +651,7 @@ const getFilteredLocations = (warehouseId) => {
 
 // Get filtered locations for edit form
 const getEditFilteredLocations = computed(() => {
+    // If no warehouse is selected, show all locations
     if (!editForm.value.warehouse_id) return props.locations || [];
     
     // Find the selected warehouse
@@ -1500,7 +1509,7 @@ const filteredInventoryItems = computed(() => {
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
                                     <Multiselect
                                         v-model="editForm.location"
-                                        :options="getEditFilteredLocations"
+                                        :options="props.locations"
                                         :custom-label="location => location.location"
                                         placeholder="Select Location"
                                         :searchable="true"
@@ -1516,7 +1525,6 @@ const filteredInventoryItems = computed(() => {
                                         :options-limit="100"
                                         :taggable="false"
                                         :multiple="false"
-                                        :disabled="!editForm.warehouse_id"
                                         class="text-sm"
                                     />
                                 </div>
