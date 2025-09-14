@@ -360,6 +360,17 @@ class MohInventoryController extends Controller
 
             foreach ($mohItems as $mohItem) {
                 try {
+                    // Debug: Log MOH item details before processing
+                    Log::info('Processing MOH item for release', [
+                        'moh_inventory_item_id' => $mohItem->id,
+                        'product_id' => $mohItem->product_id,
+                        'warehouse_id' => $mohItem->warehouse_id,
+                        'uom' => $mohItem->uom,
+                        'unit_cost' => $mohItem->unit_cost,
+                        'total_cost' => $mohItem->total_cost,
+                        'quantity' => $mohItem->quantity
+                    ]);
+
                     // Check if inventory record already exists for this product
                     $inventory = Inventory::where('product_id', $mohItem->product_id)->first();
 
@@ -392,15 +403,15 @@ class MohInventoryController extends Controller
                         'inventory_id' => $inventory->id,
                         'product_id' => $mohItem->product_id,
                         'warehouse_id' => $mohItem->warehouse_id,
-                        'quantity' => $mohItem->quantity,
+                        'quantity' => (float) $mohItem->quantity,
                         'expiry_date' => $mohItem->expiry_date,
                         'batch_number' => $mohItem->batch_number,
                         'barcode' => $mohItem->barcode,
                         'location' => $mohItem->location,
                         'notes' => $mohItem->notes,
                         'uom' => $mohItem->uom,
-                        'unit_cost' => $mohItem->unit_cost,
-                        'total_cost' => $mohItem->total_cost,
+                        'unit_cost' => $mohItem->unit_cost ? (float) $mohItem->unit_cost : null,
+                        'total_cost' => $mohItem->total_cost ? (float) $mohItem->total_cost : null,
                     ]);
 
                     $releasedCount++;
@@ -411,7 +422,13 @@ class MohInventoryController extends Controller
                         'moh_inventory_item_id' => $mohItem->id,
                         'product_name' => $mohItem->product->name,
                         'warehouse_name' => $mohItem->warehouse->name,
-                        'quantity' => $mohItem->quantity
+                        'quantity' => $mohItem->quantity,
+                        'uom' => $mohItem->uom,
+                        'unit_cost' => $mohItem->unit_cost,
+                        'total_cost' => $mohItem->total_cost,
+                        'created_uom' => $inventoryItem->uom,
+                        'created_unit_cost' => $inventoryItem->unit_cost,
+                        'created_total_cost' => $inventoryItem->total_cost
                     ]);
 
                 } catch (\Exception $e) {
