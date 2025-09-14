@@ -1507,15 +1507,14 @@ const filteredInventoryItems = computed(() => {
                             </div>
 
                             <div class="flex-1 overflow-auto">
-                                <table class="min-w-full divide-y divide-gray-200" style="min-width: 1200px;">
+                                <table class="min-w-full divide-y divide-gray-200" style="min-width: 1300px;">
                                     <thead class="bg-gray-50 sticky top-0">
                                         <tr>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" style="width: 250px;">Item *</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-24">UoM</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-32">Source</th>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" style="width: 300px;">Item *</th>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-32">UoM</th>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-40">Source</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-24">Quantity *</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-32">Batch No</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 w-32">Expiry Date</th>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" style="width: 200px;">Batch & Expiry</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" style="width: 300px;">Warehouse & Location *</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" style="width: 200px;">Costs</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Actions</th>
@@ -1524,7 +1523,7 @@ const filteredInventoryItems = computed(() => {
                                     <tbody class="bg-white divide-y divide-gray-200">
                                         <tr v-for="(item, index) in createItems" :key="index" class="hover:bg-gray-50">
                                             <!-- Item (Product) -->
-                                            <td class="px-3 py-2 border-r border-gray-200" style="width: 250px;">
+                                            <td class="px-3 py-2 border-r border-gray-200" style="width: 300px;">
                                                 <select v-model="item.product_id" required
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
                                                     <option value="">Select Product</option>
@@ -1535,13 +1534,13 @@ const filteredInventoryItems = computed(() => {
                                             </td>
 
                                             <!-- UoM -->
-                                            <td class="px-3 py-2 border-r border-gray-200 w-24">
+                                            <td class="px-3 py-2 border-r border-gray-200 w-32">
                                                 <input v-model="item.uom" type="text"
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
                                             </td>
 
                                             <!-- Source -->
-                                            <td class="px-3 py-2 border-r border-gray-200 w-32">
+                                            <td class="px-3 py-2 border-r border-gray-200 w-40">
                                                 <input v-model="item.source" type="text"
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
                                             </td>
@@ -1553,16 +1552,22 @@ const filteredInventoryItems = computed(() => {
                                                     class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
                                             </td>
 
-                                            <!-- Batch Number -->
-                                            <td class="px-3 py-2 border-r border-gray-200 w-32">
-                                                <input v-model="item.batch_number" type="text"
-                                                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
-                                            </td>
-
-                                            <!-- Expiry Date -->
-                                            <td class="px-3 py-2 border-r border-gray-200 w-32">
-                                                <input v-model="item.expiry_date" type="date"
-                                                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                                            <!-- Batch & Expiry Combined -->
+                                            <td class="px-3 py-2 border-r border-gray-200" style="width: 200px;">
+                                                <div class="space-y-2">
+                                                    <!-- Batch Number -->
+                                                    <div>
+                                                        <label class="block text-xs font-medium text-gray-600 mb-1">Batch No</label>
+                                                        <input v-model="item.batch_number" type="text"
+                                                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                                                    </div>
+                                                    <!-- Expiry Date -->
+                                                    <div>
+                                                        <label class="block text-xs font-medium text-gray-600 mb-1">Expiry Date</label>
+                                                        <input v-model="item.expiry_date" type="date"
+                                                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                                                    </div>
+                                                </div>
                                             </td>
 
                                             <!-- Warehouse & Location Combined -->
