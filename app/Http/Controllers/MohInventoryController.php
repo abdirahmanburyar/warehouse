@@ -572,7 +572,6 @@ class MohInventoryController extends Controller
                 'notes' => 'nullable|string|max:1000',
                 'items' => 'required|array|min:1',
                 'items.*.product_id' => 'required|exists:products,id',
-                'items.*.dosage_id' => 'nullable|exists:dosages,id',
                 'items.*.quantity' => 'required|numeric|min:0',
                 'items.*.uom' => 'nullable|string|max:255',
                 'items.*.source' => 'nullable|string|max:255',
@@ -611,7 +610,6 @@ class MohInventoryController extends Controller
                 MohInventoryItem::create([
                     'moh_inventory_id' => $mohInventory->id,
                     'product_id' => $itemData['product_id'],
-                    'dosage_id' => $itemData['dosage_id'],
                     'quantity' => $itemData['quantity'],
                     'uom' => $itemData['uom'],
                     'source' => $itemData['source'],
