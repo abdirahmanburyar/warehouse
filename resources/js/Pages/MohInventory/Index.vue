@@ -453,6 +453,9 @@ const openEditModal = (item) => {
         return;
     }
 
+    // Find the location object from the locations array
+    const locationObject = item.location_id ? props.locations.find(loc => loc.id === item.location_id) : null;
+    
     editForm.value = {
         id: item.id,
         product_id: item.product_id || null,
@@ -466,7 +469,7 @@ const openEditModal = (item) => {
         batch_number: item.batch_number || '',
         expiry_date: item.expiry_date ? moment(item.expiry_date).format('YYYY-MM-DD') : '',
         location_id: item.location_id || null,
-        location: item.location ? { id: item.location_id, location: item.location } : null, // Create location object for multiselect
+        location: locationObject, // Use the found location object
         unit_cost: item.unit_cost || 0,
         total_cost: item.total_cost || 0,
         barcode: item.barcode || ''
