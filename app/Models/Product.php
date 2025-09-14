@@ -623,6 +623,7 @@ class Product extends Model
             'product' => [
                 'id' => $this->id,
                 'name' => $this->name,
+                'uom' => $inventoryItems->first()->uom,
                 'category' => [
                     'id' => $this->category->id ?? null,
                     'name' => $this->category->name ?? null
