@@ -58,13 +58,14 @@ const editForm = ref({
     product: null, // Store the full product object for multiselect
     product_name: '',
     warehouse_id: null,
+    warehouse: null, // Store the full warehouse object for multiselect
     warehouse_name: '',
     quantity: 0,
     uom: '',
     batch_number: '',
     expiry_date: '',
     location_id: null,
-    location: '',
+    location: null, // Store the full location object for multiselect
     unit_cost: 0,
     total_cost: 0,
     barcode: ''
@@ -130,6 +131,23 @@ watch(createItems, (newItems) => {
 watch(() => editForm.value.product, (newProduct) => {
     if (newProduct && newProduct.id) {
         editForm.value.product_id = newProduct.id;
+    }
+});
+
+// Watch for warehouse selection changes in edit form
+watch(() => editForm.value.warehouse, (newWarehouse) => {
+    if (newWarehouse && newWarehouse.id) {
+        editForm.value.warehouse_id = newWarehouse.id;
+        // Clear location when warehouse changes
+        editForm.value.location = null;
+        editForm.value.location_id = null;
+    }
+});
+
+// Watch for location selection changes in edit form
+watch(() => editForm.value.location, (newLocation) => {
+    if (newLocation && newLocation.id) {
+        editForm.value.location_id = newLocation.id;
     }
 });
 
@@ -441,13 +459,14 @@ const openEditModal = (item) => {
         product: item.product || null, // Set the full product object for multiselect
         product_name: item.product?.name || '',
         warehouse_id: item.warehouse_id || null,
+        warehouse: item.warehouse || null, // Set the full warehouse object for multiselect
         warehouse_name: item.warehouse?.name || '',
         quantity: item.quantity || 0,
         uom: item.uom || '',
         batch_number: item.batch_number || '',
         expiry_date: item.expiry_date ? moment(item.expiry_date).format('YYYY-MM-DD') : '',
         location_id: item.location_id || null,
-        location: item.location || '',
+        location: item.location ? { id: item.location_id, location: item.location } : null, // Create location object for multiselect
         unit_cost: item.unit_cost || 0,
         total_cost: item.total_cost || 0,
         barcode: item.barcode || ''
@@ -490,6 +509,16 @@ const updateMohItem = async () => {
         // Ensure product_id is set from the product object
         if (editForm.value.product && editForm.value.product.id) {
             editForm.value.product_id = editForm.value.product.id;
+        }
+        
+        // Ensure warehouse_id is set from the warehouse object
+        if (editForm.value.warehouse && editForm.value.warehouse.id) {
+            editForm.value.warehouse_id = editForm.value.warehouse.id;
+        }
+        
+        // Ensure location_id is set from the location object
+        if (editForm.value.location && editForm.value.location.id) {
+            editForm.value.location_id = editForm.value.location.id;
         }
         
         // Calculate total cost
@@ -608,6 +637,20 @@ const getFilteredLocations = (warehouseId) => {
         location.warehouse && location.warehouse.toLowerCase() === selectedWarehouse.name.toLowerCase()
     );
 };
+
+// Get filtered locations for edit form
+const getEditFilteredLocations = computed(() => {
+    if (!editForm.value.warehouse_id) return props.locations || [];
+    
+    // Find the selected warehouse
+    const selectedWarehouse = props.warehouses.find(w => w.id == editForm.value.warehouse_id);
+    if (!selectedWarehouse) return props.locations || [];
+    
+    // Filter locations that belong to this warehouse
+    return props.locations.filter(location => 
+        location.warehouse && location.warehouse.toLowerCase() === selectedWarehouse.name.toLowerCase()
+    );
+});
 
 // Handle warehouse change - clear location selection
 const filterLocationsByWarehouse = (item) => {
@@ -1452,25 +1495,53 @@ const filteredInventoryItems = computed(() => {
                                 <!-- Location -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                                    <select v-model="editForm.location_id"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="">Select Location</option>
-                                        <option v-for="location in props.locations" :key="location.id" :value="location.id">
-                                            {{ location.location }}
-                                        </option>
-                                    </select>
+                                    <Multiselect
+                                        v-model="editForm.location"
+                                        :options="getEditFilteredLocations"
+                                        :custom-label="location => location.location"
+                                        placeholder="Select Location"
+                                        :searchable="true"
+                                        :allow-empty="true"
+                                        :close-on-select="true"
+                                        :clear-on-select="false"
+                                        :preserve-search="false"
+                                        :preserve-scroll="true"
+                                        :show-labels="false"
+                                        :max-height="200"
+                                        :loading="false"
+                                        :internal-search="true"
+                                        :options-limit="100"
+                                        :taggable="false"
+                                        :multiple="false"
+                                        :disabled="!editForm.warehouse_id"
+                                        class="text-sm"
+                                    />
                                 </div>
 
                                 <!-- Warehouse -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse *</label>
-                                    <select v-model="editForm.warehouse_id" required
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="">Select Warehouse</option>
-                                        <option v-for="warehouse in props.warehouses" :key="warehouse.id" :value="warehouse.id">
-                                            {{ warehouse.name }}
-                                        </option>
-                                    </select>
+                                    <Multiselect
+                                        v-model="editForm.warehouse"
+                                        :options="props.warehouses"
+                                        :custom-label="warehouse => warehouse.name"
+                                        placeholder="Select Warehouse"
+                                        :searchable="true"
+                                        :allow-empty="false"
+                                        :close-on-select="true"
+                                        :clear-on-select="false"
+                                        :preserve-search="false"
+                                        :preserve-scroll="true"
+                                        :show-labels="false"
+                                        :max-height="200"
+                                        :loading="false"
+                                        :internal-search="true"
+                                        :options-limit="100"
+                                        :taggable="false"
+                                        :multiple="false"
+                                        :required="true"
+                                        class="text-sm"
+                                    />
                                 </div>
 
                                 <!-- Unit Cost -->
