@@ -408,7 +408,7 @@ const loadWarehouses = async () => {
 // Open edit modal
 const openEditModal = async (item) => {
     // Check if inventory is approved
-    if (selectedInventory.value?.approved_at) {
+    if (props.selectedInventory?.approved_at) {
         Swal.fire({
             icon: 'warning',
             title: 'Cannot Edit',
@@ -652,7 +652,7 @@ const filteredInventoryItems = computed(() => {
                     </div>
 
                     <!-- Filters (only show when inventory is selected) -->
-                    <div v-if="selectedInventory" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div v-if="props.selectedInventory" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Search Items</label>
                             <input
@@ -704,7 +704,7 @@ const filteredInventoryItems = computed(() => {
             </div>
 
             <!-- Selected Inventory Details -->
-            <div v-else-if="selectedInventory" class="space-y-6">
+            <div v-else-if="props.selectedInventory" class="space-y-6">
                 <!-- Inventory Summary -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="px-6 py-4 border-b border-gray-200">
@@ -722,23 +722,23 @@ const filteredInventoryItems = computed(() => {
                             </div>
                             <div>
                                 <dt class="text-sm font-medium text-gray-500">Total Items</dt>
-                                <dd class="mt-1 text-sm text-gray-900">{{ getTotalItems(selectedInventory) }}</dd>
+                                <dd class="mt-1 text-sm text-gray-900">{{ getTotalItems(props.selectedInventory) }}</dd>
                             </div>
                             <div>
                                 <dt class="text-sm font-medium text-gray-500">Total Quantity</dt>
-                                <dd class="mt-1 text-sm text-gray-900">{{ getTotalQuantity(selectedInventory) }}</dd>
+                                <dd class="mt-1 text-sm text-gray-900">{{ getTotalQuantity(props.selectedInventory) }}</dd>
                             </div>
                             <div>
                                 <dt class="text-sm font-medium text-gray-500">Total Cost</dt>
-                                <dd class="mt-1 text-sm text-gray-900 font-semibold">{{ formatCurrency(getTotalCost(selectedInventory)) }}</dd>
+                                <dd class="mt-1 text-sm text-gray-900 font-semibold">{{ formatCurrency(getTotalCost(props.selectedInventory)) }}</dd>
                             </div>
                             <div>
                                 <dt class="text-sm font-medium text-gray-500">Status</dt>
                                 <dd class="mt-1">
                                     <span 
-                                        :class="`inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-${getStatusInfo(selectedInventory).color}-100 text-${getStatusInfo(selectedInventory).color}-800`"
+                                        :class="`inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-${getStatusInfo(props.selectedInventory).color}-100 text-${getStatusInfo(props.selectedInventory).color}-800`"
                                     >
-                                        {{ getStatusInfo(selectedInventory).text }}
+                                        {{ getStatusInfo(props.selectedInventory).text }}
                                     </span>
                                 </dd>
                             </div>
@@ -808,9 +808,9 @@ const filteredInventoryItems = computed(() => {
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         <button @click="openEditModal(item)"
-                                            :disabled="selectedInventory?.approved_at"
+                                            :disabled="props.selectedInventory?.approved_at"
                                             :class="[
-                                                selectedInventory?.approved_at
+                                                props.selectedInventory?.approved_at
                                                     ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
                                                     : 'text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
                                             ]"
@@ -818,7 +818,7 @@ const filteredInventoryItems = computed(() => {
                                             <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                             </svg>
-                                            {{ selectedInventory?.approved_at ? 'Edit (Disabled)' : 'Edit' }}
+                                            {{ props.selectedInventory?.approved_at ? 'Edit (Disabled)' : 'Edit' }}
                                         </button>
                                     </td>
                                 </tr>
@@ -829,7 +829,7 @@ const filteredInventoryItems = computed(() => {
 
 
             <!-- Approval Actions -->
-            <div v-if="selectedInventory" class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
+            <div v-if="props.selectedInventory" class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-medium text-gray-900">MOH Inventory Approval Actions</h3>
                     <p class="text-sm text-gray-500 mt-1">Review and approve this MOH inventory</p>
@@ -852,29 +852,29 @@ const filteredInventoryItems = computed(() => {
                                     class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
                                     <span class="text-sm font-bold text-white">
-                                        {{ selectedInventory.reviewed_at ? 'Reviewed' : isType['is_reviewing'] ? 'Please Wait...' : 'Review' }}
+                                        {{ props.selectedInventory.reviewed_at ? 'Reviewed' : isType['is_reviewing'] ? 'Please Wait...' : 'Review' }}
                                     </span>
                                 </button>
-                                <span v-show="selectedInventory?.reviewed_at" class="text-sm text-gray-600 mt-1">
-                                    On {{ moment(selectedInventory?.reviewed_at).format('DD/MM/YYYY HH:mm') }}
+                                <span v-show="props.selectedInventory?.reviewed_at" class="text-sm text-gray-600 mt-1">
+                                    On {{ moment(props.selectedInventory?.reviewed_at).format('DD/MM/YYYY HH:mm') }}
                                 </span>
-                                <span v-show="selectedInventory?.reviewed_by" class="text-sm text-gray-600">
-                                    By {{ selectedInventory?.reviewed_by?.name }}
+                                <span v-show="props.selectedInventory?.reviewed_by" class="text-sm text-gray-600">
+                                    By {{ props.selectedInventory?.reviewed_by?.name }}
                                 </span>
                             </div>
-                            <div v-if="!selectedInventory.reviewed_at && selectedInventory.status !== 'rejected'" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+                            <div v-if="!props.selectedInventory.reviewed_at && props.selectedInventory.status !== 'rejected'" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
 
                         <!-- Approve Button -->
-                        <div class="relative" v-if="selectedInventory.status !== 'rejected'">
+                        <div class="relative" v-if="props.selectedInventory.status !== 'rejected'">
                             <div class="flex flex-col">
                                 <button 
-                                    @click="changeStatus(selectedInventory.id, 'approved', 'is_approve')"
-                                    :disabled="isType['is_approve'] || !selectedInventory.reviewed_at || selectedInventory.approved_at"
+                                    @click="changeStatus(props.selectedInventory.id, 'approved', 'is_approve')"
+                                    :disabled="isType['is_approve'] || !props.selectedInventory.reviewed_at || props.selectedInventory.approved_at"
                                     :class="[
-                                        selectedInventory.approved_at
+                                        props.selectedInventory.approved_at
                                             ? 'bg-green-500'
-                                            : selectedInventory.reviewed_at && !selectedInventory.approved_at
+                                            : props.selectedInventory.reviewed_at && !props.selectedInventory.approved_at
                                                 ? 'bg-yellow-500 hover:bg-yellow-600'
                                                 : 'bg-gray-300 cursor-not-allowed',
                                     ]" 
@@ -887,42 +887,42 @@ const filteredInventoryItems = computed(() => {
                                     <template v-else>
                                         <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
                                         <span class="text-sm font-bold text-white">
-                                            {{ selectedInventory.approved_at ? 'Approved' : isType['is_approve'] ? 'Please Wait...' : 'Approve' }}
+                                            {{ props.selectedInventory.approved_at ? 'Approved' : isType['is_approve'] ? 'Please Wait...' : 'Approve' }}
                                         </span>
                                     </template>
                                 </button>
-                                <span v-show="selectedInventory?.approved_at" class="text-sm text-gray-600 mt-1">
-                                    On {{ moment(selectedInventory?.approved_at).format('DD/MM/YYYY HH:mm') }}
+                                <span v-show="props.selectedInventory?.approved_at" class="text-sm text-gray-600 mt-1">
+                                    On {{ moment(props.selectedInventory?.approved_at).format('DD/MM/YYYY HH:mm') }}
                                 </span>
-                                <span v-show="selectedInventory?.approved_by" class="text-sm text-gray-600">
-                                    By {{ selectedInventory?.approved_by?.name }}
+                                <span v-show="props.selectedInventory?.approved_by" class="text-sm text-gray-600">
+                                    By {{ props.selectedInventory?.approved_by?.name }}
                                 </span>
                             </div>
-                            <div v-if="selectedInventory.reviewed_at && !selectedInventory.approved_at" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+                            <div v-if="props.selectedInventory.reviewed_at && !props.selectedInventory.approved_at" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                         </div>
 
                         <!-- Reject Button - Only show if not approved -->
-                        <div class="relative" v-if="!selectedInventory.approved_at">
+                        <div class="relative" v-if="!props.selectedInventory.approved_at">
                             <div class="flex flex-col">
                                 <button 
-                                    @click="changeStatus(selectedInventory.id, 'rejected', 'is_reject')"
-                                    :disabled="isType['is_reject'] || selectedInventory.status === 'rejected'"
+                                    @click="changeStatus(props.selectedInventory.id, 'rejected', 'is_reject')"
+                                    :disabled="isType['is_reject'] || props.selectedInventory.status === 'rejected'"
                                     :class="[
-                                        selectedInventory.status === 'rejected'
+                                        props.selectedInventory.status === 'rejected'
                                             ? 'bg-red-500'
                                             : 'bg-red-500 hover:bg-red-600',
                                     ]" 
                                     class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
                                     <span class="text-sm font-bold text-white">
-                                        {{ selectedInventory.status === 'rejected' ? 'Rejected' : isType['is_reject'] ? 'Please Wait...' : 'Reject' }}
+                                        {{ props.selectedInventory.status === 'rejected' ? 'Rejected' : isType['is_reject'] ? 'Please Wait...' : 'Reject' }}
                                     </span>
                                 </button>
-                                <span v-show="selectedInventory?.status === 'rejected'" class="text-sm text-gray-600 mt-1">
-                                    On {{ moment(selectedInventory?.rejected_at).format('DD/MM/YYYY HH:mm') }}
+                                <span v-show="props.selectedInventory?.status === 'rejected'" class="text-sm text-gray-600 mt-1">
+                                    On {{ moment(props.selectedInventory?.rejected_at).format('DD/MM/YYYY HH:mm') }}
                                 </span>
-                                <span v-show="selectedInventory?.rejected_by" class="text-sm text-gray-600">
-                                    By {{ selectedInventory?.rejected_by?.name }}
+                                <span v-show="props.selectedInventory?.rejected_by" class="text-sm text-gray-600">
+                                    By {{ props.selectedInventory?.rejected_by?.name }}
                                 </span>
                             </div>
                         </div>
@@ -932,7 +932,7 @@ const filteredInventoryItems = computed(() => {
             </div>
 
             <!-- Empty State - No Inventory Selected -->
-            <div v-else-if="!selectedInventory" class="text-center py-12">
+            <div v-else-if="!props.selectedInventory" class="text-center py-12">
                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -1220,7 +1220,7 @@ const filteredInventoryItems = computed(() => {
                     <!-- Modal Body -->
                     <div class="mt-4">
                         <!-- Warning for approved inventories -->
-                        <div v-if="selectedInventory?.approved_at" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                        <div v-if="props.selectedInventory?.approved_at" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
                             <div class="flex">
                                 <div class="flex-shrink-0">
                                     <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -1236,7 +1236,7 @@ const filteredInventoryItems = computed(() => {
                             </div>
                         </div>
 
-                        <form @submit.prevent="updateMohItem" :class="{ 'opacity-50 pointer-events-none': selectedInventory?.approved_at }">
+                        <form @submit.prevent="updateMohItem" :class="{ 'opacity-50 pointer-events-none': props.selectedInventory?.approved_at }">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <!-- Product Name -->
                                 <div class="col-span-2">
