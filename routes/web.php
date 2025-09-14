@@ -662,16 +662,16 @@ Route::controller(LocationController::class)
         Route::get('/get-locations', [InventoryController::class, 'getLocations'])->name('inventories.getLocations');
         Route::get('/get-all-locations', [InventoryController::class, 'getAllLocations'])->name('inventories.getAllLocations');
         Route::post('/import', [InventoryController::class, 'import'])->name('inventories.import');
-    });
-
-    // - Inventory Management Routes
-    Route::controller(MohInventoryController::class)
-    ->group(function () {
-        Route::get('/moh-inventory', 'index')->name('inventories.moh-inventory.index');
-        Route::post('/moh-inventory/import', 'import')->name('inventories.moh-inventory.import');
-        Route::get('/moh-inventory/import-progress', 'getImportProgress')->name('inventories.moh-inventory.import-progress');
-        Route::get('/moh-inventory/test-import', 'testImport')->name('inventories.moh-inventory.test-import');
-        Route::post('/moh-inventory/{mohInventory}/change-status', 'changeStatus')->name('inventories.moh-inventory.change-status');
+        
+        // MOH Inventory Routes
+        Route::controller(MohInventoryController::class)
+        ->group(function () {
+            Route::get('/moh-inventory', 'index')->name('inventories.moh-inventory.index');
+            Route::post('/moh-inventory/import', 'import')->name('inventories.moh-inventory.import');
+            Route::get('/moh-inventory/import-progress', 'getImportProgress')->name('inventories.moh-inventory.import-progress');
+            Route::get('/moh-inventory/test-import', 'testImport')->name('inventories.moh-inventory.test-import');
+            Route::post('/moh-inventory/{mohInventory}/change-status', 'changeStatus')->name('inventories.moh-inventory.change-status');
+        });
     });
 
     // API Routes
