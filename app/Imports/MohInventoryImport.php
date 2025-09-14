@@ -6,6 +6,8 @@ use App\Models\Product;
 use App\Models\Warehouse;
 use App\Models\MohInventory;
 use App\Models\MohInventoryItem;
+use App\Models\Category;
+use App\Models\Dosage;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -97,15 +99,87 @@ class MohInventoryImport implements
         $product = Product::where('name', $itemName)->first();
         
         if ($product) {
+            Log::info('Found existing product', ['product_id' => $product->id, 'name' => $itemName]);
             return $product;
         }
 
-        // If not found, throw exception to stop import
-        $errorMessage = "Product '{$itemName}' not found in database. Please add this product first before importing.";
+        // If not found, create the product
+        Log::info('Product not found, creating new product', ['name' => $itemName]);
         
-        throw new \Exception($errorMessage);
+        // Get or create category
+        $categoryName = trim($row['category'] ?? $row['Category'] ?? $row['CATEGORY'] ?? 'General');
+        $category = $this->getOrCreateCategory($categoryName);
+        
+        // Get or create dosage
+        $dosageName = trim($row['uom'] ?? $row['UoM'] ?? $row['UOM'] ?? $row['unit'] ?? 'Pcs');
+        $dosage = $this->getOrCreateDosage($dosageName);
+        
+        // Create the product
+        $product = Product::create([
+            'name' => $itemName,
+            'category_id' => $category->id,
+            'dosage_id' => $dosage->id,
+            'is_active' => true,
+            'tracert_type' => ['batch_number', 'expiry_date'] // Default tracking types
+        ]);
+        
+        Log::info('Created new product', [
+            'product_id' => $product->id,
+            'name' => $itemName,
+            'category_id' => $category->id,
+            'dosage_id' => $dosage->id
+        ]);
+        
+        return $product;
     }
 
+    protected function getOrCreateCategory($categoryName)
+    {
+        // Try to find existing category by name
+        $category = Category::where('name', $categoryName)->first();
+        
+        if ($category) {
+            Log::info('Found existing category', ['category_id' => $category->id, 'name' => $categoryName]);
+            return $category;
+        }
+
+        // If not found, create the category
+        Log::info('Category not found, creating new category', ['name' => $categoryName]);
+        
+        $category = Category::create([
+            'name' => $categoryName,
+            'description' => "Auto-created category for MOH inventory import",
+            'is_active' => true
+        ]);
+        
+        Log::info('Created new category', ['category_id' => $category->id, 'name' => $categoryName]);
+        
+        return $category;
+    }
+
+    protected function getOrCreateDosage($dosageName)
+    {
+        // Try to find existing dosage by name
+        $dosage = Dosage::where('name', $dosageName)->first();
+        
+        if ($dosage) {
+            Log::info('Found existing dosage', ['dosage_id' => $dosage->id, 'name' => $dosageName]);
+            return $dosage;
+        }
+
+        // If not found, create the dosage
+        Log::info('Dosage not found, creating new dosage', ['name' => $dosageName]);
+        
+        $dosage = Dosage::create([
+            'name' => $dosageName,
+            'description' => "Auto-created dosage for MOH inventory import",
+            'is_active' => true
+        ]);
+        
+        Log::info('Created new dosage', ['dosage_id' => $dosage->id, 'name' => $dosageName]);
+        
+        return $dosage;
+    }
 
     protected function getWarehouse($warehouseName)
     {
