@@ -71,7 +71,6 @@ const showCreateModal = ref(false);
 const isCreating = ref(false);
 const createForm = ref({
     date: new Date().toISOString().split('T')[0], // Today's date
-    notes: ''
 });
 const createItems = ref([]);
 
@@ -430,8 +429,7 @@ const openEditModal = (item) => {
         location: item.location || '',
         unit_cost: item.unit_cost || 0,
         total_cost: item.total_cost || 0,
-        barcode: item.barcode || '',
-        notes: item.notes || ''
+        barcode: item.barcode || ''
     };
     
     // Calculate total cost based on quantity and unit cost
@@ -459,8 +457,7 @@ const closeEditModal = () => {
         location: '',
         unit_cost: 0,
         total_cost: 0,
-        barcode: '',
-        notes: ''
+        barcode: ''
     };
 };
 
@@ -483,8 +480,7 @@ const updateMohItem = async () => {
             location_id: editForm.value.location_id,
             unit_cost: editForm.value.unit_cost,
             total_cost: editForm.value.total_cost,
-            barcode: editForm.value.barcode,
-            notes: editForm.value.notes
+            barcode: editForm.value.barcode
         });
         
         if (response.data.success) {
@@ -530,8 +526,7 @@ const updateMohItem = async () => {
 const openCreateModal = () => {
     showCreateModal.value = true;
     createForm.value = {
-        date: new Date().toISOString().split('T')[0],
-        notes: ''
+        date: new Date().toISOString().split('T')[0]
     };
     createItems.value = [];
     addCreateItem();
@@ -540,8 +535,7 @@ const openCreateModal = () => {
 const closeCreateModal = () => {
     showCreateModal.value = false;
     createForm.value = {
-        date: new Date().toISOString().split('T')[0],
-        notes: ''
+        date: new Date().toISOString().split('T')[0]
     };
     createItems.value = [];
 };
@@ -559,8 +553,7 @@ const addCreateItem = () => {
         warehouse_id: null,
         unit_cost: 0,
         total_cost: 0,
-        barcode: '',
-        notes: ''
+        barcode: ''
     });
 };
 
@@ -606,7 +599,6 @@ const createMohInventory = async () => {
         
         const response = await axios.post('/moh-inventory', {
             date: createForm.value.date,
-            notes: createForm.value.notes,
             items: createItems.value
         });
         
@@ -1497,11 +1489,6 @@ const filteredInventoryItems = computed(() => {
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Date *</label>
                                 <input v-model="createForm.date" type="date" required
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                                <input v-model="createForm.notes" type="text"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                             </div>
                         </div>
