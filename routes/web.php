@@ -659,17 +659,6 @@ Route::controller(LocationController::class)
         Route::post('/import', [InventoryController::class, 'import'])->name('inventories.import');
     });
 
-    // MOH Inventory Routes
-    Route::controller(MohInventoryController::class)
-    ->group(function () {
-        Route::get('/moh-inventory', 'index')->name('inventories.moh-inventory.index');
-        Route::post('/moh-inventory/import', 'import')->name('inventories.moh-inventory.import');
-        Route::get('/moh-inventory/import-progress', 'getImportProgress')->name('inventories.moh-inventory.import-progress');
-        Route::get('/moh-inventory/test-import', 'testImport')->name('inventories.moh-inventory.test-import');
-        Route::post('/moh-inventory/{mohInventory}/change-status', 'changeStatus')->name('inventories.moh-inventory.change-status');
-        Route::put('/moh-inventory/{mohInventoryItem}', 'updateItem')->name('inventories.moh-inventory.update-item');
-    });
-
     // API Routes
     Route::prefix('api')->group(function () {
         // Issue Quantity Reports Export Routes
@@ -770,6 +759,17 @@ Route::controller(LocationController::class)
         Route::post('/store', 'store')->name('reasons.store');
         Route::delete('/destroy', 'destroy')->name('reasons.destroy');
         Route::get('/get-reasons', 'getReasons')->name('reasons.get-reasons');
+    });
+
+    // MOH Inventory Routes
+    Route::controller(MohInventoryController::class)
+    ->group(function () {
+        Route::get('/moh-inventory', 'index')->name('inventories.moh-inventory.index');
+        Route::post('/moh-inventory/import', 'import')->name('inventories.moh-inventory.import');
+        Route::get('/moh-inventory/import-progress', 'getImportProgress')->name('inventories.moh-inventory.import-progress');
+        Route::get('/moh-inventory/test-import', 'testImport')->name('inventories.moh-inventory.test-import');
+        Route::post('/moh-inventory/{mohInventory}/change-status', 'changeStatus')->name('inventories.moh-inventory.change-status');
+        Route::put('/moh-inventory/{mohInventoryItem}', 'updateItem')->name('inventories.moh-inventory.update-item');
     });
         
     });
