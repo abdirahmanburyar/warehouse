@@ -66,7 +66,7 @@ class MohInventoryController extends Controller
                 ->orderBy('name')
                 ->get();
             $warehouses = Warehouse::select('id', 'name')->orderBy('name')->get();
-            $locations = Location::select('id', 'name')->orderBy('name')->get();
+            $locations = Location::select('id', 'location')->orderBy('location')->get();
 
             return Inertia::render('MohInventory/Index', [
                 'nonApprovedInventories' => $nonApprovedInventories,
