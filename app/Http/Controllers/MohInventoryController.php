@@ -367,6 +367,13 @@ class MohInventoryController extends Controller
                 'notes' => 'nullable|string',
             ]);
 
+            // Get location name from location_id
+            $locationName = null;
+            if ($request->location_id) {
+                $location = Location::find($request->location_id);
+                $locationName = $location ? $location->location : null;
+            }
+
             // Update the MOH inventory item
             $mohInventoryItem->update([
                 'product_id' => $request->product_id,
@@ -375,7 +382,7 @@ class MohInventoryController extends Controller
                 'uom' => $request->uom,
                 'batch_number' => $request->batch_number,
                 'expiry_date' => $request->expiry_date,
-                'location_id' => $request->location_id,
+                'location' => $locationName,
                 'unit_cost' => $request->unit_cost,
                 'total_cost' => $request->total_cost,
                 'barcode' => $request->barcode,
@@ -614,6 +621,13 @@ class MohInventoryController extends Controller
             foreach ($request->items as $itemData) {
                 // Calculate total cost if not provided
                 $totalCost = $itemData['total_cost'] ?? ($itemData['quantity'] * ($itemData['unit_cost'] ?? 0));
+                
+                // Get location name from location_id
+                $locationName = null;
+                if ($itemData['location_id']) {
+                    $location = Location::find($itemData['location_id']);
+                    $locationName = $location ? $location->location : null;
+                }
 
                 MohInventoryItem::create([
                     'moh_inventory_id' => $mohInventory->id,
@@ -624,7 +638,7 @@ class MohInventoryController extends Controller
                     'source' => $itemData['source'],
                     'batch_number' => $itemData['batch_number'],
                     'expiry_date' => $itemData['expiry_date'],
-                    'location_id' => $itemData['location_id'],
+                    'location' => $locationName,
                     'warehouse_id' => $itemData['warehouse_id'],
                     'unit_cost' => $itemData['unit_cost'],
                     'total_cost' => $totalCost,
