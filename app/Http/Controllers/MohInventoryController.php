@@ -360,10 +360,8 @@ class MohInventoryController extends Controller
 
             foreach ($mohItems as $mohItem) {
                 try {
-                    // Check if inventory record already exists for this product and warehouse
-                    $inventory = Inventory::where('product_id', $mohItem->product_id)
-                        ->where('warehouse_id', $mohItem->warehouse_id)
-                        ->first();
+                    // Check if inventory record already exists for this product
+                    $inventory = Inventory::where('product_id', $mohItem->product_id)->first();
 
                     if ($inventory) {
                         // Update existing inventory quantity
@@ -372,7 +370,6 @@ class MohInventoryController extends Controller
                         Log::info('Updated existing inventory', [
                             'inventory_id' => $inventory->id,
                             'product_id' => $mohItem->product_id,
-                            'warehouse_id' => $mohItem->warehouse_id,
                             'quantity_added' => $mohItem->quantity,
                             'new_total' => $inventory->quantity
                         ]);
@@ -380,19 +377,17 @@ class MohInventoryController extends Controller
                         // Create new inventory record
                         $inventory = Inventory::create([
                             'product_id' => $mohItem->product_id,
-                            'warehouse_id' => $mohItem->warehouse_id,
                             'quantity' => $mohItem->quantity,
                         ]);
                         
                         Log::info('Created new inventory record', [
                             'inventory_id' => $inventory->id,
                             'product_id' => $mohItem->product_id,
-                            'warehouse_id' => $mohItem->warehouse_id,
                             'quantity' => $mohItem->quantity
                         ]);
                     }
 
-                    // Create inventory item record
+                    // Create inventory item record with warehouse information
                     $inventoryItem = InventoryItem::create([
                         'inventory_id' => $inventory->id,
                         'product_id' => $mohItem->product_id,
@@ -406,7 +401,6 @@ class MohInventoryController extends Controller
                         'uom' => $mohItem->uom,
                         'unit_cost' => $mohItem->unit_cost,
                         'total_cost' => $mohItem->total_cost,
-                        'source' => 'MOH Import - ' . $mohInventory->uuid,
                     ]);
 
                     $releasedCount++;
