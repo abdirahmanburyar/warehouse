@@ -11,6 +11,7 @@ use App\Models\Dosage;
 use App\Models\Warehouse;
 use App\Models\Inventory;
 use App\Models\InventoryItem;
+use App\Models\Location;
 use App\Imports\MohInventoryImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -58,12 +59,23 @@ class MohInventoryController extends Controller
             // Get filter options
             $categories = Category::select('id', 'name')->orderBy('name')->get();
             $dosages = Dosage::select('id', 'name')->orderBy('name')->get();
+            
+            // Get products and locations for edit modal
+            $products = Product::with(['category:id,name', 'dosage:id,name'])
+                ->select('id', 'name', 'product_code', 'category_id', 'dosage_id')
+                ->orderBy('name')
+                ->get();
+            $warehouses = Warehouse::select('id', 'name')->orderBy('name')->get();
+            $locations = Location::select('id', 'name')->orderBy('name')->get();
 
             return Inertia::render('MohInventory/Index', [
                 'nonApprovedInventories' => $nonApprovedInventories,
                 'selectedInventory' => $selectedInventory,
                 'categories' => $categories,
                 'dosages' => $dosages,
+                'products' => $products,
+                'warehouses' => $warehouses,
+                'locations' => $locations,
                 'filters' => $request->only(['inventory_id', 'search', 'category_id', 'dosage_id']),
             ]);
         } catch (\Exception $e) {
@@ -347,7 +359,7 @@ class MohInventoryController extends Controller
                 'uom' => 'nullable|string|max:255',
                 'batch_number' => 'nullable|string|max:255',
                 'expiry_date' => 'nullable|date',
-                'location' => 'nullable|string|max:255',
+                'location_id' => 'nullable|exists:locations,id',
                 'unit_cost' => 'nullable|numeric|min:0',
                 'total_cost' => 'nullable|numeric|min:0',
                 'barcode' => 'nullable|string|max:255',
@@ -362,7 +374,7 @@ class MohInventoryController extends Controller
                 'uom' => $request->uom,
                 'batch_number' => $request->batch_number,
                 'expiry_date' => $request->expiry_date,
-                'location' => $request->location,
+                'location_id' => $request->location_id,
                 'unit_cost' => $request->unit_cost,
                 'total_cost' => $request->total_cost,
                 'barcode' => $request->barcode,

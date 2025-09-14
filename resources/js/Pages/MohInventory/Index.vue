@@ -14,6 +14,9 @@ const props = defineProps({
     selectedInventory: Object,
     categories: Array,
     dosages: Array,
+    products: Array,
+    warehouses: Array,
+    locations: Array,
     filters: Object,
 });
 
@@ -56,6 +59,7 @@ const editForm = ref({
     uom: '',
     batch_number: '',
     expiry_date: '',
+    location_id: null,
     location: '',
     unit_cost: 0,
     total_cost: 0,
@@ -63,9 +67,7 @@ const editForm = ref({
     notes: ''
 });
 
-// Data for dropdowns
-const products = ref([]);
-const warehouses = ref([]);
+// Data for dropdowns (now from props)
 
 // Apply filters with debouncing
 const applyFilters = () => {
@@ -383,30 +385,10 @@ const getTotalItems = (mohInventory) => {
     return mohInventory.moh_inventory_items?.length || 0;
 };
 
-// Load products for dropdown
-const loadProducts = async () => {
-    try {
-        const response = await axios.get('/api/products');
-        products.value = response.data.data || [];
-    } catch (error) {
-        console.error('Error loading products:', error);
-        products.value = [];
-    }
-};
-
-// Load warehouses for dropdown
-const loadWarehouses = async () => {
-    try {
-        const response = await axios.get('/api/warehouses');
-        warehouses.value = response.data.data || [];
-    } catch (error) {
-        console.error('Error loading warehouses:', error);
-        warehouses.value = [];
-    }
-};
+// No need for API loading functions - data comes from props
 
 // Open edit modal
-const openEditModal = async (item) => {
+const openEditModal = (item) => {
     // Check if inventory is approved
     if (props.selectedInventory?.approved_at) {
         Swal.fire({
@@ -419,14 +401,6 @@ const openEditModal = async (item) => {
         return;
     }
 
-    // Load products and warehouses if not already loaded
-    if (products.value.length === 0) {
-        await loadProducts();
-    }
-    if (warehouses.value.length === 0) {
-        await loadWarehouses();
-    }
-
     editForm.value = {
         id: item.id,
         product_id: item.product_id || null,
@@ -437,6 +411,7 @@ const openEditModal = async (item) => {
         uom: item.uom || '',
         batch_number: item.batch_number || '',
         expiry_date: item.expiry_date ? moment(item.expiry_date).format('YYYY-MM-DD') : '',
+        location_id: item.location_id || null,
         location: item.location || '',
         unit_cost: item.unit_cost || 0,
         total_cost: item.total_cost || 0,
@@ -459,6 +434,7 @@ const closeEditModal = () => {
         uom: '',
         batch_number: '',
         expiry_date: '',
+        location_id: null,
         location: '',
         unit_cost: 0,
         total_cost: 0,
@@ -483,7 +459,7 @@ const updateMohItem = async () => {
             uom: editForm.value.uom,
             batch_number: editForm.value.batch_number,
             expiry_date: editForm.value.expiry_date,
-            location: editForm.value.location,
+            location_id: editForm.value.location_id,
             unit_cost: editForm.value.unit_cost,
             total_cost: editForm.value.total_cost,
             barcode: editForm.value.barcode,
@@ -1244,7 +1220,7 @@ const filteredInventoryItems = computed(() => {
                                     <select v-model="editForm.product_id" required
                                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                                         <option value="">Select Product</option>
-                                        <option v-for="product in products" :key="product.id" :value="product.id">
+                                        <option v-for="product in props.products" :key="product.id" :value="product.id">
                                             {{ product.name }} ({{ product.product_code }})
                                         </option>
                                     </select>
@@ -1281,8 +1257,13 @@ const filteredInventoryItems = computed(() => {
                                 <!-- Location -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                                    <input v-model="editForm.location" type="text"
+                                    <select v-model="editForm.location_id"
                                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Select Location</option>
+                                        <option v-for="location in props.locations" :key="location.id" :value="location.id">
+                                            {{ location.name }}
+                                        </option>
+                                    </select>
                                 </div>
 
                                 <!-- Warehouse -->
@@ -1291,7 +1272,7 @@ const filteredInventoryItems = computed(() => {
                                     <select v-model="editForm.warehouse_id" required
                                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                                         <option value="">Select Warehouse</option>
-                                        <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
+                                        <option v-for="warehouse in props.warehouses" :key="warehouse.id" :value="warehouse.id">
                                             {{ warehouse.name }}
                                         </option>
                                     </select>
