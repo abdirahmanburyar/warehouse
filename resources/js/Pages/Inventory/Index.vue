@@ -868,7 +868,7 @@ onUnmounted(() => {
                                     <th class="px-3 py-2 text-xs font-bold"
                                         style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">UoM</th>
                                     <th class="px-3 py-2 text-xs font-bold text-center"
-                                        style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" colspan="4">Item
+                                        style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" colspan="5">Item
                                         Details</th>
                                     <th class="px-3 py-2 text-xs font-bold text-center"
                                         style="color: #4F6FCB; border-bottom: 2px solid #B7C6E6;" rowspan="2">Total QTY
@@ -900,12 +900,14 @@ onUnmounted(() => {
                                     </th>
                                     <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center"
                                         style="color: #4F6FCB;">Location</th>
+                                        <th class="px-2 py-1 text-xs font-bold border border-[#B7C6E6] text-center"
+                                        style="color: #4F6FCB;">Source</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template v-if="isLoading">
                                     <tr>
-                                        <td colspan="11" class="text-center py-8 text-gray-500 bg-gray-50">
+                                        <td colspan="12" class="text-center py-8 text-gray-500 bg-gray-50">
                                             <div class="flex flex-col items-center justify-center gap-2">
                                                 <svg class="animate-spin h-10 w-10 text-gray-300"
                                                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -925,7 +927,7 @@ onUnmounted(() => {
                                 </template>
                                 <template v-else-if="!props.inventories || !props.inventories.data || props.inventories.data.length === 0">
                                     <tr>
-                                        <td colspan="11" class="text-center py-8 text-gray-500 bg-gray-50">
+                                        <td colspan="12" class="text-center py-8 text-gray-500 bg-gray-50">
                                             <div class="flex flex-col items-center justify-center gap-2">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-300"
                                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1003,6 +1005,10 @@ onUnmounted(() => {
                                                     </button>
                                                 </div>
                                             </td>
+                                            <td
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle"
+                                                :class="(item.quantity || 0) > 0 ? 'text-gray-900' : 'text-gray-400'">
+                                                {{ item.source }}</td>
 
                                             <!-- Total QTY on Hand - only on first row for this inventory -->
                                             <td v-if="itemIndex === 0"
@@ -1139,6 +1145,12 @@ onUnmounted(() => {
                                             <td
                                                 class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">
                                                 <span class="text-gray-400">No Location</span>
+                                            </td>
+
+                                            <!-- Source -->
+                                            <td
+                                                class="px-2 py-1 text-xs border-b border-[#B7C6E6] items-center align-middle text-gray-400">
+                                                <span class="text-gray-400">No Source</span>
                                             </td>
 
                                             <!-- Total QTY on Hand -->
