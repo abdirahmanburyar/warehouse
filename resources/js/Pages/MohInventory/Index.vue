@@ -1221,7 +1221,7 @@ const filteredInventoryItems = computed(() => {
                                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                                         <option value="">Select Product</option>
                                         <option v-for="product in props.products" :key="product.id" :value="product.id">
-                                            {{ product.name }} ({{ product.product_code }})
+                                            {{ product.name }}
                                         </option>
                                     </select>
                                 </div>
@@ -1261,7 +1261,7 @@ const filteredInventoryItems = computed(() => {
                                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                                         <option value="">Select Location</option>
                                         <option v-for="location in props.locations" :key="location.id" :value="location.id">
-                                            {{ location.name }}
+                                            {{ location.location }}
                                         </option>
                                     </select>
                                 </div>
