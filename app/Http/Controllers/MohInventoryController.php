@@ -463,18 +463,6 @@ class MohInventoryController extends Controller
                         $inventory = $existingInventoryItem->inventory;
                         $inventory->increment('quantity', $mohItem->quantity);
                         
-                        Log::info('Updated existing inventory item', [
-                            'inventory_item_id' => $existingInventoryItem->id,
-                            'inventory_id' => $inventory->id,
-                            'product_id' => $mohItem->product_id,
-                            'warehouse_id' => $mohItem->warehouse_id,
-                            'batch_number' => $mohItem->batch_number,
-                            'expiry_date' => $mohItem->expiry_date,
-                            'location' => $mohItem->location,
-                            'quantity_added' => $mohItem->quantity,
-                            'new_total' => $existingInventoryItem->quantity,
-                            'inventory_total' => $inventory->quantity
-                        ]);
                     } else {
                         // Check if inventory record exists for this product
                         $inventory = Inventory::where('product_id', $mohItem->product_id)->first();
@@ -483,12 +471,6 @@ class MohInventoryController extends Controller
                             // Update existing inventory quantity
                             $inventory->increment('quantity', $mohItem->quantity);
                             
-                            Log::info('Updated existing inventory', [
-                                'inventory_id' => $inventory->id,
-                                'product_id' => $mohItem->product_id,
-                                'quantity_added' => $mohItem->quantity,
-                                'new_total' => $inventory->quantity
-                            ]);
                         } else {
                             // Create new inventory record
                             $inventory = Inventory::create([
@@ -496,11 +478,7 @@ class MohInventoryController extends Controller
                                 'quantity' => $mohItem->quantity,
                             ]);
                             
-                            Log::info('Created new inventory record', [
-                                'inventory_id' => $inventory->id,
-                                'product_id' => $mohItem->product_id,
-                                'quantity' => $mohItem->quantity
-                            ]);
+                           
                         }
 
                         // Create new inventory item record
@@ -515,6 +493,7 @@ class MohInventoryController extends Controller
                             'location' => $mohItem->location,
                             'notes' => $mohItem->notes,
                             'uom' => $mohItem->uom,
+                            'source' => $mohItem->source,
                             'unit_cost' => $mohItem->unit_cost ? (float) $mohItem->unit_cost : null,
                             'total_cost' => $mohItem->total_cost ? (float) $mohItem->total_cost : null,
                         ]);

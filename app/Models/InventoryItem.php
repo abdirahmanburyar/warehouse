@@ -15,6 +15,7 @@ class InventoryItem extends Model
         'product_id',
         'warehouse_id',
         'quantity',
+        'source',
         'expiry_date',
         'batch_number',
         'barcode',
