@@ -201,6 +201,8 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
             Route::post('/get-warehouses', 'getWarehousesPluck')->name('warehouses.get-warehouses');
 
         });
+    });
+
 
      // Warehouse Management Routes
 Route::controller(LocationController::class)
