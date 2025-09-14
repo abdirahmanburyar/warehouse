@@ -264,4 +264,76 @@ class MohInventoryController extends Controller
         }
     }
 
+    /**
+     * Change MOH inventory status
+     */
+    public function changeStatus(Request $request, MohInventory $mohInventory)
+    {
+        $request->validate([
+            'status' => 'required|in:reviewed,approved,rejected'
+        ]);
+
+        $status = $request->input('status');
+        $user = auth()->user();
+
+        try {
+            switch ($status) {
+                case 'reviewed':
+                    $mohInventory->update([
+                        'reviewed_at' => now(),
+                        'reviewed_by' => $user->id,
+                    ]);
+                    $message = 'MOH inventory has been reviewed successfully';
+                    break;
+
+                case 'approved':
+                    if (!$mohInventory->reviewed_at) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'MOH inventory must be reviewed before approval'
+                        ], 400);
+                    }
+                    $mohInventory->update([
+                        'approved_at' => now(),
+                        'approved_by' => $user->id,
+                    ]);
+                    $message = 'MOH inventory has been approved successfully';
+                    break;
+
+                case 'rejected':
+                    $mohInventory->update([
+                        'status' => 'rejected',
+                        'rejected_at' => now(),
+                        'rejected_by' => $user->id,
+                    ]);
+                    $message = 'MOH inventory has been rejected';
+                    break;
+            }
+
+            Log::info('MOH inventory status changed', [
+                'moh_inventory_id' => $mohInventory->id,
+                'status' => $status,
+                'user_id' => $user->id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'moh_inventory' => $mohInventory->fresh(['reviewer', 'approver'])
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error changing MOH inventory status', [
+                'moh_inventory_id' => $mohInventory->id,
+                'status' => $status,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while updating the status'
+            ], 500);
+        }
+    }
+
 }

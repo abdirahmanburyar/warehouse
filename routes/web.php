@@ -671,6 +671,7 @@ Route::controller(LocationController::class)
         Route::post('/moh-inventory/import', 'import')->name('inventories.moh-inventory.import');
         Route::get('/moh-inventory/import-progress', 'getImportProgress')->name('inventories.moh-inventory.import-progress');
         Route::get('/moh-inventory/test-import', 'testImport')->name('inventories.moh-inventory.test-import');
+        Route::post('/moh-inventory/{mohInventory}/change-status', 'changeStatus')->name('inventories.moh-inventory.change-status');
     });
 
     // API Routes
