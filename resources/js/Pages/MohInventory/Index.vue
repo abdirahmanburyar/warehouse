@@ -595,7 +595,7 @@ const filteredInventoryItems = computed(() => {
         <div v-if="showUploadModal"
             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
             @click="closeUploadModal">
-            <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" @click.stop>
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto" @click.stop>
                 <div class="flex items-center justify-between p-6 border-b border-gray-200">
                     <div>
                         <h3 class="text-lg font-semibold text-gray-900">Upload MOH Inventory</h3>
@@ -644,58 +644,89 @@ const filteredInventoryItems = computed(() => {
                     <div class="mb-6">
                         <h4 class="text-sm font-medium text-gray-900 mb-3">Required Columns</h4>
                         <div class="bg-gray-50 rounded-lg p-4">
-                            <ul class="space-y-2 text-sm text-gray-600">
-                                <li class="flex items-center">
-                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Item</span>
-                                    <span class="text-gray-400 ml-2">(required)</span>
-                                </li>
-                                <li class="flex items-center">
-                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Category</span>
-                                    <span class="text-gray-400 ml-2">(required)</span>
-                                </li>
-                                <li class="flex items-center">
-                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">UoM</span>
-                                    <span class="text-gray-400 ml-2">(required)</span>
-                                </li>
-                                <li class="flex items-center">
-                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Source</span>
-                                    <span class="text-gray-400 ml-2">(required)</span>
-                                </li>
-                                <li class="flex items-center">
-                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Quantity</span>
-                                    <span class="text-gray-400 ml-2">(required)</span>
-                                </li>
-                                <li class="flex items-center">
-                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Batch No</span>
-                                    <span class="text-gray-400 ml-2">(required)</span>
-                                </li>
-                                <li class="flex items-center">
-                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Expiry Date</span>
-                                    <span class="text-gray-400 ml-2">(required)</span>
-                                </li>
-                                <li class="flex items-center">
-                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Location</span>
-                                    <span class="text-gray-400 ml-2">(required)</span>
-                                </li>
-                                <li class="flex items-center">
-                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Warehouse</span>
-                                    <span class="text-gray-400 ml-2">(required)</span>
-                                </li>
-                                <li class="flex items-center">
-                                    <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></span>
-                                    <span class="font-medium">Unit Cost</span>
-                                    <span class="text-gray-400 ml-2">(required)</span>
-                                </li>
-                            </ul>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-100">
+                                        <tr>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Column Name</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr>
+                                            <td class="px-4 py-2 text-sm font-medium text-gray-900">Item</td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Required</span>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-500">Product name</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 text-sm font-medium text-gray-900">Category</td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Required</span>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-500">Product category</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 text-sm font-medium text-gray-900">UoM</td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Required</span>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-500">Unit of measurement</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 text-sm font-medium text-gray-900">Source</td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Required</span>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-500">Supply source (e.g., UNICEF)</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 text-sm font-medium text-gray-900">Quantity</td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Required</span>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-500">Number of items</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 text-sm font-medium text-gray-900">Batch No</td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Required</span>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-500">Batch number</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 text-sm font-medium text-gray-900">Expiry Date</td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Required</span>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-500">Expiration date (DD/MM/YYYY)</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 text-sm font-medium text-gray-900">Location</td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Required</span>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-500">Storage location</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 text-sm font-medium text-gray-900">Warehouse</td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Required</span>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-500">Warehouse name (must exist)</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 text-sm font-medium text-gray-900">Unit Cost</td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Optional</span>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-500">Cost per unit (default: 0)</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                         <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                             <div class="flex">
