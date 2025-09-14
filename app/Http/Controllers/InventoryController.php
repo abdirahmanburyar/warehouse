@@ -187,7 +187,7 @@ class InventoryController extends Controller
 					'category:id,name',
 					'dosage:id,name',
 					'items' => function($query) {
-						$query->select('id', 'product_id', 'warehouse_id', 'quantity', 'location', 'batch_number', 'expiry_date', 'uom', 'unit_cost', 'total_cost')
+						$query->select('id', 'product_id', 'warehouse_id', 'quantity', 'location', 'batch_number', 'expiry_date', 'uom', 'source', 'unit_cost', 'total_cost')
 							  ->with('warehouse:id,name');
 					}
 				]);
