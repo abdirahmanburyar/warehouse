@@ -757,6 +757,7 @@ Route::controller(LocationController::class)
     Route::controller(MohInventoryController::class)
     ->group(function () {
         Route::get('/moh-inventory', 'index')->name('inventories.moh-inventory.index');
+        Route::post('/moh-inventory', 'store')->name('inventories.moh-inventory.store');
         Route::post('/moh-inventory/import', 'import')->name('inventories.moh-inventory.import');
         Route::get('/moh-inventory/import-progress', 'getImportProgress')->name('inventories.moh-inventory.import-progress');
         Route::get('/moh-inventory/test-import', 'testImport')->name('inventories.moh-inventory.test-import');

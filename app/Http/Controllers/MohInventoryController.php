@@ -66,7 +66,7 @@ class MohInventoryController extends Controller
                 ->orderBy('name')
                 ->get();
             $warehouses = Warehouse::select('id', 'name')->orderBy('name')->get();
-            $locations = Location::select('id', 'location')->orderBy('location')->get();
+            $locations = Location::select('id', 'location', 'warehouse')->orderBy('location')->get();
 
             return Inertia::render('MohInventory/Index', [
                 'nonApprovedInventories' => $nonApprovedInventories,
@@ -572,6 +572,94 @@ class MohInventoryController extends Controller
             ]);
 
             throw $e;
+        }
+    }
+
+    /**
+     * Store a newly created MOH inventory.
+     */
+    public function store(Request $request)
+    {
+        try {
+            $request->validate([
+                'date' => 'required|date',
+                'notes' => 'nullable|string|max:1000',
+                'items' => 'required|array|min:1',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.dosage_id' => 'nullable|exists:dosages,id',
+                'items.*.quantity' => 'required|numeric|min:0',
+                'items.*.uom' => 'nullable|string|max:255',
+                'items.*.source' => 'nullable|string|max:255',
+                'items.*.batch_number' => 'nullable|string|max:255',
+                'items.*.expiry_date' => 'nullable|date',
+                'items.*.location_id' => 'nullable|exists:locations,id',
+                'items.*.warehouse_id' => 'required|exists:warehouses,id',
+                'items.*.unit_cost' => 'nullable|numeric|min:0',
+                'items.*.total_cost' => 'nullable|numeric|min:0',
+                'items.*.barcode' => 'nullable|string|max:255',
+                'items.*.notes' => 'nullable|string|max:1000',
+            ]);
+
+            DB::beginTransaction();
+
+            // Create MOH inventory
+            $mohInventory = MohInventory::create([
+                'uuid' => Str::uuid(),
+                'date' => $request->date,
+                'notes' => $request->notes,
+                'created_by' => auth()->id(),
+            ]);
+
+            // Create MOH inventory items
+            foreach ($request->items as $itemData) {
+                // Calculate total cost if not provided
+                $totalCost = $itemData['total_cost'] ?? ($itemData['quantity'] * ($itemData['unit_cost'] ?? 0));
+
+                MohInventoryItem::create([
+                    'moh_inventory_id' => $mohInventory->id,
+                    'product_id' => $itemData['product_id'],
+                    'dosage_id' => $itemData['dosage_id'],
+                    'quantity' => $itemData['quantity'],
+                    'uom' => $itemData['uom'],
+                    'source' => $itemData['source'],
+                    'batch_number' => $itemData['batch_number'],
+                    'expiry_date' => $itemData['expiry_date'],
+                    'location_id' => $itemData['location_id'],
+                    'warehouse_id' => $itemData['warehouse_id'],
+                    'unit_cost' => $itemData['unit_cost'],
+                    'total_cost' => $totalCost,
+                    'barcode' => $itemData['barcode'],
+                    'notes' => $itemData['notes'],
+                ]);
+            }
+
+            DB::commit();
+
+            Log::info('MOH inventory created successfully', [
+                'moh_inventory_id' => $mohInventory->id,
+                'items_count' => count($request->items),
+                'created_by' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'MOH inventory created successfully',
+                'data' => $mohInventory->load('mohInventoryItems')
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Failed to create MOH inventory', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'created_by' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create MOH inventory: ' . $e->getMessage()
+            ], 500);
         }
     }
 
