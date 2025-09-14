@@ -642,106 +642,182 @@ const filteredInventoryItems = computed(() => {
                     </div>
                 </div>
 
-                <!-- Approval Actions -->
-                <div v-if="selectedInventory && !selectedInventory.approved_at" class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">MOH Inventory Approval Actions</h3>
-                        <p class="text-sm text-gray-500 mt-1">Review and approve this MOH inventory</p>
+            <!-- Status Timeline -->
+            <div v-if="selectedInventory" class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">MOH Inventory Status Timeline</h3>
+                    <p class="text-sm text-gray-500 mt-1">Track the approval progress</p>
+                </div>
+                <div class="px-6 py-4">
+                    <div class="flex items-center justify-center space-x-8">
+                        <!-- Pending -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-12 h-12 rounded-full border-4 flex items-center justify-center z-10" :class="[
+                                selectedInventory.status === 'pending' || selectedInventory.reviewed_at || selectedInventory.approved_at
+                                    ? 'bg-white border-yellow-500'
+                                    : 'bg-white border-gray-200',
+                            ]">
+                                <img src="/assets/images/pending.png" class="w-6 h-6" alt="Pending" :class="selectedInventory.status === 'pending' || selectedInventory.reviewed_at || selectedInventory.approved_at
+                                    ? ''
+                                    : 'opacity-40'
+                                    " />
+                            </div>
+                            <span class="mt-2 text-sm font-medium" :class="selectedInventory.status === 'pending' || selectedInventory.reviewed_at || selectedInventory.approved_at
+                                ? 'text-yellow-600'
+                                : 'text-gray-500'
+                                ">Pending</span>
+                        </div>
+
+                        <!-- Reviewed -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-12 h-12 rounded-full border-4 flex items-center justify-center z-10" :class="[
+                                selectedInventory.reviewed_at || selectedInventory.approved_at
+                                    ? 'bg-white border-orange-500'
+                                    : 'bg-white border-gray-200',
+                            ]">
+                                <img src="/assets/images/review.png" class="w-6 h-6" alt="Reviewed" :class="selectedInventory.reviewed_at || selectedInventory.approved_at
+                                    ? ''
+                                    : 'opacity-40'
+                                    " />
+                            </div>
+                            <span class="mt-2 text-sm font-medium" :class="selectedInventory.reviewed_at || selectedInventory.approved_at
+                                ? 'text-orange-600'
+                                : 'text-gray-500'
+                                ">Reviewed</span>
+                        </div>
+
+                        <!-- Approved -->
+                        <div class="flex flex-col items-center" v-if="selectedInventory.status !== 'rejected'">
+                            <div class="w-12 h-12 rounded-full border-4 flex items-center justify-center z-10" :class="[
+                                selectedInventory.approved_at
+                                    ? 'bg-white border-green-500'
+                                    : 'bg-white border-gray-200',
+                            ]">
+                                <img src="/assets/images/approved.png" class="w-6 h-6" alt="Approved" :class="selectedInventory.approved_at
+                                    ? ''
+                                    : 'opacity-40'
+                                    " />
+                            </div>
+                            <span class="mt-2 text-sm font-medium" :class="selectedInventory.approved_at
+                                ? 'text-green-600'
+                                : 'text-gray-500'
+                                ">Approved</span>
+                        </div>
+
+                        <!-- Rejected -->
+                        <div class="flex flex-col items-center" v-if="selectedInventory.status === 'rejected'">
+                            <div class="w-12 h-12 rounded-full border-4 flex items-center justify-center z-10 bg-white border-red-500">
+                                <img src="/assets/images/rejected.png" class="w-6 h-6" alt="Rejected" />
+                            </div>
+                            <span class="mt-2 text-sm font-medium text-red-600">Rejected</span>
+                        </div>
                     </div>
-                    <div class="px-6 py-4">
-                        <div class="flex flex-wrap items-center justify-center gap-4">
-                            <!-- Review Button -->
-                            <div class="relative">
-                                <div class="flex flex-col">
-                                    <button 
-                                        @click="changeStatus(selectedInventory.id, 'reviewed', 'is_reviewing')"
-                                        :disabled="isType['is_reviewing'] || selectedInventory.reviewed_at"
-                                        :class="[
-                                            selectedInventory.reviewed_at
-                                                ? 'bg-green-500'
-                                                : selectedInventory.reviewed_at === null
-                                                    ? 'bg-yellow-500 hover:bg-yellow-600'
-                                                    : 'bg-gray-300 cursor-not-allowed',
-                                        ]" 
-                                        class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
-                                        <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
-                                        <span class="text-sm font-bold text-white">
-                                            {{ selectedInventory.reviewed_at ? 'Reviewed' : isType['is_reviewing'] ? 'Please Wait...' : 'Review' }}
-                                        </span>
-                                    </button>
-                                    <span v-show="selectedInventory?.reviewed_at" class="text-sm text-gray-600 mt-1">
-                                        On {{ moment(selectedInventory?.reviewed_at).format('DD/MM/YYYY HH:mm') }}
-                                    </span>
-                                    <span v-show="selectedInventory?.reviewed_by" class="text-sm text-gray-600">
-                                        By {{ selectedInventory?.reviewed_by?.name }}
-                                    </span>
-                                </div>
-                                <div v-if="!selectedInventory.reviewed_at" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
-                            </div>
+                </div>
+            </div>
 
-                            <!-- Approve Button -->
-                            <div class="relative" v-if="selectedInventory.status !== 'rejected'">
-                                <div class="flex flex-col">
-                                    <button 
-                                        @click="changeStatus(selectedInventory.id, 'approved', 'is_approve')"
-                                        :disabled="isType['is_approve'] || !selectedInventory.reviewed_at || selectedInventory.approved_at"
-                                        :class="[
-                                            selectedInventory.approved_at
-                                                ? 'bg-green-500'
-                                                : selectedInventory.reviewed_at && !selectedInventory.approved_at
-                                                    ? 'bg-yellow-500 hover:bg-yellow-600'
-                                                    : 'bg-gray-300 cursor-not-allowed',
-                                        ]" 
-                                        class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
-                                        <svg v-if="isLoading && selectedInventory.reviewed_at && !selectedInventory.approved_at" 
-                                            class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <template v-else>
-                                            <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
-                                            <span class="text-sm font-bold text-white">
-                                                {{ selectedInventory.approved_at ? 'Approved' : isType['is_approve'] ? 'Please Wait...' : 'Approve' }}
-                                            </span>
-                                        </template>
-                                    </button>
-                                    <span v-show="selectedInventory?.approved_at" class="text-sm text-gray-600 mt-1">
-                                        On {{ moment(selectedInventory?.approved_at).format('DD/MM/YYYY HH:mm') }}
+            <!-- Approval Actions -->
+            <div v-if="selectedInventory" class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">MOH Inventory Approval Actions</h3>
+                    <p class="text-sm text-gray-500 mt-1">Review and approve this MOH inventory</p>
+                </div>
+                <div class="px-6 py-4">
+                    <div class="flex flex-wrap items-center justify-center gap-4">
+                        <!-- Review Button -->
+                        <div class="relative">
+                            <div class="flex flex-col">
+                                <button 
+                                    @click="changeStatus(selectedInventory.id, 'reviewed', 'is_reviewing')"
+                                    :disabled="isType['is_reviewing'] || selectedInventory.reviewed_at || selectedInventory.status === 'rejected'"
+                                    :class="[
+                                        selectedInventory.reviewed_at
+                                            ? 'bg-green-500'
+                                            : selectedInventory.status === 'rejected'
+                                                ? 'bg-gray-300 cursor-not-allowed'
+                                                : 'bg-yellow-500 hover:bg-yellow-600',
+                                    ]" 
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
+                                    <span class="text-sm font-bold text-white">
+                                        {{ selectedInventory.reviewed_at ? 'Reviewed' : isType['is_reviewing'] ? 'Please Wait...' : 'Review' }}
                                     </span>
-                                    <span v-show="selectedInventory?.approved_by" class="text-sm text-gray-600">
-                                        By {{ selectedInventory?.approved_by?.name }}
-                                    </span>
-                                </div>
-                                <div v-if="selectedInventory.reviewed_at && !selectedInventory.approved_at" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+                                </button>
+                                <span v-show="selectedInventory?.reviewed_at" class="text-sm text-gray-600 mt-1">
+                                    On {{ moment(selectedInventory?.reviewed_at).format('DD/MM/YYYY HH:mm') }}
+                                </span>
+                                <span v-show="selectedInventory?.reviewed_by" class="text-sm text-gray-600">
+                                    By {{ selectedInventory?.reviewed_by?.name }}
+                                </span>
                             </div>
+                            <div v-if="!selectedInventory.reviewed_at && selectedInventory.status !== 'rejected'" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+                        </div>
 
-                            <!-- Reject Button -->
-                            <div class="relative">
-                                <div class="flex flex-col">
-                                    <button 
-                                        @click="changeStatus(selectedInventory.id, 'rejected', 'is_reject')"
-                                        :disabled="isType['is_reject'] || selectedInventory.approved_at"
-                                        :class="[
-                                            selectedInventory.status === 'rejected'
-                                                ? 'bg-red-500'
-                                                : !selectedInventory.approved_at
-                                                    ? 'bg-red-500 hover:bg-red-600'
-                                                    : 'bg-gray-300 cursor-not-allowed',
-                                        ]" 
-                                        class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
-                                        <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
+                        <!-- Approve Button -->
+                        <div class="relative" v-if="selectedInventory.status !== 'rejected'">
+                            <div class="flex flex-col">
+                                <button 
+                                    @click="changeStatus(selectedInventory.id, 'approved', 'is_approve')"
+                                    :disabled="isType['is_approve'] || !selectedInventory.reviewed_at || selectedInventory.approved_at"
+                                    :class="[
+                                        selectedInventory.approved_at
+                                            ? 'bg-green-500'
+                                            : selectedInventory.reviewed_at && !selectedInventory.approved_at
+                                                ? 'bg-yellow-500 hover:bg-yellow-600'
+                                                : 'bg-gray-300 cursor-not-allowed',
+                                    ]" 
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    <svg v-if="isType['is_approve']" 
+                                        class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <template v-else>
+                                        <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
                                         <span class="text-sm font-bold text-white">
-                                            {{ selectedInventory.status === 'rejected' ? 'Rejected' : isType['is_reject'] ? 'Please Wait...' : 'Reject' }}
+                                            {{ selectedInventory.approved_at ? 'Approved' : isType['is_approve'] ? 'Please Wait...' : 'Approve' }}
                                         </span>
-                                    </button>
-                                    <span v-show="selectedInventory?.status === 'rejected'" class="text-sm text-gray-600 mt-1">
-                                        Rejected
+                                    </template>
+                                </button>
+                                <span v-show="selectedInventory?.approved_at" class="text-sm text-gray-600 mt-1">
+                                    On {{ moment(selectedInventory?.approved_at).format('DD/MM/YYYY HH:mm') }}
+                                </span>
+                                <span v-show="selectedInventory?.approved_by" class="text-sm text-gray-600">
+                                    By {{ selectedInventory?.approved_by?.name }}
+                                </span>
+                            </div>
+                            <div v-if="selectedInventory.reviewed_at && !selectedInventory.approved_at" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+                        </div>
+
+                        <!-- Reject Button -->
+                        <div class="relative">
+                            <div class="flex flex-col">
+                                <button 
+                                    @click="changeStatus(selectedInventory.id, 'rejected', 'is_reject')"
+                                    :disabled="isType['is_reject'] || selectedInventory.approved_at || selectedInventory.status === 'rejected'"
+                                    :class="[
+                                        selectedInventory.status === 'rejected'
+                                            ? 'bg-red-500'
+                                            : selectedInventory.approved_at
+                                                ? 'bg-gray-300 cursor-not-allowed'
+                                                : 'bg-red-500 hover:bg-red-600',
+                                    ]" 
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
+                                    <span class="text-sm font-bold text-white">
+                                        {{ selectedInventory.status === 'rejected' ? 'Rejected' : isType['is_reject'] ? 'Please Wait...' : 'Reject' }}
                                     </span>
-                                </div>
+                                </button>
+                                <span v-show="selectedInventory?.status === 'rejected'" class="text-sm text-gray-600 mt-1">
+                                    On {{ moment(selectedInventory?.rejected_at).format('DD/MM/YYYY HH:mm') }}
+                                </span>
+                                <span v-show="selectedInventory?.rejected_by" class="text-sm text-gray-600">
+                                    By {{ selectedInventory?.rejected_by?.name }}
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
             </div>
 
             <!-- Empty State - No Inventory Selected -->
