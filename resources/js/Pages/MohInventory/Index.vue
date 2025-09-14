@@ -480,17 +480,6 @@ const updateMohItem = async () => {
         });
         
         if (response.data.success) {
-            // Update the item in the selected inventory
-            if (props.selectedInventory?.moh_inventory_items) {
-                const itemIndex = props.selectedInventory.moh_inventory_items.findIndex(item => item.id === editForm.value.id);
-                if (itemIndex !== -1) {
-                    props.selectedInventory.moh_inventory_items[itemIndex] = {
-                        ...props.selectedInventory.moh_inventory_items[itemIndex],
-                        ...editForm.value
-                    };
-                }
-            }
-            
             Swal.fire({
                 icon: 'success',
                 title: 'Success!',
@@ -500,6 +489,18 @@ const updateMohItem = async () => {
             });
             
             closeEditModal();
+            
+            // Reload the page to get updated data
+            router.get(route("inventories.moh-inventory.index"), {
+                inventory_id: selectedInventoryId.value,
+                search: search.value,
+                category_id: category_id.value,
+                dosage_id: dosage_id.value
+            }, {
+                preserveState: false,
+                preserveScroll: false,
+                only: ["nonApprovedInventories", "selectedInventory", "categories", "dosages", "products", "warehouses", "locations"]
+            });
         } else {
             throw new Error(response.data.message || 'Failed to update item');
         }
