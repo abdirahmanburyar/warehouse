@@ -48,7 +48,9 @@ const showEditModal = ref(false);
 const isUpdating = ref(false);
 const editForm = ref({
     id: null,
+    product_id: null,
     product_name: '',
+    warehouse_id: null,
     warehouse_name: '',
     quantity: 0,
     uom: '',
@@ -60,6 +62,10 @@ const editForm = ref({
     barcode: '',
     notes: ''
 });
+
+// Data for dropdowns
+const products = ref([]);
+const warehouses = ref([]);
 
 // Apply filters with debouncing
 const applyFilters = () => {
@@ -377,11 +383,55 @@ const getTotalItems = (mohInventory) => {
     return mohInventory.moh_inventory_items?.length || 0;
 };
 
+// Load products for dropdown
+const loadProducts = async () => {
+    try {
+        const response = await axios.get('/api/products');
+        products.value = response.data.data || [];
+    } catch (error) {
+        console.error('Error loading products:', error);
+        products.value = [];
+    }
+};
+
+// Load warehouses for dropdown
+const loadWarehouses = async () => {
+    try {
+        const response = await axios.get('/api/warehouses');
+        warehouses.value = response.data.data || [];
+    } catch (error) {
+        console.error('Error loading warehouses:', error);
+        warehouses.value = [];
+    }
+};
+
 // Open edit modal
-const openEditModal = (item) => {
+const openEditModal = async (item) => {
+    // Check if inventory is approved
+    if (selectedInventory.value?.approved_at) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Cannot Edit',
+            text: 'This MOH inventory has been approved and cannot be edited.',
+            timer: 3000,
+            showConfirmButton: false
+        });
+        return;
+    }
+
+    // Load products and warehouses if not already loaded
+    if (products.value.length === 0) {
+        await loadProducts();
+    }
+    if (warehouses.value.length === 0) {
+        await loadWarehouses();
+    }
+
     editForm.value = {
         id: item.id,
+        product_id: item.product_id || null,
         product_name: item.product?.name || '',
+        warehouse_id: item.warehouse_id || null,
         warehouse_name: item.warehouse?.name || '',
         quantity: item.quantity || 0,
         uom: item.uom || '',
@@ -401,7 +451,9 @@ const closeEditModal = () => {
     showEditModal.value = false;
     editForm.value = {
         id: null,
+        product_id: null,
         product_name: '',
+        warehouse_id: null,
         warehouse_name: '',
         quantity: 0,
         uom: '',
@@ -425,6 +477,8 @@ const updateMohItem = async () => {
         editForm.value.total_cost = totalCost;
         
         const response = await axios.put(`/moh-inventory/${editForm.value.id}`, {
+            product_id: editForm.value.product_id,
+            warehouse_id: editForm.value.warehouse_id,
             quantity: editForm.value.quantity,
             uom: editForm.value.uom,
             batch_number: editForm.value.batch_number,
@@ -754,11 +808,17 @@ const filteredInventoryItems = computed(() => {
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         <button @click="openEditModal(item)"
-                                            class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                            :disabled="selectedInventory?.approved_at"
+                                            :class="[
+                                                selectedInventory?.approved_at
+                                                    ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                                    : 'text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                                            ]"
+                                            class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md">
                                             <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                             </svg>
-                                            Edit
+                                            {{ selectedInventory?.approved_at ? 'Edit (Disabled)' : 'Edit' }}
                                         </button>
                                     </td>
                                 </tr>
@@ -1159,13 +1219,35 @@ const filteredInventoryItems = computed(() => {
 
                     <!-- Modal Body -->
                     <div class="mt-4">
-                        <form @submit.prevent="updateMohItem">
+                        <!-- Warning for approved inventories -->
+                        <div v-if="selectedInventory?.approved_at" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-yellow-800">Cannot Edit Approved Inventory</h3>
+                                    <div class="mt-2 text-sm text-yellow-700">
+                                        <p>This MOH inventory has been approved and cannot be edited. Only pending, reviewed, or rejected inventories can be modified.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form @submit.prevent="updateMohItem" :class="{ 'opacity-50 pointer-events-none': selectedInventory?.approved_at }">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <!-- Product Name -->
                                 <div class="col-span-2">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                                    <input v-model="editForm.product_name" type="text" readonly
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+                                    <select v-model="editForm.product_id" required
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Select Product</option>
+                                        <option v-for="product in products" :key="product.id" :value="product.id">
+                                            {{ product.name }} ({{ product.product_code }})
+                                        </option>
+                                    </select>
                                 </div>
 
                                 <!-- Quantity -->
@@ -1205,9 +1287,14 @@ const filteredInventoryItems = computed(() => {
 
                                 <!-- Warehouse -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse</label>
-                                    <input v-model="editForm.warehouse_name" type="text" readonly
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Warehouse *</label>
+                                    <select v-model="editForm.warehouse_id" required
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Select Warehouse</option>
+                                        <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
+                                            {{ warehouse.name }}
+                                        </option>
+                                    </select>
                                 </div>
 
                                 <!-- Unit Cost -->

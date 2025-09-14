@@ -674,10 +674,23 @@ Route::controller(LocationController::class)
     Route::prefix('api')->group(function () {
         // Issue Quantity Reports Export Routes
             Route::get('/reports/issueQuantityReports/export', [ReportController::class, 'exportIssueQuantityReports']);
+            
+        // Products API
+        Route::get('/products', function () {
+            $products = \App\Models\Product::with(['category', 'dosage'])
+                ->select('id', 'name', 'product_code', 'category_id', 'dosage_id')
+                ->get();
+            return response()->json(['data' => $products]);
+        });
+        
+        // Warehouses API
+        Route::get('/warehouses', function () {
+            $warehouses = \App\Models\Warehouse::select('id', 'name')->get();
+            return response()->json(['data' => $warehouses]);
+        });
+        
         // Removed the individual report items export endpoint as it's now handled client-side
-            Route::get('/reports/inventory-report/data', [ReportController::class, 'inventoryReportData'])->name('reports.inventoryReport.data');
-        // Warehouse API endpoint for dropdowns
-        Route::get('/warehouses', [\App\Http\Controllers\WarehouseController::class, 'getWarehouses'])->name('api.warehouses');
+        Route::get('/reports/inventory-report/data', [ReportController::class, 'inventoryReportData'])->name('reports.inventoryReport.data');
     });
 
     // Report Routes

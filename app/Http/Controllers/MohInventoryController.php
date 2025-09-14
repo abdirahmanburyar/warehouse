@@ -341,6 +341,8 @@ class MohInventoryController extends Controller
     {
         try {
             $request->validate([
+                'product_id' => 'required|exists:products,id',
+                'warehouse_id' => 'required|exists:warehouses,id',
                 'quantity' => 'required|numeric|min:0',
                 'uom' => 'nullable|string|max:255',
                 'batch_number' => 'nullable|string|max:255',
@@ -354,6 +356,8 @@ class MohInventoryController extends Controller
 
             // Update the MOH inventory item
             $mohInventoryItem->update([
+                'product_id' => $request->product_id,
+                'warehouse_id' => $request->warehouse_id,
                 'quantity' => $request->quantity,
                 'uom' => $request->uom,
                 'batch_number' => $request->batch_number,
