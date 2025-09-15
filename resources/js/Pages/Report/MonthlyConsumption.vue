@@ -157,8 +157,6 @@
                     </div>
                 </div>
 
-                {{ props.pivotData }}
-
                 <!-- Data Table -->
 
                 <div class="overflow-x-auto">
