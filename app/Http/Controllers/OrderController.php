@@ -138,6 +138,7 @@ class OrderController extends Controller
             'rejected' => 0,
             'in_process' => 0,
             'dispatched' => 0,
+            'delivered' => 0,
             'received' => 0
         ];
 

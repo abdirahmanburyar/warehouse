@@ -139,7 +139,6 @@ watch(() => editForm.value.warehouse, (newWarehouse) => {
         editForm.value.warehouse_id = newWarehouse.id;
         // Clear location when warehouse changes
         editForm.value.location = null;
-        editForm.value.location_id = null;
     }
 });
 
@@ -625,6 +624,21 @@ const getFilteredLocations = (warehouseId) => {
     // Return all locations for now, or implement warehouse-based filtering differently
     return props.locations || [];
 };
+
+// Get filtered locations for edit form based on selected warehouse
+const getEditFilteredLocations = computed(() => {
+    // If no warehouse is selected, return empty array to show dependency
+    if (!editForm.value.warehouse_id) return [];
+    
+    // Find the selected warehouse
+    const selectedWarehouse = props.warehouses.find(w => w.id == editForm.value.warehouse_id);
+    if (!selectedWarehouse) return [];
+    
+    // Since locations are now strings, we need to filter them based on warehouse
+    // This assumes locations are prefixed with warehouse info or we need a different approach
+    // For now, return all locations - you may need to implement warehouse-based filtering differently
+    return props.locations || [];
+});
 
 // Handle warehouse change - clear location selection
 const filterLocationsByWarehouse = (item) => {
@@ -1471,7 +1485,7 @@ const filteredInventoryItems = computed(() => {
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
                                     <Multiselect
                                         v-model="editForm.location"
-                                        :options="props.locations"
+                                        :options="getEditFilteredLocations"
                                         placeholder="Select Location"
                                         :searchable="true"
                                         :allow-empty="true"
@@ -1485,6 +1499,7 @@ const filteredInventoryItems = computed(() => {
                                         :internal-search="true"
                                         :taggable="false"
                                         :multiple="false"
+                                        :disabled="!editForm.warehouse_id"
                                         class="text-sm"
                                     />
                                 </div>

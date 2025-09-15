@@ -829,7 +829,10 @@ import axios from "axios";
 const props = defineProps({
     orders: Object,
     filters: Object,
-    stats: Object,
+    stats: {
+        type: Object,
+        default: () => ({})
+    },
     regions: Array,
 });
 
@@ -841,30 +844,43 @@ let searchTimeout = null;
 
 // Ensure stats object has all required properties with defaults
 const safeStats = computed(() => {
-    const defaultStats = {
-        pending: 0,
-        reviewed: 0,
-        approved: 0,
-        in_process: 0,
-        dispatched: 0,
-        delivered: 0,
-        received: 0,
-        rejected: 0
-    };
-    
-    const result = {
-        ...defaultStats,
-        ...props.stats
-    };
-    
-    console.log('🔍 Order Stats Debug:', {
-        propsStats: props.stats,
-        defaultStats,
-        result,
-        totalOrders: totalOrders.value
-    });
-    
-    return result;
+    try {
+        const defaultStats = {
+            pending: 0,
+            reviewed: 0,
+            approved: 0,
+            in_process: 0,
+            dispatched: 0,
+            delivered: 0,
+            received: 0,
+            rejected: 0
+        };
+        
+        const result = {
+            ...defaultStats,
+            ...(props.stats || {})
+        };
+        
+        console.log('🔍 Order Stats Debug:', {
+            propsStats: props.stats,
+            defaultStats,
+            result
+        });
+        
+        return result;
+    } catch (error) {
+        console.error('Error in safeStats computed:', error);
+        return {
+            pending: 0,
+            reviewed: 0,
+            approved: 0,
+            in_process: 0,
+            dispatched: 0,
+            delivered: 0,
+            received: 0,
+            rejected: 0
+        };
+    }
 });
 
 async function handleRegionSelect(option) {
