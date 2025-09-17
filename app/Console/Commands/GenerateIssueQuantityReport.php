@@ -94,9 +94,15 @@ class GenerateIssueQuantityReport extends Command
             $endDate = Carbon::parse($month . '-01 23:59:59')->endOfMonth();
 
             // Get all issued quantities for the month
-            $issuedQuantities = IssuedQuantity::whereBetween('issued_date', [$startDate, $endDate])->get();
+            $issuedQuantities = IssuedQuantity::whereBetween('issued_date', [$startDate, $endDate])
+                ->with('warehouse')
+                ->get();
 
             $this->info("Found {$issuedQuantities->count()} issued quantities for {$month}");
+            
+            // Show unique warehouses being processed
+            $uniqueWarehouses = $issuedQuantities->pluck('warehouse_id')->unique();
+            $this->info("Processing data for " . $uniqueWarehouses->count() . " warehouse(s): " . $uniqueWarehouses->implode(', '));
 
             $bar = $this->output->createProgressBar(count($issuedQuantities));
             $bar->start();
@@ -104,9 +110,17 @@ class GenerateIssueQuantityReport extends Command
             $totalQuantity = 0;
 
             foreach ($issuedQuantities as $issuedQuantity) {
-                // Try to find existing item with the same parent_id and product_id
+                // Skip if warehouse_id is null (log warning)
+                if (is_null($issuedQuantity->warehouse_id)) {
+                    $this->warn("Skipping issued quantity ID {$issuedQuantity->id} - no warehouse_id specified");
+                    $bar->advance();
+                    continue;
+                }
+
+                // Try to find existing item with the same parent_id, product_id, and warehouse_id
                 $item = IssueQuantityItem::where('parent_id', $report->id)
                     ->where('product_id', $issuedQuantity->product_id)
+                    ->where('warehouse_id', $issuedQuantity->warehouse_id)
                     ->first();
             
                 if ($item) {
@@ -118,6 +132,7 @@ class GenerateIssueQuantityReport extends Command
                     IssueQuantityItem::create([
                         'parent_id' => $report->id,
                         'product_id' => $issuedQuantity->product_id,
+                        'warehouse_id' => $issuedQuantity->warehouse_id,
                         'quantity' => $issuedQuantity->quantity,
                     ]);
                 }
@@ -138,6 +153,9 @@ class GenerateIssueQuantityReport extends Command
             
             $this->info("Total quantity for this month: {$totalQuantity}");
 
+            // Show summary by warehouse
+            $this->showWarehouseSummary($report->id);
+
             // Commit the transaction
             DB::commit();
 
@@ -154,5 +172,34 @@ class GenerateIssueQuantityReport extends Command
 
             return 1;
         }
+    }
+
+    /**
+     * Show summary of issued quantities by warehouse
+     */
+    private function showWarehouseSummary($reportId)
+    {
+        $this->info("\n" . str_repeat("=", 80));
+        $this->info("WAREHOUSE SUMMARY");
+        $this->info(str_repeat("=", 80));
+
+        // Get warehouse summary from issue quantity items
+        $warehouseSummary = IssueQuantityItem::where('parent_id', $reportId)
+            ->with('warehouse')
+            ->selectRaw('warehouse_id, SUM(quantity) as total_quantity, COUNT(*) as product_count')
+            ->groupBy('warehouse_id')
+            ->get();
+
+        foreach ($warehouseSummary as $summary) {
+            $warehouseName = $summary->warehouse ? $summary->warehouse->name : 'Unknown Warehouse';
+            $this->info("\nWarehouse: {$warehouseName} (ID: {$summary->warehouse_id})");
+            $this->info("  Total Quantity Issued: " . number_format($summary->total_quantity));
+            $this->info("  Products Count: {$summary->product_count}");
+        }
+
+        $this->info("\n" . str_repeat("=", 80));
+        $this->info("Total Warehouses: {$warehouseSummary->count()}");
+        $this->info("Total Quantity: " . number_format($warehouseSummary->sum('total_quantity')));
+        $this->info(str_repeat("=", 80));
     }
 }

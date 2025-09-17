@@ -95,9 +95,15 @@ class GenerateMonthlyReceivedReport extends Command
             $endDate = Carbon::parse($month . '-01 23:59:59')->endOfMonth();
 
             // Get all received quantities for the month
-            $receivedQuantities = ReceivedQuantity::whereBetween('received_at', [$startDate, $endDate])->get();
+            $receivedQuantities = ReceivedQuantity::whereBetween('received_at', [$startDate, $endDate])
+                ->with('warehouse')
+                ->get();
 
             $this->info("Found {$receivedQuantities->count()} received quantities for {$month}");
+            
+            // Show unique warehouses being processed
+            $uniqueWarehouses = $receivedQuantities->pluck('warehouse_id')->unique();
+            $this->info("Processing data for " . $uniqueWarehouses->count() . " warehouse(s): " . $uniqueWarehouses->implode(', '));
 
             $bar = $this->output->createProgressBar(count($receivedQuantities));
             $bar->start();
@@ -105,9 +111,17 @@ class GenerateMonthlyReceivedReport extends Command
             $totalQuantity = 0;
 
             foreach ($receivedQuantities as $receivedQuantity) {
-                // Check if a row for this product_id already exists in the report
+                // Skip if warehouse_id is null (log warning)
+                if (is_null($receivedQuantity->warehouse_id)) {
+                    $this->warn("Skipping received quantity ID {$receivedQuantity->id} - no warehouse_id specified");
+                    $bar->advance();
+                    continue;
+                }
+
+                // Check if a row for this product_id and warehouse_id already exists in the report
                 $item = ReceivedQuantityItem::where('parent_id', $report->id)
                     ->where('product_id', $receivedQuantity->product_id)
+                    ->where('warehouse_id', $receivedQuantity->warehouse_id)
                     ->first();
             
                 if ($item) {
@@ -119,6 +133,7 @@ class GenerateMonthlyReceivedReport extends Command
                     ReceivedQuantityItem::create([
                         'parent_id' => $report->id,
                         'product_id' => $receivedQuantity->product_id,
+                        'warehouse_id' => $receivedQuantity->warehouse_id,
                         'quantity' => $receivedQuantity->quantity,
                     ]);
                 }
@@ -138,6 +153,9 @@ class GenerateMonthlyReceivedReport extends Command
             
             $this->info("Total quantity for this month: {$totalQuantity}");
 
+            // Show summary by warehouse
+            $this->showWarehouseSummary($report->id);
+
             // Commit the transaction
             DB::commit();
 
@@ -154,5 +172,34 @@ class GenerateMonthlyReceivedReport extends Command
 
             return 1;
         }
+    }
+
+    /**
+     * Show summary of received quantities by warehouse
+     */
+    private function showWarehouseSummary($reportId)
+    {
+        $this->info("\n" . str_repeat("=", 80));
+        $this->info("WAREHOUSE SUMMARY");
+        $this->info(str_repeat("=", 80));
+
+        // Get warehouse summary from received quantity items
+        $warehouseSummary = ReceivedQuantityItem::where('parent_id', $reportId)
+            ->with('warehouse')
+            ->selectRaw('warehouse_id, SUM(quantity) as total_quantity, COUNT(*) as product_count')
+            ->groupBy('warehouse_id')
+            ->get();
+
+        foreach ($warehouseSummary as $summary) {
+            $warehouseName = $summary->warehouse ? $summary->warehouse->name : 'Unknown Warehouse';
+            $this->info("\nWarehouse: {$warehouseName} (ID: {$summary->warehouse_id})");
+            $this->info("  Total Quantity Received: " . number_format($summary->total_quantity));
+            $this->info("  Products Count: {$summary->product_count}");
+        }
+
+        $this->info("\n" . str_repeat("=", 80));
+        $this->info("Total Warehouses: {$warehouseSummary->count()}");
+        $this->info("Total Quantity: " . number_format($warehouseSummary->sum('total_quantity')));
+        $this->info(str_repeat("=", 80));
     }
 }
