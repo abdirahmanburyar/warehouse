@@ -6,10 +6,12 @@ use App\Models\InventoryReport;
 use App\Models\InventoryReportItem;
 use App\Models\Product;
 use App\Models\Inventory;
+use App\Models\InventoryItem;
 use App\Models\IssueQuantityReport;
 use App\Models\IssueQuantityItem;
 use App\Models\MonthlyQuantityReceived;
 use App\Models\ReceivedQuantityItem;
+use App\Models\Warehouse;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -69,26 +71,13 @@ class GenerateInventoryReport extends Command
                 'generated_at' => now(),
             ]);
 
-            // Get all unique warehouse IDs from issue and received quantity reports for the target month
-            $monthYear = $targetMonth->format('Y-m');
-            
-            // Get warehouse IDs from issue quantity reports
-            $issueWarehouseIds = IssueQuantityItem::whereHas('report', function($query) use ($monthYear) {
-                $query->where('month_year', $monthYear);
-            })->distinct()->pluck('warehouse_id')->filter();
-            
-            // Get warehouse IDs from received quantity reports
-            $receivedWarehouseIds = ReceivedQuantityItem::whereHas('monthlyReport', function($query) use ($monthYear) {
-                $query->where('month_year', $monthYear);
-            })->distinct()->pluck('warehouse_id')->filter();
-            
-            // Combine and get unique warehouse IDs
-            $allWarehouseIds = $issueWarehouseIds->merge($receivedWarehouseIds)->unique();
+            // Get all warehouses that have inventory items
+            $allWarehouseIds = InventoryItem::distinct()->pluck('warehouse_id')->filter();
             
             // Filter by specific warehouse if provided
             if ($warehouseId) {
                 if (!$allWarehouseIds->contains($warehouseId)) {
-                    $this->warn("No data found for warehouse ID {$warehouseId} in {$monthYear}");
+                    $this->warn("No inventory found for warehouse ID {$warehouseId}");
                     return 1;
                 }
                 $allWarehouseIds = collect([$warehouseId]);
@@ -98,7 +87,7 @@ class GenerateInventoryReport extends Command
             $warehouses = Warehouse::whereIn('id', $allWarehouseIds)->get();
             
             if ($warehouses->isEmpty()) {
-                $this->warn("No warehouses found with data for {$monthYear}");
+                $this->warn("No warehouses found with inventory");
                 return 1;
             }
 
@@ -273,29 +262,18 @@ class GenerateInventoryReport extends Command
     }
 
     /**
-     * Get products that have data in a specific warehouse for a given month
+     * Get products that have inventory in a specific warehouse
      */
     private function getProductsForWarehouse($warehouse, $targetMonth)
     {
-        $monthYear = $targetMonth->format('Y-m');
+        // Get products that have inventory items in this warehouse
+        // This ensures we include all products that have been in this warehouse,
+        // not just those with transactions in the specific month
+        $products = Product::whereHas('items', function($query) use ($warehouse) {
+            $query->where('warehouse_id', $warehouse->id);
+        })->with(['inventories'])->get();
         
-        // Get product IDs from issue quantity reports for this warehouse
-        $issueProductIds = IssueQuantityItem::whereHas('report', function($query) use ($monthYear) {
-            $query->where('month_year', $monthYear);
-        })->where('warehouse_id', $warehouse->id)
-        ->pluck('product_id');
-        
-        // Get product IDs from received quantity reports for this warehouse
-        $receivedProductIds = ReceivedQuantityItem::whereHas('monthlyReport', function($query) use ($monthYear) {
-            $query->where('month_year', $monthYear);
-        })->where('warehouse_id', $warehouse->id)
-        ->pluck('product_id');
-        
-        // Combine and get unique product IDs
-        $allProductIds = $issueProductIds->merge($receivedProductIds)->unique();
-        
-        // Return products with their inventories
-        return Product::whereIn('id', $allProductIds)->with(['inventories'])->get();
+        return $products;
     }
 
     /**
