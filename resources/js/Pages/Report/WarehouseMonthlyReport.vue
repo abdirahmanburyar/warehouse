@@ -99,6 +99,7 @@
                 <table class="min-w-full divide-y divide-gray-200 border border-gray-300">
                     <thead class="bg-gray-50">
                         <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Warehouse</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Product</th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Beginning Balance</th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Stock Received</th>
@@ -115,92 +116,112 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="(item, index) in props.reportData" :key="item.product.id" :class="getRowClass(index)">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border border-gray-300 relative">
-                                {{ item.product.name }}
-                                <span v-if="rowError[index]" class="absolute top-2 right-2 text-red-500 animate-bounce">
-                                    ❌
-                                </span>
-                                <span v-else-if="rowSaving[index]" class="absolute top-2 right-2 text-yellow-500">
-                                    <svg class="animate-pulse h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-                                    </svg>
-                                </span>
-                                <span v-else-if="rowUpdating[index]" class="absolute top-2 right-2 text-blue-500">
-                                    <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                </span>
-                                <span v-else-if="rowChanged[index]" class="absolute top-2 right-2 text-green-500">
-                                    ✓
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300" :class="getBalanceColor(item.beginning_balance)">
-                                {{ formatNumber(item.beginning_balance) }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 border border-gray-300 transition-all duration-300">
-                                {{ formatNumber(item.received_quantity) }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 border border-gray-300 transition-all duration-300">
-                                {{ formatNumber(item.issued_quantity) }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300">
-                                <input 
-                                    v-if="canEdit"
-                                    v-model.number="currentAdjustments[index].negative_adjustment"
-                                    @input="updateCalculatedBalance(item, index)"
-                                    type="number"
-                                    min="0"
-                                    step="1"
-                                    :class="[
-                                        'w-20 px-2 py-1 text-right border rounded focus:ring-1 transition-all duration-200',
-                                        rowError[index] ? 'border-red-400 ring-1 ring-red-200 bg-red-50' :
-                                        rowSaving[index] ? 'border-yellow-400 ring-1 ring-yellow-200 bg-yellow-50' :
-                                        rowUpdating[index] ? 'border-blue-400 ring-1 ring-blue-200 bg-blue-50' : 
-                                        'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                    ]"
-                                />
-                                <span v-else class="text-gray-900">
-                                    {{ formatNumber(item.negative_adjustment) }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300">
-                                <input 
-                                    v-if="canEdit"
-                                    v-model.number="currentAdjustments[index].positive_adjustment"
-                                    @input="updateCalculatedBalance(item, index)"
-                                    type="number"
-                                    min="0"
-                                    step="1"
-                                    :class="[
-                                        'w-20 px-2 py-1 text-right border rounded focus:ring-1 transition-all duration-200',
-                                        rowError[index] ? 'border-red-400 ring-1 ring-red-200 bg-red-50' :
-                                        rowSaving[index] ? 'border-yellow-400 ring-1 ring-yellow-200 bg-yellow-50' :
-                                        rowUpdating[index] ? 'border-blue-400 ring-1 ring-blue-200 bg-blue-50' : 
-                                        'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                    ]"
-                                />
-                                <span v-else class="text-gray-900">
-                                {{ formatNumber(item.positive_adjustment) }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300" :class="getClosingBalanceClass(item, index)">
-                                {{ formatNumber(calculateClosingBalance(item, index)) }}
-                                <span v-if="rowError[index]" class="ml-2 text-red-500 animate-bounce">
-                                    ❌
-                                </span>
-                                <span v-else-if="rowSaving[index]" class="ml-2 text-yellow-500">
-                                    💾
-                                </span>
-                                <span v-else-if="rowUpdating[index]" class="ml-2 text-blue-500">
-                                    ⟳
-                                </span>
-                                <span v-else-if="rowChanged[index]" class="ml-2 text-green-500">
-                                    ✓
-                                </span>
-                            </td>
-                        </tr>
+                        <template v-for="(warehouseGroup, warehouseId) in groupedReportData" :key="warehouseId">
+                            <!-- Warehouse Header Row -->
+                            <tr class="bg-gray-100 border-b-2 border-gray-300">
+                                <td colspan="8" class="px-6 py-3 text-sm font-bold text-gray-800 border border-gray-300">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-lg">🏢</span>
+                                        <span>{{ warehouseGroup.warehouse.name || 'Unknown Warehouse' }}</span>
+                                        <span class="text-gray-500 text-xs">(ID: {{ warehouseId }})</span>
+                                        <span class="ml-auto text-xs text-gray-600">
+                                            {{ warehouseGroup.items.length }} product{{ warehouseGroup.items.length !== 1 ? 's' : '' }}
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Products for this warehouse -->
+                            <tr v-for="(item, itemIndex) in warehouseGroup.items" :key="`${warehouseId}-${item.product.id}`" :class="getRowClass(getGlobalIndex(warehouseId, itemIndex))">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 border border-gray-300">
+                                    <!-- Empty cell for warehouse column since it's in the header -->
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border border-gray-300 relative">
+                                    {{ item.product.name }}
+                                    <span v-if="rowError[getGlobalIndex(warehouseId, itemIndex)]" class="absolute top-2 right-2 text-red-500 animate-bounce">
+                                        ❌
+                                    </span>
+                                    <span v-else-if="rowSaving[getGlobalIndex(warehouseId, itemIndex)]" class="absolute top-2 right-2 text-yellow-500">
+                                        <svg class="animate-pulse h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                                        </svg>
+                                    </span>
+                                    <span v-else-if="rowUpdating[getGlobalIndex(warehouseId, itemIndex)]" class="absolute top-2 right-2 text-blue-500">
+                                        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                    </span>
+                                    <span v-else-if="rowChanged[getGlobalIndex(warehouseId, itemIndex)]" class="absolute top-2 right-2 text-green-500">
+                                        ✓
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300" :class="getBalanceColor(item.beginning_balance)">
+                                    {{ formatNumber(item.beginning_balance) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 border border-gray-300 transition-all duration-300">
+                                    {{ formatNumber(item.received_quantity) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 border border-gray-300 transition-all duration-300">
+                                    {{ formatNumber(item.issued_quantity) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300">
+                                    <input 
+                                        v-if="canEdit"
+                                        v-model.number="currentAdjustments[getGlobalIndex(warehouseId, itemIndex)].negative_adjustment"
+                                        @input="updateCalculatedBalance(item, getGlobalIndex(warehouseId, itemIndex))"
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        :class="[
+                                            'w-20 px-2 py-1 text-right border rounded focus:ring-1 transition-all duration-200',
+                                            rowError[getGlobalIndex(warehouseId, itemIndex)] ? 'border-red-400 ring-1 ring-red-200 bg-red-50' :
+                                            rowSaving[getGlobalIndex(warehouseId, itemIndex)] ? 'border-yellow-400 ring-1 ring-yellow-200 bg-yellow-50' :
+                                            rowUpdating[getGlobalIndex(warehouseId, itemIndex)] ? 'border-blue-400 ring-1 ring-blue-200 bg-blue-50' : 
+                                            'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                        ]"
+                                    />
+                                    <span v-else class="text-gray-900">
+                                        {{ formatNumber(item.negative_adjustment) }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300">
+                                    <input 
+                                        v-if="canEdit"
+                                        v-model.number="currentAdjustments[getGlobalIndex(warehouseId, itemIndex)].positive_adjustment"
+                                        @input="updateCalculatedBalance(item, getGlobalIndex(warehouseId, itemIndex))"
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        :class="[
+                                            'w-20 px-2 py-1 text-right border rounded focus:ring-1 transition-all duration-200',
+                                            rowError[getGlobalIndex(warehouseId, itemIndex)] ? 'border-red-400 ring-1 ring-red-200 bg-red-50' :
+                                            rowSaving[getGlobalIndex(warehouseId, itemIndex)] ? 'border-yellow-400 ring-1 ring-yellow-200 bg-yellow-50' :
+                                            rowUpdating[getGlobalIndex(warehouseId, itemIndex)] ? 'border-blue-400 ring-1 ring-blue-200 bg-blue-50' : 
+                                            'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                        ]"
+                                    />
+                                    <span v-else class="text-gray-900">
+                                    {{ formatNumber(item.positive_adjustment) }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300" :class="getClosingBalanceClass(item, getGlobalIndex(warehouseId, itemIndex))">
+                                    {{ formatNumber(calculateClosingBalance(item, getGlobalIndex(warehouseId, itemIndex))) }}
+                                    <span v-if="rowError[getGlobalIndex(warehouseId, itemIndex)]" class="ml-2 text-red-500 animate-bounce">
+                                        ❌
+                                    </span>
+                                    <span v-else-if="rowSaving[getGlobalIndex(warehouseId, itemIndex)]" class="ml-2 text-yellow-500">
+                                        💾
+                                    </span>
+                                    <span v-else-if="rowUpdating[getGlobalIndex(warehouseId, itemIndex)]" class="ml-2 text-blue-500">
+                                        ⟳
+                                    </span>
+                                    <span v-else-if="rowChanged[getGlobalIndex(warehouseId, itemIndex)]" class="ml-2 text-green-500">
+                                        ✓
+                                    </span>
+                                </td>
+                            </tr>
+                        </template>
                     </tbody>
                 </table>
             </div>
@@ -401,6 +422,29 @@ const getClosingBalanceClass = (item, index) => {
 };
 
 // Computed properties
+const groupedReportData = computed(() => {
+    if (!props.reportData || !Array.isArray(props.reportData)) {
+        return {};
+    }
+    
+    const grouped = {};
+    props.reportData.forEach((item, index) => {
+        const warehouseId = item.warehouse_id || 'unknown';
+        if (!grouped[warehouseId]) {
+            grouped[warehouseId] = {
+                warehouse: item.warehouse || { name: 'Unknown Warehouse' },
+                items: []
+            };
+        }
+        grouped[warehouseId].items.push({
+            ...item,
+            globalIndex: index
+        });
+    });
+    
+    return grouped;
+});
+
 const canEdit = computed(() => {
     return props.inventoryReport?.status === 'pending' || props.inventoryReport?.status === 'rejected';
 });
@@ -455,6 +499,15 @@ const hasUnsavedChanges = computed(() => {
                current.negative_adjustment !== original.negative_adjustment;
     });
 });
+
+// Get global index for a warehouse item
+const getGlobalIndex = (warehouseId, itemIndex) => {
+    const warehouseGroup = groupedReportData.value[warehouseId];
+    if (!warehouseGroup || !warehouseGroup.items[itemIndex]) {
+        return 0;
+    }
+    return warehouseGroup.items[itemIndex].globalIndex;
+};
 
 // Format month year for display
 const formatMonthYear = (dateString) => {
@@ -515,6 +568,7 @@ const saveAdjustments = async () => {
                 current.negative_adjustment !== original.negative_adjustment) {
                 adjustments.push({
                     product_id: item.product.id,
+                    warehouse_id: item.warehouse_id,
                     positive_adjustment: parseFloat(current.positive_adjustment) || 0,
                     negative_adjustment: parseFloat(current.negative_adjustment) || 0
                 });
@@ -695,6 +749,7 @@ const exportToExcel = async () => {
             const closingBalance = item.beginning_balance + item.received_quantity - item.issued_quantity - negativeAdj + positiveAdj;
             
             return {
+                'Warehouse': item.warehouse?.name || 'Unknown Warehouse',
                 'Product': item.product.name || 'N/A',
                 'Beginning Balance': item.beginning_balance || 0,
                 'Stock Received': item.received_quantity || 0,
@@ -711,6 +766,7 @@ const exportToExcel = async () => {
         
         // Set column widths
         const columnWidths = [
+            { wch: 25 }, // Warehouse
             { wch: 30 }, // Product
             { wch: 15 }, // Beginning Balance
             { wch: 15 }, // Stock Received
@@ -844,6 +900,7 @@ const saveRowToBackend = async (item, index) => {
             month_year: month_year.value,
             adjustments: [{
                 product_id: item.product.id,
+                warehouse_id: item.warehouse_id,
                 positive_adjustment: parseFloat(current.positive_adjustment) || 0,
                 negative_adjustment: parseFloat(current.negative_adjustment) || 0
             }]

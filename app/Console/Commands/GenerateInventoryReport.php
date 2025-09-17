@@ -69,15 +69,59 @@ class GenerateInventoryReport extends Command
                 'generated_at' => now(),
             ]);
 
-            // Get all products with their current inventory
-            $products = Product::with(['inventories'])->get();
+            // Get all unique warehouse IDs from issue and received quantity reports for the target month
+            $monthYear = $targetMonth->format('Y-m');
+            
+            // Get warehouse IDs from issue quantity reports
+            $issueWarehouseIds = IssueQuantityItem::whereHas('report', function($query) use ($monthYear) {
+                $query->where('month_year', $monthYear);
+            })->distinct()->pluck('warehouse_id')->filter();
+            
+            // Get warehouse IDs from received quantity reports
+            $receivedWarehouseIds = ReceivedQuantityItem::whereHas('monthlyReport', function($query) use ($monthYear) {
+                $query->where('month_year', $monthYear);
+            })->distinct()->pluck('warehouse_id')->filter();
+            
+            // Combine and get unique warehouse IDs
+            $allWarehouseIds = $issueWarehouseIds->merge($receivedWarehouseIds)->unique();
+            
+            // Filter by specific warehouse if provided
+            if ($warehouseId) {
+                if (!$allWarehouseIds->contains($warehouseId)) {
+                    $this->warn("No data found for warehouse ID {$warehouseId} in {$monthYear}");
+                    return 1;
+                }
+                $allWarehouseIds = collect([$warehouseId]);
+            }
+            
+            // Get warehouse objects
+            $warehouses = Warehouse::whereIn('id', $allWarehouseIds)->get();
+            
+            if ($warehouses->isEmpty()) {
+                $this->warn("No warehouses found with data for {$monthYear}");
+                return 1;
+            }
 
-            $bar = $this->output->createProgressBar(count($products));
+            $totalProducts = 0;
+            foreach ($warehouses as $warehouse) {
+                // Get products that have data in this warehouse for this month
+                $products = $this->getProductsForWarehouse($warehouse, $targetMonth);
+                $totalProducts += $products->count();
+            }
+
+            $bar = $this->output->createProgressBar($totalProducts);
             $bar->start();
 
-            foreach ($products as $product) {
-                // Process each product at product_id level (no batches)
-                $this->processProductInventory($product, $targetMonth, $report, $bar);
+            foreach ($warehouses as $warehouse) {
+                $this->info("\nProcessing warehouse: {$warehouse->name} (ID: {$warehouse->id})");
+                
+                // Get products that have data in this warehouse for this month
+                $products = $this->getProductsForWarehouse($warehouse, $targetMonth);
+
+                foreach ($products as $product) {
+                    // Process each product for this specific warehouse
+                    $this->processProductInventory($product, $targetMonth, $report, $warehouse, $bar);
+                }
             }
 
             $bar->finish();
@@ -97,7 +141,7 @@ class GenerateInventoryReport extends Command
         }
     }
 
-    private function calculateBeginningBalance($product, $targetMonth)
+    private function calculateBeginningBalance($product, $targetMonth, $warehouse)
     {
         // Get the previous month's report
         $previousMonth = (clone $targetMonth)->subMonth();
@@ -110,6 +154,7 @@ class GenerateInventoryReport extends Command
         if ($previousReport) {
             $previousBalance = InventoryReportItem::where('inventory_report_id', $previousReport->id)
                 ->where('product_id', $product->id)
+                ->where('warehouse_id', $warehouse->id)
                 ->value('closing_balance');
 
             if ($previousBalance !== null) {
@@ -121,7 +166,7 @@ class GenerateInventoryReport extends Command
         return 0;
     }
 
-    private function calculateReceivedQuantity($product, $targetMonth)
+    private function calculateReceivedQuantity($product, $targetMonth, $warehouse)
     {
         // Get the monthly quantity received report for the target month
         $monthYear = $targetMonth->format('Y-m');
@@ -131,15 +176,16 @@ class GenerateInventoryReport extends Command
             return 0;
         }
 
-        // Get the received quantity for this product from the report
+        // Get the received quantity for this product from the report for this warehouse
         $receivedItem = ReceivedQuantityItem::where('parent_id', $receivedReport->id)
             ->where('product_id', $product->id)
+            ->where('warehouse_id', $warehouse->id)
             ->first();
 
         return $receivedItem ? $receivedItem->quantity : 0;
     }
 
-    private function calculateIssuedQuantity($product, $targetMonth)
+    private function calculateIssuedQuantity($product, $targetMonth, $warehouse)
     {
         // Get the issue quantity report for the target month
         $monthYear = $targetMonth->format('Y-m');
@@ -149,9 +195,10 @@ class GenerateInventoryReport extends Command
             return 0;
         }
 
-        // Get the issued quantity for this product from the report
+        // Get the issued quantity for this product from the report for this warehouse
         $issuedItem = IssueQuantityItem::where('parent_id', $issueReport->id)
             ->where('product_id', $product->id)
+            ->where('warehouse_id', $warehouse->id)
             ->first();
 
         return $issuedItem ? $issuedItem->quantity : 0;
@@ -191,11 +238,22 @@ class GenerateInventoryReport extends Command
         $this->info(str_repeat("=", 80));
 
         $reportItems = InventoryReportItem::where('inventory_report_id', $reportId)
-            ->with('product')
+            ->with(['product', 'warehouse'])
+            ->orderBy('warehouse_id')
             ->orderBy('product_id')
             ->get();
 
+        $currentWarehouse = null;
         foreach ($reportItems as $item) {
+            // Show warehouse header when it changes
+            if ($currentWarehouse !== $item->warehouse_id) {
+                $currentWarehouse = $item->warehouse_id;
+                $warehouseName = $item->warehouse ? $item->warehouse->name : 'Unknown Warehouse';
+                $this->info("\n" . str_repeat("-", 60));
+                $this->info("WAREHOUSE: {$warehouseName} (ID: {$item->warehouse_id})");
+                $this->info(str_repeat("-", 60));
+            }
+            
             $this->info("\nProduct: {$item->product->name} (ID: {$item->product_id})");
             $this->info("  Beginning Balance: {$item->beginning_balance}");
             $this->info("  Received Quantity: {$item->received_quantity}");
@@ -215,14 +273,40 @@ class GenerateInventoryReport extends Command
     }
 
     /**
-     * Process individual product inventory at product_id level
+     * Get products that have data in a specific warehouse for a given month
      */
-    private function processProductInventory($product, $targetMonth, $report, $bar)
+    private function getProductsForWarehouse($warehouse, $targetMonth)
+    {
+        $monthYear = $targetMonth->format('Y-m');
+        
+        // Get product IDs from issue quantity reports for this warehouse
+        $issueProductIds = IssueQuantityItem::whereHas('report', function($query) use ($monthYear) {
+            $query->where('month_year', $monthYear);
+        })->where('warehouse_id', $warehouse->id)
+        ->pluck('product_id');
+        
+        // Get product IDs from received quantity reports for this warehouse
+        $receivedProductIds = ReceivedQuantityItem::whereHas('monthlyReport', function($query) use ($monthYear) {
+            $query->where('month_year', $monthYear);
+        })->where('warehouse_id', $warehouse->id)
+        ->pluck('product_id');
+        
+        // Combine and get unique product IDs
+        $allProductIds = $issueProductIds->merge($receivedProductIds)->unique();
+        
+        // Return products with their inventories
+        return Product::whereIn('id', $allProductIds)->with(['inventories'])->get();
+    }
+
+    /**
+     * Process individual product inventory at product_id level for a specific warehouse
+     */
+    private function processProductInventory($product, $targetMonth, $report, $warehouse, $bar)
     {
         // Calculate quantities for the month (no batch number)
-        $beginningBalance = $this->calculateBeginningBalance($product, $targetMonth);
-        $receivedQuantity = $this->calculateReceivedQuantity($product, $targetMonth);
-        $issuedQuantity = $this->calculateIssuedQuantity($product, $targetMonth);
+        $beginningBalance = $this->calculateBeginningBalance($product, $targetMonth, $warehouse);
+        $receivedQuantity = $this->calculateReceivedQuantity($product, $targetMonth, $warehouse);
+        $issuedQuantity = $this->calculateIssuedQuantity($product, $targetMonth, $warehouse);
         $otherQuantityOut = $this->calculateOtherQuantityOut($product, $targetMonth);
         $adjustments = $this->calculateAdjustments($product, $targetMonth);
         
@@ -244,6 +328,7 @@ class GenerateInventoryReport extends Command
         $data = [
             'inventory_report_id' => $report->id,
             'product_id' => $product->id,
+            'warehouse_id' => $warehouse->id,
             'beginning_balance' => $beginningBalance,
             'received_quantity' => $receivedQuantity,
             'issued_quantity' => $issuedQuantity,

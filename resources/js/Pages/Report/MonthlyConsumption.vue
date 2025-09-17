@@ -156,7 +156,6 @@
                         </p>
                     </div>
                 </div>
-
                 <!-- Data Table -->
 
                 <div class="overflow-x-auto">

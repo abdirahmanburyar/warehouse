@@ -11,6 +11,7 @@ class IssueQuantityItem extends Model
         'product_id',
         'parent_id',
         'quantity',
+        'warehouse_id',
     ];
 
     /**
@@ -27,5 +28,13 @@ class IssueQuantityItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Get the warehouse for this item.
+     */
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 }

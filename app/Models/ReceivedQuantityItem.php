@@ -18,6 +18,7 @@ class ReceivedQuantityItem extends Model
         'quantity',
         'product_id',
         'parent_id',
+        'warehouse_id',
     ];
     
     /**
@@ -34,6 +35,14 @@ class ReceivedQuantityItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Get the warehouse for this item.
+     */
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 
 }

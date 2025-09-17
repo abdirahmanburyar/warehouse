@@ -10,6 +10,7 @@ class InventoryReportItem extends Model
     protected $fillable = [
         'inventory_report_id',
         'product_id',
+        'warehouse_id',
         'beginning_balance',
         'received_quantity',
         'issued_quantity',
@@ -58,5 +59,13 @@ class InventoryReportItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Get the warehouse for this report item
+     */
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 }

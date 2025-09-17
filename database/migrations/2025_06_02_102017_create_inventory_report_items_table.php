@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('inventory_report_id')->constrained('inventory_reports')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('products');
+            $table->foreignId('warehouse_id')->constrained('warehouses');
             $table->integer('beginning_balance')->default(0);
             $table->integer('received_quantity')->default(0);
             $table->integer('issued_quantity')->default(0);
