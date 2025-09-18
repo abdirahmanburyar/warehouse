@@ -124,6 +124,11 @@ const props = defineProps({
             'Disposed': 0
         })
     },
+    warehouses: {
+        type: Array,
+        required: false,
+        default: () => []
+    }
 });
 
 
@@ -341,6 +346,8 @@ const handleFilterChange = () => {
 const warehouseDataType = ref('beginning_balance');
 // Available data types: 'beginning_balance','received_quantity','issued_quantity','closing_balance'
 
+const selectedWarehouse = ref('');
+
 const facilityDataType = ref('opening_balance');
 // Available data types: 'opening_balance' (Beginning Balance), 'stock_received' (QTY Received), 'stock_issued' (Issued Quantity), 'closing_balance' (Closing Balance), 'positive_adjustments', 'negative_adjustments'
 
@@ -387,7 +394,8 @@ const facilityMonth = ref(months[1]); // Use previous month as default to match 
 
 watch([
     () => warehouseDataType.value,
-    () => issuedMonth.value
+    () => issuedMonth.value,
+    () => selectedWarehouse.value
 ], () => {
     handleTracertItems();
 });
@@ -436,6 +444,9 @@ async function handleTracertItems() {
     }
     if (issuedMonth.value){
         query.month = issuedMonth.value;
+    }
+    if (selectedWarehouse.value){
+        query.warehouse_id = selectedWarehouse.value;
     }
 
     try {
@@ -2102,18 +2113,36 @@ const navigateToTask = (route) => {
                     <div v-if="activeTab === 'warehouse'" class="">
                         <div class="bg-white rounded-xl shadow-lg p-1 border border-gray-100">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                <div class="flex gap-4">
+                                <div class="flex flex-wrap gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
-                                        <input type="month" v-model="issuedMonth" class="border border-gray-300 rounded-md px-3 py-2" />
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                                            <span>📅</span>
+                                            <span>Month</span>
+                                        </label>
+                                        <input type="month" v-model="issuedMonth" class="border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500 transition-colors" />
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Data Type</label>
-                                        <select v-model="warehouseDataType" class="border border-gray-300 rounded-md px-3 py-2 min-w-[180px]">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                                            <span>📊</span>
+                                            <span>Data Type</span>
+                                        </label>
+                                        <select v-model="warehouseDataType" class="border-2 border-gray-300 rounded-lg px-3 py-2 min-w-[180px] focus:border-indigo-500 focus:ring-indigo-500 transition-colors">
                                             <option value="beginning_balance">Beginning Balance</option>
                                             <option value="received_quantity">QTY Received</option>
                                             <option value="issued_quantity">QTY Issued</option>
                                             <option value="closing_balance">Closing Balance</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                                            <span>🏢</span>
+                                            <span>Warehouse</span>
+                                        </label>
+                                        <select v-model="selectedWarehouse" class="border-2 border-gray-300 rounded-lg px-3 py-2 min-w-[200px] focus:border-indigo-500 focus:ring-indigo-500 transition-colors">
+                                            <option value="">All Warehouses</option>
+                                            <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
+                                                {{ warehouse.name }}
+                                            </option>
                                         </select>
                                     </div>
                                 </div>

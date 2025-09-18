@@ -291,6 +291,7 @@ class DashboardController extends Controller
             'expiredStats' => $expiredStats,
             'assetStats' => $assetStats['categories'],
             'assetStatusStats' => $assetStats['statuses'],
+            'warehouses' => Warehouse::select('id', 'name')->orderBy('name')->get(),
         ];
 
 
@@ -303,6 +304,7 @@ class DashboardController extends Controller
         try {
             $type = $request->type ?? 'beginning_balance';
             $month = $request->month ?? now()->subMonth()->format('Y-m');
+            $warehouseId = $request->warehouse_id;
             
             // Validate the type is one of the allowed columns
             $allowedTypes = ['beginning_balance', 'received_quantity', 'issued_quantity', 'closing_balance'];
@@ -336,9 +338,14 @@ class DashboardController extends Controller
                 // Find the inventory report item for this product
                 $inventoryItem = null;
                 if ($inventoryReport) {
-                    $inventoryItem = $inventoryReport->items()
-                        ->where('product_id', $product->id)
-                        ->first();
+                    $query = $inventoryReport->items()->where('product_id', $product->id);
+                    
+                    // Apply warehouse filter if provided
+                    if ($warehouseId) {
+                        $query->where('warehouse_id', $warehouseId);
+                    }
+                    
+                    $inventoryItem = $query->first();
                 }
                 
                 // Get category name from the product's category relationship
