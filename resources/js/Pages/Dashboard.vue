@@ -1768,9 +1768,9 @@ const fulfillmentChartData = computed(() => {
             borderWidth: 0,
             borderRadius: { topLeft: 100, topRight: 100, bottomLeft: 0, bottomRight: 0 },
             borderSkipped: 'bottom',
-            maxBarThickness: 40,
-            barPercentage: 0.6,
-            categoryPercentage: 0.6,
+            maxBarThickness: 50,
+            barPercentage: 0.8,
+            categoryPercentage: 0.8,
             hoverBackgroundColor: [
                 'rgba(68, 114, 196, 1)',
                 'rgba(237, 125, 49, 1)',
@@ -2444,19 +2444,19 @@ const navigateToTask = (route) => {
 
         <!-- Fulfillment Chart Row -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-            <!-- Fulfillment Chart - Takes 8 columns -->
-            <div class="lg:col-span-8 bg-white rounded-xl shadow-lg border border-gray-200 p-3">
-                <div class="mb-2">
+            <!-- Fulfillment Chart - Takes 10 columns -->
+            <div class="lg:col-span-10 bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+                <div class="mb-3">
                     <h3 class="text-xl font-bold text-gray-900">Top 10 Suppliers - Fulfillment Rate</h3>
                     <p class="text-sm text-gray-600 mt-1">Supplier performance based on fulfillment percentage</p>
                 </div>
-                <div class="h-64">
+                <div class="h-72">
                     <Bar :data="fulfillmentChartData" :options="fulfillmentBarChartOptions" />
+                </div>
             </div>
-        </div>
 
-            <!-- Summary Stats - Takes 4 columns -->
-            <div class="lg:col-span-4 space-y-3">
+            <!-- Summary Stats - Takes 2 columns -->
+            <div class="lg:col-span-2 space-y-3">
                 <!-- Lowest Performer Card -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3">
                         <div class="flex items-center justify-between mb-2">
