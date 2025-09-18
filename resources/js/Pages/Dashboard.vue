@@ -180,27 +180,28 @@ const selectedOrderTypeValue = computed(() => {
     return selectedOrderType.value;
 });
 
-const totalOrders = computed(() =>
-    props.orderStats.pending +
-    props.orderStats.reviewed +
-    props.orderStats.approved +
-    props.orderStats.in_process +
-    props.orderStats.dispatched +
-    props.orderStats.received +
-    props.orderStats.rejected +
-    props.orderStats.delivered
-);
+const totalOrders = computed(() => {
+    const stats = props.orderStats;
+    return (stats.pending || 0) +
+           (stats.reviewed || 0) +
+           (stats.approved || 0) +
+           (stats.in_process || 0) +
+           (stats.dispatched || 0) +
+           (stats.delivered || 0) +
+           (stats.received || 0) +
+           (stats.rejected || 0);
+});
 
 // Order status configuration for dashboard vertical overview
 const orderStatusConfig = [
-    { key: 'pending', label: 'Pending', stroke: '#eab308', textClass: 'text-yellow-600' },
-    { key: 'reviewed', label: 'Reviewed', stroke: '#22c55e', textClass: 'text-green-600' },
-    { key: 'approved', label: 'Approved', stroke: '#22c55e', textClass: 'text-green-600' },
-    { key: 'in_process', label: 'In Process', stroke: '#3b82f6', textClass: 'text-blue-600' },
-    { key: 'dispatched', label: 'Dispatched', stroke: '#8b5cf6', textClass: 'text-purple-600' },
-    { key: 'delivered', label: 'Delivered', stroke: '#f59e42', textClass: 'text-orange-600' },
-    { key: 'received', label: 'Received', stroke: '#6366f1', textClass: 'text-indigo-600' },
-    { key: 'rejected', label: 'Rejected', stroke: '#ef4444', textClass: 'text-red-600' }
+    { key: 'pending', label: 'Pending', stroke: '#eab308', textClass: 'text-yellow-600', icon: '/assets/images/pending.png' },
+    { key: 'reviewed', label: 'Reviewed', stroke: '#22c55e', textClass: 'text-green-600', icon: '/assets/images/review.png' },
+    { key: 'approved', label: 'Approved', stroke: '#22c55e', textClass: 'text-green-600', icon: '/assets/images/approved.png' },
+    { key: 'in_process', label: 'In Process', stroke: '#3b82f6', textClass: 'text-blue-600', icon: '/assets/images/inprocess.png' },
+    { key: 'dispatched', label: 'Dispatched', stroke: '#8b5cf6', textClass: 'text-purple-600', icon: '/assets/images/dispatch.png' },
+    { key: 'delivered', label: 'Delivered', stroke: '#f59e42', textClass: 'text-orange-600', icon: '/assets/images/delivery.png' },
+    { key: 'received', label: 'Received', stroke: '#6366f1', textClass: 'text-indigo-600', icon: '/assets/images/received.png' },
+    { key: 'rejected', label: 'Rejected', stroke: '#ef4444', textClass: 'text-red-600', icon: '/assets/images/rejected.png' }
 ];
 
 // Tab functionality
@@ -700,18 +701,18 @@ function generateColors(count, isBackground = true) {
 const doughnutChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    cutout: '60%',
+    cutout: '50%',
     plugins: {
         legend: { 
             display: true,
             position: 'bottom',
             labels: {
-                padding: 20,
+                padding: 25,
                 usePointStyle: true,
                 font: {
-                    size: 12,
+                    size: 14,
                     weight: '600',
-                    family: 'Segoe UI, Arial, sans-serif'
+                    family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
                 },
                 generateLabels: function(chart) {
                     const data = chart.data;
@@ -771,8 +772,8 @@ const doughnutChartOptions = {
             color: '#ffffff',
             font: {
                 weight: 'bold',
-                size: 14,
-                family: 'Segoe UI, Arial, sans-serif'
+                size: 20,
+                family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
             },
             formatter: function(value, context) {
                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -780,7 +781,16 @@ const doughnutChartOptions = {
                 return value > 0 ? `${percentage}%` : '';
             },
             textAlign: 'center',
-            textBaseline: 'middle'
+            textBaseline: 'middle',
+            textShadowColor: 'rgba(0, 0, 0, 0.8)',
+            textShadowBlur: 3,
+            textShadowOffsetX: 2,
+            textShadowOffsetY: 2,
+            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            borderColor: 'rgba(255, 255, 255, 0.8)',
+            borderWidth: 1,
+            borderRadius: 8,
+            padding: 6
         }
     },
     animation: {
@@ -791,10 +801,10 @@ const doughnutChartOptions = {
     },
     layout: {
         padding: {
-            top: 20,
-            bottom: 10,
-            left: 10,
-            right: 10
+            top: 30,
+            bottom: 20,
+            left: 20,
+            right: 20
         }
     }
 };
@@ -2239,7 +2249,7 @@ const navigateToTask = (route) => {
                                 <div v-else class="h-full">
                                     <!-- Single Chart -->
                                     <div v-if="chartCount === 1" class="h-full">
-                                        <div class="mb-4 text-center">
+                                        <div class="mb-3 text-center">
                                             <h3 class="text-lg font-semibold text-gray-800 bg-gray-50 px-4 py-2 rounded-md border inline-block">
                                                 {{ localWarehouseChartData[0]?.categoryDisplay || localWarehouseChartData[0]?.category || 'Unknown Category' }}
                                             </h3>
@@ -2335,7 +2345,7 @@ const navigateToTask = (route) => {
                                 <div v-else class="h-full">
                                     <!-- Single Chart -->
                                     <div v-if="facilityChartCount === 1" class="h-full">
-                                        <div class="mb-4 text-center">
+                                        <div class="mb-3 text-center">
                                             <h3 class="text-lg font-semibold text-gray-800 bg-gray-50 px-4 py-2 rounded-md border inline-block">
                                                 {{ localFacilityChartData[0]?.categoryDisplay || localFacilityChartData[0]?.category || 'Unknown Category' }}
                                             </h3>
@@ -2397,11 +2407,11 @@ const navigateToTask = (route) => {
         <!-- Charts Row -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <!-- Product Categories Chart -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div class="mb-6">
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+                <div class="mb-8">
                     <h3 class="text-xl font-bold text-gray-900">Product Categories</h3>
                       </div>
-                <div class="h-64">
+                <div class="h-96 px-4 py-2">
                     <Doughnut :data="productCategoryChartData" :options="doughnutChartOptions" />
                     </div>
                 </div>
@@ -2483,12 +2493,12 @@ const navigateToTask = (route) => {
         <!-- Expired Statistics Chart Row -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
             <!-- Expired Chart - Takes 8 columns -->
-            <div class="lg:col-span-8 bg-white rounded-xl shadow-lg border border-gray-200 p-3">
-                <div class="mb-2">
+            <div class="lg:col-span-8 bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div class="mb-6">
                     <h3 class="text-xl font-bold text-gray-900">Expiry Status Overview</h3>
                     <p class="text-sm text-gray-600 mt-1">Items by expiry status and timeline</p>
                 </div>
-                <div class="h-64">
+                <div class="h-80 px-4 py-2">
                     <Doughnut :data="expiredChartData" :options="doughnutChartOptions" />
                     </div>
                 </div>
@@ -2564,8 +2574,8 @@ const navigateToTask = (route) => {
                 </div>
 
         <!-- Order Status Overview (Vertical) -->
-        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
-            <div class="mb-4">
+        <div class="bg-white rounded-xl p-6 mb-6">
+            <div class="mb-3">
                 <h3 class="text-xl font-bold text-gray-900">Order Status Overview</h3>
                 <p class="text-sm text-gray-600 mt-1">Live distribution of orders</p>
             </div>
@@ -2573,9 +2583,14 @@ const navigateToTask = (route) => {
                 <div
                     v-for="cfg in orderStatusConfig"
                     :key="cfg.key"
-                    class="flex items-center justify-center gap-3 p-3 rounded-lg border border-gray-200 hover:shadow-sm transition-all"
+                    class="flex items-center justify-center gap-3 p-3 rounded-lg transition-all"
                 >
                     <div class="flex items-center">
+                        <!-- Status Icon -->
+                        <div class="w-12 h-12 flex items-center justify-center mr-3">
+                            <img :src="cfg.icon" :alt="cfg.label" class="w-8 h-8" />
+                        </div>
+                        <!-- Circular Progress -->
                         <div class="w-14 h-14 relative mr-2">
                             <svg class="w-14 h-14 transform -rotate-90">
                                 <circle cx="28" cy="28" r="24" fill="none" stroke="#e2e8f0" stroke-width="4" />
@@ -2586,12 +2601,12 @@ const navigateToTask = (route) => {
                                     fill="none"
                                     :stroke="cfg.stroke"
                                     stroke-width="4"
-                                    :stroke-dasharray="(props.orderStats[cfg.key] === totalOrders && totalOrders > 0) ? '150.72 150.72' : `${(props.orderStats[cfg.key] / totalOrders) * 150.72} 150.72`"
+                                    :stroke-dasharray="(props.orderStats[cfg.key] === totalOrders && totalOrders > 0) ? '150.72 150.72' : `${((props.orderStats[cfg.key] || 0) / totalOrders) * 150.72} 150.72`"
                                 />
                             </svg>
                             <div class="absolute inset-0 flex items-center justify-center">
                                 <span :class="['text-xs font-bold', cfg.textClass]">
-                                    {{ totalOrders > 0 ? Math.round((props.orderStats[cfg.key] / totalOrders) * 100) : 0 }}%
+                                    {{ totalOrders > 0 ? Math.round(((props.orderStats[cfg.key] || 0) / totalOrders) * 100) : 0 }}%
                                 </span>
                             </div>
                         </div>
@@ -2608,10 +2623,10 @@ const navigateToTask = (route) => {
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
             <!-- Asset Status Chart - Takes 5 columns -->
             <div class="lg:col-span-5 bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div class="mb-4">
+                <div class="mb-3">
                     <h3 class="text-xl font-bold text-gray-900">Asset Status Overview</h3>
                     <p class="text-sm text-gray-600 mt-1">Assets by current status</p>
-                            </div>
+                </div>
                 <div class="h-64">
                     <Bar :data="assetStatusChartData" :options="assetStatusChartOptions" />
                 </div>
@@ -2631,16 +2646,17 @@ const navigateToTask = (route) => {
                                     <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z"></path>
-                                </svg>
+                                    </svg>
+                                </div>
                             </div>
-                        </div>
                             <!-- Content -->
                             <div class="relative z-10 text-center">
                                 <div class="text-2xl font-bold text-gray-900 mb-1">{{ props.assetStats?.Furniture || 0 }}</div>
                                 <div class="text-sm font-medium text-gray-600">Furniture</div>
-                        </div>
+                            </div>
                             <!-- Hover Effect -->
                             <div class="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -2737,7 +2753,6 @@ const navigateToTask = (route) => {
                     </div>
                 </div>
             </div>
-        </div>
 
     </AuthenticatedLayout>
 </template>
