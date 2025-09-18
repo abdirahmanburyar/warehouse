@@ -21,6 +21,8 @@ use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterImport;
+use Maatwebsite\Excel\Events\BeforeImport;
+use Maatwebsite\Excel\Events\ImportFailed;
 use Carbon\Carbon;
 
 class MohInventoryImport implements 
@@ -36,6 +38,8 @@ class MohInventoryImport implements
 
     public $importId;
     public $mohInventoryId;
+    private $totalRows = 0;
+    private $processedRows = 0;
 
     public function __construct(string $importId, int $mohInventoryId)
     {
@@ -50,6 +54,21 @@ class MohInventoryImport implements
 
     public function model(array $row)
     {
+        // Increment processed rows counter
+        $this->processedRows++;
+        
+        // Update progress every 10 rows or at the end
+        if ($this->processedRows % 10 == 0 || $this->processedRows == $this->totalRows) {
+            $progress = $this->totalRows > 0 ? min(100, round(($this->processedRows / $this->totalRows) * 100)) : 0;
+            Cache::put($this->importId, $progress);
+            Log::info('MOH inventory import progress updated', [
+                'import_id' => $this->importId,
+                'processed_rows' => $this->processedRows,
+                'total_rows' => $this->totalRows,
+                'progress' => $progress
+            ]);
+        }
+        
         // Log the row data for debugging
         Log::info('Processing MOH inventory row', ['row' => $row]);
         
@@ -268,14 +287,37 @@ class MohInventoryImport implements
     public function registerEvents(): array
     {
         return [
+            BeforeImport::class => function(BeforeImport $event) {
+                // Get total row count for progress tracking
+                $this->totalRows = $event->getReader()->getTotalRows();
+                Log::info('MOH inventory import started', [
+                    'import_id' => $this->importId,
+                    'moh_inventory_id' => $this->mohInventoryId,
+                    'total_rows' => $this->totalRows
+                ]);
+                
+                // Initialize progress to 0
+                Cache::put($this->importId, 0);
+            },
             AfterImport::class => function(AfterImport $event) {
                 Log::info('MOH inventory import completed', [
                     'import_id' => $this->importId,
-                    'moh_inventory_id' => $this->mohInventoryId
+                    'moh_inventory_id' => $this->mohInventoryId,
+                    'processed_rows' => $this->processedRows
                 ]);
                 
                 // Update cache to indicate completion
                 Cache::put($this->importId, 100);
+            },
+            ImportFailed::class => function(ImportFailed $event) {
+                Log::error('MOH inventory import failed', [
+                    'import_id' => $this->importId,
+                    'moh_inventory_id' => $this->mohInventoryId,
+                    'error' => $event->getException()->getMessage()
+                ]);
+                
+                // Update cache to indicate failure
+                Cache::put($this->importId, -1);
             },
         ];
     }
