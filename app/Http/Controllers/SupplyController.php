@@ -85,7 +85,8 @@ class SupplyController extends Controller
         $stats = [
             'total_items' => PurchaseOrder::count(),
             'total_cost' => PurchaseOrder::join('purchase_order_items', 'purchase_orders.id', '=', 'purchase_order_items.purchase_order_id')
-                ->sum(DB::raw('quantity * unit_cost')),
+                ->where('purchase_orders.status', 'approved')
+                ->sum('purchase_order_items.total_cost'),
             'lead_times' => [
                 'max' => round($leadTimes->max_lead_time ?? 0, 1) . ' Months',
                 'avg' => round($leadTimes->avg_lead_time ?? 0, 1) . ' Months',
