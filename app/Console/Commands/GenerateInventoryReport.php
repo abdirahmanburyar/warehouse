@@ -74,14 +74,8 @@ class GenerateInventoryReport extends Command
             // Get all warehouses that have inventory items
             $allWarehouseIds = InventoryItem::distinct()->pluck('warehouse_id')->filter();
             
-            // Filter by specific warehouse if provided
-            if ($warehouseId) {
-                if (!$allWarehouseIds->contains($warehouseId)) {
-                    $this->warn("No inventory found for warehouse ID {$warehouseId}");
-                    return 1;
-                }
-                $allWarehouseIds = collect([$warehouseId]);
-            }
+            // Note: Processing all warehouses by default
+            // If you need to filter by specific warehouse, add it as a command option
             
             // Get warehouse objects
             $warehouses = Warehouse::whereIn('id', $allWarehouseIds)->get();

@@ -22,6 +22,7 @@ use App\Models\Facility;
 use App\Models\Inventory;
 use App\Models\InventoryItem;
 use App\Models\InventoryReport;
+use App\Models\InventoryReportItem;
 use App\Models\InventoryAdjustment;
 use App\Models\InventoryAdjustmentItem;
 use App\Models\ReceivedBackorder;
