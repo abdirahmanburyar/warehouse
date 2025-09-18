@@ -670,22 +670,28 @@ function getDataTypeLabel(type) {
 
 // Generate colors for chart
 function generateColors(count, isBackground = true) {
-    const baseColors = [
-        'rgba(59, 130, 246, ' + (isBackground ? '0.8)' : '1)'), // Blue
-        'rgba(16, 185, 129, ' + (isBackground ? '0.8)' : '1)'), // Green
-        'rgba(245, 158, 11, ' + (isBackground ? '0.8)' : '1)'), // Yellow
-        'rgba(239, 68, 68, ' + (isBackground ? '0.8)' : '1)'),   // Red
-        'rgba(147, 51, 234, ' + (isBackground ? '0.8)' : '1)'), // Purple
-        'rgba(236, 72, 153, ' + (isBackground ? '0.8)' : '1)'), // Pink
-        'rgba(14, 165, 233, ' + (isBackground ? '0.8)' : '1)'), // Sky
-        'rgba(34, 197, 94, ' + (isBackground ? '0.8)' : '1)'),  // Emerald
-        'rgba(168, 85, 247, ' + (isBackground ? '0.8)' : '1)'), // Violet
-        'rgba(251, 191, 36, ' + (isBackground ? '0.8)' : '1)')  // Amber
+    const professionalGradients = [
+        // Modern professional gradient colors
+        isBackground ? 'rgba(99, 102, 241, 0.9)' : 'rgba(99, 102, 241, 1)', // Indigo
+        isBackground ? 'rgba(16, 185, 129, 0.9)' : 'rgba(16, 185, 129, 1)', // Emerald
+        isBackground ? 'rgba(245, 158, 11, 0.9)' : 'rgba(245, 158, 11, 1)', // Amber
+        isBackground ? 'rgba(239, 68, 68, 0.9)' : 'rgba(239, 68, 68, 1)',   // Red
+        isBackground ? 'rgba(139, 92, 246, 0.9)' : 'rgba(139, 92, 246, 1)', // Purple
+        isBackground ? 'rgba(236, 72, 153, 0.9)' : 'rgba(236, 72, 153, 1)', // Pink
+        isBackground ? 'rgba(6, 182, 212, 0.9)' : 'rgba(6, 182, 212, 1)',   // Cyan
+        isBackground ? 'rgba(34, 197, 94, 0.9)' : 'rgba(34, 197, 94, 1)',   // Green
+        isBackground ? 'rgba(251, 146, 60, 0.9)' : 'rgba(251, 146, 60, 1)', // Orange
+        isBackground ? 'rgba(168, 85, 247, 0.9)' : 'rgba(168, 85, 247, 1)', // Violet
+        isBackground ? 'rgba(59, 130, 246, 0.9)' : 'rgba(59, 130, 246, 1)', // Blue
+        isBackground ? 'rgba(20, 184, 166, 0.9)' : 'rgba(20, 184, 166, 1)', // Teal
+        isBackground ? 'rgba(245, 101, 101, 0.9)' : 'rgba(245, 101, 101, 1)', // Rose
+        isBackground ? 'rgba(132, 204, 22, 0.9)' : 'rgba(132, 204, 22, 1)', // Lime
+        isBackground ? 'rgba(251, 191, 36, 0.9)' : 'rgba(251, 191, 36, 1)'  // Yellow
     ];
     
     const colors = [];
     for (let i = 0; i < count; i++) {
-        colors.push(baseColors[i % baseColors.length]);
+        colors.push(professionalGradients[i % professionalGradients.length]);
     }
     return colors;
 }
@@ -802,14 +808,24 @@ const barChartOptions = {
         },
         tooltip: { 
             enabled: true,
-            backgroundColor: 'rgba(0, 0, 0, 0.9)',
-            titleColor: 'white',
-            bodyColor: 'white',
-            borderColor: 'rgba(255, 255, 255, 0.2)',
-            borderWidth: 0,
-            cornerRadius: 8,
-            padding: 12,
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            titleColor: '#f8fafc',
+            bodyColor: '#f1f5f9',
+            borderColor: 'rgba(99, 102, 241, 0.3)',
+            borderWidth: 1,
+            cornerRadius: 12,
+            padding: 16,
             displayColors: true,
+            titleFont: {
+                size: 14,
+                weight: '600',
+                family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+            },
+            bodyFont: {
+                size: 13,
+                weight: '500',
+                family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+            },
             callbacks: {
                 title: function(context) {
                     return context[0].label;
@@ -821,35 +837,44 @@ const barChartOptions = {
         },
         datalabels: {
             display: true,
-            anchor: 'end',
-            align: 'top',
-            color: '#374151',
+            anchor: 'center',
+            align: 'center',
+            color: '#ffffff',
             font: {
                 weight: 'bold',
-                size: 14
+                size: 12,
+                family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
             },
             formatter: function(value, context) {
                 return value > 0 ? formatLargeNumber(value) : '';
             },
-            padding: 6
+            padding: 0,
+            textShadowColor: 'rgba(0, 0, 0, 0.3)',
+            textShadowBlur: 2,
+            textShadowOffsetX: 1,
+            textShadowOffsetY: 1
         }
     },
     scales: {
         y: { 
             beginAtZero: true,
             grid: {
-                display: false,
-                drawBorder: false
+                display: true,
+                color: 'rgba(148, 163, 184, 0.1)',
+                drawBorder: false,
+                lineWidth: 1
             },
             ticks: {
                 callback: function(value) {
                     return formatLargeNumber(value);
                 },
                 font: {
-                    size: 12,
-                    weight: 'bold'
+                    size: 11,
+                    weight: '600',
+                    family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
                 },
-                padding: 8
+                padding: 12,
+                color: '#64748b'
             }
         },
         x: {
@@ -861,16 +886,24 @@ const barChartOptions = {
                 maxRotation: 45,
                 minRotation: 0,
                 font: {
-                    size: 12,
-                    weight: 'bold'
+                    size: 11,
+                    weight: '600',
+                    family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
                 },
-                padding: 8
+                padding: 12,
+                color: '#64748b'
             }
         }
     },
     animation: {
-        duration: 1000,
-        easing: 'easeOutQuart'
+        duration: 1200,
+        easing: 'easeOutCubic',
+        delay: (context) => {
+            return context.dataIndex * 100;
+        }
+    },
+    hover: {
+        animationDuration: 200
     },
     layout: {
         padding: {
@@ -927,13 +960,17 @@ const horizontalBarChartOptions = {
             color: '#ffffff',
             font: {
                 weight: 'bold',
-                size: 12,
-                family: 'Segoe UI, Arial, sans-serif'
+                size: 11,
+                family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
             },
             formatter: function(value, context) {
                 return value > 0 ? formatLargeNumber(value) : '';
             },
-            padding: 0
+            padding: 0,
+            textShadowColor: 'rgba(0, 0, 0, 0.4)',
+            textShadowBlur: 2,
+            textShadowOffsetX: 1,
+            textShadowOffsetY: 1
         }
     },
     scales: {
@@ -1104,16 +1141,22 @@ const lineChartOptions = {
         },
         datalabels: {
             display: true,
-            anchor: 'end',
-            align: 'top',
-            color: '#374151',
+            anchor: 'center',
+            align: 'center',
+            color: '#ffffff',
             font: {
                 weight: 'bold',
-                size: 11
+                size: 10,
+                family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
             },
             formatter: function(value, context) {
                 return value > 0 ? formatLargeNumber(value) : '';
-            }
+            },
+            padding: 4,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            borderColor: 'rgba(255, 255, 255, 0.2)',
+            borderWidth: 1,
+            borderRadius: 4
         }
     },
     scales: {
@@ -1160,16 +1203,22 @@ const issuedChartOptions = {
         },
         datalabels: {
             display: true,
-            anchor: 'end',
-            align: 'top',
-            color: '#374151',
+            anchor: 'center',
+            align: 'center',
+            color: '#ffffff',
             font: {
                 weight: 'bold',
-                size: 11
+                size: 11,
+                family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
             },
             formatter: function(value, context) {
                 return value > 0 ? formatLargeNumber(value) : '';
-            }
+            },
+            padding: 0,
+            textShadowColor: 'rgba(0, 0, 0, 0.3)',
+            textShadowBlur: 2,
+            textShadowOffsetX: 1,
+            textShadowOffsetY: 1
         }
     },
     scales: {
@@ -1204,11 +1253,32 @@ const issuedChartOptions = {
         bar: {
             borderWidth: 0,
             borderSkipped: 'bottom',
-            borderRadius: { topLeft: 100, topRight: 100, bottomLeft: 0, bottomRight: 0 },
-            maxBarThickness: 20,
-            barPercentage: 0.5,
-            categoryPercentage: 0.5
+            borderRadius: { topLeft: 8, topRight: 8, bottomLeft: 0, bottomRight: 0 },
+            maxBarThickness: 35,
+            barPercentage: 0.7,
+            categoryPercentage: 0.8,
+            hoverBackgroundColor: function(context) {
+                const chart = context.chart;
+                const {ctx, chartArea} = chart;
+                if (!chartArea) return null;
+                
+                const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                const baseColor = context.parsed.y > 0 ? 'rgba(99, 102, 241, 0.8)' : 'rgba(239, 68, 68, 0.8)';
+                gradient.addColorStop(0, baseColor);
+                gradient.addColorStop(1, baseColor.replace('0.8', '1'));
+                return gradient;
+            }
         }
+    },
+    animation: {
+        duration: 1200,
+        easing: 'easeOutCubic',
+        delay: (context) => {
+            return context.dataIndex * 100;
+        }
+    },
+    hover: {
+        animationDuration: 200
     }
 };
 
