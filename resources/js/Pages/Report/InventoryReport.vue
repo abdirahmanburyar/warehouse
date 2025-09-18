@@ -283,10 +283,15 @@ async function loadReport() {
         });
         
         if (response.data.success) {
+            console.log('Report data received:', response.data);
+            console.log('Data count:', response.data.data?.length || 0);
+            console.log('Debug info:', response.data.debug);
+            
             reportData.value = response.data.data;
             hasGenerated.value = true;
-            toast.success('Report loaded successfully');
+            toast.success(`Report loaded successfully - ${response.data.data?.length || 0} items found`);
         } else {
+            console.error('Report loading failed:', response.data);
             toast.error(response.data.message || 'No report found for the selected month. Reports are generated automatically by scheduled commands.');
         }
     } catch (error) {

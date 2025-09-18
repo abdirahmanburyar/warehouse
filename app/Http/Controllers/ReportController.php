@@ -185,8 +185,22 @@ class ReportController extends Controller
             $prevMonthYear = $request->input('prev_month_year');
             $warehouseId = $request->input('warehouse_id');
 
+            // Log the request parameters for debugging
+            \Log::info('Inventory Report Data Request', [
+                'month_year' => $monthYear,
+                'warehouse_id' => $warehouseId,
+                'prev_month_year' => $prevMonthYear
+            ]);
+
             // Get the inventory report data
             $reportData = $this->getInventoryReportData($request, $monthYear);
+
+            // Log the data count for debugging
+            \Log::info('Inventory Report Data Retrieved', [
+                'count' => $reportData->count(),
+                'month_year' => $monthYear,
+                'warehouse_id' => $warehouseId
+            ]);
 
             // Get previous month data for comparison
             $prevReportData = [];
@@ -198,9 +212,19 @@ class ReportController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $reportData,
-                'prevData' => $prevReportData
+                'prevData' => $prevReportData,
+                'debug' => [
+                    'month_year' => $monthYear,
+                    'warehouse_id' => $warehouseId,
+                    'count' => $reportData->count()
+                ]
             ]);
         } catch (\Exception $e) {
+            \Log::error('Inventory Report Data Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch inventory report data: ' . $e->getMessage()
@@ -1051,13 +1075,25 @@ class ReportController extends Controller
             ]
         );
 
-        // Return items with product relationship - no need for complex calculations
-        return $inventoryReport->items()
-            ->with(['product' => function($query) {
-                $query->select('id', 'name', 'category_id')
-                    ->with('category:id,name');
-            }])
-            ->get();
+        // Build query for items with relationships
+        $query = $inventoryReport->items()
+            ->with([
+                'product' => function($query) {
+                    $query->select('id', 'name', 'category_id')
+                        ->with('category:id,name');
+                },
+                'warehouse' => function($query) {
+                    $query->select('id', 'name');
+                }
+            ]);
+
+        // Apply warehouse filter if provided
+        if ($request->filled('warehouse_id')) {
+            $query->where('warehouse_id', $request->input('warehouse_id'));
+        }
+
+        // Return the filtered items
+        return $query->get();
     }
 
     public function warehouseMonthlyReport(Request $request)
