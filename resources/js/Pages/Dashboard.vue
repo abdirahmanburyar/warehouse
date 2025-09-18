@@ -1422,18 +1422,22 @@ const fulfillmentBarChartOptions = {
         },
         datalabels: {
             display: true,
-            anchor: 'end',
-            align: 'top',
-            color: '#374151',
+            anchor: 'center',
+            align: 'center',
+            color: '#ffffff',
             font: {
                 weight: 'bold',
-                size: 12,
+                size: 14,
                 family: 'Segoe UI, Arial, sans-serif'
             },
             formatter: function(value, context) {
                 return value > 0 ? `${value.toFixed(1)}%` : '';
             },
-            padding: 6
+            padding: 0,
+            textShadowColor: 'rgba(0, 0, 0, 0.3)',
+            textShadowBlur: 2,
+            textShadowOffsetX: 1,
+            textShadowOffsetY: 1
         }
     },
     scales: {
@@ -2437,6 +2441,7 @@ const navigateToTask = (route) => {
                         </div>
                     </div>
 
+
         <!-- Fulfillment Chart Row -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
             <!-- Fulfillment Chart - Takes 8 columns -->
@@ -2503,73 +2508,152 @@ const navigateToTask = (route) => {
                     </div>
                 </div>
 
-			<!-- Summary Stats - Takes 4 columns -->
-			<div class="lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 grid-rows-2 auto-rows-fr gap-3 h-full">
-				<!-- Quick Start: Placeholder (no link) - first card -->
-				<div class="relative overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm p-4 min-h-[88px] h-full">
-					<div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-amber-400 to-orange-500"></div>
-					<div class="flex items-center justify-between">
-						<div class="text-base font-semibold text-gray-900">Quick Start</div>
-						<div class="flex items-center justify-center h-10 w-10 rounded-full bg-amber-50 text-amber-600">
-							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.802 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.802-2.034a1 1 0 00-1.175 0l-2.802 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-							</svg>
-						</div>
-					</div>
+			<!-- Quick Actions - Takes 4 columns -->
+			<div class="lg:col-span-4">
+				<!-- Section Header -->
+				<div class="mb-4">
+					<h3 class="text-lg font-semibold text-gray-900 mb-1">Quick Actions</h3>
+					<p class="text-sm text-gray-600">Access frequently used features</p>
 				</div>
-
-				<!-- Quick Start: Purchase Order -->
-				<Link :href="route('supplies.purchase_order')" class="block group">
-					<div class="relative overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm p-4 transition-all duration-200 hover:shadow-md min-h-[88px] h-full">
-						<div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-emerald-400 to-teal-500"></div>
-						<div class="flex items-center justify-between">
-							<div>
-								<div class="text-base font-semibold text-gray-900">Purchase Order</div>
-							</div>
-							<div class="flex items-center justify-center h-10 w-10 rounded-full bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-100">
-								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
-								</svg>
+				
+				<!-- Quick Actions Grid -->
+				<div class="grid grid-cols-1 gap-3 h-full">
+					<!-- Create Purchase Order -->
+					<Link :href="route('supplies.purchase_order')" class="group">
+						<div class="relative overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 p-5">
+							<!-- Gradient Accent -->
+							<div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-emerald-500 to-teal-600"></div>
+							
+							<div class="flex items-center justify-between">
+								<div class="flex-1">
+									<div class="flex items-center space-x-3">
+										<!-- Icon -->
+										<div class="flex-shrink-0 w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center group-hover:bg-emerald-100 transition-colors duration-200">
+											<svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+											</svg>
+										</div>
+										
+										<!-- Content -->
+										<div class="flex-1">
+											<h4 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors">Create Purchase Order</h4>
+											<p class="text-sm text-gray-600 mt-1">Request new supplies and materials</p>
+										</div>
+									</div>
+								</div>
+								
+								<!-- Arrow -->
+								<div class="flex-shrink-0">
+									<svg class="w-5 h-5 text-gray-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+									</svg>
+								</div>
 							</div>
 						</div>
-					</div>
-				</Link>
-				
-				<!-- Quick Start: Orders -->
-				<Link :href="route('orders.index')" class="block group">
-					<div class="relative overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm p-4 transition-all duration-200 hover:shadow-md min-h-[88px] h-full">
-						<div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-indigo-400 to-blue-500"></div>
-						<div class="flex items-center justify-between">
-							<div>
-								<div class="text-base font-semibold text-gray-900">Orders</div>
-							</div>
-							<div class="flex items-center justify-center h-10 w-10 rounded-full bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-100">
-								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-								</svg>
+					</Link>
+					
+					<!-- Manage Orders -->
+					<Link :href="route('orders.index')" class="group">
+						<div class="relative overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 p-5">
+							<!-- Gradient Accent -->
+							<div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-indigo-500 to-blue-600"></div>
+							
+							<div class="flex items-center justify-between">
+								<div class="flex-1">
+									<div class="flex items-center space-x-3">
+										<!-- Icon -->
+										<div class="flex-shrink-0 w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center group-hover:bg-indigo-100 transition-colors duration-200">
+											<svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+											</svg>
+										</div>
+										
+										<!-- Content -->
+										<div class="flex-1">
+											<h4 class="text-base font-semibold text-gray-900 group-hover:text-indigo-700 transition-colors">Manage Orders</h4>
+											<p class="text-sm text-gray-600 mt-1">View and track order status</p>
+										</div>
+									</div>
+								</div>
+								
+								<!-- Arrow -->
+								<div class="flex-shrink-0">
+									<svg class="w-5 h-5 text-gray-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+									</svg>
+								</div>
 							</div>
 						</div>
-					</div>
-				</Link>
-				
-				<!-- Quick Start: Transfers -->
-				<Link :href="route('transfers.index')" class="block group">
-					<div class="relative overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm p-4 transition-all duration-200 hover:shadow-md min-h-[88px] h-full">
-						<div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-violet-400 to-purple-600"></div>
-						<div class="flex items-center justify-between">
-							<div>
-								<div class="text-base font-semibold text-gray-900">Transfers</div>
-							</div>
-							<div class="flex items-center justify-center h-10 w-10 rounded-full bg-violet-50 text-violet-600 transition-colors group-hover:bg-violet-100">
-								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-								</svg>
+					</Link>
+					
+					<!-- Transfer Items -->
+					<Link :href="route('transfers.index')" class="group">
+						<div class="relative overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 p-5">
+							<!-- Gradient Accent -->
+							<div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-violet-500 to-purple-600"></div>
+							
+							<div class="flex items-center justify-between">
+								<div class="flex-1">
+									<div class="flex items-center space-x-3">
+										<!-- Icon -->
+										<div class="flex-shrink-0 w-12 h-12 bg-violet-50 rounded-xl flex items-center justify-center group-hover:bg-violet-100 transition-colors duration-200">
+											<svg class="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+											</svg>
+										</div>
+										
+										<!-- Content -->
+										<div class="flex-1">
+											<h4 class="text-base font-semibold text-gray-900 group-hover:text-violet-700 transition-colors">Transfer Items</h4>
+											<p class="text-sm text-gray-600 mt-1">Move inventory between locations</p>
+										</div>
+									</div>
+								</div>
+								
+								<!-- Arrow -->
+								<div class="flex-shrink-0">
+									<svg class="w-5 h-5 text-gray-400 group-hover:text-violet-600 group-hover:translate-x-1 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+									</svg>
+								</div>
 							</div>
 						</div>
-					</div>
-				</Link>
-
-				
+					</Link>
+					
+					<!-- View Reports -->
+					<Link :href="route('reports.index')" class="group">
+						<div class="relative overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 p-5">
+							<!-- Gradient Accent -->
+							<div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-amber-500 to-orange-600"></div>
+							
+							<div class="flex items-center justify-between">
+								<div class="flex-1">
+									<div class="flex items-center space-x-3">
+										<!-- Icon -->
+										<div class="flex-shrink-0 w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center group-hover:bg-amber-100 transition-colors duration-200">
+											<svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+											</svg>
+										</div>
+										
+										<!-- Content -->
+										<div class="flex-1">
+											<h4 class="text-base font-semibold text-gray-900 group-hover:text-amber-700 transition-colors">View Reports</h4>
+											<p class="text-sm text-gray-600 mt-1">Access analytics and insights</p>
+										</div>
+									</div>
+								</div>
+								
+								<!-- Arrow -->
+								<div class="flex-shrink-0">
+									<svg class="w-5 h-5 text-gray-400 group-hover:text-amber-600 group-hover:translate-x-1 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+									</svg>
+								</div>
+							</div>
+						</div>
+					</Link>
+				</div>
 			</div>
                 </div>
 
@@ -2658,7 +2742,6 @@ const navigateToTask = (route) => {
                             <div class="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                         </div>
                     </div>
-                </div>
 
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden">
                         <div class="p-6 flex flex-col items-center justify-center h-32 relative">
@@ -2669,18 +2752,18 @@ const navigateToTask = (route) => {
                                 <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                                     <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                </svg>
+                                    </svg>
+                                </div>
                             </div>
-                        </div>
                             <!-- Content -->
                             <div class="relative z-10 text-center">
                                 <div class="text-2xl font-bold text-gray-900 mb-1">{{ props.assetStats?.IT || 0 }}</div>
                                 <div class="text-sm font-medium text-gray-600">IT Equipment</div>
-                        </div>
+                            </div>
                             <!-- Hover Effect -->
                             <div class="absolute inset-0 bg-purple-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                        </div>
                     </div>
-                </div>
 
                     <!-- Row 2: Medical Equipment and Vehicles -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden">
@@ -2692,18 +2775,18 @@ const navigateToTask = (route) => {
                                 <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                                     <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                                </svg>
+                                    </svg>
+                                </div>
                             </div>
-                        </div>
                             <!-- Content -->
                             <div class="relative z-10 text-center">
                                 <div class="text-2xl font-bold text-gray-900 mb-1">{{ props.assetStats?.['Medical equipment'] || 0 }}</div>
                                 <div class="text-sm font-medium text-gray-600">Medical Equipment</div>
-                        </div>
+                            </div>
                             <!-- Hover Effect -->
                             <div class="absolute inset-0 bg-green-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                        </div>
                     </div>
-                </div>
 
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden">
                         <div class="p-6 flex flex-col items-center justify-center h-32 relative">
@@ -2715,7 +2798,7 @@ const navigateToTask = (route) => {
                                     <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a4 4 0 118 0v4m-4 6v6m-4-6h8m-8 0H4"></path>
                                     </svg>
-                            </div>
+                                </div>
                             </div>
                             <!-- Content -->
                             <div class="relative z-10 text-center">
@@ -2739,9 +2822,9 @@ const navigateToTask = (route) => {
                                 <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
                                     <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                                </svg>
+                                    </svg>
+                                </div>
                             </div>
-                        </div>
                             <!-- Content -->
                             <div class="relative z-10 text-center">
                                 <div class="text-2xl font-bold text-gray-900 mb-1">{{ props.assetStats?.Others || 0 }}</div>
@@ -2753,7 +2836,7 @@ const navigateToTask = (route) => {
                     </div>
                 </div>
             </div>
+        </div>
 
     </AuthenticatedLayout>
 </template>
-
