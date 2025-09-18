@@ -296,7 +296,23 @@ async function loadReport() {
         }
     } catch (error) {
         console.error('Error loading report:', error);
-        toast.error('Failed to load report. Please try again.');
+        console.error('Error details:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            url: error.config?.url,
+            method: error.config?.method
+        });
+        
+        let errorMessage = 'Failed to load report. Please try again.';
+        if (error.response?.data?.message) {
+            errorMessage = error.response.data.message;
+        } else if (error.message) {
+            errorMessage = `Error: ${error.message}`;
+        }
+        
+        toast.error(errorMessage);
     } finally {
         loading.value = false;
     }

@@ -666,9 +666,6 @@ Route::controller(LocationController::class)
             Route::get('/reports/issueQuantityReports/export', [ReportController::class, 'exportIssueQuantityReports']);
             
         // API routes removed - data now comes from controller props
-        
-        // Removed the individual report items export endpoint as it's now handled client-side
-        Route::get('/reports/inventory-report/data', [ReportController::class, 'inventoryReportData'])->name('reports.inventoryReport.data');
     });
 
     // Report Routes
@@ -693,6 +690,7 @@ Route::controller(LocationController::class)
 
         // Inventory Routes
             Route::get('/inventory-report', [ReportController::class, 'inventoryReport'])->name('reports.inventoryReport');
+            Route::get('/inventory-report/data', [ReportController::class, 'inventoryReportData'])->name('reports.inventoryReport.data');
             Route::post('/inventory-report/generate', [ReportController::class, 'generateInventoryReport'])->name('reports.generateInventoryReport');
 
         // Physical count report routes

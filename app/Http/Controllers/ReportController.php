@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\PhysicalCountSubmitted;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use App\Models\AvarageMonthlyconsumption;
 use App\Models\Location;
@@ -48,7 +49,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Jobs\ImportIssueQuantityJob;
@@ -186,7 +186,7 @@ class ReportController extends Controller
             $warehouseId = $request->input('warehouse_id');
 
             // Log the request parameters for debugging
-            \Log::info('Inventory Report Data Request', [
+            Log::info('Inventory Report Data Request', [
                 'month_year' => $monthYear,
                 'warehouse_id' => $warehouseId,
                 'prev_month_year' => $prevMonthYear
@@ -196,7 +196,7 @@ class ReportController extends Controller
             $reportData = $this->getInventoryReportData($request, $monthYear);
 
             // Log the data count for debugging
-            \Log::info('Inventory Report Data Retrieved', [
+            Log::info('Inventory Report Data Retrieved', [
                 'count' => $reportData->count(),
                 'month_year' => $monthYear,
                 'warehouse_id' => $warehouseId
@@ -220,7 +220,7 @@ class ReportController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            \Log::error('Inventory Report Data Error', [
+            Log::error('Inventory Report Data Error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -1065,35 +1065,58 @@ class ReportController extends Controller
      */
     protected function getInventoryReportData(Request $request, $monthYear)
     {
-        // Get or create the inventory report
-        $inventoryReport = InventoryReport::firstOrCreate(
-            ['month_year' => $monthYear],
-            [
-                'status' => 'pending',
-                'generated_by' => auth()->id(),
-                'generated_at' => now(),
-            ]
-        );
+        try {
+            // Get or create the inventory report
+            $inventoryReport = InventoryReport::firstOrCreate(
+                ['month_year' => $monthYear],
+                [
+                    'status' => 'pending',
+                    'generated_by' => auth()->id(),
+                    'generated_at' => now(),
+                ]
+            );
 
-        // Build query for items with relationships
-        $query = $inventoryReport->items()
-            ->with([
-                'product' => function($query) {
-                    $query->select('id', 'name', 'category_id')
-                        ->with('category:id,name');
-                },
-                'warehouse' => function($query) {
-                    $query->select('id', 'name');
-                }
+            Log::info('Inventory Report Found/Created', [
+                'id' => $inventoryReport->id,
+                'month_year' => $monthYear,
+                'status' => $inventoryReport->status
             ]);
 
-        // Apply warehouse filter if provided
-        if ($request->filled('warehouse_id')) {
-            $query->where('warehouse_id', $request->input('warehouse_id'));
-        }
+            // Build query for items with relationships
+            $query = $inventoryReport->items()
+                ->with([
+                    'product' => function($query) {
+                        $query->select('id', 'name', 'category_id')
+                            ->with('category:id,name');
+                    },
+                    'warehouse' => function($query) {
+                        $query->select('id', 'name');
+                    }
+                ]);
 
-        // Return the filtered items
-        return $query->get();
+            // Apply warehouse filter if provided
+            if ($request->filled('warehouse_id')) {
+                $query->where('warehouse_id', $request->input('warehouse_id'));
+            }
+
+            // Return the filtered items
+            $items = $query->get();
+            
+            Log::info('Inventory Report Items Retrieved', [
+                'count' => $items->count(),
+                'warehouse_filter' => $request->input('warehouse_id')
+            ]);
+
+            return $items;
+        } catch (\Exception $e) {
+            Log::error('Error in getInventoryReportData', [
+                'error' => $e->getMessage(),
+                'month_year' => $monthYear,
+                'warehouse_id' => $request->input('warehouse_id'),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
     }
 
     public function warehouseMonthlyReport(Request $request)
