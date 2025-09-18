@@ -2181,7 +2181,7 @@ const navigateToTask = (route) => {
                 <div class="min-h-[400px]">
                     <!-- Warehouse Tab -->
                     <div v-if="activeTab === 'warehouse'" class="">
-                        <div class="bg-white rounded-xl shadow-lg p-1 border border-gray-100">
+                        <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                 <div class="flex flex-wrap gap-4">
                                     <div>
@@ -2218,7 +2218,7 @@ const navigateToTask = (route) => {
                                 </div>
                             </div>
                             <!-- Chart Container -->
-                            <div class="relative" :class="chartCount > 1 ? 'min-h-96' : 'h-80'">
+                            <div class="relative mt-6" :class="chartCount > 1 ? 'min-h-96' : 'h-80'">
                                 <!-- Loading State -->
                                 <div v-if="isLoadingChart" class="absolute inset-0 flex items-center justify-center bg-gray-50 rounded-lg">
                                     <div class="flex items-center space-x-2">
@@ -2250,8 +2250,8 @@ const navigateToTask = (route) => {
                                     </div>
                                     <!-- Multiple Charts Grid - 3 charts per row -->
                                     <div v-else class="space-y-6">
-                                        <div v-for="(chartRow, rowIndex) in chartRows" :key="'row-' + rowIndex" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            <div v-for="chart in chartRow" :key="chart.id" class="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+                                        <div v-for="(chartRow, rowIndex) in chartRows" :key="'row-' + rowIndex" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            <div v-for="chart in chartRow" :key="chart.id" class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
                                                 <!-- Category Title -->
                                                 <div class="mb-3 flex items-start">
                                                     <span class="text-sm font-semibold text-gray-700">
@@ -2272,11 +2272,14 @@ const navigateToTask = (route) => {
                     </div>
                     <!-- Facilities Tab -->
                     <div v-if="activeTab === 'facilities'" class="">
-                        <div class="bg-white rounded-xl shadow-lg p-1 border border-gray-100">
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                <div class="flex gap-4">
-                                    <div class="w-[300px]">
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Facility</label>
+                        <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                                <div class="flex flex-col lg:flex-row gap-4 flex-1">
+                                    <div class="flex-1">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                                            <span>🏥</span>
+                                            <span>Facility</span>
+                                        </label>
                                         <Multiselect
                                             v-model="selectedFacility"
                                             :options="facilities"
@@ -2286,16 +2289,22 @@ const navigateToTask = (route) => {
                                             label="name"
                                             track-by="id"
                                             placeholder="Select facility..."
-                                            class="w-full sm:w-48"
+                                            class="w-full"
                                         />
                                     </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
-                                        <input type="month" v-model="facilityMonth" class="border border-gray-300 rounded-md px-3 py-2" />
+                                    <div class="lg:w-48">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                                            <span>📅</span>
+                                            <span>Month</span>
+                                        </label>
+                                        <input type="month" v-model="facilityMonth" class="border-2 border-gray-300 rounded-lg px-3 py-2 w-full focus:border-indigo-500 focus:ring-indigo-500 transition-colors" />
                                     </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Data Type</label>
-                                        <select v-model="facilityDataType" class="border border-gray-300 rounded-md px-3 py-2 min-w-[180px]">
+                                    <div class="lg:w-48">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                                            <span>📊</span>
+                                            <span>Data Type</span>
+                                        </label>
+                                        <select v-model="facilityDataType" class="border-2 border-gray-300 rounded-lg px-3 py-2 w-full focus:border-indigo-500 focus:ring-indigo-500 transition-colors">
                                             <option value="opening_balance">Beginning Balance</option>
                                             <option value="stock_received">QTY Received</option>
                                             <option value="stock_issued">Issued Quantity</option>
@@ -2305,7 +2314,7 @@ const navigateToTask = (route) => {
                                 </div>
                             </div>
                             <!-- Chart Container -->
-                            <div class="relative" :class="facilityChartCount > 1 ? 'min-h-96' : 'h-80'">
+                            <div class="relative mt-6" :class="facilityChartCount > 1 ? 'min-h-96' : 'h-80'">
                                 <!-- Loading State -->
                                 <div v-if="isLoadingFacilityChart" class="absolute inset-0 flex items-center justify-center bg-gray-50 rounded-lg">
                                     <div class="flex items-center space-x-2">
@@ -2337,8 +2346,8 @@ const navigateToTask = (route) => {
                                     </div>
                                     <!-- Multiple Charts Grid - 3 charts per row -->
                                     <div v-else class="space-y-6">
-                                        <div v-for="(chartRow, rowIndex) in facilityChartRows" :key="'facility-row-' + rowIndex" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            <div v-for="chart in chartRow" :key="'facility-' + chart.id" class="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+                                        <div v-for="(chartRow, rowIndex) in facilityChartRows" :key="'facility-row-' + rowIndex" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            <div v-for="chart in chartRow" :key="'facility-' + chart.id" class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
                                                 <!-- Category Title -->
                                                 <div class="mb-3 flex items-start">
                                                     <span class="text-sm font-semibold text-gray-700">
