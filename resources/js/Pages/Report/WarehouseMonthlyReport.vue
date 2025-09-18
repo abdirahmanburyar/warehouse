@@ -5,14 +5,40 @@
         <!-- Header Section -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <div class="flex flex-wrap items-center justify-between gap-4">
-                <!-- Month Year Selector -->
-                <div class="flex items-center gap-4">
-                    <input 
-                        type="month" 
-                        v-model="month_year"
-                        class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    >
-                    <span class="text-gray-700 font-medium">{{ formatMonthYear(month_year) }}</span>
+                <!-- Filters -->
+                <div class="flex items-center gap-6">
+                    <!-- Month Year Selector -->
+                    <div class="flex items-center gap-3">
+                        <label class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <span>📅</span>
+                            <span>Month:</span>
+                        </label>
+                        <input 
+                            type="month" 
+                            v-model="month_year"
+                            class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-3 py-2 border-2"
+                        >
+                        <span class="text-gray-700 font-semibold bg-gray-100 px-3 py-2 rounded-lg">
+                            {{ formatMonthYear(month_year) }}
+                        </span>
+                    </div>
+                    
+                    <!-- Warehouse Filter -->
+                    <div class="flex items-center gap-3">
+                        <label class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <span>🏢</span>
+                            <span>Warehouse:</span>
+                        </label>
+                        <select 
+                            v-model="selectedWarehouse"
+                            class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-w-[250px] px-3 py-2 border-2"
+                        >
+                            <option value="">All Warehouses</option>
+                            <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
+                                {{ warehouse.name }}
+                            </option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Report Status -->
@@ -88,6 +114,48 @@
             </div>
         </div>
 
+        <!-- Summary Section -->
+        <div v-if="filteredReportData && filteredReportData.length > 0" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">📊</span>
+                        <div>
+                            <div class="text-sm font-medium text-blue-600">Total Products</div>
+                            <div class="text-2xl font-bold text-blue-800">{{ filteredReportData.length }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">📥</span>
+                        <div>
+                            <div class="text-sm font-medium text-green-600">Total Received</div>
+                            <div class="text-2xl font-bold text-green-800">{{ formatNumber(filteredReportData.reduce((sum, item) => sum + (item.received_quantity || 0), 0)) }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">📤</span>
+                        <div>
+                            <div class="text-sm font-medium text-red-600">Total Issued</div>
+                            <div class="text-2xl font-bold text-red-800">{{ formatNumber(filteredReportData.reduce((sum, item) => sum + (item.issued_quantity || 0), 0)) }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">📋</span>
+                        <div>
+                            <div class="text-sm font-medium text-purple-600">Total Closing</div>
+                            <div class="text-2xl font-bold text-purple-800">{{ formatNumber(filteredReportData.reduce((sum, item) => sum + calculateClosingBalance(item, filteredReportData.indexOf(item)), 0)) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Report Table -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-[100px]">
             <div v-if="dataLoading" class="p-8 text-center">
@@ -95,133 +163,194 @@
                 <div class="mt-4 text-gray-700">Loading report data...</div>
                 <div class="text-sm text-gray-500 mt-2">This may take a few moments for large datasets</div>
             </div>
-            <div v-else-if="props.reportData && props.reportData.length > 0" class="overflow-x-auto">
+            <div v-else-if="filteredReportData && filteredReportData.length > 0" class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 border border-gray-300">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Warehouse</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Product</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Beginning Balance</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Stock Received</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Stock Issued</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 capitalize tracking-wider bg-blue-50 border border-gray-300">
-                                Negative Adjustment
-                                <span v-if="canEdit" class="ml-1 text-blue-600" title="Editable">✏️</span>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                <div class="flex items-center gap-2">
+                                    <span>🏢</span>
+                                    <span>Warehouse</span>
+                                </div>
                             </th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 capitalize tracking-wider bg-blue-50 border border-gray-300">
-                                Positive Adjustment
-                                <span v-if="canEdit" class="ml-1 text-blue-600" title="Editable">✏️</span>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                <div class="flex items-center gap-2">
+                                    <span>📦</span>
+                                    <span>Product</span>
+                                </div>
                             </th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 capitalize tracking-wider border border-gray-300">Closing Balance</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                <div class="flex items-center justify-end gap-2">
+                                    <span>📊</span>
+                                    <span>Beginning Balance</span>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                <div class="flex items-center justify-end gap-2">
+                                    <span>📥</span>
+                                    <span>Stock Received</span>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                <div class="flex items-center justify-end gap-2">
+                                    <span>📤</span>
+                                    <span>Stock Issued</span>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider bg-red-50 border border-gray-300">
+                                <div class="flex items-center justify-end gap-2">
+                                    <span>📉</span>
+                                    <span>Negative Adjustment</span>
+                                    <span v-if="canEdit" class="text-red-600" title="Editable">✏️</span>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider bg-green-50 border border-gray-300">
+                                <div class="flex items-center justify-end gap-2">
+                                    <span>📈</span>
+                                    <span>Positive Adjustment</span>
+                                    <span v-if="canEdit" class="text-green-600" title="Editable">✏️</span>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">
+                                <div class="flex items-center justify-end gap-2">
+                                    <span>📋</span>
+                                    <span>Closing Balance</span>
+                                </div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <template v-for="(warehouseGroup, warehouseId) in groupedReportData" :key="warehouseId">
-                            <!-- Warehouse Header Row -->
-                            <tr class="bg-gray-100 border-b-2 border-gray-300">
-                                <td colspan="8" class="px-6 py-3 text-sm font-bold text-gray-800 border border-gray-300">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-lg">🏢</span>
-                                        <span>{{ warehouseGroup.warehouse.name || 'Unknown Warehouse' }}</span>
-                                        <span class="text-gray-500 text-xs">(ID: {{ warehouseId }})</span>
-                                        <span class="ml-auto text-xs text-gray-600">
-                                            {{ warehouseGroup.items.length }} product{{ warehouseGroup.items.length !== 1 ? 's' : '' }}
+                        <tr v-for="(item, index) in filteredReportData" :key="`${item.warehouse_id}-${item.product.id}`" :class="getRowClass(index)">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border border-gray-300">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg">🏢</span>
+                                    <div>
+                                        <div class="font-semibold">{{ item.warehouse?.name || 'Unknown Warehouse' }}</div>
+                                        <div class="text-xs text-gray-500">ID: {{ item.warehouse_id || 'N/A' }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border border-gray-300 relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg">📦</span>
+                                    <div>
+                                        <div class="font-semibold">{{ item.product.name }}</div>
+                                        <div v-if="item.product.category" class="text-xs text-gray-500">
+                                            {{ item.product.category.name }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <span v-if="rowError[index]" class="absolute top-2 right-2 text-red-500 animate-bounce">
+                                    ❌
+                                </span>
+                                <span v-else-if="rowSaving[index]" class="absolute top-2 right-2 text-yellow-500">
+                                    <svg class="animate-pulse h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                                    </svg>
+                                </span>
+                                <span v-else-if="rowUpdating[index]" class="absolute top-2 right-2 text-blue-500">
+                                    <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </span>
+                                <span v-else-if="rowChanged[index]" class="absolute top-2 right-2 text-green-500">
+                                    ✓
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300" :class="getBalanceColor(item.beginning_balance)">
+                                <div class="flex items-center justify-end gap-1">
+                                    <span class="text-lg">📊</span>
+                                    <span class="font-semibold">{{ formatNumber(item.beginning_balance) }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 border border-gray-300 transition-all duration-300">
+                                <div class="flex items-center justify-end gap-1">
+                                    <span class="text-lg">📥</span>
+                                    <span class="font-semibold text-green-600">{{ formatNumber(item.received_quantity) }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 border border-gray-300 transition-all duration-300">
+                                <div class="flex items-center justify-end gap-1">
+                                    <span class="text-lg">📤</span>
+                                    <span class="font-semibold text-red-600">{{ formatNumber(item.issued_quantity) }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300 bg-red-50">
+                                <div class="flex items-center justify-end gap-2">
+                                    <span class="text-lg">📉</span>
+                                    <div class="flex flex-col items-end">
+                                        <input 
+                                            v-if="canEdit"
+                                            v-model.number="currentAdjustments[index].negative_adjustment"
+                                            @input="updateCalculatedBalance(item, index)"
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            :class="[
+                                                'w-24 px-3 py-2 text-right border rounded-lg focus:ring-2 transition-all duration-200 font-semibold',
+                                                rowError[index] ? 'border-red-400 ring-2 ring-red-200 bg-red-100' :
+                                                rowSaving[index] ? 'border-yellow-400 ring-2 ring-yellow-200 bg-yellow-100' :
+                                                rowUpdating[index] ? 'border-blue-400 ring-2 ring-blue-200 bg-blue-100' : 
+                                                'border-red-300 focus:border-red-500 focus:ring-red-500 bg-white'
+                                            ]"
+                                        />
+                                        <span v-else class="text-red-700 font-bold text-lg">
+                                            {{ formatNumber(item.negative_adjustment) }}
                                         </span>
                                     </div>
-                                </td>
-                            </tr>
-                            
-                            <!-- Products for this warehouse -->
-                            <tr v-for="(item, itemIndex) in warehouseGroup.items" :key="`${warehouseId}-${item.product.id}`" :class="getRowClass(getGlobalIndex(warehouseId, itemIndex))">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 border border-gray-300">
-                                    <!-- Empty cell for warehouse column since it's in the header -->
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border border-gray-300 relative">
-                                    {{ item.product.name }}
-                                    <span v-if="rowError[getGlobalIndex(warehouseId, itemIndex)]" class="absolute top-2 right-2 text-red-500 animate-bounce">
-                                        ❌
-                                    </span>
-                                    <span v-else-if="rowSaving[getGlobalIndex(warehouseId, itemIndex)]" class="absolute top-2 right-2 text-yellow-500">
-                                        <svg class="animate-pulse h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-                                        </svg>
-                                    </span>
-                                    <span v-else-if="rowUpdating[getGlobalIndex(warehouseId, itemIndex)]" class="absolute top-2 right-2 text-blue-500">
-                                        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                    </span>
-                                    <span v-else-if="rowChanged[getGlobalIndex(warehouseId, itemIndex)]" class="absolute top-2 right-2 text-green-500">
-                                        ✓
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300" :class="getBalanceColor(item.beginning_balance)">
-                                    {{ formatNumber(item.beginning_balance) }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 border border-gray-300 transition-all duration-300">
-                                    {{ formatNumber(item.received_quantity) }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 border border-gray-300 transition-all duration-300">
-                                    {{ formatNumber(item.issued_quantity) }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300">
-                                    <input 
-                                        v-if="canEdit"
-                                        v-model.number="currentAdjustments[getGlobalIndex(warehouseId, itemIndex)].negative_adjustment"
-                                        @input="updateCalculatedBalance(item, getGlobalIndex(warehouseId, itemIndex))"
-                                        type="number"
-                                        min="0"
-                                        step="1"
-                                        :class="[
-                                            'w-20 px-2 py-1 text-right border rounded focus:ring-1 transition-all duration-200',
-                                            rowError[getGlobalIndex(warehouseId, itemIndex)] ? 'border-red-400 ring-1 ring-red-200 bg-red-50' :
-                                            rowSaving[getGlobalIndex(warehouseId, itemIndex)] ? 'border-yellow-400 ring-1 ring-yellow-200 bg-yellow-50' :
-                                            rowUpdating[getGlobalIndex(warehouseId, itemIndex)] ? 'border-blue-400 ring-1 ring-blue-200 bg-blue-50' : 
-                                            'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                        ]"
-                                    />
-                                    <span v-else class="text-gray-900">
-                                        {{ formatNumber(item.negative_adjustment) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300">
-                                    <input 
-                                        v-if="canEdit"
-                                        v-model.number="currentAdjustments[getGlobalIndex(warehouseId, itemIndex)].positive_adjustment"
-                                        @input="updateCalculatedBalance(item, getGlobalIndex(warehouseId, itemIndex))"
-                                        type="number"
-                                        min="0"
-                                        step="1"
-                                        :class="[
-                                            'w-20 px-2 py-1 text-right border rounded focus:ring-1 transition-all duration-200',
-                                            rowError[getGlobalIndex(warehouseId, itemIndex)] ? 'border-red-400 ring-1 ring-red-200 bg-red-50' :
-                                            rowSaving[getGlobalIndex(warehouseId, itemIndex)] ? 'border-yellow-400 ring-1 ring-yellow-200 bg-yellow-50' :
-                                            rowUpdating[getGlobalIndex(warehouseId, itemIndex)] ? 'border-blue-400 ring-1 ring-blue-200 bg-blue-50' : 
-                                            'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                        ]"
-                                    />
-                                    <span v-else class="text-gray-900">
-                                    {{ formatNumber(item.positive_adjustment) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300" :class="getClosingBalanceClass(item, getGlobalIndex(warehouseId, itemIndex))">
-                                    {{ formatNumber(calculateClosingBalance(item, getGlobalIndex(warehouseId, itemIndex))) }}
-                                    <span v-if="rowError[getGlobalIndex(warehouseId, itemIndex)]" class="ml-2 text-red-500 animate-bounce">
-                                        ❌
-                                    </span>
-                                    <span v-else-if="rowSaving[getGlobalIndex(warehouseId, itemIndex)]" class="ml-2 text-yellow-500">
-                                        💾
-                                    </span>
-                                    <span v-else-if="rowUpdating[getGlobalIndex(warehouseId, itemIndex)]" class="ml-2 text-blue-500">
-                                        ⟳
-                                    </span>
-                                    <span v-else-if="rowChanged[getGlobalIndex(warehouseId, itemIndex)]" class="ml-2 text-green-500">
-                                        ✓
-                                    </span>
-                                </td>
-                            </tr>
-                        </template>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300 transition-all duration-300 bg-green-50">
+                                <div class="flex items-center justify-end gap-2">
+                                    <span class="text-lg">📈</span>
+                                    <div class="flex flex-col items-end">
+                                        <input 
+                                            v-if="canEdit"
+                                            v-model.number="currentAdjustments[index].positive_adjustment"
+                                            @input="updateCalculatedBalance(item, index)"
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            :class="[
+                                                'w-24 px-3 py-2 text-right border rounded-lg focus:ring-2 transition-all duration-200 font-semibold',
+                                                rowError[index] ? 'border-red-400 ring-2 ring-red-200 bg-red-100' :
+                                                rowSaving[index] ? 'border-yellow-400 ring-2 ring-yellow-200 bg-yellow-100' :
+                                                rowUpdating[index] ? 'border-blue-400 ring-2 ring-blue-200 bg-blue-100' : 
+                                                'border-green-300 focus:border-green-500 focus:ring-green-500 bg-white'
+                                            ]"
+                                        />
+                                        <span v-else class="text-green-700 font-bold text-lg">
+                                            {{ formatNumber(item.positive_adjustment) }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right border border-gray-300" :class="getClosingBalanceClass(item, index)">
+                                <div class="flex items-center justify-end gap-2">
+                                    <span class="text-lg">📋</span>
+                                    <div class="flex flex-col items-end">
+                                        <span class="font-bold text-lg" :class="getClosingBalanceTextClass(item, index)">
+                                            {{ formatNumber(calculateClosingBalance(item, index)) }}
+                                        </span>
+                                        <div class="flex items-center gap-1 mt-1">
+                                            <span v-if="rowError[index]" class="text-red-500 animate-bounce text-sm">
+                                                ❌
+                                            </span>
+                                            <span v-else-if="rowSaving[index]" class="text-yellow-500 text-sm">
+                                                💾
+                                            </span>
+                                            <span v-else-if="rowUpdating[index]" class="text-blue-500 text-sm">
+                                                ⟳
+                                            </span>
+                                            <span v-else-if="rowChanged[index]" class="text-green-500 text-sm">
+                                                ✓
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -268,6 +397,10 @@ const props = defineProps({
         type: Array,
         default: () => []
     },
+    warehouses: {
+        type: Array,
+        default: () => []
+    },
     filters: {
         type: Object,
         default: () => ({})
@@ -289,6 +422,7 @@ const props = defineProps({
 const currentAdjustments = ref({});
 const originalAdjustments = ref({});
 const month_year = ref(props.monthYear || props.filters.month_year);
+const selectedWarehouse = ref(props.filters.warehouse_id || '');
 const cellLoading = ref({});
 const processing = ref(false);
 const saving = ref(false);
@@ -355,6 +489,7 @@ onUnmounted(() => {
 
 watch([
     () => month_year.value,
+    () => selectedWarehouse.value,
 ], () => {
     reloadData();
 });
@@ -369,6 +504,7 @@ function reloadData() {
     dataLoading.value = true;
     const query = {};
     if (month_year.value) query.month_year = month_year.value;
+    if (selectedWarehouse.value) query.warehouse_id = selectedWarehouse.value;
     router.get(route('reports.warehouseMonthly'), query, {
         preserveState: true,
         preserveScroll: true,
@@ -376,6 +512,7 @@ function reloadData() {
             'reportData',
             'inventoryReport',
             'monthYear',
+            'warehouses',
             'error'
         ],
         onFinish: () => {
@@ -421,14 +558,41 @@ const getClosingBalanceClass = (item, index) => {
     return baseClasses.join(' ');
 };
 
+const getClosingBalanceTextClass = (item, index) => {
+    const balance = calculateClosingBalance(item, index);
+    
+    if (balance < 0) {
+        return 'text-red-600';
+    } else if (balance === 0) {
+        return 'text-yellow-600';
+    } else {
+        return 'text-green-600';
+    }
+};
+
 // Computed properties
-const groupedReportData = computed(() => {
+const filteredReportData = computed(() => {
     if (!props.reportData || !Array.isArray(props.reportData)) {
+        return [];
+    }
+    
+    let filtered = props.reportData;
+    
+    // Apply warehouse filter
+    if (selectedWarehouse.value) {
+        filtered = filtered.filter(item => item.warehouse_id == selectedWarehouse.value);
+    }
+    
+    return filtered;
+});
+
+const groupedReportData = computed(() => {
+    if (!filteredReportData.value || !Array.isArray(filteredReportData.value)) {
         return {};
     }
     
     const grouped = {};
-    props.reportData.forEach((item, index) => {
+    filteredReportData.value.forEach((item, index) => {
         const warehouseId = item.warehouse_id || 'unknown';
         if (!grouped[warehouseId]) {
             grouped[warehouseId] = {

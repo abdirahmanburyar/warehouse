@@ -1125,6 +1125,9 @@ class ReportController extends Controller
         try {
             $monthYear = $request->input('month_year', Carbon::now()->format('Y-m'));
             
+            // Get warehouses for the filter
+            $warehouses = Warehouse::select('id', 'name')->orderBy('name')->get();
+            
             // Get inventory report status
             $inventoryReport = InventoryReport::with('submittedBy', 'reviewedBy', 'approvedBy', 'rejectedBy')
                 ->where('month_year', $monthYear)
@@ -1143,6 +1146,7 @@ class ReportController extends Controller
             return inertia('Report/WarehouseMonthlyReport', [
                 'reportData' => $reportData,
                 'monthYear' => $monthYear,
+                'warehouses' => $warehouses,
                 'inventoryReport' => $inventoryReport->load([
                     'submittedBy' => function ($query) {
                         $query->select('id', 'name');
@@ -1157,7 +1161,7 @@ class ReportController extends Controller
                         $query->select('id', 'name');
                     }
                 ]),
-                'filters' => $request->only(['month_year', 'per_page', 'page']),
+                'filters' => $request->only(['month_year', 'warehouse_id', 'per_page', 'page']),
             ]);
             
         } catch (\Throwable $th) {
