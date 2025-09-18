@@ -125,28 +125,41 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
         $issuedItems = $issuedReport->items()->with('product')->get();
         echo "Found {$issuedItems->count()} issued items\n";
         
-        // Get all unique products from both reports
-        $allProductIds = $receivedItems->pluck('product_id')->merge($issuedItems->pluck('product_id'))->unique();
-        echo "Processing {$allProductIds->count()} unique products\n";
+        // Get all unique product-warehouse combinations from both reports
+        $receivedProductWarehouses = $receivedItems->map(function($item) {
+            return ['product_id' => $item->product_id, 'warehouse_id' => $item->warehouse_id];
+        });
+        
+        $issuedProductWarehouses = $issuedItems->map(function($item) {
+            return ['product_id' => $item->product_id, 'warehouse_id' => $item->warehouse_id];
+        });
+        
+        $allProductWarehouses = $receivedProductWarehouses->merge($issuedProductWarehouses)->unique(function($item) {
+            return $item['product_id'] . '-' . $item['warehouse_id'];
+        });
+        
+        echo "Processing {$allProductWarehouses->count()} unique product-warehouse combinations\n";
         
         $itemsGenerated = 0;
         $processedCount = 0;
         
-        foreach ($allProductIds as $productId) {
+        foreach ($allProductWarehouses as $productWarehouse) {
             $processedCount++;
             
-            // Show progress every 10 products
+            // Show progress every 10 combinations
             if ($processedCount % 10 == 0) {
-                echo "Processed {$processedCount}/{$allProductIds->count()} products\n";
+                echo "Processed {$processedCount}/{$allProductWarehouses->count()} product-warehouse combinations\n";
             }
             
             // Get the product
-            $product = Product::find($productId);
+            $product = Product::find($productWarehouse['product_id']);
             if (!$product) {
                 continue;
             }
             
-            if ($this->generateProductReportItemFromReports($report, $product, $receivedItems, $issuedItems, $previousDate)) {
+            $warehouseId = $productWarehouse['warehouse_id'];
+            
+            if ($this->generateProductReportItemFromReports($report, $product, $warehouseId, $receivedItems, $issuedItems, $previousDate)) {
                 $itemsGenerated++;
             }
         }
@@ -159,21 +172,21 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
     /**
      * Generate report item for a specific product using data from generated reports
      */
-    private function generateProductReportItemFromReports(InventoryReport $report, $product, $receivedItems, $issuedItems, Carbon $previousDate)
+    private function generateProductReportItemFromReports(InventoryReport $report, $product, $warehouseId, $receivedItems, $issuedItems, Carbon $previousDate)
     {
         echo "Processing product: {$product->productID} - {$product->name}\n";
         
-        // Get beginning balance from previous month's report
-        $beginningBalance = $this->getPreviousMonthClosingBalance($product->id, $previousDate->format('Y-m'));
-        echo "  Beginning balance: {$beginningBalance}\n";
+        // Get beginning balance from previous month's report for this warehouse
+        $beginningBalance = $this->getPreviousMonthClosingBalance($product->id, $warehouseId, $previousDate->format('Y-m'));
+        echo "  Beginning balance for warehouse {$warehouseId}: {$beginningBalance}\n";
         
-        // Get received quantity from the received report items
-        $receivedQuantity = $receivedItems->where('product_id', $product->id)->sum('quantity');
-        echo "  Received quantity: {$receivedQuantity}\n";
+        // Get received quantity from the received report items for this warehouse
+        $receivedQuantity = $receivedItems->where('product_id', $product->id)->where('warehouse_id', $warehouseId)->sum('quantity');
+        echo "  Received quantity for warehouse {$warehouseId}: {$receivedQuantity}\n";
         
-        // Get issued quantity from the issued report items
-        $issuedQuantity = $issuedItems->where('product_id', $product->id)->sum('quantity');
-        echo "  Issued quantity: {$issuedQuantity}\n";
+        // Get issued quantity from the issued report items for this warehouse
+        $issuedQuantity = $issuedItems->where('product_id', $product->id)->where('warehouse_id', $warehouseId)->sum('quantity');
+        echo "  Issued quantity for warehouse {$warehouseId}: {$issuedQuantity}\n";
         
         // Set adjustments to 0 (will be entered manually)
         $positiveAdjustment = 0;
@@ -186,9 +199,9 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
         // Only create report item if there's any movement or balance
         if ($beginningBalance > 0 || $receivedQuantity > 0 || $issuedQuantity > 0 || $closingBalance > 0) {
             
-            // Get all received and issued items for this product
-            $productReceivedItems = $receivedItems->where('product_id', $product->id);
-            $productIssuedItems = $issuedItems->where('product_id', $product->id);
+            // Get all received and issued items for this product and warehouse
+            $productReceivedItems = $receivedItems->where('product_id', $product->id)->where('warehouse_id', $warehouseId);
+            $productIssuedItems = $issuedItems->where('product_id', $product->id)->where('warehouse_id', $warehouseId);
             
             echo "  Found " . $productReceivedItems->count() . " received items and " . $productIssuedItems->count() . " issued items for this product\n";
             
@@ -310,6 +323,7 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
             InventoryReportItem::create([
                 'inventory_report_id' => $report->id,
                 'product_id' => $product->id,
+                'warehouse_id' => $warehouseId,
                 'uom' => $product->uom ?? 'pcs',
                 'batch_number' => $batchNumber,
                 'expiry_date' => $expiryDate,
@@ -339,11 +353,11 @@ class GenerateMonthlyInventoryReportJob implements ShouldQueue
     /**
      * Get closing balance from previous month's report
      */
-    private function getPreviousMonthClosingBalance($productId, $monthYear)
+    private function getPreviousMonthClosingBalance($productId, $warehouseId, $monthYear)
     {
         $previousReportItem = InventoryReportItem::whereHas('report', function($q) use ($monthYear) {
             $q->where('month_year', $monthYear);
-        })->where('product_id', $productId)->first();
+        })->where('product_id', $productId)->where('warehouse_id', $warehouseId)->first();
         
         return $previousReportItem ? $previousReportItem->closing_balance : 0;
     }
