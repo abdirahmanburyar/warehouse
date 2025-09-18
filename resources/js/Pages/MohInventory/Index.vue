@@ -243,12 +243,12 @@ const uploadExcelFile = async () => {
             toast.success(data.message);
             importId.value = data.import_id;
             
-            // Start polling for progress
-            startProgressPolling();
-            
-            // Close modal
+            // Close modal first
             showUploadModal.value = false;
             uploadFile.value = null;
+            
+            // Start polling for progress after modal is closed
+            startProgressPolling();
             
             // Refresh the page after a short delay to show new data
             setTimeout(() => {
@@ -260,12 +260,16 @@ const uploadExcelFile = async () => {
             if (data.message.includes('not found in database')) {
                 toast.error('Import failed: ' + data.message + ' Please add the missing items to the database first.');
             }
+            // Reset upload state on error
+            isUploading.value = false;
+            uploadProgress.value = 0;
         }
     } catch (error) {
         console.error('Upload error:', error);
         toast.error('Upload failed. Please try again.');
-    } finally {
+        // Reset upload state on error
         isUploading.value = false;
+        uploadProgress.value = 0;
     }
 };
 
@@ -274,7 +278,23 @@ const startProgressPolling = () => {
         clearInterval(progressInterval.value);
     }
 
+    let pollingAttempts = 0;
+    const maxPollingAttempts = 300; // 5 minutes timeout (300 * 1000ms = 5 minutes)
+
     progressInterval.value = setInterval(async () => {
+        pollingAttempts++;
+        
+        // Timeout after 5 minutes
+        if (pollingAttempts > maxPollingAttempts) {
+            clearInterval(progressInterval.value);
+            progressInterval.value = null;
+            toast.error('Import timeout. Please check if the import completed successfully.');
+            isUploading.value = false;
+            uploadProgress.value = 0;
+            importId.value = null;
+            return;
+        }
+
         try {
             const response = await fetch(`${route('inventories.moh-inventory.import-progress')}?import_id=${importId.value}`);
             const data = await response.json();
@@ -284,7 +304,19 @@ const startProgressPolling = () => {
                 
                 if (data.completed) {
                     clearInterval(progressInterval.value);
+                    progressInterval.value = null;
                     toast.success('Import completed successfully!');
+                    // Reset upload state after completion
+                    isUploading.value = false;
+                    uploadProgress.value = 0;
+                    importId.value = null;
+                } else if (data.progress === -1) {
+                    // Handle import failure
+                    clearInterval(progressInterval.value);
+                    progressInterval.value = null;
+                    toast.error('Import failed. Please check the logs for details.');
+                    // Reset upload state on failure
+                    isUploading.value = false;
                     uploadProgress.value = 0;
                     importId.value = null;
                 }
@@ -292,6 +324,11 @@ const startProgressPolling = () => {
         } catch (error) {
             console.error('Progress polling error:', error);
             clearInterval(progressInterval.value);
+            progressInterval.value = null;
+            // Reset upload state on error
+            isUploading.value = false;
+            uploadProgress.value = 0;
+            importId.value = null;
         }
     }, 1000);
 };
@@ -822,8 +859,11 @@ const filteredInventoryItems = computed(() => {
                         <!-- Progress Bar (shown during upload) -->
                         <div v-if="isUploading || uploadProgress > 0" class="mt-4">
                             <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
-                                <span>Uploading and processing...</span>
-                                <span>{{ uploadProgress }}%</span>
+                                <span v-if="isUploading">Uploading file...</span>
+                                <span v-else-if="uploadProgress > 0 && uploadProgress < 100">Processing import... ({{ uploadProgress }}%)</span>
+                                <span v-else-if="uploadProgress === 100">Import completed!</span>
+                                <span v-else>Preparing import...</span>
+                                <span v-if="uploadProgress > 0">{{ uploadProgress }}%</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2">
                                 <div 

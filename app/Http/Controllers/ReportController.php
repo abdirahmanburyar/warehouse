@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\PhysicalCountSubmitted;
 use Illuminate\Support\Facades\Cache;
+use Inertia\Inertia;
 use App\Models\AvarageMonthlyconsumption;
 use App\Models\Location;
 use App\Models\Product;
@@ -143,9 +144,68 @@ class ReportController extends Controller
     }
 
     public function inventoryReport(Request $request){
-        $query = InventoryReport::query();
+        // Get warehouses for the filter
+        $warehouses = Warehouse::select('id', 'name')->orderBy('name')->get();
 
-        $query->with(['items.product.dosage', 'items.product.category', 'items.warehouse', 'approver', 'rejecter', 'reviewer']);
+        // Get the current month and year for default filtering
+        $currentMonth = (int) date('n');
+        $currentYear = (int) date('Y');
+
+        return Inertia::render('Report/InventoryReport', [
+            'warehouses' => $warehouses,
+            'currentMonth' => $currentMonth,
+            'currentYear' => $currentYear,
+        ]);
+    }
+
+    public function generateInventoryReport(Request $request){
+        try {
+            $monthYear = $request->input('month_year');
+            $warehouseId = $request->input('warehouse_id');
+
+            // Generate the inventory report using the existing getInventoryReportData method
+            $reportData = $this->getInventoryReportData($request, $monthYear);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Inventory report generated successfully',
+                'data' => $reportData
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate inventory report: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function inventoryReportData(Request $request){
+        try {
+            $monthYear = $request->input('month_year');
+            $prevMonthYear = $request->input('prev_month_year');
+            $warehouseId = $request->input('warehouse_id');
+
+            // Get the inventory report data
+            $reportData = $this->getInventoryReportData($request, $monthYear);
+
+            // Get previous month data for comparison
+            $prevReportData = [];
+            if ($prevMonthYear) {
+                $prevRequest = new Request(['month_year' => $prevMonthYear, 'warehouse_id' => $warehouseId]);
+                $prevReportData = $this->getInventoryReportData($prevRequest, $prevMonthYear);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $reportData,
+                'prevData' => $prevReportData
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch inventory report data: ' . $e->getMessage()
+            ], 500);
+        }
     }
     
     public function physicalCountReport(Request $request){
@@ -939,7 +999,7 @@ class ReportController extends Controller
                 $query->where('month_year', $request->month);
             })
             ->whereIn('status', ['approved', 'rejected'])
-            ->with(['items.product.dosage', 'items.product.category', 'items.warehouse', 'approver', 'rejecter', 'reviewer'])
+            ->with(['items.product.dosage', 'items.product.category', 'items.warehouse', 'approvedBy', 'rejectedBy', 'reviewedBy'])
             ->paginate($request->input('per_page', 100), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
             

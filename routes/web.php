@@ -693,7 +693,7 @@ Route::controller(LocationController::class)
 
         // Inventory Routes
             Route::get('/inventory-report', [ReportController::class, 'inventoryReport'])->name('reports.inventoryReport');
-        // Route::post('/inventory-report/generate', [ReportController::class, 'generateInventoryReport'])->middleware(PermissionMiddleware::class . ':report.generate')->name('reports.generateInventoryReport');
+            Route::post('/inventory-report/generate', [ReportController::class, 'generateInventoryReport'])->name('reports.generateInventoryReport');
 
         // Physical count report routes
             Route::post('/physical-count/generate', [ReportController::class, 'generatePhysicalCountReport'])->name('reports.physicalCountReport');
