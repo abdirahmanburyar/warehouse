@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Cache;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\UploadInventory;
 use App\Services\InventoryAnalyticsService;
+use App\Services\WarehouseAmcCalculationService;
 use App\Models\InventoryItem;
 use App\Models\Warehouse;
 
@@ -90,11 +91,25 @@ class InventoryController extends Controller
 
 			$products->setPath(url()->current());
 			
-			// Add reorder_level and amc to each product using the Product model methods
-			// Temporarily disabled to prevent timeout - set default values
-			$products->getCollection()->transform(function ($product) {
-				$product->reorder_level = 0;
-				$product->amc = 0;
+			// Calculate AMC and reorder level using the warehouse AMC service
+			$productIds = $products->getCollection()->pluck('id')->toArray();
+			$warehouseAmcService = new WarehouseAmcCalculationService();
+			$amcResults = [];
+			
+			try {
+				$amcResults = $warehouseAmcService->calculateAmcForProducts($productIds);
+			} catch (\Exception $e) {
+				Log::warning('Warehouse AMC calculation failed for inventory: ' . $e->getMessage());
+			}
+			
+			$products->getCollection()->transform(function ($product) use ($amcResults) {
+				$amc = isset($amcResults[$product->id]) ? $amcResults[$product->id]['amc'] : 0;
+				
+				// Calculate reorder level: AMC × 3 (simplified version without buffer stock)
+				$reorderLevel = $amc > 0 ? round($amc * 3, 2) : 0;
+				
+				$product->reorder_level = $reorderLevel;
+				$product->amc = $amc;
 				return $product;
 			});
 			
@@ -121,10 +136,10 @@ class InventoryController extends Controller
 									
 								case 'low_stock_reorder_level':
 									if ($reorderLevel <= 0) return false;
-									return $totalQuantity > 1 && $totalQuantity <= $reorderLevel;
+									return $totalQuantity > 0 && $totalQuantity <= $reorderLevel;
 									
 								case 'out_of_stock':
-									return $totalQuantity <= 0;
+									return $totalQuantity == 0;
 									
 								default:
 									return true;
@@ -229,10 +244,23 @@ class InventoryController extends Controller
 			// Get all products that match the filters (no pagination)
 			$allProducts = $productQuery->get();
 
-			// Add reorder_level and amc to each product (same as main query)
-			$allProducts->transform(function ($product) {
-				$product->reorder_level = 0;
-				$product->amc = 0;
+			// Calculate AMC and reorder level for status counting (same as main query)
+			$allProductIds = $allProducts->pluck('id')->toArray();
+			$warehouseAmcService = new WarehouseAmcCalculationService();
+			$allAmcResults = [];
+			
+			try {
+				$allAmcResults = $warehouseAmcService->calculateAmcForProducts($allProductIds);
+			} catch (\Exception $e) {
+				Log::warning('Warehouse AMC calculation failed for status counting: ' . $e->getMessage());
+			}
+			
+			$allProducts->transform(function ($product) use ($allAmcResults) {
+				$amc = isset($allAmcResults[$product->id]) ? $allAmcResults[$product->id]['amc'] : 0;
+				$reorderLevel = $amc > 0 ? round($amc * 3, 2) : 0;
+				
+				$product->reorder_level = $reorderLevel;
+				$product->amc = $amc;
 				return $product;
 			});
 

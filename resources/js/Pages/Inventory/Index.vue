@@ -534,14 +534,14 @@ const getInventoryStatus = (inventory) => {
     // Calculate the low stock threshold (reorder level + 30%)
     const lowStockThreshold = reorderLevel * 1.3;
     
-    if (totalQuantity > 1 && totalQuantity <= reorderLevel) {
-        // Items at or below reorder level but more than 1 (2 to 9,000 in your example)
+    if (totalQuantity > 0 && totalQuantity <= reorderLevel) {
+        // Items at or below reorder level (1 to reorderLevel)
         return 'low_stock_reorder_level';
-    } else if (totalQuantity <= lowStockThreshold) {
-        // Items between reorder level and reorder level + 30% (9,001 to 11,700 in your example)
+    } else if (totalQuantity > reorderLevel && totalQuantity <= lowStockThreshold) {
+        // Items between reorder level and reorder level + 30%
         return 'low_stock';
     } else {
-        // Items above reorder level + 30% (above 11,700 in your example)
+        // Items above reorder level + 30%
         return 'in_stock';
     }
 };
@@ -610,9 +610,9 @@ const outOfStockCount = computed(() => {
 // Combined count for debugging - shows both old and new status names
 const combinedReorderLevelCount = computed(() => {
     if (!props.inventoryStatusCounts || !Array.isArray(props.inventoryStatusCounts)) return 0;
-    const reorderLevel = props.inventoryStatusCounts.find(s => s.status === 'low_stock_reorder_level')?.count || 0;
+    // Just return the low_stock_reorder_level count (no need to double it)
     const lowStockReorderLevel = props.inventoryStatusCounts.find(s => s.status === 'low_stock_reorder_level')?.count || 0;
-    return reorderLevel + lowStockReorderLevel;
+    return lowStockReorderLevel;
 });
 
 // Calculate counts directly from inventory data for accuracy
