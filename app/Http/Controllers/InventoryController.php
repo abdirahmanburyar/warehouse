@@ -78,21 +78,26 @@ class InventoryController extends Controller
 				$productQuery->whereHas('items.warehouse', fn($q) => $q->where('name', $request->warehouse));
 			}
 	
-			// Status filter - will be applied after data is loaded
+			// Status filter - will be applied after data is loaded but before pagination
 			$statusFilter = $request->filled('status') ? $request->status : null;
 	
-						// Paginate
-			$products = $productQuery->paginate(
-				$request->input('per_page', 25),
-				['*'],
-				'page',
-				$request->input('page', 1)
-			)->withQueryString();
-
-			$products->setPath(url()->current());
+			// Get all products first (without pagination) if status filter is applied
+			if ($statusFilter) {
+				$allProducts = $productQuery->get();
+			} else {
+				// Paginate normally if no status filter
+				$products = $productQuery->paginate(
+					$request->input('per_page', 25),
+					['*'],
+					'page',
+					$request->input('page', 1)
+				)->withQueryString();
+				$products->setPath(url()->current());
+			}
 			
 			// Calculate AMC and reorder level using the warehouse AMC service
-			$productIds = $products->getCollection()->pluck('id')->toArray();
+			$currentProducts = $statusFilter ? $allProducts : $products->getCollection();
+			$productIds = $currentProducts->pluck('id')->toArray();
 			$warehouseAmcService = new WarehouseAmcCalculationService();
 			$amcResults = [];
 			
@@ -102,7 +107,7 @@ class InventoryController extends Controller
 				Log::warning('Warehouse AMC calculation failed for inventory: ' . $e->getMessage());
 			}
 			
-			$products->getCollection()->transform(function ($product) use ($amcResults) {
+			$currentProducts->transform(function ($product) use ($amcResults) {
 				$amc = isset($amcResults[$product->id]) ? $amcResults[$product->id]['amc'] : 0;
 				
 				// Calculate reorder level: AMC × 3 (simplified version without buffer stock)
@@ -116,10 +121,11 @@ class InventoryController extends Controller
 			// Apply status filter after data is loaded and calculated
 			if ($statusFilter) {
 				try {
-					$filteredCollection = $products->getCollection()->filter(function ($product) use ($statusFilter) {
+					$filteredCollection = $allProducts->filter(function ($product) use ($statusFilter) {
 						try {
 							$totalQuantity = $product->items->sum('quantity');
 							$reorderLevel = $product->reorder_level ?? 0;
+							
 							
 							switch ($statusFilter) {
 								case 'in_stock':
@@ -130,9 +136,13 @@ class InventoryController extends Controller
 									return $totalQuantity > $lowStockThreshold;
 									
 								case 'low_stock':
-									if ($reorderLevel <= 0) return false;
+									if ($reorderLevel <= 0) {
+										// No reorder level set, cannot be "low stock" - return false
+										return false;
+									}
 									$lowStockThreshold = $reorderLevel * 1.3;
-									return $totalQuantity > $reorderLevel && $totalQuantity <= $lowStockThreshold;
+									$isLowStock = $totalQuantity > $reorderLevel && $totalQuantity <= $lowStockThreshold;
+									return $isLowStock;
 									
 								case 'low_stock_reorder_level':
 									if ($reorderLevel <= 0) return false;
@@ -150,9 +160,24 @@ class InventoryController extends Controller
 						}
 					});
 					
-					// Update the collection and pagination
-					$products->setCollection($filteredCollection);
-					$products->setTotal($filteredCollection->count());
+					// Create pagination from filtered results
+					
+					$perPage = $request->input('per_page', 25);
+					$currentPage = $request->input('page', 1);
+					$offset = ($currentPage - 1) * $perPage;
+					$paginatedItems = $filteredCollection->slice($offset, $perPage)->values();
+					
+					$products = new \Illuminate\Pagination\LengthAwarePaginator(
+						$paginatedItems,
+						$filteredCollection->count(),
+						$perPage,
+						$currentPage,
+						[
+							'path' => request()->url(),
+							'pageName' => 'page',
+						]
+					);
+					$products->withQueryString();
 				} catch (\Exception $e) {
 					Log::error('[INVENTORY-FILTER] Error applying status filter: ' . $e->getMessage());
 					// Continue without filtering if there's an error
@@ -285,17 +310,17 @@ class InventoryController extends Controller
 						
 						if ($totalQuantity > $lowStockThreshold) {
 							$statusCounts[0]['count']++; // in_stock
-						} elseif ($totalQuantity > $reorderLevel) {
+						} elseif ($totalQuantity > $reorderLevel && $totalQuantity <= $lowStockThreshold) {
 							$statusCounts[1]['count']++; // low_stock
 						} else {
 							$statusCounts[2]['count']++; // low_stock_reorder_level
 						}
 					} else {
-						// No reorder level set, use simple threshold
-						if ($totalQuantity > 10) {
+						// No reorder level set - cannot be "low stock", only in_stock or out_of_stock
+						if ($totalQuantity > 0) {
 							$statusCounts[0]['count']++; // in_stock
 						} else {
-							$statusCounts[1]['count']++; // low_stock
+							$statusCounts[3]['count']++; // out_of_stock
 						}
 					}
 				} catch (\Exception $e) {

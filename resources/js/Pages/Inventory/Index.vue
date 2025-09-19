@@ -749,10 +749,10 @@ onUnmounted(() => {
                             @change="applyFilters"
                             class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             <option value="">All Statuses ({{ props.inventories?.data?.length || 0 }})</option>
-                            <option value="in_stock">In Stock ({{ inStockCount }})</option>
-                            <option value="low_stock">Low Stock ({{ lowStockCount }})</option>
-                            <option value="low_stock_reorder_level">Low Stock + Reorder Level ({{ lowStockReorderLevelCount }})</option>
-                            <option value="out_of_stock">Out of Stock ({{ outOfStockCount }})</option>
+                            <option value="in_stock">✅ In Stock ({{ inStockCount }})</option>
+                            <option value="low_stock">⚠️ Low Stock ({{ lowStockCount }})</option>
+                            <option value="low_stock_reorder_level">🚨 Critical - Below Reorder Level ({{ lowStockReorderLevelCount }})</option>
+                            <option value="out_of_stock">❌ Out of Stock ({{ outOfStockCount }})</option>
                         </select>
                     </div>
                 </div>
@@ -787,10 +787,10 @@ onUnmounted(() => {
                         class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                         <span class="text-sm text-gray-600">
                             Status: {{
-                                status === 'in_stock' ? 'In Stock' :
-                                    status === 'low_stock' ? 'Low Stock' :
-                                        status === 'low_stock_reorder_level' ? 'Low Stock + Reorder Level' :
-                                            status === 'out_of_stock' ? 'Out of Stock' :
+                                status === 'in_stock' ? '✅ In Stock' :
+                                    status === 'low_stock' ? '⚠️ Low Stock' :
+                                        status === 'low_stock_reorder_level' ? '🚨 Critical - Below Reorder Level' :
+                                            status === 'out_of_stock' ? '❌ Out of Stock' :
                                                 status
                             }}
                         </span>
@@ -1027,28 +1027,28 @@ onUnmounted(() => {
                                                     <!-- Main status icon -->
                                                     <div v-if="getInventoryStatus(inventory) === 'in_stock'"
                                                         class="flex items-center justify-center"
-                                                        title="In Stock - No reorder needed">
+                                                        title="✅ In Stock - Sufficient quantity available">
                                                         <img src="/assets/images/in_stock.png" 
                                                              alt="In Stock" 
                                                              class="w-8 h-8 drop-shadow-sm" />
                                                     </div>
                                                     <div v-else-if="getInventoryStatus(inventory) === 'low_stock'"
                                                         class="flex items-center justify-center"
-                                                        title="Low Stock - Reorder recommended">
+                                                        title="⚠️ Low Stock - Above reorder level but getting low">
                                                         <img src="/assets/images/low_stock.png" 
                                                              alt="Low Stock" 
                                                              class="w-8 h-8 drop-shadow-sm" />
                                                     </div>
                                                     <div v-else-if="getInventoryStatus(inventory) === 'low_stock_reorder_level'"
                                                         class="flex items-center justify-center"
-                                                        title="Low Stock + Reorder Level - Immediate reorder needed">
+                                                        title="🚨 Critical - At or below reorder level, order immediately">
                                                         <img src="/assets/images/low_stock.png"
                                                              alt="Low Stock + Reorder Level" 
                                                              class="w-8 h-8 drop-shadow-sm" />
                                                     </div>
                                                     <div v-else-if="getInventoryStatus(inventory) === 'out_of_stock'"
                                                         class="flex items-center justify-center"
-                                                        title="Out of Stock - Immediate reorder needed">
+                                                        title="❌ Out of Stock - No quantity available">
                                                         <img src="/assets/images/out_stock_alert.png" 
                                                              alt="Out of Stock" 
                                                              class="w-8 h-8 drop-shadow-sm" />
@@ -1166,28 +1166,28 @@ onUnmounted(() => {
                                                     <!-- Main status icon -->
                                                     <div v-if="getInventoryStatus(inventory) === 'in_stock'"
                                                         class="flex items-center justify-center"
-                                                        title="In Stock - No reorder needed">
+                                                        title="✅ In Stock - Sufficient quantity available">
                                                         <img src="/assets/images/in_stock.png" 
                                                              alt="In Stock" 
                                                              class="w-8 h-8 drop-shadow-sm" />
                                                     </div>
                                                     <div v-else-if="getInventoryStatus(inventory) === 'low_stock'"
                                                         class="flex items-center justify-center"
-                                                        title="Low Stock - Reorder recommended">
+                                                        title="⚠️ Low Stock - Above reorder level but getting low">
                                                         <img src="/assets/images/low_stock.png" 
                                                              alt="Low Stock" 
                                                              class="w-8 h-8 drop-shadow-sm" />
                                                     </div>
                                                     <div v-else-if="getInventoryStatus(inventory) === 'low_stock_reorder_level'"
                                                         class="flex items-center justify-center"
-                                                        title="Low Stock + Reorder Level - Immediate reorder needed">
+                                                        title="🚨 Critical - At or below reorder level, order immediately">
                                                         <img src="/assets/images/low_stock.png"
                                                              alt="Low Stock + Reorder Level" 
                                                              class="w-8 h-8 drop-shadow-sm" />
                                                     </div>
                                                     <div v-else-if="getInventoryStatus(inventory) === 'out_of_stock'"
                                                         class="flex items-center justify-center"
-                                                        title="Out of Stock - Immediate reorder needed">
+                                                        title="❌ Out of Stock - No quantity available">
                                                         <img src="/assets/images/out_stock_alert.png" 
                                                              alt="Out of Stock" 
                                                              class="w-8 h-8 drop-shadow-sm" />

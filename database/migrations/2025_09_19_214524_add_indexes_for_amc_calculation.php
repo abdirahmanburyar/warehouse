@@ -22,6 +22,7 @@ return new class extends Migration
             // This covers: WHERE facility_id = ? AND month_year != ?
             $table->index(['facility_id', 'month_year'], 'idx_mcr_facility_month');
         });
+
     }
 
     /**
@@ -29,9 +30,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('monthly_consumption_items', function (Blueprint $table) {
-            $table->dropIndex('idx_mci_product_quantity');
-        });
+        // Note: Cannot drop idx_mci_product_quantity as it's used by foreign key constraints
+        // Schema::table('monthly_consumption_items', function (Blueprint $table) {
+        //     $table->dropIndex('idx_mci_product_quantity');
+        // });
 
         Schema::table('monthly_consumption_reports', function (Blueprint $table) {
             $table->dropIndex('idx_mcr_facility_month');
