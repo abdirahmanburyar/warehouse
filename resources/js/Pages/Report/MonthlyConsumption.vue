@@ -417,19 +417,13 @@ const pivotTableData = computed(() => {
 const filteredPivotTableData = computed(() => {
     if (!pivotTableData.value.length) return [];
     
-    // Debug: Log all products in pivot data
-    console.log('All products in pivotTableData:', pivotTableData.value.map(row => row.product_name));
-    
     if (productSearch.value) {
         const searchTerm = productSearch.value.toLowerCase();
-        const filtered = pivotTableData.value.filter(row => {
+        return pivotTableData.value.filter(row => {
             return row.product_name.toLowerCase().includes(searchTerm);
         });
-        console.log('Filtered products:', filtered.map(row => row.product_name));
-        return filtered;
     }
     
-    console.log('Using all pivot table data (no search filter)');
     return pivotTableData.value;
 });
 
