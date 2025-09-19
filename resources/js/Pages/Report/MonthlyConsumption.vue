@@ -189,7 +189,7 @@
                                 <th class="px-4 py-2 text-center text-xs font-medium text-white uppercase tracking-wider bg-sky-500 relative group">
                                     AMC
                                     <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                        AMC calculated using exact 70% deviation screening formula
+                                        AMC: Finds 3 consistent months (≤70% deviation) and calculates their average
                                     </div>
                                 </th>
                             </tr>
@@ -933,21 +933,28 @@ async function downloadTemplate() {
     }
 }
 
-// Single AMC per row using the exact 70% deviation screening formula
-// Formula: Find 3 consecutive months that pass ≤70% deviation threshold
-// Example: Jan=3000, Feb=2000, Mar=3000, Apr=6000, May=2500, Jun=300
-// Step 1: Take closest 3 months (Jun=300, May=2500, Apr=6000)
-// Step 2: Calculate average: (300+2500+6000)/3 = 2933
-// Step 3: Check each month: |300-2933|/2933*100 = 89.7% > 70% (FAILED)
-// Step 4: Reselect 3 months including passed ones: May=2500, Apr=6000, Mar=3000
-// Step 5: Calculate average: (2500+6000+3000)/3 = 3833
-// Step 6: Check each month: |2500-3833|/3833*100 = 34.8% ≤ 70% (PASSED)
-// Step 7: Final AMC = 3833
+/**
+ * Calculate AMC using exact 70% deviation screening formula (matches backend logic)
+ * 
+ * AMC Screening Process:
+ * 1. Exclude current month from consumption data
+ * 2. Screen months to find 3 that have ≤70% deviation from their average
+ * 3. Calculate AMC (Average Monthly Consumption) from selected 3 months
+ * 
+ * Example: 
+ * Months: Jan=100, Feb=150, Mar=120, Apr=500, May=110, Jun=140
+ * Step 1: Take first 3 months [Jan=100, Feb=150, Mar=120]
+ * Step 2: Calculate average: (100+150+120)/3 = 123.33
+ * Step 3: Check deviations: |100-123.33|/123.33*100 = 18.9% ≤ 70% ✓
+ *                          |150-123.33|/123.33*100 = 21.6% ≤ 70% ✓  
+ *                          |120-123.33|/123.33*100 = 2.7% ≤ 70% ✓
+ * Step 4: All pass → AMC = 123.33
+ */
 function calculateScreenedAMC(row) {
-    // Prefer backend AMC calculation (which now uses the new 70% formula)
+    // Prefer backend AMC calculation (which uses the exact screening logic)
     const backend = props.amcByProduct?.[row.product_id]?.amc;
     if (typeof backend === 'number' && !isNaN(backend)) {
-        return backend;
+        return Math.round(backend * 100) / 100;
     }
     
     // Get all available months (excluding current month)
@@ -956,83 +963,77 @@ function calculateScreenedAMC(row) {
     
     if (availableMonths.length === 0) return 0;
     
-    // Get consumption values for available months
-    const monthData = availableMonths.map(month => ({
-        month: month,
-        consumption: Number(row[month]) || 0
-    })); // Include all months, even with 0 consumption
+    // Get consumption values for available months, sorted newest first
+    const monthsData = availableMonths
+        .map(month => ({
+            month_year: month,
+            consumption: Number(row[month]) || 0
+        }))
+        .sort((a, b) => new Date(b.month_year) - new Date(a.month_year));
     
-    if (monthData.length === 0) return 0;
+    // Exclude current month if present (double check)
+    const startIndex = 0; // We already filtered out current month above
+    const monthsCount = monthsData.length;
     
-    // Sort by month (newest first for the screening logic - bottom to top)
-    monthData.sort((a, b) => new Date(b.month) - new Date(a.month));
+    if (monthsCount === 0) return 0;
     
-    // Filter out months with 0 consumption for AMC calculation
-    const nonZeroMonthData = monthData.filter(item => item.consumption > 0);
-    
-    if (nonZeroMonthData.length === 0) return 0;
-    
-    // Apply the exact AMC screening formula step by step
+    // AMC Screening Logic: Find 3 months that are consistent with each other
     let selectedMonths = [];
     let amc = 0;
     
-    if (nonZeroMonthData.length >= 3) {
-        // Step 1: Start with the closest 3 months (first 3 in our sorted array)
-        let currentGroup = nonZeroMonthData.slice(0, 3);
-        let foundValidGroup = false;
-        let passedMonths = [];
+    if (monthsCount >= 3) {
+        // Start with the first 3 months (excluding current month if applicable)
+        const firstThreeMonths = monthsData.slice(startIndex, startIndex + 3);
         
-        // Step 2: Try to find 3 consecutive months that all pass the 70% threshold
-        for (let startIndex = 0; startIndex <= nonZeroMonthData.length - 3 && !foundValidGroup; startIndex++) {
-            let testGroup = nonZeroMonthData.slice(startIndex, startIndex + 3);
-            let groupSum = testGroup.reduce((acc, item) => acc + item.consumption, 0);
-            let groupAverage = groupSum / 3;
+        // Calculate average of first 3 months
+        let sum = 0;
+        firstThreeMonths.forEach(month => {
+            sum += parseFloat(month.consumption);
+        });
+        const average = sum / 3;
+        
+        // Screen each month: must be within 70% deviation of the 3-month average
+        const passedMonths = [];
+        const failedMonths = [];
+        
+        firstThreeMonths.forEach(month => {
+            const quantity = parseFloat(month.consumption);
+            const deviation = Math.abs(quantity - average);
+            const percentage = average > 0 ? (deviation / average) * 100 : 0;
             
-            // Step 3: Check if all months in this group pass the 70% threshold
-            let allPass = true;
-            let currentPassedMonths = [];
-            
-            testGroup.forEach(item => {
-                let quantity = item.consumption;
-                let deviation = Math.abs(quantity - groupAverage);
-                let percentage = groupAverage > 0 ? (deviation / groupAverage) * 100 : 0;
-                
-                if (percentage <= 70) {
-                    currentPassedMonths.push(item);
-                } else {
-                    allPass = false;
-                }
-            });
-            
-            if (allPass) {
-                // All 3 months passed, use this group
-                selectedMonths = testGroup;
-                amc = groupAverage;
-                foundValidGroup = true;
-                break;
-            } else if (currentPassedMonths.length > 0) {
-                // Some months passed, keep track of them for potential use
-                if (currentPassedMonths.length > passedMonths.length) {
-                    passedMonths = [...currentPassedMonths];
-                }
+            if (percentage <= 70) {
+                passedMonths.push(month);
+            } else {
+                failedMonths.push(month);
             }
-        }
+        });
         
-        // Step 4: If no valid group of 3 found, try to find a group including passed months
-        if (!foundValidGroup && passedMonths.length > 0) {
-            // Try to find 3 months that work together, including the passed ones
-            // Start from the beginning and look for any 3 consecutive months that pass
-            for (let startIndex = 0; startIndex <= nonZeroMonthData.length - 3; startIndex++) {
-                let testGroup = nonZeroMonthData.slice(startIndex, startIndex + 3);
-                let groupSum = testGroup.reduce((acc, item) => acc + item.consumption, 0);
-                let groupAverage = groupSum / 3;
+        // If all 3 months passed, use them
+        if (passedMonths.length === 3) {
+            selectedMonths = passedMonths;
+            amc = average;
+        } else {
+            // Need to find more months to get 3 that pass
+            const remainingMonths = monthsData.slice(startIndex + 3);
+            const candidates = [...passedMonths, ...remainingMonths];
+            
+            // Try to find 3 months that pass screening together
+            let foundValidGroup = false;
+            
+            for (let i = 0; i <= candidates.length - 3 && !foundValidGroup; i++) {
+                const testGroup = candidates.slice(i, i + 3);
+                let testSum = 0;
+                testGroup.forEach(month => {
+                    testSum += parseFloat(month.consumption);
+                });
+                const testAverage = testSum / 3;
                 
-                // Check if this group passes
+                // Check if all months in this group pass
                 let allPass = true;
-                testGroup.forEach(item => {
-                    let quantity = item.consumption;
-                    let deviation = Math.abs(quantity - groupAverage);
-                    let percentage = groupAverage > 0 ? (deviation / groupAverage) * 100 : 0;
+                testGroup.forEach(month => {
+                    const quantity = parseFloat(month.consumption);
+                    const deviation = Math.abs(quantity - testAverage);
+                    const percentage = testAverage > 0 ? (deviation / testAverage) * 100 : 0;
                     
                     if (percentage > 70) {
                         allPass = false;
@@ -1041,43 +1042,39 @@ function calculateScreenedAMC(row) {
                 
                 if (allPass) {
                     selectedMonths = testGroup;
-                    amc = groupAverage;
+                    amc = testAverage;
                     foundValidGroup = true;
                     break;
                 }
             }
+            
+            // If no valid group found, use the months that passed initially
+            if (!foundValidGroup && passedMonths.length > 0) {
+                selectedMonths = passedMonths;
+                if (passedMonths.length > 1) {
+                    let passedSum = 0;
+                    passedMonths.forEach(month => {
+                        passedSum += parseFloat(month.consumption);
+                    });
+                    amc = passedSum / passedMonths.length;
+                } else {
+                    amc = parseFloat(passedMonths[0].consumption);
+                }
+            }
         }
-        
-        // Step 5: If still no valid group, use the best available months
-        if (!foundValidGroup && selectedMonths.length === 0) {
-            // Use the first 3 months as fallback
-            selectedMonths = nonZeroMonthData.slice(0, 3);
-            let sum = selectedMonths.reduce((acc, item) => acc + item.consumption, 0);
-            amc = sum / 3;
-        }
-    } else if (nonZeroMonthData.length === 2) {
+    } else if (monthsCount === 2) {
         // If only 2 months available
-        selectedMonths = nonZeroMonthData.slice(0, 2);
-        let sum = selectedMonths.reduce((acc, item) => acc + item.consumption, 0);
+        selectedMonths = monthsData.slice(startIndex, startIndex + 2);
+        let sum = 0;
+        selectedMonths.forEach(month => {
+            sum += parseFloat(month.consumption);
+        });
         amc = sum / 2;
-    } else if (nonZeroMonthData.length === 1) {
+    } else if (monthsCount === 1) {
         // If only 1 month available
-        selectedMonths = nonZeroMonthData.slice(0, 1);
-        amc = selectedMonths[0].consumption;
+        selectedMonths = monthsData.slice(startIndex, startIndex + 1);
+        amc = parseFloat(selectedMonths[0].consumption);
     }
-    
-    // Debug logging for AMC calculation
-    console.log('AMC Calculation Debug:', {
-        product: row.product_name,
-        backendAmc: props.amcByProduct?.[row.product_id]?.amc,
-        monthData: monthData,
-        nonZeroMonthData: nonZeroMonthData,
-        selectedMonths: selectedMonths,
-        amc: amc,
-        foundValidGroup: foundValidGroup,
-        sortedMonths: sortedMonths.value,
-        usingBackend: typeof props.amcByProduct?.[row.product_id]?.amc === 'number' && !isNaN(props.amcByProduct?.[row.product_id]?.amc)
-    });
     
     return Math.round(amc * 100) / 100; // Round to 2 decimal places
 }
@@ -1154,10 +1151,10 @@ function exportToExcel() {
             sortedMonths.value.forEach((month) => {
                 dataRow.push(row[month] || 0);
             });
-            // Add AMC: prefer backend, else fallback to exact 70% deviation screening formula
+            // Add AMC: Uses 70% deviation screening to find 3 consistent months
             const backendAmc = props.amcByProduct?.[row.product_id]?.amc;
             const amcValue = (typeof backendAmc === 'number' && !isNaN(backendAmc))
-                ? backendAmc
+                ? Math.round(backendAmc * 100) / 100
                 : calculateScreenedAMC(row);
             dataRow.push(amcValue);
 
