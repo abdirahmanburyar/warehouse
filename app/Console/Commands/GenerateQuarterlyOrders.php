@@ -19,7 +19,7 @@ class GenerateQuarterlyOrders extends Command
      *
      * @var string
      */
-    protected $signature = 'orders:generate-quarterly {quarter? : Target quarter (1-4)} {year? : Target year} {--test : Test mode - bypass date validation}';
+    protected $signature = 'orders:generate-quarterly {quarter? : Target quarter (1-4)} {year? : Target year} {--test : Test mode - bypass date validation} {--force : Force generation even if orders already exist}';
 
     /**
      * The console command description.
@@ -131,6 +131,28 @@ class GenerateQuarterlyOrders extends Command
                 }
 
                 $this->info("   🏥 Found {$facilities->count()} active facilities of type: {$facilityType}");
+
+                // Check for existing quarterly orders for this quarter/year
+                $existingOrdersCount = $this->checkExistingQuarterlyOrders($facilities, $targetQuarter, $year);
+                if ($existingOrdersCount > 0) {
+                    $this->warn("   ⚠️ Found {$existingOrdersCount} existing quarterly orders for Q{$targetQuarter} {$year} in {$facilityType} facilities");
+                    
+                    if (!$this->option('test') && !$this->option('force')) {
+                        $this->error("   ❌ Quarterly orders for Q{$targetQuarter} {$year} already exist for {$facilityType} facilities");
+                        $this->error("   💡 Use --test or --force mode to override this check:");
+                        $this->error("      • --test: Test mode bypass");
+                        $this->error("      • --force: Force regeneration (may create duplicates)");
+                        continue; // Skip this facility type
+                    } else {
+                        if ($this->option('test')) {
+                            $this->warn("   🧪 TEST MODE: Proceeding despite existing orders");
+                        }
+                        if ($this->option('force')) {
+                            $this->warn("   🔧 FORCE MODE: Proceeding despite existing orders (may create duplicates)");
+                        }
+                    }
+                }
+
                 $this->newLine();
 
                 // Process each facility for this facility type
@@ -632,12 +654,12 @@ class GenerateQuarterlyOrders extends Command
                                 $this->info("         🗑️ Deleted empty batch: {$inventory->batch_number} (Product ID: {$item->product_id})");
                             } else {
                                 // Update inventory item with remaining quantity
-                                DB::table('inventory_items')
-                                    ->where('id', $inventory->id)
-                                    ->update([
+                            DB::table('inventory_items')
+                                ->where('id', $inventory->id)
+                                ->update([
                                         'quantity' => $newQuantity,
                                         'total_cost' => DB::raw("unit_cost * {$newQuantity}")
-                                    ]);
+                                ]);
                             }
 
                             // Update parent inventory (total quantity for product)
@@ -748,6 +770,42 @@ class GenerateQuarterlyOrders extends Command
             'skipped' => $skipped,
             'errors' => $errors
         ];
+    }
+
+    /**
+     * Check for existing quarterly orders for the given facilities, quarter, and year
+     */
+    private function checkExistingQuarterlyOrders($facilities, $targetQuarter, $year)
+    {
+        $facilityIds = $facilities->pluck('id')->toArray();
+        
+        // Map quarter to correct start month for date range checking
+        $quarterStartMonths = [
+            1 => 12,  // Q1: December
+            2 => 3,   // Q2: March
+            3 => 6,   // Q3: June
+            4 => 9,   // Q4: September
+        ];
+        
+        $startMonth = $quarterStartMonths[$targetQuarter];
+        $searchYear = $year;
+        
+        // Handle year adjustment for Q1 starting in December
+        if ($targetQuarter == 1 && $startMonth == 12) {
+            $searchYear = $year - 1;
+        }
+        
+        $startDate = Carbon::create($searchYear, $startMonth, 1);
+        $endDate = $startDate->copy()->addMonths(3);
+        
+        $existingOrders = DB::table('orders')
+            ->whereIn('facility_id', $facilityIds)
+            ->where('order_type', 'LIKE', '%Q-' . $targetQuarter)
+            ->where('order_date', '>=', $startDate)
+            ->where('order_date', '<', $endDate)
+            ->count();
+            
+        return $existingOrders;
     }
 
     /**
