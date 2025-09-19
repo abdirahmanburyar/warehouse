@@ -394,17 +394,15 @@
                                 </tbody>
                             </table>
                     </div>
-                   <div class="mt-4 flex justify-between bg-white px-6 py-4 border-t border-gray-200">
-                    <div class="flex items-center gap-2">
-                        <div class="text-sm text-gray-500">
-                            Showing {{ orders.meta.from }} to {{ orders.meta.to }} of {{ orders.meta.total }} orders
-                        </div>
-                        <TailwindPagination
-                            :data="props.orders"
-                            :limit="2"
-                            @pagination-change-page="getResult"
-                        />
+                   <div class="mt-4 flex justify-between bg-white px-6 py-4 border-t border-gray-200">                    
+                    <div class="text-sm text-gray-500">
+                        Showing {{ orders.meta.from }} to {{ orders.meta.to }} of {{ orders.meta.total }} orders
                     </div>
+                    <TailwindPagination
+                        :data="props.orders"
+                        :limit="2"
+                        @pagination-change-page="getResult"
+                    />
                    </div>
                 </div>
             </div>
