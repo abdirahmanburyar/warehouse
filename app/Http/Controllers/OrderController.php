@@ -501,6 +501,7 @@ class OrderController extends Controller
                             'allocation_type'  => $order->order_type,
                             'unit_cost'        => $inventory->unit_cost,
                             'total_cost'       => $inventory->unit_cost * $allocQty,
+                            'source'           => $inventory->source ?? 'warehouse', // Capture source from inventory_items
                             'notes'            => 'Allocated from inventory ID: ' . $inventory->id
                         ]);
                     }
@@ -663,6 +664,7 @@ class OrderController extends Controller
                         'allocation_type'  => $order->order_type,
                         'unit_cost'        => $inventory->unit_cost,
                         'total_cost'       => $inventory->unit_cost * $allocQty,
+                        'source'           => $inventory->source ?? 'warehouse', // Capture source from inventory_items
                         'notes'            => 'Fresh allocation from inventory ID: ' . $inventory->id
                     ]);
                     

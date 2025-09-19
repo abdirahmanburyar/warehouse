@@ -560,7 +560,7 @@ class GenerateQuarterlyOrders extends Command
                         ->where('product_id', $item->product_id)
                         ->where('quantity', '>', 0)
                         ->where('expiry_date', '>=', now()->toDateString())
-                        ->select('id', 'inventory_id', 'product_id', 'warehouse_id', 'location', 'batch_number', 'expiry_date', 'quantity', 'unit_cost', 'uom')
+                        ->select('id', 'inventory_id', 'product_id', 'warehouse_id', 'location', 'batch_number', 'expiry_date', 'quantity', 'unit_cost', 'uom', 'source')
                         ->orderBy('expiry_date')
                         ->get();
 
@@ -577,7 +577,8 @@ class GenerateQuarterlyOrders extends Command
                                 'needed_quantity' => $neededQuantity,
                                 'available_batches' => $batchCount,
                                 'total_available' => $totalAvailable,
-                                'will_allocate' => $totalToAllocate
+                                'will_allocate' => $totalToAllocate,
+                                'sources' => $inventories->pluck('source', 'batch_number')->toArray()
                             ]);
                         }
 
@@ -598,7 +599,8 @@ class GenerateQuarterlyOrders extends Command
                             $allocatedBatches[] = [
                                 'batch_number' => $inventory->batch_number,
                                 'allocated_quantity' => $batchAllocation,
-                                'expiry_date' => $inventory->expiry_date
+                                'expiry_date' => $inventory->expiry_date,
+                                'source' => $inventory->source ?? 'warehouse'
                             ];
 
                             // Create allocation
@@ -614,6 +616,7 @@ class GenerateQuarterlyOrders extends Command
                                 'unit_cost' => $inventory->unit_cost,
                                 'total_cost' => $inventory->unit_cost * $batchAllocation,
                                 'uom' => $inventory->uom,
+                                'source' => $inventory->source ?? 'warehouse', // Capture source from inventory_items
                                 'notes' => "Quarterly allocation from batch {$inventory->batch_number}",
                                 'created_at' => now(),
                                 'updated_at' => now(),
