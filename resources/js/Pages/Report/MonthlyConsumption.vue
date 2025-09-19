@@ -986,7 +986,7 @@ function calculateScreenedAMC(row) {
     let amc = 0;
     
     if (monthsCount >= 3) {
-        // Step 1: Start with the closest 3 months (bottom to top)
+        // Step 1: Take closest 3 months (bottom to top)
         const firstThreeMonths = monthsData.slice(startIndex, startIndex + 3);
         
         // Step 2: Calculate average of first 3 months
@@ -996,7 +996,7 @@ function calculateScreenedAMC(row) {
         });
         const average = sum / 3;
         
-        // Step 3: Screen each month: must be within 70% deviation of the 3-month average
+        // Step 3: Screen each month for 70% deviation
         const passedMonths = [];
         
         firstThreeMonths.forEach(month => {
@@ -1011,38 +1011,47 @@ function calculateScreenedAMC(row) {
         
         // Step 4: If all 3 months passed, use them
         if (passedMonths.length === 3) {
-            selectedMonths = passedMonths;
+            selectedMonths = firstThreeMonths;
             amc = average;
         } else {
-            // Step 5: Reselect 3 months including the passed ones
-            // Passed months don't need to be screened again
+            // Step 5: Reselect 3 months including passed ones
+            // Get remaining months to combine with passed ones
             const remainingMonths = monthsData.slice(startIndex + 3);
-            let candidates = [...passedMonths, ...remainingMonths];
             
-            // Try to build a group of 3 that includes the already passed months
-            if (candidates.length >= 3) {
-                // Take first 3 from candidates (includes passed months + next available)
-                const testGroup = candidates.slice(0, 3);
-                
-                // Calculate average for the new group
-                let testSum = 0;
-                testGroup.forEach(month => {
-                    testSum += parseFloat(month.consumption);
+            // Build new group: passed months + enough remaining months to make 3
+            let newGroup = [...passedMonths];
+            let remainingIndex = 0;
+            
+            // Add months from remaining until we have 3 total
+            while (newGroup.length < 3 && remainingIndex < remainingMonths.length) {
+                newGroup.push(remainingMonths[remainingIndex]);
+                remainingIndex++;
+            }
+            
+            // If we still don't have 3, fall back to original 3
+            if (newGroup.length < 3) {
+                selectedMonths = firstThreeMonths;
+                amc = average;
+            } else {
+                // Calculate new average
+                let newSum = 0;
+                newGroup.forEach(month => {
+                    newSum += parseFloat(month.consumption);
                 });
-                const testAverage = testSum / 3;
+                const newAverage = newSum / 3;
                 
-                // Only screen the months that haven't passed yet
+                // Screen only the NEW months (passed months don't need screening again)
                 let allNewMonthsPass = true;
-                testGroup.forEach(month => {
-                    // Skip months that already passed screening
+                newGroup.forEach(month => {
+                    // Skip months that already passed
                     const alreadyPassed = passedMonths.some(passed => 
                         passed.month_year === month.month_year
                     );
                     
                     if (!alreadyPassed) {
                         const quantity = parseFloat(month.consumption);
-                        const deviation = Math.abs(testAverage - quantity);
-                        const percentage = testAverage > 0 ? (deviation / testAverage) * 100 : 0;
+                        const deviation = Math.abs(newAverage - quantity);
+                        const percentage = newAverage > 0 ? (deviation / newAverage) * 100 : 0;
                         
                         if (percentage > 70) {
                             allNewMonthsPass = false;
@@ -1051,27 +1060,13 @@ function calculateScreenedAMC(row) {
                 });
                 
                 if (allNewMonthsPass) {
-                    selectedMonths = testGroup;
-                    amc = testAverage;
+                    selectedMonths = newGroup;
+                    amc = newAverage;
                 } else {
-                    // Fallback: use passed months or first 3 as last resort
-                    selectedMonths = passedMonths.length > 0 ? 
-                        (passedMonths.length >= 3 ? passedMonths.slice(0, 3) : firstThreeMonths) : 
-                        firstThreeMonths;
-                    let fallbackSum = 0;
-                    selectedMonths.forEach(month => {
-                        fallbackSum += parseFloat(month.consumption);
-                    });
-                    amc = fallbackSum / selectedMonths.length;
+                    // Fallback to original group
+                    selectedMonths = firstThreeMonths;
+                    amc = average;
                 }
-            } else {
-                // Not enough months, use what we have
-                selectedMonths = passedMonths.length > 0 ? passedMonths : firstThreeMonths;
-                let fallbackSum = 0;
-                selectedMonths.forEach(month => {
-                    fallbackSum += parseFloat(month.consumption);
-                });
-                amc = fallbackSum / selectedMonths.length;
             }
         }
     } else if (monthsCount === 2) {
@@ -1087,6 +1082,13 @@ function calculateScreenedAMC(row) {
         selectedMonths = monthsData.slice(startIndex, startIndex + 1);
         amc = parseFloat(selectedMonths[0].consumption);
     }
+    
+    // Debug logging to trace the AMC calculation
+    console.log(`AMC Debug for ${row.product_name}:`, {
+        monthsData: monthsData.map(m => ({month: m.month_year, consumption: m.consumption})),
+        selectedMonths: selectedMonths.map(m => ({month: m.month_year, consumption: m.consumption})),
+        finalAMC: Math.round(amc * 100) / 100
+    });
     
     return Math.round(amc * 100) / 100; // Round to 2 decimal places
 }
