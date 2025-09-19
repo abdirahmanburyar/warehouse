@@ -407,10 +407,9 @@ class OrderController extends Controller
                         $inventory->quantity += $restoreQty;
                         $inventory->save();
                     } else {
-                        // Find or create parent inventory record
+                        // Find or create parent inventory record (only by product_id)
                         $parentInventory = \App\Models\Inventory::firstOrCreate([
                             'product_id' => $allocation->product_id,
-                            'warehouse_id' => $allocation->warehouse_id,
                         ], [
                             'quantity' => 0, // Will be updated by the inventory item
                         ]);
@@ -418,7 +417,6 @@ class OrderController extends Controller
                         if ($parentInventory->wasRecentlyCreated) {
                             logger()->info("Created parent inventory record during order update", [
                                 'product_id' => $allocation->product_id,
-                                'warehouse_id' => $allocation->warehouse_id,
                                 'inventory_id' => $parentInventory->id
                             ]);
                         }
@@ -595,10 +593,9 @@ class OrderController extends Controller
                     $inventory->quantity += $allocation->allocated_quantity;
                     $inventory->save();
                 } else {
-                    // Find or create parent inventory record
+                    // Find or create parent inventory record (only by product_id)
                     $parentInventory = \App\Models\Inventory::firstOrCreate([
                         'product_id' => $allocation->product_id,
-                        'warehouse_id' => $allocation->warehouse_id,
                     ], [
                         'quantity' => 0, // Will be updated by the inventory item
                     ]);
@@ -606,7 +603,6 @@ class OrderController extends Controller
                     if ($parentInventory->wasRecentlyCreated) {
                         logger()->info("Created parent inventory record during allocation restore", [
                             'product_id' => $allocation->product_id,
-                            'warehouse_id' => $allocation->warehouse_id,
                             'inventory_id' => $parentInventory->id
                         ]);
                     }
