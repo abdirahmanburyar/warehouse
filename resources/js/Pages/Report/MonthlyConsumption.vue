@@ -942,13 +942,17 @@ async function downloadTemplate() {
  * 3. Calculate AMC (Average Monthly Consumption) from selected 3 months
  * 
  * Example: 
- * Months: Jan=100, Feb=150, Mar=120, Apr=500, May=110, Jun=140
- * Step 1: Take first 3 months [Jan=100, Feb=150, Mar=120]
- * Step 2: Calculate average: (100+150+120)/3 = 123.33
- * Step 3: Check deviations: |100-123.33|/123.33*100 = 18.9% ≤ 70% ✓
- *                          |150-123.33|/123.33*100 = 21.6% ≤ 70% ✓  
- *                          |120-123.33|/123.33*100 = 2.7% ≤ 70% ✓
- * Step 4: All pass → AMC = 123.33
+ * Months: Jan=3000, Feb=2000, Mar=3000, Apr=6000, May=2500, Jun=300
+ * Step 1: Take closest 3 months (bottom to top): [Jun=300, May=2500, Apr=6000]
+ * Step 2: Calculate average: (300+2500+6000)/3 = 2933.33
+ * Step 3: Check deviations: |2933-300|/2933*100 = 89.7% > 70% ❌
+ *                          |2933-2500|/2933*100 = 14.8% ≤ 70% ✓ (May passed)
+ *                          |2933-6000|/2933*100 = 104.5% > 70% ❌
+ * Step 4: Reselect with passed months: [May=2500, Mar=3000, Feb=2000]
+ * Step 5: New average: (2500+3000+2000)/3 = 2500
+ * Step 6: Screen remaining: |2500-3000|/2500*100 = 20% ≤ 70% ✓
+ *                          |2500-2000|/2500*100 = 20% ≤ 70% ✓
+ * Step 7: Final AMC = 2500
  */
 function calculateScreenedAMC(row) {
     // Prefer backend AMC calculation (which uses the exact screening logic)
@@ -982,84 +986,92 @@ function calculateScreenedAMC(row) {
     let amc = 0;
     
     if (monthsCount >= 3) {
-        // Start with the first 3 months (excluding current month if applicable)
+        // Step 1: Start with the closest 3 months (bottom to top)
         const firstThreeMonths = monthsData.slice(startIndex, startIndex + 3);
         
-        // Calculate average of first 3 months
+        // Step 2: Calculate average of first 3 months
         let sum = 0;
         firstThreeMonths.forEach(month => {
             sum += parseFloat(month.consumption);
         });
         const average = sum / 3;
         
-        // Screen each month: must be within 70% deviation of the 3-month average
+        // Step 3: Screen each month: must be within 70% deviation of the 3-month average
         const passedMonths = [];
-        const failedMonths = [];
         
         firstThreeMonths.forEach(month => {
             const quantity = parseFloat(month.consumption);
-            const deviation = Math.abs(quantity - average);
+            const deviation = Math.abs(average - quantity);
             const percentage = average > 0 ? (deviation / average) * 100 : 0;
             
             if (percentage <= 70) {
                 passedMonths.push(month);
-            } else {
-                failedMonths.push(month);
             }
         });
         
-        // If all 3 months passed, use them
+        // Step 4: If all 3 months passed, use them
         if (passedMonths.length === 3) {
             selectedMonths = passedMonths;
             amc = average;
         } else {
-            // Need to find more months to get 3 that pass
+            // Step 5: Reselect 3 months including the passed ones
+            // Passed months don't need to be screened again
             const remainingMonths = monthsData.slice(startIndex + 3);
-            const candidates = [...passedMonths, ...remainingMonths];
+            let candidates = [...passedMonths, ...remainingMonths];
             
-            // Try to find 3 months that pass screening together
-            let foundValidGroup = false;
-            
-            for (let i = 0; i <= candidates.length - 3 && !foundValidGroup; i++) {
-                const testGroup = candidates.slice(i, i + 3);
+            // Try to build a group of 3 that includes the already passed months
+            if (candidates.length >= 3) {
+                // Take first 3 from candidates (includes passed months + next available)
+                const testGroup = candidates.slice(0, 3);
+                
+                // Calculate average for the new group
                 let testSum = 0;
                 testGroup.forEach(month => {
                     testSum += parseFloat(month.consumption);
                 });
                 const testAverage = testSum / 3;
                 
-                // Check if all months in this group pass
-                let allPass = true;
+                // Only screen the months that haven't passed yet
+                let allNewMonthsPass = true;
                 testGroup.forEach(month => {
-                    const quantity = parseFloat(month.consumption);
-                    const deviation = Math.abs(quantity - testAverage);
-                    const percentage = testAverage > 0 ? (deviation / testAverage) * 100 : 0;
+                    // Skip months that already passed screening
+                    const alreadyPassed = passedMonths.some(passed => 
+                        passed.month_year === month.month_year
+                    );
                     
-                    if (percentage > 70) {
-                        allPass = false;
+                    if (!alreadyPassed) {
+                        const quantity = parseFloat(month.consumption);
+                        const deviation = Math.abs(testAverage - quantity);
+                        const percentage = testAverage > 0 ? (deviation / testAverage) * 100 : 0;
+                        
+                        if (percentage > 70) {
+                            allNewMonthsPass = false;
+                        }
                     }
                 });
                 
-                if (allPass) {
+                if (allNewMonthsPass) {
                     selectedMonths = testGroup;
                     amc = testAverage;
-                    foundValidGroup = true;
-                    break;
-                }
-            }
-            
-            // If no valid group found, use the months that passed initially
-            if (!foundValidGroup && passedMonths.length > 0) {
-                selectedMonths = passedMonths;
-                if (passedMonths.length > 1) {
-                    let passedSum = 0;
-                    passedMonths.forEach(month => {
-                        passedSum += parseFloat(month.consumption);
-                    });
-                    amc = passedSum / passedMonths.length;
                 } else {
-                    amc = parseFloat(passedMonths[0].consumption);
+                    // Fallback: use passed months or first 3 as last resort
+                    selectedMonths = passedMonths.length > 0 ? 
+                        (passedMonths.length >= 3 ? passedMonths.slice(0, 3) : firstThreeMonths) : 
+                        firstThreeMonths;
+                    let fallbackSum = 0;
+                    selectedMonths.forEach(month => {
+                        fallbackSum += parseFloat(month.consumption);
+                    });
+                    amc = fallbackSum / selectedMonths.length;
                 }
+            } else {
+                // Not enough months, use what we have
+                selectedMonths = passedMonths.length > 0 ? passedMonths : firstThreeMonths;
+                let fallbackSum = 0;
+                selectedMonths.forEach(month => {
+                    fallbackSum += parseFloat(month.consumption);
+                });
+                amc = fallbackSum / selectedMonths.length;
             }
         }
     } else if (monthsCount === 2) {
