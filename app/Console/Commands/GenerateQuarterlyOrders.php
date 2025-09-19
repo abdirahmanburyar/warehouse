@@ -328,7 +328,7 @@ class GenerateQuarterlyOrders extends Command
      * 4. Project consumption for remaining quarter days: (AMC / 30) * daysRemaining
      * 5. Calculate required quantity: ceil(projected consumption - SOH - QOO)
      */
-    private function processOrderItem($orderId, $facilityId, $item, $months)
+    private function processOrderItem($orderId, $facilityId, $item, $months, &$deletedBatches)
     {
         $maxRetries = 2;
         $attempt = 0;
@@ -483,7 +483,8 @@ class GenerateQuarterlyOrders extends Command
                 }
                 
                 $daysSince = $quarterStart->diffInDays($now->startOfDay());
-                $daysRemaining = max(1, 90 - $daysSince); // Ensure at least 1 day remaining
+                // Ensure days remaining is between 1 and 90 (quarter is exactly 90 days)
+                $daysRemaining = max(1, min(90, 90 - $daysSince));
 
                 // Quantity on Order (QOO) default to 0
                 $qoo = 0;
@@ -619,12 +620,22 @@ class GenerateQuarterlyOrders extends Command
                             ]);
 
                             // Update inventory item (specific batch)
-                            DB::table('inventory_items')
-                                ->where('id', $inventory->id)
-                                ->update([
-                                    'quantity' => DB::raw("quantity - {$batchAllocation}"),
-                                    'total_cost' => DB::raw("unit_cost * (quantity - {$batchAllocation})")
-                                ]);
+                            $newQuantity = $inventory->quantity - $batchAllocation;
+                            
+                            if ($newQuantity <= 0) {
+                                // Delete the inventory item if quantity becomes zero or negative
+                                DB::table('inventory_items')->where('id', $inventory->id)->delete();
+                                $deletedBatches++;
+                                $this->info("         🗑️ Deleted empty batch: {$inventory->batch_number} (Product ID: {$item->product_id})");
+                            } else {
+                                // Update inventory item with remaining quantity
+                                DB::table('inventory_items')
+                                    ->where('id', $inventory->id)
+                                    ->update([
+                                        'quantity' => $newQuantity,
+                                        'total_cost' => DB::raw("unit_cost * {$newQuantity}")
+                                    ]);
+                            }
 
                             // Update parent inventory (total quantity for product)
                             DB::table('inventories')
@@ -666,6 +677,7 @@ class GenerateQuarterlyOrders extends Command
         $processed = 0;
         $skipped = 0;
         $errors = 0;
+        $deletedBatches = 0;
 
         $this->info("   📦 Found {$eligibleItems->count()} eligible items for facility {$facility->id}");
         $bar = $this->output->createProgressBar($eligibleItems->count());
@@ -680,7 +692,7 @@ class GenerateQuarterlyOrders extends Command
          }
 
          foreach ($eligibleItems as $item) {
-             $result = $this->processOrderItem($orderId, $facility->id, $item, $months);
+             $result = $this->processOrderItem($orderId, $facility->id, $item, $months, $deletedBatches);
             
             switch ($result) {
                 case 'success':
@@ -712,6 +724,9 @@ class GenerateQuarterlyOrders extends Command
         if ($errors > 0) {
             $this->warn("      ⚠️ Failed to process: {$errors} items");
         }
+        if ($deletedBatches > 0) {
+            $this->info("      🗑️ Cleaned up empty batches: {$deletedBatches} batches");
+        }
         
         Log::info("Facility quarterly order processing completed", [
             'facility_id' => $facility->id,
@@ -720,6 +735,7 @@ class GenerateQuarterlyOrders extends Command
             'processed' => $processed,
             'skipped' => $skipped,
             'errors' => $errors,
+            'deleted_batches' => $deletedBatches,
             'total_eligible' => $eligibleItems->count()
         ]);
 

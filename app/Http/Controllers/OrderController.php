@@ -487,8 +487,20 @@ class OrderController extends Controller
                         ]);
                     }
     
-                    $inventory->quantity -= $allocQty;
-                    $inventory->save();
+                    // Update inventory quantity and clean up empty batches
+                    $newQuantity = $inventory->quantity - $allocQty;
+                    if ($newQuantity <= 0) {
+                        // Delete the inventory item if quantity becomes zero or negative
+                        $inventory->delete();
+                        logger()->info("Deleted empty batch during order update", [
+                            'batch_number' => $inventory->batch_number,
+                            'product_id' => $inventory->product_id,
+                            'order_item_id' => $orderItem->id
+                        ]);
+                    } else {
+                        $inventory->quantity = $newQuantity;
+                        $inventory->save();
+                    }
                     $remainingToAllocate -= $allocQty;
                     
                    
@@ -511,8 +523,19 @@ class OrderController extends Controller
                             ->first();
     
                         if ($inventory) {
-                            $inventory->quantity -= $difference;
-                            $inventory->save();
+                            $newQuantity = $inventory->quantity - $difference;
+                            if ($newQuantity <= 0) {
+                                // Delete the inventory item if quantity becomes zero or negative
+                                $inventory->delete();
+                                logger()->info("Deleted empty batch during final adjustment", [
+                                    'batch_number' => $inventory->batch_number,
+                                    'product_id' => $inventory->product_id,
+                                    'order_item_id' => $orderItem->id
+                                ]);
+                            } else {
+                                $inventory->quantity = $newQuantity;
+                                $inventory->save();
+                            }
                         }
                     }
                 }
