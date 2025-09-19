@@ -407,7 +407,24 @@ class OrderController extends Controller
                         $inventory->quantity += $restoreQty;
                         $inventory->save();
                     } else {
+                        // Find or create parent inventory record
+                        $parentInventory = \App\Models\Inventory::firstOrCreate([
+                            'product_id' => $allocation->product_id,
+                            'warehouse_id' => $allocation->warehouse_id,
+                        ], [
+                            'quantity' => 0, // Will be updated by the inventory item
+                        ]);
+
+                        if ($parentInventory->wasRecentlyCreated) {
+                            logger()->info("Created parent inventory record during order update", [
+                                'product_id' => $allocation->product_id,
+                                'warehouse_id' => $allocation->warehouse_id,
+                                'inventory_id' => $parentInventory->id
+                            ]);
+                        }
+
                         InventoryItem::create([
+                            'inventory_id' => $parentInventory->id,
                             'product_id'   => $allocation->product_id,
                             'warehouse_id' => $allocation->warehouse_id,
                             'location'     => $allocation->location,
@@ -417,6 +434,9 @@ class OrderController extends Controller
                             'expiry_date'  => $allocation->expiry_date,
                             'quantity'     => $restoreQty
                         ]);
+
+                        // Update parent inventory quantity
+                        $parentInventory->increment('quantity', $restoreQty);
                     }
     
                     if ($allocation->allocated_quantity <= $remainingToRemove) {
@@ -575,7 +595,24 @@ class OrderController extends Controller
                     $inventory->quantity += $allocation->allocated_quantity;
                     $inventory->save();
                 } else {
+                    // Find or create parent inventory record
+                    $parentInventory = \App\Models\Inventory::firstOrCreate([
+                        'product_id' => $allocation->product_id,
+                        'warehouse_id' => $allocation->warehouse_id,
+                    ], [
+                        'quantity' => 0, // Will be updated by the inventory item
+                    ]);
+
+                    if ($parentInventory->wasRecentlyCreated) {
+                        logger()->info("Created parent inventory record during allocation restore", [
+                            'product_id' => $allocation->product_id,
+                            'warehouse_id' => $allocation->warehouse_id,
+                            'inventory_id' => $parentInventory->id
+                        ]);
+                    }
+
                     InventoryItem::create([
+                        'inventory_id' => $parentInventory->id,
                         'product_id'   => $allocation->product_id,
                         'warehouse_id' => $allocation->warehouse_id,
                         'location'     => $allocation->location,
@@ -585,6 +622,9 @@ class OrderController extends Controller
                         'expiry_date'  => $allocation->expiry_date,
                         'quantity'     => $allocation->allocated_quantity
                     ]);
+
+                    // Update parent inventory quantity
+                    $parentInventory->increment('quantity', $allocation->allocated_quantity);
                 }
                 
                
