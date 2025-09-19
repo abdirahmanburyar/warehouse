@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Services\AmcCalculationService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Models\MonthlyConsumptionItem;
@@ -359,123 +360,13 @@ class GenerateQuarterlyOrders extends Command
             try {
                 DB::beginTransaction();
                 
-                // Get monthly consumption data using the advanced AMC screening logic
-                $monthlyConsumptions = DB::table('monthly_consumption_items as mci')
-                    ->join('monthly_consumption_reports as mcr', 'mci.parent_id', '=', 'mcr.id')
-                    ->select('mci.id', 'mci.product_id', 'mci.quantity', 'mci.quantity as consumption', 'mcr.month_year', 'mcr.facility_id')
-                    ->where('mcr.facility_id', $facilityId)
-                    ->where('mci.product_id', $item->product_id)
-                    ->where('mci.quantity', '>', 0) // Pre-filter zero quantities at database level
-                    ->orderBy('mcr.month_year', 'desc') // Database-level sorting (newest first)
-                    ->limit(12) // Limit to last 12 months for performance
-                    ->get();
-
-                // Convert to array for faster processing
-                $monthsData = $monthlyConsumptions->toArray();
-                $monthsCount = count($monthsData);
+                // Use the AMC calculation service for consistent calculation
+                $amcService = new AmcCalculationService();
+                $amcResult = $amcService->calculateAmc($facilityId, $item->product_id);
                 
-                // Determine start index: skip only if the first month equals the actual current month
-                $startIndex = 0;
-                if ($monthsCount > 0) {
-                    $currentMonthY = Carbon::now()->format('Y-m');
-                    if (isset($monthsData[0]->month_year) && $monthsData[0]->month_year === $currentMonthY) {
-                        $startIndex = 1; // skip real current month
-                    }
-                }
-
-                // AMC Screening Logic: Find 3 months that are consistent with each other
-                // This ensures we use reliable consumption data for AMC calculation
-                $selectedMonths = [];
-                $amc = 0;
-                
-                if ($monthsCount >= 3) {
-                    // Start with the first 3 months (excluding current month if applicable)
-                    $firstThreeMonths = array_slice($monthsData, $startIndex, 3);
-                    
-                    // Calculate average of first 3 months
-                    $sum = 0;
-                    foreach ($firstThreeMonths as $month) {
-                        $sum += (float) $month->consumption;
-                    }
-                    $average = $sum / 3;
-                    
-                    // Screen each month: must be within 70% deviation of the 3-month average
-                    // This filters out months with unusually high/low consumption
-                    $passedMonths = [];
-                    $failedMonths = [];
-                    
-                    foreach ($firstThreeMonths as $month) {
-                        $quantity = (float) $month->consumption;
-                        $deviation = abs($quantity - $average);
-                        $percentage = $average > 0 ? ($deviation / $average) * 100 : 0;
-                        
-                        if ($percentage <= 70) {
-                            $passedMonths[] = $month;
-                        } else {
-                            $failedMonths[] = $month;
-                        }
-                    }
-                    
-                    // If all 3 months passed, use them
-                    if (count($passedMonths) == 3) {
-                        $selectedMonths = $passedMonths;
-                        $amc = $average;
-                    } else {
-                        // Need to find more months to get 3 that pass
-                        $remainingMonths = array_slice($monthsData, $startIndex + 3);
-                        $candidates = array_merge($passedMonths, $remainingMonths);
-                        
-                        // Try to find 3 months that pass screening together
-                        $foundValidGroup = false;
-                        
-                        for ($i = 0; $i <= count($candidates) - 3 && !$foundValidGroup; $i++) {
-                            $testGroup = array_slice($candidates, $i, 3);
-                            $testSum = 0;
-                            foreach ($testGroup as $month) {
-                                $testSum += (float) $month->consumption;
-                            }
-                            $testAverage = $testSum / 3;
-                            
-                            // Check if all months in this group pass
-                            $allPass = true;
-                            foreach ($testGroup as $month) {
-                                $quantity = (float) $month->consumption;
-                                $deviation = abs($quantity - $testAverage);
-                                $percentage = $testAverage > 0 ? ($deviation / $testAverage) * 100 : 0;
-                                
-                                if ($percentage > 70) {
-                                    $allPass = false;
-                                    break;
-                                }
-                            }
-                            
-                            if ($allPass) {
-                                $selectedMonths = $testGroup;
-                                $amc = $testAverage;
-                                $foundValidGroup = true;
-                                break;
-                            }
-                        }
-                        
-                        // If no valid group found, use the months that passed initially
-                        if (!$foundValidGroup && count($passedMonths) > 0) {
-                            $selectedMonths = $passedMonths;
-                            $amc = count($passedMonths) > 1 ? array_sum(array_map(function($m) { return (float) $m->consumption; }, $passedMonths)) / count($passedMonths) : (float) $passedMonths[0]->consumption;
-                        }
-                    }
-                } elseif ($monthsCount == 2) {
-                    // If only 2 months available
-                    $selectedMonths = array_slice($monthsData, $startIndex, 2);
-                    $sum = 0;
-                    foreach ($selectedMonths as $month) {
-                        $sum += (float) $month->consumption;
-                    }
-                    $amc = $sum / 2;
-                } elseif ($monthsCount == 1) {
-                    // If only 1 month available
-                    $selectedMonths = array_slice($monthsData, $startIndex, 1);
-                    $amc = (float) $selectedMonths[0]->consumption;
-                }
+                $amc = $amcResult['amc'];
+                $selectedMonths = $amcResult['selectedMonths'];
+                $totalMonths = $amcResult['totalMonths'];
 
                 // Get SOH
                 $soh = DB::table('facility_inventory_items')
@@ -529,7 +420,7 @@ class GenerateQuarterlyOrders extends Command
                     'facility_id' => $facilityId,
                     'product_id' => $item->product_id,
                     'product_name' => $item->product_name ?? 'Unknown',
-                    'total_months_available' => $monthsCount,
+                    'total_months_available' => $totalMonths,
                     'screening_process' => [
                         'step_1' => 'Exclude current month if present',
                         'step_2' => 'Find 3 months with ≤70% deviation from their average',
@@ -539,12 +430,8 @@ class GenerateQuarterlyOrders extends Command
                     'screening_results' => [
                         'months_selected_for_amc' => count($selectedMonths),
                         'calculated_amc' => round($amc, 2),
-                        'selected_months_data' => array_map(function($month) {
-                            return [
-                                'month' => $month->month_year,
-                                'consumption' => (float) $month->consumption
-                            ];
-                        }, $selectedMonths)
+                        'calculation_method' => $amcResult['calculation'],
+                        'selected_months_data' => $selectedMonths
                     ],
                     'quantity_calculation' => [
                         'soh' => $soh,
