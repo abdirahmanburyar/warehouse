@@ -19,36 +19,38 @@ class GenerateQuarterlyOrders extends Command
      *
      * @var string
      */
-    protected $signature = 'orders:generate-quarterly {quarter? : Target quarter (1-4)} {year? : Target year}';
+    protected $signature = 'orders:generate-quarterly {quarter? : Target quarter (1-4)} {year? : Target year} {--test : Test mode - bypass date validation}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Generate quarterly orders for all active facilities. Optionally specify quarter (1-4) and year.';
+    protected $description = 'Generate quarterly orders for all active facilities using advanced AMC screening logic. Optionally specify quarter (1-4) and year.';
 
     public function handle()
     {
-        $this->info('Starting quarterly order generation...');
+        $this->info('Starting quarterly order generation with advanced AMC screening logic...');
         
         try {
-            // Calculate quarter and year
+            // Calculate quarter and year using the correct quarter system
             $today = now();
-            $targetQuarter = $this->argument('quarter') ?? ceil($today->month / 3);
+            $targetQuarter = $this->argument('quarter') ?? $this->getCurrentQuarter();
             $year = $this->argument('year') ?? $today->year;
             
-            if ($targetQuarter == 4 && !$this->argument('quarter')) {
-                $year++;
+            // Handle year rollover for Q1 (Dec-Feb) when we're in Dec
+            if ($targetQuarter == 1 && $today->month == 12 && !$this->argument('quarter')) {
+                // We're in December starting Q1, but the quarter spans into next year
+                $year = $today->year + 1; // The quarter name is for the year it ends in (Feb)
             }
 
-            // Check if today is the first day of a quarter (only if no arguments provided)
-            if (!$this->argument('quarter') && !$this->argument('year')) {
+            // Check if today is the first day of a quarter (only if no arguments provided and not in test mode)
+            if (!$this->argument('quarter') && !$this->argument('year') && !$this->option('test')) {
                 $quarterStartDates = [
-                    1 => ['month' => 1, 'day' => 1],   // Q1: January 1st
-                    2 => ['month' => 4, 'day' => 1],   // Q2: April 1st  
-                    3 => ['month' => 7, 'day' => 1],   // Q3: July 1st
-                    4 => ['month' => 10, 'day' => 1],  // Q4: October 1st
+                    1 => ['month' => 12, 'day' => 1],  // Q1: Dec 1 - Feb 28/29
+                    2 => ['month' => 3, 'day' => 1],   // Q2: Mar 1 - May 31  
+                    3 => ['month' => 6, 'day' => 1],   // Q3: Jun 1 - Aug 31
+                    4 => ['month' => 9, 'day' => 1],   // Q4: Sep 1 - Nov 30
                 ];
 
                 $isQuarterStartDate = false;
@@ -62,18 +64,21 @@ class GenerateQuarterlyOrders extends Command
 
                 if (!$isQuarterStartDate) {
                     $this->warn("❌ Quarterly orders can only be generated on quarter start dates:");
-                    $this->warn("   • Q1: January 1st");
-                    $this->warn("   • Q2: April 1st"); 
-                    $this->warn("   • Q3: July 1st");
-                    $this->warn("   • Q4: October 1st");
+                    $this->warn("   • Q1: December 1st (Dec-Feb)");
+                    $this->warn("   • Q2: March 1st (Mar-May)"); 
+                    $this->warn("   • Q3: June 1st (Jun-Aug)");
+                    $this->warn("   • Q4: September 1st (Sep-Nov)");
                     $this->warn("Current date: {$today->format('Y-m-d')}");
-                    $this->warn("To override this check, specify quarter and year arguments:");
-                    $this->warn("   php artisan orders:generate-quarterly 3 2025");
+                    $this->warn("To override this check, either:");
+                    $this->warn("   • Use test mode: php artisan orders:generate-quarterly --test");
+                    $this->warn("   • Specify quarter/year: php artisan orders:generate-quarterly 4 2025");
                                         
                     return 1;
                 }
 
                 $this->info("✅ Confirmed: Today is the start of Q{$targetQuarter} {$year}");
+            } elseif ($this->option('test')) {
+                $this->warn("🧪 TEST MODE: Bypassing date validation - generating Q{$targetQuarter} {$year}");
             } else {
                 $this->warn("⚠️ Manual override: Quarter {$targetQuarter} and year {$year} specified");
             }
@@ -217,13 +222,31 @@ class GenerateQuarterlyOrders extends Command
             try {
                 DB::beginTransaction();
                 
+                // Map quarter to correct start month
+                $quarterStartMonths = [
+                    1 => 12,  // Q1: December
+                    2 => 3,   // Q2: March
+                    3 => 6,   // Q3: June
+                    4 => 9,   // Q4: September
+                ];
+                
+                $startMonth = $quarterStartMonths[$targetQuarter];
+                $orderYear = $year;
+                
+                // Handle year adjustment for Q1 starting in December
+                if ($targetQuarter == 1 && $startMonth == 12) {
+                    // Q1 starts in December of the previous year
+                    $orderYear = $year - 1;
+                }
+                
                 $orderId = DB::table('orders')->insertGetId([
                     'facility_id' => $facility->id,
+                    'user_id' => 1, // System generated order
                     'order_number' => $orderNumber,
                     'order_type' => 'Quarterly Q-'.$targetQuarter,
                     'status' => 'pending',
-                    'order_date' => Carbon::create($year, ($targetQuarter - 1) * 3 + 1, 1),
-                    'expected_date' => Carbon::create($year, ($targetQuarter - 1) * 3 + 1, 1)->addDays(7),
+                    'order_date' => Carbon::create($orderYear, $startMonth, 1),
+                    'expected_date' => Carbon::create($orderYear, $startMonth, 1)->addDays(7),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -256,11 +279,27 @@ class GenerateQuarterlyOrders extends Command
     {
         $quarterPrefix = "Q{$targetQuarter}-{$year}";
         
+        // Map quarter to correct start month
+        $quarterStartMonths = [
+            1 => 12,  // Q1: December
+            2 => 3,   // Q2: March  
+            3 => 6,   // Q3: June
+            4 => 9,   // Q4: September
+        ];
+        
+        $startMonth = $quarterStartMonths[$targetQuarter];
+        $searchYear = $year;
+        
+        // Handle year adjustment for Q1 starting in December
+        if ($targetQuarter == 1 && $startMonth == 12) {
+            $searchYear = $year - 1;
+        }
+        
         // Get the highest existing order number for this quarter
         $lastOrderNumber = DB::table('orders')
-            ->where('order_type', 'quarterly-' . $targetQuarter)
-            ->where('order_date', '>=', Carbon::create($year, ($targetQuarter - 1) * 3 + 1, 1))
-            ->where('order_date', '<', Carbon::create($year, $targetQuarter * 3 + 1, 1))
+            ->where('order_type', 'LIKE', '%Q-' . $targetQuarter)
+            ->where('order_date', '>=', Carbon::create($searchYear, $startMonth, 1))
+            ->where('order_date', '<', Carbon::create($searchYear, $startMonth, 1)->addMonths(3))
             ->where('order_number', 'LIKE', $quarterPrefix . '-%')
             ->orderBy('order_number', 'desc')
             ->value('order_number');
@@ -281,6 +320,13 @@ class GenerateQuarterlyOrders extends Command
 
     /**
      * Process a single order item with micro-transaction (pattern from successful imports)
+     * 
+     * AMC Screening Process (from facilities OrderController):
+     * 1. Exclude current month from consumption data
+     * 2. Screen months to find 3 that have ≤70% deviation from their average
+     * 3. Calculate AMC (Average Monthly Consumption) from selected 3 months
+     * 4. Project consumption for remaining quarter days: (AMC / 30) * daysRemaining
+     * 5. Calculate required quantity: ceil(projected consumption - SOH - QOO)
      */
     private function processOrderItem($orderId, $facilityId, $item, $months)
     {
@@ -291,16 +337,123 @@ class GenerateQuarterlyOrders extends Command
             try {
                 DB::beginTransaction();
                 
-                // Get consumption data
-                $consumptionData = MonthlyConsumptionItem::whereHas('monthlyConsumptionReport', function($query) use ($facilityId, $months) {
-                    $query->where('facility_id', $facilityId)
-                        ->whereIn('month_year', $months);
-                })
-                ->where('product_id', $item->product_id)
-                ->sum('quantity');
+                // Get monthly consumption data using the advanced AMC screening logic
+                $monthlyConsumptions = DB::table('monthly_consumption_items as mci')
+                    ->join('monthly_consumption_reports as mcr', 'mci.parent_id', '=', 'mcr.id')
+                    ->select('mci.id', 'mci.product_id', 'mci.quantity', 'mci.quantity as consumption', 'mcr.month_year', 'mcr.facility_id')
+                    ->where('mcr.facility_id', $facilityId)
+                    ->where('mci.product_id', $item->product_id)
+                    ->where('mci.quantity', '>', 0) // Pre-filter zero quantities at database level
+                    ->orderBy('mcr.month_year', 'desc') // Database-level sorting (newest first)
+                    ->limit(12) // Limit to last 12 months for performance
+                    ->get();
 
-                // Calculate AMC
-                $amc = $consumptionData > 0 ? ($consumptionData / 3) : 10;
+                // Convert to array for faster processing
+                $monthsData = $monthlyConsumptions->toArray();
+                $monthsCount = count($monthsData);
+                
+                // Determine start index: skip only if the first month equals the actual current month
+                $startIndex = 0;
+                if ($monthsCount > 0) {
+                    $currentMonthY = Carbon::now()->format('Y-m');
+                    if (isset($monthsData[0]->month_year) && $monthsData[0]->month_year === $currentMonthY) {
+                        $startIndex = 1; // skip real current month
+                    }
+                }
+
+                // AMC Screening Logic: Find 3 months that are consistent with each other
+                // This ensures we use reliable consumption data for AMC calculation
+                $selectedMonths = [];
+                $amc = 0;
+                
+                if ($monthsCount >= 3) {
+                    // Start with the first 3 months (excluding current month if applicable)
+                    $firstThreeMonths = array_slice($monthsData, $startIndex, 3);
+                    
+                    // Calculate average of first 3 months
+                    $sum = 0;
+                    foreach ($firstThreeMonths as $month) {
+                        $sum += (float) $month->consumption;
+                    }
+                    $average = $sum / 3;
+                    
+                    // Screen each month: must be within 70% deviation of the 3-month average
+                    // This filters out months with unusually high/low consumption
+                    $passedMonths = [];
+                    $failedMonths = [];
+                    
+                    foreach ($firstThreeMonths as $month) {
+                        $quantity = (float) $month->consumption;
+                        $deviation = abs($quantity - $average);
+                        $percentage = $average > 0 ? ($deviation / $average) * 100 : 0;
+                        
+                        if ($percentage <= 70) {
+                            $passedMonths[] = $month;
+                        } else {
+                            $failedMonths[] = $month;
+                        }
+                    }
+                    
+                    // If all 3 months passed, use them
+                    if (count($passedMonths) == 3) {
+                        $selectedMonths = $passedMonths;
+                        $amc = $average;
+                    } else {
+                        // Need to find more months to get 3 that pass
+                        $remainingMonths = array_slice($monthsData, $startIndex + 3);
+                        $candidates = array_merge($passedMonths, $remainingMonths);
+                        
+                        // Try to find 3 months that pass screening together
+                        $foundValidGroup = false;
+                        
+                        for ($i = 0; $i <= count($candidates) - 3 && !$foundValidGroup; $i++) {
+                            $testGroup = array_slice($candidates, $i, 3);
+                            $testSum = 0;
+                            foreach ($testGroup as $month) {
+                                $testSum += (float) $month->consumption;
+                            }
+                            $testAverage = $testSum / 3;
+                            
+                            // Check if all months in this group pass
+                            $allPass = true;
+                            foreach ($testGroup as $month) {
+                                $quantity = (float) $month->consumption;
+                                $deviation = abs($quantity - $testAverage);
+                                $percentage = $testAverage > 0 ? ($deviation / $testAverage) * 100 : 0;
+                                
+                                if ($percentage > 70) {
+                                    $allPass = false;
+                                    break;
+                                }
+                            }
+                            
+                            if ($allPass) {
+                                $selectedMonths = $testGroup;
+                                $amc = $testAverage;
+                                $foundValidGroup = true;
+                                break;
+                            }
+                        }
+                        
+                        // If no valid group found, use the months that passed initially
+                        if (!$foundValidGroup && count($passedMonths) > 0) {
+                            $selectedMonths = $passedMonths;
+                            $amc = count($passedMonths) > 1 ? array_sum(array_map(function($m) { return (float) $m->consumption; }, $passedMonths)) / count($passedMonths) : (float) $passedMonths[0]->consumption;
+                        }
+                    }
+                } elseif ($monthsCount == 2) {
+                    // If only 2 months available
+                    $selectedMonths = array_slice($monthsData, $startIndex, 2);
+                    $sum = 0;
+                    foreach ($selectedMonths as $month) {
+                        $sum += (float) $month->consumption;
+                    }
+                    $amc = $sum / 2;
+                } elseif ($monthsCount == 1) {
+                    // If only 1 month available
+                    $selectedMonths = array_slice($monthsData, $startIndex, 1);
+                    $amc = (float) $selectedMonths[0]->consumption;
+                }
 
                 // Get SOH
                 $soh = DB::table('facility_inventory_items')
@@ -310,8 +463,74 @@ class GenerateQuarterlyOrders extends Command
                     ->where('facility_inventory_items.expiry_date', '>=', now()->toDateString())
                     ->sum('facility_inventory_items.quantity');
 
-                // Calculate needed quantity
-                $neededQuantity = max(0, ceil(($amc * 3) - $soh));
+                // Calculate days remaining in quarter cycle using quarter-based logic
+                $now = Carbon::now();
+                $quarter = $this->getCurrentQuarter();
+                $quarterStartDates = [
+                    1 => '01-12',  // Q1: Dec 1 - Feb 28/29 (90 days)
+                    2 => '01-03',  // Q2: Mar 1 - May 31 (90 days)
+                    3 => '01-06',  // Q3: Jun 1 - Aug 31 (90 days)
+                    4 => '01-09'   // Q4: Sep 1 - Nov 30 (90 days)
+                ];
+                
+                $quarterStartDateParts = explode('-', $quarterStartDates[$quarter]);
+                $quarterStart = Carbon::createFromDate($now->year, $quarterStartDateParts[1], $quarterStartDateParts[0])->startOfDay();
+                
+                // Handle year rollover for quarters that span across years
+                if ($quarter == 1 && $now->month <= 2) {
+                    // For Q1 (Dec-Feb), if we're in Jan/Feb, the quarter started in December of previous year
+                    $quarterStart = Carbon::createFromDate($now->year - 1, 12, 1)->startOfDay();
+                }
+                
+                $daysSince = $quarterStart->diffInDays($now->startOfDay());
+                $daysRemaining = max(1, 90 - $daysSince); // Ensure at least 1 day remaining
+
+                // Quantity on Order (QOO) default to 0
+                $qoo = 0;
+
+                // Calculate projected consumption:
+                // AMC is average monthly, so convert to daily by dividing by ~30 days
+                $projectedConsumption = ($amc / 30) * $daysRemaining;
+
+                // Calculate required quantity = projected consumption - SOH - QOO
+                $neededQuantity = ceil($projectedConsumption - $soh - $qoo);
+                $neededQuantity = max(0, $neededQuantity);
+
+                // If no AMC and no SOH and quantity zero, assign default order quantity (first time order)
+                if ($amc == 0 && $soh == 0 && $neededQuantity == 0) {
+                    $neededQuantity = (int) $daysRemaining; // default value for first order, adjust as needed
+                }
+
+                // Log AMC screening results for transparency
+                Log::info("AMC Screening Process", [
+                    'facility_id' => $facilityId,
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product_name ?? 'Unknown',
+                    'total_months_available' => $monthsCount,
+                    'screening_process' => [
+                        'step_1' => 'Exclude current month if present',
+                        'step_2' => 'Find 3 months with ≤70% deviation from their average',
+                        'step_3' => 'Calculate AMC from selected months',
+                        'step_4' => 'Project consumption for remaining quarter days'
+                    ],
+                    'screening_results' => [
+                        'months_selected_for_amc' => count($selectedMonths),
+                        'calculated_amc' => round($amc, 2),
+                        'selected_months_data' => array_map(function($month) {
+                            return [
+                                'month' => $month->month_year,
+                                'consumption' => (float) $month->consumption
+                            ];
+                        }, $selectedMonths)
+                    ],
+                    'quantity_calculation' => [
+                        'soh' => $soh,
+                        'days_remaining_in_quarter' => $daysRemaining,
+                        'daily_consumption_rate' => round($amc / 30, 4),
+                        'projected_consumption' => round($projectedConsumption, 2),
+                        'final_needed_quantity' => $neededQuantity
+                    ]
+                ]);
 
                 // Skip if no quantity needed
                 if ($neededQuantity == 0) {
@@ -326,10 +545,10 @@ class GenerateQuarterlyOrders extends Command
                     'quantity' => $neededQuantity,
                     'quantity_on_order' => 0,
                     'soh' => $soh,
-                    'amc' => $amc,
+                    'amc' => round($amc, 2),
                     'quantity_to_release' => 0,
-                    'no_of_days' => 120,
-                    'days' => 120,
+                    'no_of_days' => $daysRemaining,
+                    'days' => $daysRemaining,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -510,6 +729,37 @@ class GenerateQuarterlyOrders extends Command
             'skipped' => $skipped,
             'errors' => $errors
         ];
+    }
+
+    /**
+     * Determine the current quarter based on the current date
+     * 
+     * @return int
+     */
+    private function getCurrentQuarter()
+    {
+        $now = Carbon::now();
+        $month = $now->month;
+        
+        // Q1: Dec (12) - Feb (2)
+        if ($month == 12 || $month <= 2) {
+            return 1;
+        }
+        // Q2: Mar (3) - May (5)
+        elseif ($month >= 3 && $month <= 5) {
+            return 2;
+        }
+        // Q3: Jun (6) - Aug (8)
+        elseif ($month >= 6 && $month <= 8) {
+            return 3;
+        }
+        // Q4: Sep (9) - Nov (11)
+        elseif ($month >= 9 && $month <= 11) {
+            return 4;
+        }
+        
+        // Fallback (should not reach here)
+        return 1;
     }
 
     /**
