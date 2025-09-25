@@ -663,15 +663,18 @@
                                         'is_reviewing'
                                     )
                                     " :disabled="isType['is_reviewing'] ||
-                                        props.order.status !== 'pending'
+                                        props.order.status !== 'pending' ||
+                                        !$page.props.auth.can.order_review
                                         " :class="[
-                                    props.order.status === 'pending'
+                                    !$page.props.auth.can.order_review
+                                        ? 'bg-red-200 text-red-800 cursor-not-allowed opacity-75'
+                                        : props.order.status === 'pending'
                                         ? 'bg-yellow-500 hover:bg-yellow-600'
                                         : statusOrder.indexOf(props.order.status) >
                                             statusOrder.indexOf('pending')
                                             ? 'bg-green-500'
                                             : 'bg-gray-300 cursor-not-allowed',
-                                ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 min-w-[160px]">
                                     <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
                                     <span class="text-sm font-bold text-white">{{
                                         statusOrder.indexOf(props.order.status) >
@@ -703,13 +706,16 @@
                                         'is_approve'
                                     )
                                     " :disabled="isType['is_approve'] ||
-                                        props.order.status !== 'reviewed'
+                                        props.order.status !== 'reviewed' ||
+                                        !$page.props.auth.can.order_approve
                                         " :class="[
-                                        props.order.status == 'reviewed'
+                                        props.order.status == 'reviewed' && $page.props.auth.can.order_approve
                                         ? 'bg-yellow-500 hover:bg-yellow-600'
                                         : statusOrder.indexOf(props.order.status) >
                                             statusOrder.indexOf('reviewed')
                                             ? 'bg-green-500'
+                                            : !$page.props.auth.can.order_approve
+                                            ? 'bg-gray-400 cursor-not-allowed opacity-60'
                                             : 'bg-gray-300 cursor-not-allowed',
                                 ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <svg v-if="
@@ -755,13 +761,16 @@
                                         'is_process'
                                     )
                                     " :disabled="isType['is_process'] ||
-                                        props.order.status !== 'approved'
+                                        props.order.status !== 'approved' ||
+                                        !$page.props.auth.can.order_manage
                                         " :class="[
-                                    props.order.status === 'approved'
+                                    props.order.status === 'approved' && $page.props.auth.can.order_manage
                                         ? 'bg-yellow-500 hover:bg-yellow-600'
                                         : statusOrder.indexOf(props.order.status) >
                                             statusOrder.indexOf('approved')
                                             ? 'bg-green-500'
+                                            : !$page.props.auth.can.order_manage
+                                            ? 'bg-gray-400 cursor-not-allowed opacity-60'
                                             : 'bg-gray-300 cursor-not-allowed',
                                 ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <svg v-if="
@@ -801,13 +810,16 @@
                         <div class="relative" v-if="props.order.status !== 'rejected'">
                             <div class="flex flex-col">
                                 <button @click="showDispatchForm = true" :disabled="isType['is_dispatch'] ||
-                                    props.order.status !== 'in_process'
+                                    props.order.status !== 'in_process' ||
+                                    !$page.props.auth.can.order_dispatch
                                     " :class="[
-                                        props.order.status === 'in_process'
+                                        props.order.status === 'in_process' && $page.props.auth.can.order_dispatch
                                             ? 'bg-yellow-500 hover:bg-yellow-600'
                                             : statusOrder.indexOf(props.order.status) >
                                                 statusOrder.indexOf('in_process')
                                                 ? 'bg-green-500'
+                                                : !$page.props.auth.can.order_dispatch
+                                                ? 'bg-gray-400 cursor-not-allowed opacity-60'
                                                 : 'bg-gray-300 cursor-not-allowed',
                                     ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <svg v-if="
@@ -920,7 +932,7 @@
 
                         <!-- Rejected button -->
                         <div class="relative" v-if="props.order.status == 'reviewed' || props.order.status == 'rejected'">
-                            <div class="flex flex-col">
+<div class="flex flex-col">
                                 <button @click="
                                     changeStatus(
                                         props.order.id,
@@ -928,13 +940,16 @@
                                         'is_reject'
                                     )
                                     " :disabled="isType['is_reject'] ||
-                                        props.order.status !== 'reviewed'
+                                        props.order.status !== 'reviewed' ||
+                                        !$page.props.auth.can.order_reject
                                         " :class="[
-                                    props.order.status == 'reviewed'
+                                    props.order.status == 'reviewed' && $page.props.auth.can.order_reject
                                         ? 'bg-red-500 hover:bg-red-600'
                                         : statusOrder.indexOf(props.order.status) >
                                             statusOrder.indexOf('reviewed')
                                             ? 'bg-red-500'
+                                            : !$page.props.auth.can.order_reject
+                                            ? 'bg-gray-400 cursor-not-allowed opacity-60'
                                             : 'bg-gray-300 cursor-not-allowed',
                                 ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <svg v-if="
@@ -979,8 +994,13 @@
                                         'is_restore'
                                     )
                                     " :disabled="isRestoring ||
-                                        props.order.status !== 'rejected'
-                                        " class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] bg-green-500">
+                                        props.order.status !== 'rejected' ||
+                                        !$page.props.auth.can.order_manage
+                                        " :class="[
+                                        $page.props.auth.can.order_manage
+                                            ? 'bg-green-500 hover:bg-green-600'
+                                            : 'bg-gray-400 cursor-not-allowed opacity-60'
+                                    ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <svg v-if="
                                         isLoading &&
                                         props.order.status === 'rejected'
