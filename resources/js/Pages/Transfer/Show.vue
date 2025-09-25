@@ -76,6 +76,7 @@
                     </div>
                 </div>
 
+
                 <!-- From and To Section -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <!-- From Section -->
@@ -810,9 +811,11 @@
                                     )
                                     " :disabled="isType['is_reviewing'] ||
                                     props.transfer.status !== 'pending' ||
-                                    !canReview
+                                    (!$page.props.auth.can.transfer_review && !$page.props.auth.can.transfer_manage)
                                     " :class="[
-                                        props.transfer.status === 'pending'
+                                        (!$page.props.auth.can.transfer_review && !$page.props.auth.can.transfer_manage)
+                                            ? 'bg-red-200 text-red-800 cursor-not-allowed opacity-75'
+                                            : props.transfer.status === 'pending'
                                             ? 'bg-yellow-500 hover:bg-yellow-600'
                                             : statusOrder.indexOf(
                                                 props.transfer.status
@@ -820,7 +823,7 @@
                                                 ? 'bg-green-500'
                                                 : 'bg-gray-300 cursor-not-allowed',
                                     ]"
-                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 min-w-[160px]">
                                     <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
                                     <span class="text-sm font-bold text-white">{{
                                         statusOrder.indexOf(
@@ -857,9 +860,11 @@
                                     )
                                     " :disabled="isType['is_approve'] ||
                                     props.transfer.status !== 'reviewed' ||
-                                    !canApprove
+                                    (!$page.props.auth.can.transfer_approve && !$page.props.auth.can.transfer_manage)
                                     " :class="[
-                                        props.transfer.status == 'reviewed'
+                                        (!$page.props.auth.can.transfer_approve && !$page.props.auth.can.transfer_manage)
+                                            ? 'bg-red-200 text-red-800 cursor-not-allowed opacity-75'
+                                            : props.transfer.status == 'reviewed'
                                             ? 'bg-yellow-500 hover:bg-yellow-600'
                                             : statusOrder.indexOf(
                                                 props.transfer.status
@@ -868,7 +873,7 @@
                                                 ? 'bg-green-500'
                                                 : 'bg-gray-300 cursor-not-allowed',
                                     ]"
-                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 min-w-[160px]">
                                     <svg v-if="
                                         isLoading &&
                                         props.transfer.status === 'reviewed'
@@ -893,7 +898,7 @@
                                                     ? "Please Wait..."
                                                     : props.transfer.status ===
                                                         "reviewed" &&
-                                                        !canApprove
+                                                        (!$page.props.auth.can.transfer_approve && !$page.props.auth.can.transfer_manage)
                                                         ? "Waiting to be approved"
                                                         : "Approve"
                                         }}</span>
@@ -921,9 +926,11 @@
                                     )
                                     " :disabled="isType['is_process'] ||
                                     props.transfer.status !== 'approved' ||
-                                    !canDispatch
+                                    (!$page.props.auth.can.transfer_processing && !$page.props.auth.can.transfer_manage)
                                     " :class="[
-                                        props.transfer.status === 'approved'
+                                        (!$page.props.auth.can.transfer_processing && !$page.props.auth.can.transfer_manage)
+                                            ? 'bg-red-200 text-red-800 cursor-not-allowed opacity-75'
+                                            : props.transfer.status === 'approved'
                                             ? 'bg-yellow-500 hover:bg-yellow-600'
                                             : statusOrder.indexOf(
                                                 props.transfer.status
@@ -932,7 +939,7 @@
                                                 ? 'bg-green-500'
                                                 : 'bg-gray-300 cursor-not-allowed',
                                     ]"
-                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 min-w-[160px]">
                                     <svg v-if="
                                         isType['is_process'] &&
                                         props.transfer.status == 'approved'
@@ -977,12 +984,14 @@
                         <!-- Dispatch button -->
                         <div class="relative" v-if="props.transfer.status !== 'rejected'">
                             <div class="flex flex-col">
-                                <button @click="showDispatchForm = true" :disabled="isType['is_dispatch'] ||
+                                <button @click="showDispatchForm = true                                    " :disabled="isType['is_dispatch'] ||
                                     props.transfer.status !==
                                     'in_process' ||
-                                    !canDispatch
+                                    (!$page.props.auth.can.transfer_dispatch && !$page.props.auth.can.transfer_manage)
                                     " :class="[
-                                    props.transfer.status === 'in_process'
+                                    (!$page.props.auth.can.transfer_dispatch && !$page.props.auth.can.transfer_manage)
+                                        ? 'bg-red-200 text-red-800 cursor-not-allowed opacity-75'
+                                        : props.transfer.status === 'in_process'
                                         ? 'bg-yellow-500 hover:bg-yellow-600'
                                         : statusOrder.indexOf(
                                             props.transfer.status
@@ -991,7 +1000,7 @@
                                             ? 'bg-green-500'
                                             : 'bg-gray-300 cursor-not-allowed',
                                 ]"
-                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 min-w-[160px]">
                                     <svg v-if="
                                         isType['is_dispatch'] &&
                                         props.transfer.status ===
@@ -1042,16 +1051,18 @@
                             <div class="relative">
                                 <div class="flex flex-col">
                                     <button @click="openDeliveryForm()"
-                                        :disabled="isType['is_delivering'] || props.transfer?.status != 'dispatched' || !canReceive"
+                                        :disabled="isType['is_delivering'] || props.transfer?.status != 'dispatched' || (!$page.props.auth.can.transfer_delivery && !$page.props.auth.can.transfer_manage)"
                                         :class="[
-                                            props.transfer.status == 'dispatched' && canReceive
+                                            (!$page.props.auth.can.transfer_delivery && !$page.props.auth.can.transfer_manage)
+                                                ? 'bg-red-200 text-red-800 cursor-not-allowed opacity-75'
+                                                : props.transfer.status == 'dispatched'
                                                 ? 'bg-yellow-300'
                                                 : statusOrder.indexOf(props.transfer.status) >
                                                     statusOrder.indexOf('dispatched')
                                                     ? 'bg-green-500 cursor-not-allowed'
                                                     : 'bg-gray-300 cursor-not-allowed',
                                         ]"
-                                        class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                        class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 min-w-[160px]">
                                         <svg v-if="
                                             isType['is_deliver'] &&
                                             props.transfer.status ===
@@ -1110,9 +1121,11 @@
                                         " :disabled="isType['is_receive'] ||
                                         props.transfer.status !==
                                         'delivered' ||
-                                        !canReceive
+                                        (!$page.props.auth.can.transfer_receive && !$page.props.auth.can.transfer_manage)
                                         " :class="[
-                                            props.transfer.status ===
+                                            (!$page.props.auth.can.transfer_receive && !$page.props.auth.can.transfer_manage)
+                                                ? 'bg-red-200 text-red-800 cursor-not-allowed opacity-75'
+                                                : props.transfer.status ===
                                                 'delivered'
                                                 ? 'bg-yellow-500 hover:bg-yellow-600'
                                                 : statusOrder.indexOf(
@@ -1124,7 +1137,7 @@
                                                     ? 'bg-green-500'
                                                     : 'bg-gray-300 cursor-not-allowed',
                                         ]"
-                                        class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                        class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 min-w-[160px]">
                                         <svg v-if="
                                             isType['is_receive'] &&
                                             props.transfer.status ===
@@ -1154,7 +1167,7 @@
                                                             : props.transfer
                                                                 .status ===
                                                                 "delivered" &&
-                                                                !canReceive
+                                                                (!$page.props.auth.can.transfer_receive && !$page.props.auth.can.transfer_manage)
                                                                 ? "Waiting to be received"
                                                                 : "Receive"
                                                 }}
@@ -1187,15 +1200,18 @@
                                         'is_reject'
                                     )
                                     " :disabled="isType['is_reject'] ||
-                                        props.transfer.status !== 'reviewed'
+                                        props.transfer.status !== 'reviewed' ||
+                                        (!$page.props.auth.can.transfer_reject && !$page.props.auth.can.transfer_manage)
                                         " :class="[
-                                    props.transfer.status == 'reviewed'
+                                    (!$page.props.auth.can.transfer_reject && !$page.props.auth.can.transfer_manage)
+                                        ? 'bg-red-200 text-red-800 cursor-not-allowed opacity-75'
+                                        : props.transfer.status == 'reviewed'
                                         ? 'bg-red-500 hover:bg-red-600'
                                         : statusOrder.indexOf(props.transfer.status) >
                                             statusOrder.indexOf('reviewed')
                                             ? 'bg-red-500'
                                             : 'bg-gray-300 cursor-not-allowed',
-                                ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                ]" class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 min-w-[160px]">
                                     <svg v-if="
                                         isLoading &&
                                         props.transfer.status === 'reviewed'
@@ -2541,30 +2557,7 @@ const statusOrder = ref([
     "received",
 ]);
 
-// Permission-based computed properties
-const canReview = computed(() => {
-    return page.props.auth.can?.transfer_review || false;
-});
-
-const canApprove = computed(() => {
-    return page.props.auth.can?.transfer_approve || false;
-});
-
-const canDispatch = computed(() => {
-    const auth = page.props.auth;
-    return (
-        auth.user.warehouse_id == props.transfer.from_warehouse_id &&
-        auth.can.transfer_dispatch
-    );
-});
-
-const canReceive = computed(() => {
-    const auth = page.props.auth;
-    return (
-        auth.user.warehouse_id == props.transfer.to_warehouse_id &&
-        auth.can.transfer_receive
-    );
-});
+// Note: Permission logic is now handled directly in template using $page.props.auth.can
 
 const isRestoring = ref(false);
 const restoreTransfer = async () => {

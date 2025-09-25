@@ -807,13 +807,18 @@ async function handleAddReason() {
 
                     <!-- Action Buttons -->
                     <div class="flex items-center justify-between pt-8 border-t border-gray-200">
-                        <button type="button" @click="addNewItem"
-                            class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105">
+                        <button type="button" @click="addNewItem" :disabled="(!$page.props.auth.can.transfer_create && !$page.props.auth.can.transfer_manage)"
+                            :class="[
+                                (!$page.props.auth.can.transfer_create && !$page.props.auth.can.transfer_manage)
+                                    ? 'bg-red-200 text-red-800 cursor-not-allowed opacity-75'
+                                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
+                            ]"
+                            class="inline-flex items-center px-6 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
-                            Add Another Item
+                            {{ (!$page.props.auth.can.transfer_create && !$page.props.auth.can.transfer_manage) ? "No Permission" : "Add Another Item" }}
                         </button>
                         <div class="flex items-center space-x-4">
                             <SecondaryButton :href="route('transfers.index')" as="a" :disabled="loading"
@@ -823,20 +828,26 @@ async function handleAddReason() {
                                 }">
                                 Cancel
                             </SecondaryButton>
-                            <PrimaryButton :disabled="loading"
-                                class="relative px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105">
+                            <PrimaryButton :disabled="loading || (!$page.props.auth.can.transfer_create && !$page.props.auth.can.transfer_manage)"
+                                :class="[
+                                    (!$page.props.auth.can.transfer_create && !$page.props.auth.can.transfer_manage)
+                                        ? 'bg-red-200 text-red-800 cursor-not-allowed opacity-75'
+                                        : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white'
+                                ]"
+                                class="relative px-8 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105">
                                 <span v-if="loading" class="absolute left-3">
                                     <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg"
                                         fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
                                             stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                                         </path>
                                     </svg>
                                 </span>
                                 <span :class="{ 'pl-7': loading }">{{
-                                    loading ? "Processing..." : "Create Transfer"
+                                    loading ? "Processing..." : 
+                                    (!$page.props.auth.can.transfer_create && !$page.props.auth.can.transfer_manage) ? "No Permission" : "Create Transfer"
                                     }}</span>
                             </PrimaryButton>
                         </div>
