@@ -66,17 +66,20 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Link } from "@inertiajs/vue3";
+import { Link, usePage } from "@inertiajs/vue3";
 import { ref, onMounted } from 'vue';
 import { usePermissions } from '@/Composables/usePermissions';
 
 // Use permissions composable
 const { hasPermissionTo } = usePermissions();
 
+// Get page props
+const page = usePage();
+
 onMounted(() => {
     console.log('Settings page mounted');
-    console.log('Page props:', $page.props);
-    console.log('Auth user:', $page.props.auth?.user);
-    console.log('User permissions:', $page.props.auth?.user?.permissions);
+    console.log('Page props:', page.props);
+    console.log('Auth user:', page.props.auth?.user);
+    console.log('User permissions:', page.props.auth?.user?.permissions);
 });
 </script>
