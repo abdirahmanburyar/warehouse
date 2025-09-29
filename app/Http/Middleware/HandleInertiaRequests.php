@@ -32,15 +32,15 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
         
         // Eager load permissions to avoid N+1 queries
-        if ($user && !$user->relationLoaded('permissions')) {
-            $user->load('permissions');
-        }
+        // if ($user && !$user->relationLoaded('permissions')) {
+        //     $user->load('permissions');
+        // }
 
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $user,
-                'permissions' => $user ? ($user->isAdmin() ? \App\Models\Permission::pluck('name') : $user->permissions->pluck('name')) : [],
+                // 'permissions' => $user ? ($user->isAdmin() ? \App\Models\Permission::pluck('name') : $user->permissions->pluck('name')) : [],
                 'can' => $this->getUserPermissions($request),
                 'isAdmin' => $user ? $user->isAdmin() : false,
             ],

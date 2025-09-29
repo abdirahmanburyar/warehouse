@@ -105,7 +105,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'inventory-view') || page.props.auth.isAdmin"
+                    v-if="page.props.auth.can.inventory_view || page.props.auth.isAdmin"
                     :href="route('inventories.index')"
                     class="menu-item"
                     :class="{ active: route().current('inventories.*') }"
@@ -181,7 +181,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'supply-view') || page.props.auth.isAdmin"
+                    v-if="$page.props.auth.can.supply_view || page.props.auth.isAdmin"
                     :href="route('supplies.index')"
                     class="menu-item"
                     :class="{ active: route().current('supplies.*') }"

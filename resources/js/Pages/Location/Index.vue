@@ -15,6 +15,7 @@
                         Back to Inventory
                     </Link>
                     <Link
+                        v-if="$page.props.auth.can.warehouse_manage"
                         :href="route('inventories.location.create')"
                         class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm"
                     >
@@ -104,6 +105,7 @@
                                 <td class="px-3 py-2 text-xs align-middle">
                                     <div class="flex items-center justify-center space-x-3">
                                         <Link
+                                            v-if="$page.props.auth.can.warehouse_manage"
                                             :href="route('inventories.location.edit', location.id)"
                                             class="inline-flex items-center justify-center w-8 h-8 text-indigo-600 hover:text-white hover:bg-indigo-600 border-2 border-indigo-200 hover:border-indigo-600 rounded-lg transition-all duration-200 transform hover:scale-105"
                                         >

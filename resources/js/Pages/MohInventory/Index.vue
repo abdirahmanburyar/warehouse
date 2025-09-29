@@ -837,7 +837,13 @@ const filteredInventoryItems = computed(() => {
                             <div class="flex space-x-3">
                                 <button
                                     @click="openCreateModal"
-                                    class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                    :disabled="!$page.props.auth.can.moh_inventory_create"
+                                    :class="[
+                                        $page.props.auth.can.moh_inventory_create
+                                            ? 'bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-800 focus:ring-blue-500'
+                                            : 'bg-gray-400 cursor-not-allowed',
+                                    ]"
+                                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-offset-2 transition ease-in-out duration-150"
                                 >
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -846,7 +852,13 @@ const filteredInventoryItems = computed(() => {
                                 </button>
                                 <button
                                     @click="openUploadModal"
-                                    class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                    :disabled="!$page.props.auth.can.moh_inventory_upload"
+                                    :class="[
+                                        $page.props.auth.can.moh_inventory_upload
+                                            ? 'bg-green-600 hover:bg-green-700 focus:bg-green-700 active:bg-green-800 focus:ring-green-500'
+                                            : 'bg-gray-400 cursor-not-allowed',
+                                    ]"
+                                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-offset-2 transition ease-in-out duration-150"
                                 >
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -1055,7 +1067,6 @@ const filteredInventoryItems = computed(() => {
                     </div>
                 </div>
 
-
             <!-- Approval Actions -->
             <div v-if="props.selectedInventory" class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
                 <div class="px-6 py-4 border-b border-gray-200">
@@ -1069,13 +1080,15 @@ const filteredInventoryItems = computed(() => {
                             <div class="flex flex-col">
                                 <button 
                                     @click="changeStatus(selectedInventory.id, 'reviewed', 'is_reviewing')"
-                                    :disabled="isType['is_reviewing'] || selectedInventory.reviewed_at || selectedInventory.status === 'rejected'"
+                                    :disabled="isType['is_reviewing'] || selectedInventory.reviewed_at || selectedInventory.status === 'rejected' || (!$page.props.auth.can.moh_inventory_review && !$page.props.auth.isAdmin)"
                                     :class="[
                                         selectedInventory.reviewed_at
                                             ? 'bg-green-500'
                                             : selectedInventory.status === 'rejected'
                                                 ? 'bg-gray-300 cursor-not-allowed'
-                                                : 'bg-yellow-500 hover:bg-yellow-600',
+                                                : (!$page.props.auth.can.moh_inventory_review && !$page.props.auth.isAdmin)
+                                                    ? 'bg-gray-400 cursor-not-allowed'
+                                                    : 'bg-yellow-500 hover:bg-yellow-600',
                                     ]" 
                                     class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
@@ -1098,12 +1111,14 @@ const filteredInventoryItems = computed(() => {
                             <div class="flex flex-col">
                                 <button 
                                     @click="changeStatus(props.selectedInventory.id, 'approved', 'is_approve')"
-                                    :disabled="isType['is_approve'] || !props.selectedInventory.reviewed_at || props.selectedInventory.approved_at"
+                                    :disabled="isType['is_approve'] || !props.selectedInventory.reviewed_at || props.selectedInventory.approved_at || (!$page.props.auth.can.moh_inventory_approve && !$page.props.auth.isAdmin)"
                                     :class="[
                                         props.selectedInventory.approved_at
                                             ? 'bg-green-500'
                                             : props.selectedInventory.reviewed_at && !props.selectedInventory.approved_at
-                                                ? 'bg-yellow-500 hover:bg-yellow-600'
+                                                ? (!$page.props.auth.can.moh_inventory_approve && !$page.props.auth.isAdmin)
+                                                    ? 'bg-gray-400 cursor-not-allowed'
+                                                    : 'bg-yellow-500 hover:bg-yellow-600'
                                                 : 'bg-gray-300 cursor-not-allowed',
                                     ]" 
                                     class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
@@ -1132,13 +1147,15 @@ const filteredInventoryItems = computed(() => {
                         <!-- Reject Button - Only show if not approved -->
                         <div class="relative" v-if="!props.selectedInventory.approved_at">
                             <div class="flex flex-col">
-                                <button 
+                                <button
                                     @click="changeStatus(props.selectedInventory.id, 'rejected', 'is_reject')"
-                                    :disabled="isType['is_reject'] || props.selectedInventory.status === 'rejected'"
+                                    :disabled="isType['is_reject'] || props.selectedInventory.status === 'rejected' || (!$page.props.auth.can.moh_inventory_reject && !$page.props.auth.isAdmin)"
                                     :class="[
                                         props.selectedInventory.status === 'rejected'
                                             ? 'bg-red-500'
-                                            : 'bg-red-500 hover:bg-red-600',
+                                            : (!$page.props.auth.can.moh_inventory_reject && !$page.props.auth.isAdmin)
+                                                ? 'bg-gray-400 cursor-not-allowed'
+                                                : 'bg-red-500 hover:bg-red-600',
                                     ]" 
                                     class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
                                     <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
@@ -1411,7 +1428,7 @@ const filteredInventoryItems = computed(() => {
                     </button>
                     <button @click="uploadExcelFile"
                         class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 border border-transparent rounded-lg font-medium text-sm text-white hover:from-amber-600 hover:to-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200"
-                        :disabled="!uploadFile || isUploading">
+                        :disabled="!uploadFile || isUploading || !$page.props.auth.can.moh_inventory_upload">
                         <svg v-if="isUploading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none"
                             viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
@@ -1800,7 +1817,7 @@ const filteredInventoryItems = computed(() => {
                             class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             Cancel
                         </button>
-                        <button type="button" @click="createMohInventory" :disabled="isCreating"
+                        <button type="button" @click="createMohInventory" :disabled="isCreating || !$page.props.auth.can.moh_inventory_create"
                             class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
                             <svg v-if="isCreating" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

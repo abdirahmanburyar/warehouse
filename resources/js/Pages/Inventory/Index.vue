@@ -670,7 +670,7 @@ onUnmounted(() => {
             <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
                 <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Warehouse Inventory</h1>
                 <div class="flex flex-wrap gap-2 md:gap-4 items-center">
-                    <button @click="openUploadModal"
+                    <button v-if="$page.props.auth.can.inventory_manage" @click="openUploadModal"
                         class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 border border-transparent rounded-lg font-medium text-sm text-white hover:from-amber-600 hover:to-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
                         :disabled="isUploading">
                         <svg v-if="!isUploading" class="h-4 w-4 mr-2" fill="none" stroke="currentColor"
@@ -710,6 +710,7 @@ onUnmounted(() => {
                     Warehouses List
                     </Link>
                     <Link :href="route('inventories.moh-inventory.index')"
+                        v-if="$page.props.auth.can.moh_inventory_view"
                         class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
@@ -993,7 +994,7 @@ onUnmounted(() => {
                                                 :class="(item.quantity || 0) > 0 ? 'text-gray-900' : 'text-gray-400'">
                                                 <div class="flex items-center justify-center space-x-2">
                                                     <span>{{ item.location || 'No Location' }}</span>
-                                                    <button v-if="(item.quantity || 0) > 0" @click="openEditLocationModal(item, inventory)"
+                                                    <button v-if="(item.quantity || 0) > 0 && $page.props.auth.can.inventory_manage" @click="openEditLocationModal(item, inventory)"
                                                         class="p-1 bg-green-50 text-green-600 hover:bg-green-100 rounded-full"
                                                         title="Edit Location">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
@@ -1087,7 +1088,7 @@ onUnmounted(() => {
                                                 class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                                 <div class="flex flex-col items-center justify-center space-y-2">
                                                     <!-- Reorder Button for Low Stock, Reorder Level, and Out of Stock Items -->
-                                                    <div v-if="needsReorder(inventory)"
+                                                    <div v-if="needsReorder(inventory) && $page.props.auth.can.inventory_manage"
                                                         class="flex flex-col items-center">
                                                         <button
                                                             class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center border-2 border-blue-200 hover:bg-blue-200 transition-colors"
@@ -1222,7 +1223,7 @@ onUnmounted(() => {
                                             <td class="px-3 py-2 text-xs text-gray-800 align-middle items-center">
                                                 <div class="flex flex-col items-center justify-center space-y-2">
                                                     <!-- Reorder Button for Low Stock, Reorder Level, and Out of Stock Items -->
-                                                    <div v-if="needsReorder(inventory)"
+                                                    <div v-if="needsReorder(inventory) && $page.props.auth.can.inventory_manage"
                                                         class="flex flex-col items-center">
                                                         <Link
                                                             :href="route('supplies.purchase_order')"

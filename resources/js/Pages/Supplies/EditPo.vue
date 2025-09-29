@@ -399,7 +399,7 @@
                                         form.rejected_at ||
                                         !$page.props.auth.can.purchase_order_review
                                     "
-                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] disabled:opacity-50 disabled:cursor-not-allowed">
                                     <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
                                     <span class="text-sm font-bold text-white">{{ form.reviewed_at ? 'Reviewed' : 'Review' }}</span>
                                 </button>
@@ -424,7 +424,7 @@
                                             : 'bg-green-500 hover:bg-green-600'
                                     ]"
                                     :disabled="form.approved_at || isProcessing.approve || !form.reviewed_at || !$page.props.auth.can.purchase_order_approve"
-                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] disabled:opacity-50 disabled:cursor-not-allowed">
                                     <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
                                     <span class="text-sm font-bold text-white">{{ form.approved_at ? 'Approved' : 'Approve' }}</span>
                                 </button>
@@ -457,7 +457,7 @@
                                         form.approved_at ||
                                         !$page.props.auth.can.purchase_order_reject
                                     "
-                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] disabled:opacity-50 disabled:cursor-not-allowed">
                                     <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
                                     <span class="text-sm font-bold text-white">{{ form.rejected_at ? 'Rejected' : 'Reject' }}</span>
                                 </button>
@@ -486,8 +486,8 @@
                         v-if="!form.approved_at" 
                         type="button" 
                         @click="submitForm" 
-                        :disabled="isSubmitting"
-                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                        :disabled="isSubmitting || !$page.props.auth.can.purchase_order_edit"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <svg v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
