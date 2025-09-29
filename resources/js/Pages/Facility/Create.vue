@@ -216,7 +216,7 @@
                             >Cancel</SecondaryButton
                         >
                     </Link>
-                    <PrimaryButton :disabled="isSubmitting || !$page.props.auth.can.facility_manage">
+                    <PrimaryButton :disabled="isSubmitting || !$page.props.auth.can.facility-manage">
                         {{ isSubmitting ? "Creating..." : "Create Facility" }}
                     </PrimaryButton>
                 </div>
@@ -250,7 +250,7 @@
                         Cancel
                     </SecondaryButton>
                     <PrimaryButton
-                        :disabled="isNewRegion || !$page.props.auth.can.facility_manage"
+                        :disabled="isNewRegion || !$page.props.auth.can.facility-manage"
                         @click="createRegion"
                     >
                         {{ isNewRegion ? "Waiting..." : "Create Region" }}
@@ -286,7 +286,7 @@
                         Cancel
                     </SecondaryButton>
                     <PrimaryButton
-                        :disabled="isNewDistrict || !$page.props.auth.can.facility_manage"
+                        :disabled="isNewDistrict || !$page.props.auth.can.facility-manage"
                         @click="createDistrict"
                     >
                         {{ isNewDistrict ? "Waiting..." : "Create District" }}

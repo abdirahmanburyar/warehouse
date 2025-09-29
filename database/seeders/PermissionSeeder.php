@@ -103,7 +103,7 @@ class PermissionSeeder extends Seeder
                 'guard_name' => 'web',
             ],
             [
-                'name' => 'facility_manage',
+                'name' => 'facility-manage',
                 'display_name' => 'Manage Facilities',
                 'description' => 'Can perform all facility management actions (create, edit, delete, import, view)',
                 'module' => 'Facility Management',
