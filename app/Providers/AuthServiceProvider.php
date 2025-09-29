@@ -83,7 +83,11 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         Gate::define('facility-management', function ($user) {
-            return $user->hasPermissionTo('facility-view') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
+            return $user->hasPermissionTo('facility-view') || $user->hasPermissionTo('facility-manage') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
+        });
+
+        Gate::define('facility-manage', function ($user) {
+            return $user->hasPermissionTo('facility-manage') || $user->hasPermissionTo('manage-system');
         });
 
         Gate::define('product-management', function ($user) {
