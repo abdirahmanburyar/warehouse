@@ -14,18 +14,17 @@ class CheckModulePermission
      * Map of routes to required permissions
      */
     protected $routePermissions = [
-        'orders.*' => 'order.view',
-        'transfers.*' => 'transfer.view',
-        'products.*' => 'product.view',
-        'inventories.*' => 'inventory.view',
-        'expired.*' => 'inventory.view',
-        'liquidate-disposal.*' => 'liquidate.view',
-        'supplies.*' => 'supply.view',
-        'reports.*' => 'report.view',
-        'facilities.*' => 'facility.view',
-        'assets.*' => 'asset.view',
-        'settings.*' => 'settings.view',
-        'assets.*' => 'settings.view',
+        'orders.*' => 'order-view',
+        'transfers.*' => 'transfer-view',
+        'products.*' => 'product-view',
+        'inventories.*' => 'inventory-view',
+        'expired.*' => 'inventory-view',
+        'liquidate-disposal.*' => 'liquidate-view',
+        'supplies.*' => 'supply-view',
+        'reports.*' => 'report-view',
+        'facilities.index' => 'facility-view',
+        'assets.*' => 'asset-view',
+        'settings.*' => 'settings-view',
     ];
 
     /**

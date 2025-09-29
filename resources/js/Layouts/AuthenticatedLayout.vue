@@ -231,7 +231,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'facility-view') || page.props.auth.isAdmin"
+                    v-if="$page.props.auth.can.facility_view || page.props.auth.isAdmin"
                     :href="route('facilities.index')"
                     class="menu-item"
                     :class="{ active: route().current('facilities.*') }"

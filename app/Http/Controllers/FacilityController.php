@@ -21,9 +21,9 @@ class FacilityController extends Controller
 {
     public function import(Request $request)
     {
-        // Check if user can import facilities
-        if (!Gate::allows('facility-import')) {
-            abort(403, 'Access denied. You do not have permission to import facilities.');
+        // Check if user can manage facilities
+        if (!Gate::allows('facility_manage')) {
+            abort(403, 'Access denied. You do not have permission to manage facilities.');
         }
 
         $request->validate([
@@ -100,9 +100,9 @@ class FacilityController extends Controller
     }
     public function index(Request $request)
     {
-        // Check if user can view facilities
-        if (!Gate::allows('facility-view')) {
-            abort(403, 'Access denied. You do not have permission to view facilities.');
+        // Check if user can manage facilities
+        if (!Gate::allows('facility_manage')) {
+            abort(403, 'Access denied. You do not have permission to manage facilities.');
         }
 
         // Get facility counts before pagination (independent of filters)
@@ -142,9 +142,9 @@ class FacilityController extends Controller
     }
 
     public function show(Request $request, $id){
-        // Check if user can view facilities
-        if (!Gate::allows('facility-view')) {
-            abort(403, 'Access denied. You do not have permission to view facilities.');
+        // Check if user can manage facilities
+        if (!Gate::allows('facility_manage')) {
+            abort(403, 'Access denied. You do not have permission to manage facilities.');
         }
 
         $facility = Facility::find($id);
@@ -156,9 +156,9 @@ class FacilityController extends Controller
 
     // tabs
     public function inventory(Request $request, $id){
-        // Check if user can view facilities
-        if (!Gate::allows('facility-view')) {
-            abort(403, 'Access denied. You do not have permission to view facilities.');
+        // Check if user can manage facilities
+        if (!Gate::allows('facility_manage')) {
+            abort(403, 'Access denied. You do not have permission to manage facilities.');
         }
 
         $facility = Facility::find($id);
@@ -169,9 +169,9 @@ class FacilityController extends Controller
     }
 
     public function dispence(Request $request, $id){
-        // Check if user can view facilities
-        if (!Gate::allows('facility-view')) {
-            abort(403, 'Access denied. You do not have permission to view facilities.');
+        // Check if user can manage facilities
+        if (!Gate::allows('facility_manage')) {
+            abort(403, 'Access denied. You do not have permission to manage facilities.');
         }
 
         $facility = Facility::find($id);
@@ -182,9 +182,9 @@ class FacilityController extends Controller
     }
 
     public function stock(Request $request, $id){
-        // Check if user can view facilities
-        if (!Gate::allows('facility-view')) {
-            abort(403, 'Access denied. You do not have permission to view facilities.');
+        // Check if user can manage facilities
+        if (!Gate::allows('facility_manage')) {
+            abort(403, 'Access denied. You do not have permission to manage facilities.');
         }
 
         $facility = Facility::find($id);
@@ -195,9 +195,9 @@ class FacilityController extends Controller
     }
 
     public function expiry(Request $request, $id){
-        // Check if user can view facilities
-        if (!Gate::allows('facility-view')) {
-            abort(403, 'Access denied. You do not have permission to view facilities.');
+        // Check if user can manage facilities
+        if (!Gate::allows('facility_manage')) {
+            abort(403, 'Access denied. You do not have permission to manage facilities.');
         }
 
         $facility = Facility::find($id);
@@ -209,9 +209,9 @@ class FacilityController extends Controller
     
     public function create()
     {
-        // Check if user can create facilities
-        if (!Gate::allows('facility-create')) {
-            abort(403, 'Access denied. You do not have permission to create facilities.');
+        // Check if user can manage facilities
+        if (!Gate::allows('facility_manage')) {
+            abort(403, 'Access denied. You do not have permission to manage facilities.');
         }
 
         return inertia('Facility/Create', [
@@ -224,9 +224,9 @@ class FacilityController extends Controller
     
     public function edit(Facility $facility)
     {
-        // Check if user can edit facilities
-        if (!Gate::allows('facility-edit')) {
-            abort(403, 'Access denied. You do not have permission to edit facilities.');
+        // Check if user can manage facilities
+        if (!Gate::allows('facility_manage')) {
+            abort(403, 'Access denied. You do not have permission to manage facilities.');
         }
 
         return inertia('Facility/Edit', [
