@@ -601,7 +601,6 @@ Route::controller(LocationController::class)
     // Asset Management Routes
     Route::controller(AssetController::class)
         ->prefix('assets-management')
-        ->middleware(['auth', 'verified'])
         ->group(function () {
             // View routes - require asset-view permission
             Route::get('/', 'index')->name('assets.index');
