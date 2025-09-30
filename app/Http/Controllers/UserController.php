@@ -21,12 +21,15 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
+        // Check if user has organization - if not, deny access
+        if (!auth()->check() || !auth()->user()->organization) {
+            abort(403, 'Access denied. You must have an organization assigned to view users.');
+        }
+        
         $query = User::query();
         
         // Organization filter - only show users from the same organization
-        if (auth()->check() && auth()->user()->organization) {
-            $query->where('organization', auth()->user()->organization);
-        }
+        $query->where('organization', auth()->user()->organization);
         
         logger()->info($request->all());
         // Search filter
@@ -92,6 +95,11 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        // Check if user has organization - if not, deny access
+        if (!auth()->check() || !auth()->user()->organization) {
+            abort(403, 'Access denied. You must have an organization assigned to create users.');
+        }
+        
         try {
             DB::beginTransaction();
             
@@ -208,6 +216,11 @@ class UserController extends Controller
 
     public function create(Request $request)
     {
+        // Check if user has organization - if not, deny access
+        if (!auth()->check() || !auth()->user()->organization) {
+            abort(403, 'Access denied. You must have an organization assigned to create users.');
+        }
+        
         $warehouses = Warehouse::all();
         $permissions = Permission::all();
         $facilities = Facility::all();
@@ -224,6 +237,16 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
+        // Check if user has organization - if not, deny access
+        if (!auth()->check() || !auth()->user()->organization) {
+            abort(403, 'Access denied. You must have an organization assigned to edit users.');
+        }
+        
+        // Check if the user being edited belongs to the same organization
+        if ($user->organization !== auth()->user()->organization) {
+            abort(403, 'Access denied. You can only edit users from your organization.');
+        }
+        
         $user->load(['permissions', 'warehouse', 'facility']);
         $warehouses = Warehouse::all();
         $permissions = Permission::all();
@@ -242,6 +265,16 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
+        // Check if user has organization - if not, deny access
+        if (!auth()->check() || !auth()->user()->organization) {
+            abort(403, 'Access denied. You must have an organization assigned to delete users.');
+        }
+        
+        // Check if the user being deleted belongs to the same organization
+        if ($user->organization !== auth()->user()->organization) {
+            abort(403, 'Access denied. You can only delete users from your organization.');
+        }
+        
         try {
             // Prevent deleting your own account
             if ($user->id === auth()->id()) {

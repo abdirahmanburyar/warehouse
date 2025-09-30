@@ -28,14 +28,17 @@ class AssetController extends Controller
 {
     public function index(Request $request)
     {
+        // Check if user has organization - if not, deny access
+        if (!auth()->check() || !auth()->user()->organization) {
+            abort(403, 'Access denied. You must have an organization assigned to view assets.');
+        }
+        
         $assetItems = AssetItem::query();
 
         // Organization filter - only show assets from the same organization
-        if (auth()->check() && auth()->user()->organization) {
-            $assetItems->whereHas('asset', function($query) {
-                $query->where('organization', auth()->user()->organization);
-            });
-        }
+        $assetItems->whereHas('asset', function($query) {
+            $query->where('organization', auth()->user()->organization);
+        });
 
         if($request->filled('search')){
             $assetItems->where(function($query) use ($request) {
