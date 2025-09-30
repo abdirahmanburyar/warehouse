@@ -117,6 +117,8 @@ class OrderController extends Controller
         
         $query->with(['facility.handledby:id,name', 'user']);
 
+        $query->orderBy('order_date', 'desc');
+
         $orders = $query->paginate($request->input('per_page', 25), ['*'], 'page', $request->input('page', 1))
             ->withQueryString();
         $orders->setPath(url()->current()); // Force Laravel to use full URLs
