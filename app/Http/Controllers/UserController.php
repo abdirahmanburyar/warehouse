@@ -26,7 +26,7 @@ class UserController extends Controller
         // Organization filter - only show users from the same organization if user has one
         if (auth()->check() && auth()->user() && !empty(auth()->user()->organization)) {
             $query->where('organization', auth()->user()->organization);
-            logger()->info('Filtering users by organization:', auth()->user()->organization);
+            logger()->info('Filtering users by organization:', ['organization' => auth()->user()->organization]);
         } else {
             // If user doesn't have organization, show all users (for admin to assign organizations)
             // This allows admins to see all users and assign organizations
