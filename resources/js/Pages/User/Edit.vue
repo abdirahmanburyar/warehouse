@@ -334,6 +334,7 @@ const submit = async () => {
         id: form.value.id,
         name: form.value.name,
         title: form.value.title,
+        organization: form.value.organization,
         username: form.value.username,
         email: form.value.email,
         password: form.value.password,
