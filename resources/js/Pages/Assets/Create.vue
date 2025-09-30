@@ -713,7 +713,7 @@ const submit = async () => {
         // Validate asset items
         for (let i = 0; i < form.value.asset_items.length; i++) {
             const item = form.value.asset_items[i];
-            if (!item.asset_tag || !item.asset_name || !item.serial_number || !item.asset_category_id || !item.asset_type_id || !item.original_value) {
+            if (!item.asset_tag || !item.asset_name || !item.asset_category_id || !item.asset_type_id || !item.original_value) {
                 toast.error(`Please fill in all required fields for item #${i + 1}`);
                 return;
             }

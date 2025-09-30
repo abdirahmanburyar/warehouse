@@ -35,18 +35,8 @@ class AssetController extends Controller
             $assetItems->whereHas('asset', function($query) {
                 $query->where('organization', auth()->user()->organization);
             });
-        } else {
-            // If user doesn't have organization, show all assets (for admin to manage)
-            // This allows admins to see all assets and assign organizations
-            logger()->info('User without organization accessing assets - showing all assets');
         }
         
-        logger()->info('Asset organization check:', [
-            'user_id' => auth()->id(),
-            'organization' => auth()->user() ? auth()->user()->organization : 'no user',
-            'has_organization' => auth()->user() ? !empty(auth()->user()->organization) : false
-        ]);
-
         if($request->filled('search')){
             $assetItems->where(function($query) use ($request) {
                 $query->whereLike('asset_tag', '%'.$request->search.'%')   
@@ -183,6 +173,8 @@ class AssetController extends Controller
     {
         // Allow creating assets even without organization
         // This allows admins to create assets and assign organizations
+
+        logger()->info('Creating asset');
         
         $locations = AssetLocation::all();
         $categories = AssetCategory::all();
@@ -844,12 +836,6 @@ class AssetController extends Controller
     public function transferAsset(Request $request, Asset $asset)
     {
         try {
-            logger()->info('Transfer request received', [
-                'asset_id' => $asset->id,
-                'request_data' => $request->all(),
-                'user_id' => auth()->id()
-            ]);
-
             // Check if asset exists and is accessible
             if (!$asset) {
                 return response()->json(['error' => 'Asset not found'], 404);
@@ -865,61 +851,33 @@ class AssetController extends Controller
                 'sub_location_id' => 'nullable|exists:sub_locations,id',
             ]);
 
-            logger()->info('Validation passed, updating asset');
-
             // For asset transfers, we typically don't want to change the asset's location
             // as it affects all asset items under that asset. Instead, we only update
             // the specific asset item's assignee and status.
             
             // Only update asset location if explicitly requested (for bulk transfers)
-            if ($request->has('update_asset_location') && $request->update_asset_location) {
-                logger()->info('Updating asset with location data:', [
-                    'asset_id' => $asset->id,
-                    'region_id' => $request->region_id,
-                    'asset_location_id' => $request->asset_location_id,
-                    'sub_location_id' => $request->sub_location_id,
-                ]);
-                
+            if ($request->has('update_asset_location') && $request->update_asset_location) {                
                 $asset->update([
                     'region_id' => $request->region_id,
                     'asset_location_id' => $request->asset_location_id,
                     'sub_location_id' => $request->sub_location_id,
                 ]);
-            } else {
-                logger()->info('Skipping asset location update - only updating asset item assignee');
             }
 
-            logger()->info('Asset updated, updating specific asset item');
 
             // Update only the specific asset item that was transferred
             // Since we're transferring a specific asset item, we need to find it
             $assetItems = $asset->assetItems()->get();
-            logger()->info('All asset items for this asset:', [
-                'asset_id' => $asset->id,
-                'asset_items_count' => $assetItems->count(),
-                'asset_items' => $assetItems->map(function($item) {
-                    return [
-                        'id' => $item->id,
-                        'assignee_id' => $item->assignee_id,
-                        'status' => $item->status
-                    ];
-                })->toArray()
-            ]);
             
             $assetItem = $assetItems->first();
-            logger()->info('Selected asset item for update:', ['asset_item_id' => $assetItem->id ?? 'null', 'asset_id' => $asset->id]);
             
             if ($assetItem) {
                 $assetItem->update([
                     'assignee_id' => $request->assignee_id,
                     'status' => 'in_use',
                 ]);
-                logger()->info('Asset item updated successfully');
-            } else {
-                logger()->warning('No asset item found for asset', ['asset_id' => $asset->id]);
             }
 
-            logger()->info('Asset items updated, creating history');
 
             // Create transfer history record for the specific asset item
             if ($assetItem) {
@@ -934,19 +892,11 @@ class AssetController extends Controller
                 ]);
             }
 
-            logger()->info('History created, returning success');
-
             return response()->json([
                 'message' => 'Asset transferred successfully',
                 'asset' => $asset->fresh(['assetItems.assignee', 'region', 'assetLocation', 'subLocation'])
             ], 200);
         } catch (\Throwable $th) {
-            logger()->error('Asset transfer failed: ' . $th->getMessage(), [
-                'asset_id' => $asset->id ?? 'unknown',
-                'request_data' => $request->all(),
-                'user_id' => auth()->id(),
-                'trace' => $th->getTraceAsString()
-            ]);
             return response()->json(['error' => 'Transfer failed: ' . $th->getMessage()], 500);
         }
     }
@@ -982,7 +932,6 @@ class AssetController extends Controller
                 'pageDescription' => 'View detailed information for asset: ' . $assetWithRelations->asset_number
             ]);
         } catch (\Throwable $th) {
-            logger()->error('Failed to show asset: ' . $th->getMessage());
             return back()->withErrors(['error' => 'Failed to load asset: ' . $th->getMessage()]);
         }
     }
@@ -1013,11 +962,6 @@ class AssetController extends Controller
                 'pageDescription' => 'View detailed history for asset item: ' . $assetItem->asset_tag
             ]);
         } catch (\Throwable $th) {
-            logger()->error('Failed to show asset history: ' . $th->getMessage(), [
-                'asset_item_id' => $assetItem->id ?? 'unknown',
-                'user_id' => auth()->id(),
-                'trace' => $th->getTraceAsString()
-            ]);
             
             return back()->withErrors(['error' => 'Failed to load asset history: ' . $th->getMessage()]);
         }
@@ -1053,12 +997,6 @@ class AssetController extends Controller
                 'pageDescription' => 'View detailed history for asset item: ' . $assetItem->asset_tag
             ]);
         } catch (\Throwable $th) {
-            logger()->error('Failed to show asset item history: ' . $th->getMessage(), [
-                'asset_item_id' => $assetItem->id ?? 'unknown',
-                'user_id' => auth()->id(),
-                'trace' => $th->getTraceAsString()
-            ]);
-            
             return back()->withErrors(['error' => 'Failed to load asset item history: ' . $th->getMessage()]);
         }
     }
@@ -1142,7 +1080,6 @@ class AssetController extends Controller
             }, $filename);
 
         } catch (\Throwable $th) {
-            logger()->error('Failed to download asset template: ' . $th->getMessage());
             return back()->withErrors(['error' => 'Failed to download template: ' . $th->getMessage()]);
         }
     }
@@ -1175,7 +1112,6 @@ class AssetController extends Controller
             return back()->withErrors(['import_errors' => $errors]);
             
         } catch (\Throwable $th) {
-            logger()->error('Failed to import assets: ' . $th->getMessage());
             return back()->withErrors(['error' => 'Failed to import assets: ' . $th->getMessage()]);
         }
     }
