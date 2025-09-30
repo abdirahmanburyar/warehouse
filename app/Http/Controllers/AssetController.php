@@ -31,14 +31,21 @@ class AssetController extends Controller
         $assetItems = AssetItem::query();
 
         // Organization filter - only show assets from the same organization if user has one
-        if (auth()->check() && auth()->user()->organization) {
+        if (auth()->check() && auth()->user() && !empty(auth()->user()->organization)) {
             $assetItems->whereHas('asset', function($query) {
                 $query->where('organization', auth()->user()->organization);
             });
         } else {
             // If user doesn't have organization, show all assets (for admin to manage)
             // This allows admins to see all assets and assign organizations
+            logger()->info('User without organization accessing assets - showing all assets');
         }
+        
+        logger()->info('Asset organization check:', [
+            'user_id' => auth()->id(),
+            'organization' => auth()->user() ? auth()->user()->organization : 'no user',
+            'has_organization' => auth()->user() ? !empty(auth()->user()->organization) : false
+        ]);
 
         if($request->filled('search')){
             $assetItems->where(function($query) use ($request) {
@@ -527,15 +534,16 @@ class AssetController extends Controller
      */
     public function approvalsIndex(Request $request)
     {
-        // Check if user has organization - if not, show notification
-        if (!auth()->check() || !auth()->user()->organization) {
-            return redirect()->back()->with('error', 'You must have an organization assigned to view asset approvals.');
-        }
-        
         // Load all assets that have been submitted (including approved ones)
         // This allows us to show the full approval workflow history
-        $assets = Asset::whereNotNull('submitted_at')
-                      ->where('organization', auth()->user()->organization)
+        $assets = Asset::whereNotNull('submitted_at');
+        
+        // Organization filter - only show assets from the same organization if user has one
+        if (auth()->check() && auth()->user()->organization) {
+            $assets->where('organization', auth()->user()->organization);
+        }
+        
+        $assets = $assets
                       ->with(['region', 'assetLocation', 'subLocation'])
                       ->get(['id', 'asset_number', 'acquisition_date'])
                       ->map(function($asset) {

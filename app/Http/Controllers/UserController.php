@@ -24,13 +24,20 @@ class UserController extends Controller
         $query = User::query();
         
         // Organization filter - only show users from the same organization if user has one
-        if (auth()->check() && auth()->user()->organization) {
+        if (auth()->check() && auth()->user() && !empty(auth()->user()->organization)) {
             $query->where('organization', auth()->user()->organization);
+            logger()->info('Filtering users by organization:', auth()->user()->organization);
         } else {
             // If user doesn't have organization, show all users (for admin to assign organizations)
             // This allows admins to see all users and assign organizations
+            logger()->info('User without organization accessing users - showing all users');
         }
         
+        logger()->info('User organization check:', [
+            'user_id' => auth()->id(),
+            'organization' => auth()->user() ? auth()->user()->organization : 'no user',
+            'has_organization' => auth()->user() ? !empty(auth()->user()->organization) : false
+        ]);
         logger()->info($request->all());
         // Search filter
         if ($request->filled('search')) {
@@ -73,6 +80,12 @@ class UserController extends Controller
         $users = $query->paginate($request->per_page, ['*'], 'page', $request->page)->withQueryString();
 
         $users->setPath(url()->current());
+        
+        logger()->info('Users query result:', [
+            'total_users' => $users->total(),
+            'current_page_users' => $users->count(),
+            'user_organizations' => $users->pluck('organization')->unique()->values()->toArray()
+        ]);
         
 
         

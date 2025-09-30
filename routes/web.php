@@ -130,6 +130,15 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Asset Management Routes
+    Route::prefix('assets')->group(function () {
+        Route::get('/', [AssetController::class, 'index'])->name('assets.index');
+        Route::get('/create', [AssetController::class, 'create'])->name('assets.create');
+        Route::post('/', [AssetController::class, 'store'])->name('assets.store');
+        Route::get('/approvals', [AssetController::class, 'approvalsIndex'])->name('assets.approvals.index');
+        Route::post('/regions', [AssetController::class, 'storeRegion'])->name('assets.regions.store');
+    });
+
     // Permissions API endpoint
     Route::get('/api/permissions', [\App\Http\Controllers\PermissionController::class, 'index'])->name('api.permissions.index');
     
