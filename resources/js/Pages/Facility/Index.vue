@@ -205,7 +205,7 @@
                             <td class="px-3 py-2 whitespace-nowrap text-center">
                                 <div class="flex items-end justify-end space-x-2">
                                     <Link
-                                        v-if="$page.props.auth.can.facility_manage || $page.props.auth.isAdmin"|
+                                        v-if="$page.props.auth.can.facility_manage || $page.props.auth.isAdmin"
                                         :href="route('facilities.edit', facility.id)"
                                         class="inline-flex items-center p-1.5 border border-transparent rounded-lg text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200"
                                         title="Edit Facility"

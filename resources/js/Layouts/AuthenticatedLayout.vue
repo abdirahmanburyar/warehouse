@@ -30,7 +30,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'order-view') || page.props.auth.isAdmin"
+                    v-if="$page.props.auth.can.order_view || $page.props.auth.isAdmin"
                     :href="route('orders.index')"
                     class="menu-item"
                     :class="{ active: route().current('orders.*') }"
@@ -55,7 +55,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'transfer-view') || page.props.auth.isAdmin"
+                    v-if="$page.props.auth.can.transfer_view || $page.props.auth.isAdmin"
                     :href="route('transfers.index')"
                     class="menu-item"
                     :class="{ active: route().current('transfers.*') }"
@@ -80,7 +80,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'product-view') || page.props.auth.isAdmin"
+                    v-if="$page.props.auth.can.product_view || $page.props.auth.isAdmin"
                     :href="route('products.index')"
                     class="menu-item"
                     :class="{ active: route().current('products.*') }"
@@ -105,7 +105,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="page.props.auth.can.inventory_view || page.props.auth.isAdmin"
+                    v-if="$page.props.auth.can.inventory_view || $page.props.auth.isAdmin"
                     :href="route('inventories.index')"
                     class="menu-item"
                     :class="{ active: route().current('inventories.*') }"
@@ -130,7 +130,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'inventory-view') || page.props.auth.isAdmin"
+                    v-if="$page.props.auth.can.inventory_view || $page.props.auth.isAdmin"
                     :href="route('expired.index')"
                     class="menu-item"
                     :class="{ active: route().current('expired.*') }"
@@ -156,7 +156,7 @@
                 </Link>
                 <!-- Liquidate and disposals -->
                 <Link
-                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'liquidate-view') || page.props.auth.isAdmin"
+                    v-if="$page.props.auth.can.liquidate_view || $page.props.auth.isAdmin"
                     :href="route('liquidate-disposal.index')"
                     class="menu-item"
                     :class="{ active: route().current('liquidate-disposal.*') }"
@@ -181,7 +181,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.can.supply_view || page.props.auth.isAdmin"
+                    v-if="$page.props.auth.can.supply_view || $page.props.auth.isAdmin"
                     :href="route('supplies.index')"
                     class="menu-item"
                     :class="{ active: route().current('supplies.*') }"
@@ -206,7 +206,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'reports-view') || page.props.auth.isAdmin"
+                    v-if="$page.props.auth.can.reports_view || $page.props.auth.isAdmin"
                     :href="route('reports.index')"
                     class="menu-item"
                     :class="{ active: route().current('reports.*') }"
@@ -231,7 +231,7 @@
                     </div>
                 </Link>
                 <Link
-                    v-if="$page.props.auth.can.facility_view || page.props.auth.isAdmin"
+                    v-if="$page.props.auth.can.facility_view || $page.props.auth.isAdmin"
                     :href="route('facilities.index')"
                     class="menu-item"
                     :class="{ active: route().current('facilities.*') }"
@@ -284,7 +284,7 @@
                 
                 <!-- Settings Menu -->
                 <Link
-                    v-if="page.props.auth.user?.permissions?.some(p => p.name === 'system-settings') || page.props.auth.user?.permissions?.some(p => p.name === 'permission-manage') || page.props.auth.user?.permissions?.some(p => p.name === 'manage-system') || page.props.auth.user?.permissions?.some(p => p.name === 'view-system') || page.props.auth.isAdmin"
+                    v-if="page.props.auth.can.system_settings || page.props.auth.isAdmin"
                     :href="route('settings.index')"
                     class="menu-item"
                     :class="{ active: route().current('settings.*') }"
@@ -423,22 +423,19 @@
                                 class="w-[50px]"
                             />
                             <span class="flex items-center text-gray-400"
-                                >|</span
-                            >
+                                >|</span>
                             <span class="flex items-center text-gray-600"
                                 >Copyright 2025 Vista. All rights
                                 reserved.</span
                             >
                             <span class="flex items-center text-gray-400"
-                                >|</span
-                            >
+                                >|</span>
                             <span
                                 class="flex items-center text-gray-600 hover:text-gray-800 cursor-pointer"
                                 >Terms of Use</span
                             >
                             <span class="flex items-center text-gray-400"
-                                >|</span
-                            >
+                                >|</span>
                             <span
                                 class="flex items-center text-gray-600 hover:text-gray-800 cursor-pointer"
                                 >Privacy</span

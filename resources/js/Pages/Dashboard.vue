@@ -2044,7 +2044,6 @@ const navigateToTask = (route) => {
 <template>
     <Head title="Dashboard" />
     <AuthenticatedLayout title="Dashboard" description="Welcome to the dashboard">
-        {{ $page.props.auth.can }}
         <!-- Modern Gradient Dashboard Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <!-- Teal Card -->

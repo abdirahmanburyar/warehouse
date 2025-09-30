@@ -7,6 +7,7 @@
                 </div>
                 <div class="flex items-center space-x-3">
                     <button
+                        v-if="$page.props.auth.can.product_manage || $page.props.auth.isAdmin"
                         @click="openUploadModal"
                         class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 border border-transparent rounded-lg font-medium text-sm text-white hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
                         :disabled="isUploading"
@@ -22,6 +23,7 @@
                     </button>
 
                     <Link
+                        v-if="$page.props.auth.can.product_manage || $page.props.auth.isAdmin"
                         :href="route('products.create')"
                         class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 border border-transparent rounded-lg font-medium text-sm text-white hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
                     >
@@ -273,6 +275,7 @@
                             <td class="px-3 py-2 whitespace-nowrap text-center">
                                 <div class="flex items-end justify-end space-x-2">
                                     <Link
+                                        v-if="$page.props.auth.can.product_manage || $page.props.auth.isAdmin"
                                         :href="route('products.edit', product.id)"
                                         class="inline-flex items-center p-1.5 border border-transparent rounded-lg text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200"
                                         title="Edit Product"
@@ -282,6 +285,7 @@
                                         </svg>
                                     </Link>
                                     <button
+                                        v-if="$page.props.auth.can.product_manage || $page.props.auth.isAdmin"
                                         @click="confirmToggleStatus(product)"
                                         :disabled="loadingProducts.has(product.id)"
                                         class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -363,6 +367,7 @@
                                     Download our template to see the correct format for uploading products.
                                 </p>
                                 <button
+                                    v-if="$page.props.auth.can.product_manage || $page.props.auth.isAdmin"
                                     @click="downloadTemplate"
                                     class="mt-3 inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-medium text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                 >
@@ -400,6 +405,7 @@
 
                     <div class="mb-6">
                         <div
+                            v-if="$page.props.auth.can.product_manage || $page.props.auth.isAdmin"
                             class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer"
                             @click="triggerFileInput"
                         >
@@ -438,6 +444,7 @@
                                 </div>
                             </div>
                             <button
+                                v-if="$page.props.auth.can.product_manage || $page.props.auth.isAdmin"
                                 @click.stop="removeSelectedFile"
                                 class="text-red-500 hover:text-red-700 transition-colors duration-200"
                             >
@@ -457,6 +464,7 @@
                         Cancel
                     </button>
                     <button
+                        v-if="$page.props.auth.can.product_manage || $page.props.auth.isAdmin"
                         @click="uploadFile"
                         class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 border border-transparent rounded-lg font-medium text-sm text-white hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
                         :disabled="!selectedFile || isUploading"
