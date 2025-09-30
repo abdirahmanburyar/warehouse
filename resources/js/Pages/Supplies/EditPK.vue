@@ -301,12 +301,20 @@
                         <div class="flex flex-col">
                             <button @click="reviewPackingList"
                                 :class="[
-                                    hasReviewedItems || hasAllApproved
+                                    form.reviewed_at
                                         ? 'bg-green-500'
+                                        : form.approved_at || form.rejected_at
+                                        ? 'bg-gray-300 cursor-not-allowed'
                                         : 'bg-yellow-500 hover:bg-yellow-600'
                                 ]"
-                                :disabled="isReviewing || hasReviewedItems || hasAllApproved || !page.props.auth.can.purchase_order_review"
-                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                :disabled="
+                                    isReviewing ||
+                                    form.reviewed_at ||
+                                    form.approved_at ||
+                                    form.rejected_at ||
+                                    !$page.props.auth.can.purchase_order_review
+                                "
+                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
                                 <span class="text-sm font-bold text-white">{{ form.reviewed_at ? 'Reviewed' : 'Review' }}</span>
                             </button>
@@ -315,7 +323,7 @@
                                 <div class="text-xs font-medium text-gray-700">By {{ form.reviewed_by?.name }}</div>
                             </div>
                         </div>
-                        <div v-if="!hasReviewedItems && !hasAllApproved"
+                        <div v-if="!form.reviewed_at && !form.approved_at && !form.rejected_at"
                             class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                     </div>
 
@@ -326,14 +334,14 @@
                         <div class="flex flex-col">
                             <button @click="approvePackingList"
                                 :class="[
-                                    hasAllApproved
+                                    form.approved_at
                                         ? 'bg-green-500'
-                                        : !hasReviewedItems
+                                        : !form.reviewed_at || form.rejected_at
                                         ? 'bg-gray-300 cursor-not-allowed'
                                         : 'bg-green-500 hover:bg-green-600'
                                 ]"
-                                :disabled="isApproving || !hasReviewedItems || hasAllApproved || !page.props.auth.can.purchase_order_approve"
-                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                :disabled="form.approved_at || isApproving || !form.reviewed_at || !$page.props.auth.can.purchase_order_approve"
+                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
                                 <span class="text-sm font-bold text-white">{{ form.approved_at ? 'Approved' : 'Approve' }}</span>
                             </button>
@@ -342,23 +350,31 @@
                                 <div class="text-xs font-medium text-gray-700">By {{ form.approved_by?.name }}</div>
                             </div>
                         </div>
-                        <div v-if="hasReviewedItems && !hasAllApproved"
+                        <div v-if="form.reviewed_at && !form.approved_at && !form.rejected_at"
                             class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                     </div>
 
                     <!-- Reject button -->
-                    <div class="relative" v-if="!hasAllApproved">
+                    <div class="relative" v-if="!form.approved_at">
                         <div class="flex flex-col">
                             <button @click="rejectPackingList"
                                 :class="[
-                                    hasRejected
+                                    form.rejected_at
                                         ? 'bg-red-500'
-                                        : !hasReviewedItems
+                                        : !form.reviewed_at
                                         ? 'bg-gray-300 cursor-not-allowed'
                                         : 'bg-red-500 hover:bg-red-600'
                                 ]"
-                                :disabled="isRejecting || !hasReviewedItems || hasAllApproved || !page.props.auth.can.purchase_order_reject"
-                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px]">
+                                :disabled="
+                                    isReviewing ||
+                                    isApproving ||
+                                    isRejecting ||
+                                    !form.reviewed_at ||
+                                    form.rejected_at ||
+                                    form.approved_at ||
+                                    !$page.props.auth.can.purchase_order_reject
+                                "
+                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
                                 <span class="text-sm font-bold text-white">{{ form.rejected_at ? 'Rejected' : 'Reject' }}</span>
                             </button>
@@ -367,7 +383,7 @@
                                 <div class="text-xs font-medium text-gray-700">By {{ form.rejected_by?.name }}</div>
                             </div>
                         </div>
-                        <div v-if="hasReviewedItems && !hasAllApproved && !hasRejected"
+                        <div v-if="form.reviewed_at && !form.approved_at && !form.rejected_at"
                             class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
                     </div>
                 </div>
@@ -379,7 +395,7 @@
                     class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Exit
                 </Link>
-                <button v-if="!hasAllApproved" @click="submit" :disabled="isSubmitting || isApproving || isReviewing || isRejecting || !canSubmit" :title="submitButtonTitle"
+                <button v-if="!hasAllApproved" @click="submit" :disabled="isSubmitting || isApproving || isReviewing || isRejecting || !canSubmit || !$page.props.auth.can.purchase_order_create" :title="submitButtonTitle"
                     class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                     {{ isSubmitting ? "Updating..." : "Update Changes" }}
                 </button>
@@ -1178,9 +1194,6 @@ const availableStatuses = computed(() => {
 const isReviewing = ref(false);
 
 async function reviewPackingList() {
-    console.log('Review function called');
-    console.log('Form status:', form.value?.status);
-    console.log('User permissions:', page.props.auth.can);
     
     const confirm = await Swal.fire({
         title: 'Review Packing List',
@@ -1255,11 +1268,7 @@ async function reviewPackingList() {
 
 const isApproving = ref(false);
 
-async function approvePackingList() {
-    console.log('Approve function called');
-    console.log('Form status:', form.value?.status);
-    console.log('User permissions:', page.props.auth.can);
-    
+async function approvePackingList() {    
     const confirm = await Swal.fire({
         title: 'Approve Packing List',
         text: 'Are you sure you want to approve these items?',
