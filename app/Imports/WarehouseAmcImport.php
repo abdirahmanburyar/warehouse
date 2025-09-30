@@ -57,17 +57,9 @@ class WarehouseAmcImport implements
 
     public function model(array $row)
     {
-        try {
-            // Log the raw row data for debugging
-            Log::info("Processing row", [
-                'import_id' => $this->importId,
-                'row_keys' => array_keys($row),
-                'row_data' => $row
-            ]);
-            
+        try {            
             // Check if item field exists and has a value
             if (!isset($row['item']) || empty(trim($row['item'] ?? ''))) {
-                Log::info("Skipping row with empty item field", ['row' => $row]);
                 $this->skippedCount++;
                 return null;
             }
@@ -84,45 +76,31 @@ class WarehouseAmcImport implements
                 return null;
             }
 
-            // Debug: Log product found
-            Log::info("Processing product: {$itemName} (ID: {$product->id})");
-
             // Update progress in cache
             Cache::increment($this->importId);
 
             // Process each month column and create/update WarehouseAmc records
             $processedMonths = 0;
-            Log::info("Row keys: " . implode(', ', array_keys($row)));
             
             foreach ($row as $key => $value) {
                         // Skip non-month columns
         if (in_array($key, ['item', 'AMC'])) {
-            Log::info("Skipping non-month column: {$key} = {$value}");
             continue;
         }
 
                 // Convert formatted month back to YYYY-MM format
                 $monthYear = $this->parseMonthYear($key);
                 if (!$monthYear) {
-                    Log::info("Could not parse month from column: {$key} = {$value}");
                     continue;
                 }
-
-                Log::info("Processing month: {$key} -> {$monthYear} = {$value}");
-
                 // Clean and validate quantity
                 $quantity = $this->cleanQuantity($value);
                 
                 // If quantity is null or empty, skip this month (don't update existing data)
                 if ($quantity === null) {
-                    Log::info("Skipping null/empty quantity for month: {$monthYear} (value: '{$value}')");
                     continue;
                 }
                 
-                Log::info("Quantity cleaned: '{$value}' -> {$quantity}");
-
-                Log::info("Creating/updating WarehouseAmc: product_id={$product->id}, month_year={$monthYear}, quantity={$quantity}");
-
                 // Create or update WarehouseAmc record
                 $warehouseAmc = WarehouseAmc::updateOrCreate(
                     [
@@ -136,10 +114,8 @@ class WarehouseAmcImport implements
 
                 if ($warehouseAmc->wasRecentlyCreated) {
                     $this->importedCount++;
-                    Log::info("Created new WarehouseAmc record: ID={$warehouseAmc->id}");
                 } else {
                     $this->updatedCount++;
-                    Log::info("Updated existing WarehouseAmc record: ID={$warehouseAmc->id}");
                 }
                 
                 $processedMonths++;
@@ -179,10 +155,6 @@ class WarehouseAmcImport implements
             $this->skippedCount++;
         }
         
-        Log::warning('Validation failures in import', [
-            'import_id' => $this->importId,
-            'failures' => $this->errors
-        ]);
     }
 
     public function chunkSize(): int
@@ -225,14 +197,6 @@ class WarehouseAmcImport implements
                     'results' => $results
                 ], 3600);
                 
-                // Log completion
-                Log::info("Warehouse AMC import completed", [
-                    'import_id' => $this->importId,
-                    'imported' => $this->importedCount,
-                    'updated' => $this->updatedCount,
-                    'skipped' => $this->skippedCount,
-                    'errors' => $this->errors
-                ]);
             },
         ];
     }
@@ -272,7 +236,6 @@ class WarehouseAmcImport implements
             
             if (isset($monthMap[$monthAbbr])) {
                 $result = $year . '-' . $monthMap[$monthAbbr];
-                Log::info("Successfully parsed month: {$headerValue} -> {$result}");
                 return $result;
             }
         }

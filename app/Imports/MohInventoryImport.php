@@ -9,7 +9,6 @@ use App\Models\MohInventoryItem;
 use App\Models\Category;
 use App\Models\Dosage;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -46,10 +45,6 @@ class MohInventoryImport implements
         $this->importId = $importId;
         $this->mohInventoryId = $mohInventoryId;
         
-        Log::info('MohInventoryImport initialized', [
-            'import_id' => $importId,
-            'moh_inventory_id' => $this->mohInventoryId
-        ]);
     }
 
     public function model(array $row)
@@ -61,16 +56,9 @@ class MohInventoryImport implements
         if ($this->processedRows % 10 == 0 || $this->processedRows == $this->totalRows) {
             $progress = $this->totalRows > 0 ? min(100, round(($this->processedRows / $this->totalRows) * 100)) : 0;
             Cache::put($this->importId, $progress);
-            Log::info('MOH inventory import progress updated', [
-                'import_id' => $this->importId,
-                'processed_rows' => $this->processedRows,
-                'total_rows' => $this->totalRows,
-                'progress' => $progress
-            ]);
+
         }
         
-        // Log the row data for debugging
-        Log::info('Processing MOH inventory row', ['row' => $row]);
         
         // Check if required fields are present - try different column name variations
         $itemName = $row['item'] ?? $row['Item'];
@@ -118,13 +106,9 @@ class MohInventoryImport implements
         $product = Product::where('name', $itemName)->first();
         
         if ($product) {
-            Log::info('Found existing product', ['product_id' => $product->id, 'name' => $itemName]);
             return $product;
         }
 
-        // If not found, create the product
-        Log::info('Product not found, creating new product', ['name' => $itemName]);
-        
         // Get or create category
         $categoryName = trim($row['category'] ?? $row['Category'] ?? $row['CATEGORY'] ?? 'General');
         $category = $this->getOrCreateCategory($categoryName);
@@ -141,13 +125,7 @@ class MohInventoryImport implements
             'is_active' => true,
             'tracert_type' => ['batch_number', 'expiry_date'] // Default tracking types
         ]);
-        
-        Log::info('Created new product', [
-            'product_id' => $product->id,
-            'name' => $itemName,
-            'category_id' => $category->id,
-            'dosage_id' => $dosage->id
-        ]);
+
         
         return $product;
     }
@@ -158,21 +136,15 @@ class MohInventoryImport implements
         $category = Category::where('name', $categoryName)->first();
         
         if ($category) {
-            Log::info('Found existing category', ['category_id' => $category->id, 'name' => $categoryName]);
             return $category;
         }
 
-        // If not found, create the category
-        Log::info('Category not found, creating new category', ['name' => $categoryName]);
-        
         $category = Category::create([
             'name' => $categoryName,
             'description' => "Auto-created category for MOH inventory import",
             'is_active' => true
         ]);
-        
-        Log::info('Created new category', ['category_id' => $category->id, 'name' => $categoryName]);
-        
+                
         return $category;
     }
 
@@ -182,20 +154,14 @@ class MohInventoryImport implements
         $dosage = Dosage::where('name', $dosageName)->first();
         
         if ($dosage) {
-            Log::info('Found existing dosage', ['dosage_id' => $dosage->id, 'name' => $dosageName]);
             return $dosage;
         }
 
-        // If not found, create the dosage
-        Log::info('Dosage not found, creating new dosage', ['name' => $dosageName]);
-        
         $dosage = Dosage::create([
             'name' => $dosageName,
             'description' => "Auto-created dosage for MOH inventory import",
             'is_active' => true
         ]);
-        
-        Log::info('Created new dosage', ['dosage_id' => $dosage->id, 'name' => $dosageName]);
         
         return $dosage;
     }
@@ -212,9 +178,7 @@ class MohInventoryImport implements
             $errorMessage = "Warehouse '{$cleanName}' not found in database. Please add this warehouse first before importing.";
             
             throw new \Exception($errorMessage);
-        } else {
-            Log::info('Found existing warehouse', ['warehouse_id' => $warehouse->id, 'name' => $warehouse->name]);
-        }
+        } 
 
         return $warehouse;
     }
@@ -290,32 +254,17 @@ class MohInventoryImport implements
             BeforeImport::class => function(BeforeImport $event) {
                 // Get total row count for progress tracking
                 $this->totalRows = $event->getReader()->getTotalRows();
-                Log::info('MOH inventory import started', [
-                    'import_id' => $this->importId,
-                    'moh_inventory_id' => $this->mohInventoryId,
-                    'total_rows' => $this->totalRows
-                ]);
                 
                 // Initialize progress to 0
                 Cache::put($this->importId, 0);
             },
             AfterImport::class => function(AfterImport $event) {
-                Log::info('MOH inventory import completed', [
-                    'import_id' => $this->importId,
-                    'moh_inventory_id' => $this->mohInventoryId,
-                    'processed_rows' => $this->processedRows
-                ]);
                 
                 // Update cache to indicate completion
                 Cache::put($this->importId, 100);
             },
             ImportFailed::class => function(ImportFailed $event) {
-                Log::error('MOH inventory import failed', [
-                    'import_id' => $this->importId,
-                    'moh_inventory_id' => $this->mohInventoryId,
-                    'error' => $event->getException()->getMessage()
-                ]);
-                
+                                
                 // Update cache to indicate failure
                 Cache::put($this->importId, -1);
             },
