@@ -153,8 +153,6 @@ class AssetController extends Controller
         $categories = AssetCategory::select('id','name')->get();
         $types = AssetType::select('id','name','asset_category_id')->get();
         $assignees = Assignee::select('id','name')->get();
-
-        Log::info($assetItems);
         
         return inertia('Assets/Index', [
             'locations' => $locations,
