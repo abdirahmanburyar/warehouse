@@ -119,9 +119,9 @@ class AuthServiceProvider extends ServiceProvider
             return $user->hasPermissionTo('asset-view') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
         });
 
-        Gate::define('asset-create', function ($user) {
-            return $user->hasPermissionTo('asset-create') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system');
-        });
+        // Gate::define('asset-create', function ($user) {
+        //     return $user->hasPermissionTo('asset-create') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system');
+        // });
 
         Gate::define('asset-edit', function ($user) {
             return $user->hasPermissionTo('asset-edit') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system');

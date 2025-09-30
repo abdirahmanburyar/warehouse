@@ -131,23 +131,6 @@ Route::middleware(['auth', \App\Http\Middleware\TwoFactorAuth::class])->group(fu
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Test route to check user permissions
-    Route::get('/test-permissions', function() {
-        if (auth()->check()) {
-            $user = auth()->user();
-            $permissions = $user->permissions->pluck('name')->toArray();
-            $hasAssetCreate = $user->can('asset-create');
-            
-            return response()->json([
-                'user_id' => $user->id,
-                'user_name' => $user->name,
-                'permissions' => $permissions,
-                'has_asset_create' => $hasAssetCreate,
-                'can_asset_create' => Gate::allows('asset-create'),
-            ]);
-        }
-        return response()->json(['error' => 'Not authenticated']);
-    });
 
     // Permissions API endpoint
     Route::get('/api/permissions', [\App\Http\Controllers\PermissionController::class, 'index'])->name('api.permissions.index');
@@ -611,7 +594,7 @@ Route::controller(LocationController::class)
             Route::get('/asset-items/{assetItem}/detailed-history', 'showAssetItemHistory')->name('assets.items.history.index');
             
             // Create routes - require asset-create permission
-            Route::get('/create', 'create')->name('assets.create');
+            Route::get('/get-create', 'create')->name('assets.get-create');
             Route::post('/store', 'store')->name('assets.store');
             
             // Edit routes - require asset-edit permission

@@ -24,7 +24,7 @@
                             </div>
                         </div>
                         <div class="mt-6 sm:mt-0 flex space-x-3">
-                            <Link v-if="$page.props.auth.can.asset_create" :href="route('assets.create')"
+                            <Link v-if="$page.props.auth.can.asset_create" :href="route('assets.get-create')"
                                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-indigo-700 bg-white hover:bg-indigo-50 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                                 class="w-4 h-4 mr-2">
@@ -321,7 +321,7 @@
                                  class="odd:bg-white even:bg-gray-50/60 hover:bg-indigo-50 transition-colors duration-150 border-b border-gray-100 group">
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
                                     <div class="text-xs text-gray-900">
-                                        <Link :href="route('assets.show', asset.asset_number)" class="text-blue-600 hover:text-blue-800 underline">
+                                        <Link :href="route('assets.show', asset.asset_tag)" class="text-blue-600 hover:text-blue-800 underline">
                                             {{ asset.asset_tag || 'N/A' }}
                                         </Link>
                                         <div class="text-xs font-semibold text-gray-900 mt-1">
