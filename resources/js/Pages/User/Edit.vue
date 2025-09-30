@@ -40,6 +40,20 @@
                                 placeholder="e.g., Manager, Supervisor, etc."
                             />
                         </div>
+                        <!-- Organization -->
+                        <div>
+                            <InputLabel for="organization" value="Organization" />
+                            <select
+                                id="organization"
+                                v-model="form.organization"
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            >
+                                <option value="">Select Organization</option>
+                                <option value="PSI">PSI</option>
+                                <option value="MoH">MoH</option>
+                            </select>
+                        </div>
                         <!-- Username -->
                         <div>
                             <InputLabel for="username" value="Username" />
@@ -232,6 +246,7 @@ const form = ref({
     id: props.user?.id || null,
     name: props.user?.name || '',
     title: props.user?.title || '',
+    organization: props.user?.organization || '',
     email: props.user?.email || '',
     username: props.user?.username || '',
     password: '',

@@ -54,6 +54,11 @@ class UserController extends Controller
             });
         }
 
+        // Organization filter
+        if ($request->filled('organization')) {
+            $query->where('organization', $request->organization);
+        }
+
         $query->with(['warehouse', 'facility'])->latest();
 
         
@@ -72,7 +77,7 @@ class UserController extends Controller
         return Inertia::render('User/Index', [
             'users' => UserResource::collection($users),
             'warehouses' => $warehouses,
-            'filters' => $request->only(['search', 'role', 'status', 'warehouse', 'facility', 'per_page']),
+            'filters' => $request->only(['search', 'role', 'status', 'organization', 'warehouse', 'facility', 'per_page']),
             'facilities' => $facilities
         ]);
     }
@@ -118,6 +123,7 @@ class UserController extends Controller
                     'email',
                     'unique:users,email,' . $request->id,
                 ],
+                'organization' => 'required|in:PSI,MoH',
                 'warehouse_id' => 'nullable|exists:warehouses,id',
                 'password' => $request->id ? 'nullable|string|min:8' : 'required|string|min:8',
                 'facility_id' => 'nullable|exists:facilities,id',
@@ -138,6 +144,7 @@ class UserController extends Controller
                 'username' => $request->username,
                 'title' => $request->title,
                 'email' => $request->email,
+                'organization' => $request->organization,
                 'warehouse_id' => $request->warehouse_id,
                 'facility_id' => $request->facility_id,
                 'is_active' => $request->has('is_active') ? $request->is_active : true,

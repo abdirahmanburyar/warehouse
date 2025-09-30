@@ -103,7 +103,18 @@
                         </div>
                     </div>
                     
-
+                    <!-- Organization Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Organization</label>
+                        <select
+                            v-model="organization"
+                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        >
+                            <option value="">All Organizations</option>
+                            <option value="PSI">PSI</option>
+                            <option value="MoH">MoH</option>
+                        </select>
+                    </div>
                     
                     <!-- Warehouse Filter -->
                     <div>
@@ -167,6 +178,9 @@
                                 Title
                             </th>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Organization
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                 Location
                             </th>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -203,6 +217,19 @@
                             <!-- Title -->
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">{{ user.title || 'No title' }}</div>
+                            </td>
+                            
+                            <!-- Organization -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                    :class="{
+                                        'bg-blue-100 text-blue-800': user.organization === 'PSI',
+                                        'bg-green-100 text-green-800': user.organization === 'MoH',
+                                        'bg-gray-100 text-gray-800': !user.organization
+                                    }"
+                                >
+                                    {{ user.organization || 'Not Set' }}
+                                </span>
                             </td>
                             
                             <!-- Location -->
@@ -312,6 +339,7 @@ const toast = useToast();
 const search = ref(props.filters?.search || '');
 const processing = ref(false);
 const per_page = ref(props.filters?.per_page || '10');
+const organization = ref(props.filters?.organization || '');
 const warehouse = ref(props.filters?.warehouse || null);
 const facility = ref(props.filters?.facility || null);
 const role = ref(props.filters?.role || null);
@@ -320,7 +348,7 @@ const status = ref(props.filters?.status || 'All');
 
 // Watch for filter changes
 watch(
-    () => [role.value, search.value, warehouse.value, facility.value, status.value, props.filters.page, per_page.value],
+    () => [role.value, search.value, organization.value, warehouse.value, facility.value, status.value, props.filters.page, per_page.value],
     () => {
         applyFilters();
     });
@@ -338,6 +366,11 @@ const applyFilters = () => {
     // Only add role_id if it has a value and is not the 'All' option
     if (role.value) {
         params.role = role.value;
+    }
+    
+    // Only add organization if it has a value
+    if (organization.value) {
+        params.organization = organization.value;
     }
     
     // Only add warehouse_id if it has a value and is not the 'All' option
