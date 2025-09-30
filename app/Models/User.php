@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Traits\HasPermissions;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class User extends Authenticatable
 {
@@ -53,6 +55,20 @@ class User extends Authenticatable
             'permission_updated_at' => 'datetime',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        // Temporarily disabled to prevent memory issues
+        // static::addGlobalScope('organization', function (Builder $builder) {
+        //     // Only apply organization filter if user is authenticated and has organization
+        //     if (Auth::check() && Auth::user() && Auth::user()->organization) {
+        //         $builder->where('organization', Auth::user()->organization);
+        //     }
+        // });
     }
 
     /**

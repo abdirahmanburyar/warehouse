@@ -138,6 +138,7 @@ class AssetsImport implements ToCollection, WithHeadingRow, WithChunkReading, Sk
                     // Create the asset
                     $asset = Asset::create([
                         'acquisition_date' => $acquisitionDate,
+                        'organization' => auth()->user()->organization ?? 'PSI', // Default to PSI if no organization
                         'fund_source_id' => $fundSource->id,
                         'region_id' => $region->id,
                         'asset_location_id' => $assetLocation->id,

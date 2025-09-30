@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 
 class Asset extends Model
 {
@@ -31,6 +32,7 @@ class Asset extends Model
     protected $fillable = [
         'asset_number',
         'acquisition_date',
+        'organization',
         'fund_source_id',
         'region_id',
         'asset_location_id',
@@ -53,6 +55,20 @@ class Asset extends Model
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
     ];
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        // Temporarily disabled to prevent memory issues
+        // static::addGlobalScope('organization', function (Builder $builder) {
+        //     // Only apply organization filter if user is authenticated and has organization
+        //     if (Auth::check() && Auth::user() && Auth::user()->organization) {
+        //         $builder->where('organization', Auth::user()->organization);
+        //     }
+        // });
+    }
 
     // Relationships
     public function assetItems(): HasMany

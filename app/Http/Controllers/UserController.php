@@ -23,6 +23,11 @@ class UserController extends Controller
     {
         $query = User::query();
         
+        // Organization filter - only show users from the same organization
+        if (auth()->check() && auth()->user()->organization) {
+            $query->where('organization', auth()->user()->organization);
+        }
+        
         logger()->info($request->all());
         // Search filter
         if ($request->filled('search')) {

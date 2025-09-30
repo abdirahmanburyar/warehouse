@@ -30,6 +30,13 @@ class AssetController extends Controller
     {
         $assetItems = AssetItem::query();
 
+        // Organization filter - only show assets from the same organization
+        if (auth()->check() && auth()->user()->organization) {
+            $assetItems->whereHas('asset', function($query) {
+                $query->where('organization', auth()->user()->organization);
+            });
+        }
+
         if($request->filled('search')){
             $assetItems->where(function($query) use ($request) {
                 $query->whereLike('asset_tag', '%'.$request->search.'%')   

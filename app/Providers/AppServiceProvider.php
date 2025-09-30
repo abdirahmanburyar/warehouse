@@ -31,6 +31,9 @@ class AppServiceProvider extends ServiceProvider
         $this->registerBladeDirectives();
         Vite::prefetch(concurrency: 3);
         Asset::observe(AssetObserver::class);
+        
+        // Add organization filtering for assets
+        $this->addOrganizationFiltering();
     }
 
     /**
@@ -76,6 +79,19 @@ class AppServiceProvider extends ServiceProvider
         // @endcanall directive
         Blade::directive('endcanall', function () {
             return "<?php endif; ?>";
+        });
+    }
+
+    /**
+     * Add organization filtering for models.
+     */
+    protected function addOrganizationFiltering(): void
+    {
+        // Add organization to assets when creating
+        Asset::creating(function ($asset) {
+            if (auth()->check() && auth()->user() && auth()->user()->organization) {
+                $asset->organization = auth()->user()->organization;
+            }
         });
     }
 }
