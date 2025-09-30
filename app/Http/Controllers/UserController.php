@@ -21,15 +21,15 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        // Check if user has organization - if not, deny access
-        if (!auth()->check() || !auth()->user()->organization) {
-            abort(403, 'Access denied. You must have an organization assigned to view users.');
-        }
-        
         $query = User::query();
         
-        // Organization filter - only show users from the same organization
-        $query->where('organization', auth()->user()->organization);
+        // Organization filter - only show users from the same organization if user has one
+        if (auth()->check() && auth()->user()->organization) {
+            $query->where('organization', auth()->user()->organization);
+        } else {
+            // If user doesn't have organization, show all users (for admin to assign organizations)
+            // This allows admins to see all users and assign organizations
+        }
         
         logger()->info($request->all());
         // Search filter
@@ -95,10 +95,8 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        // Check if user has organization - if not, deny access
-        if (!auth()->check() || !auth()->user()->organization) {
-            abort(403, 'Access denied. You must have an organization assigned to create users.');
-        }
+        // Allow creating users even without organization
+        // This allows admins to create users and assign organizations
         
         try {
             DB::beginTransaction();
@@ -216,10 +214,8 @@ class UserController extends Controller
 
     public function create(Request $request)
     {
-        // Check if user has organization - if not, deny access
-        if (!auth()->check() || !auth()->user()->organization) {
-            abort(403, 'Access denied. You must have an organization assigned to create users.');
-        }
+        // Allow access to create users even without organization
+        // This allows admins to create users and assign organizations
         
         $warehouses = Warehouse::all();
         $permissions = Permission::all();
@@ -237,14 +233,12 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        // Check if user has organization - if not, deny access
-        if (!auth()->check() || !auth()->user()->organization) {
-            abort(403, 'Access denied. You must have an organization assigned to edit users.');
-        }
+        // Allow editing users even without organization
+        // This allows admins to edit users and assign organizations
         
-        // Check if the user being edited belongs to the same organization
-        if ($user->organization !== auth()->user()->organization) {
-            abort(403, 'Access denied. You can only edit users from your organization.');
+        // Only restrict cross-organization editing if user has organization
+        if (auth()->check() && auth()->user()->organization && $user->organization !== auth()->user()->organization) {
+            return redirect()->back()->with('error', 'You can only edit users from your organization.');
         }
         
         $user->load(['permissions', 'warehouse', 'facility']);
@@ -265,14 +259,15 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        // Check if user has organization - if not, deny access
-        if (!auth()->check() || !auth()->user()->organization) {
-            abort(403, 'Access denied. You must have an organization assigned to delete users.');
-        }
+        // Allow deleting users even without organization
+        // This allows admins to delete users
         
-        // Check if the user being deleted belongs to the same organization
-        if ($user->organization !== auth()->user()->organization) {
-            abort(403, 'Access denied. You can only delete users from your organization.');
+        // Only restrict cross-organization deletion if user has organization
+        if (auth()->check() && auth()->user()->organization && $user->organization !== auth()->user()->organization) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You can only delete users from your organization.'
+            ], 400);
         }
         
         try {
