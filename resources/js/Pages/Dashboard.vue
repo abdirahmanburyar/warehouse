@@ -697,6 +697,36 @@ function generateColors(count, isBackground = true) {
     return colors;
 }
 
+// Generate colors for category charts
+function generateCategoryColors(count) {
+    const baseColors = [
+        { background: 'rgba(59, 130, 246, 0.8)', border: 'rgba(59, 130, 246, 1)' }, // Blue
+        { background: 'rgba(16, 185, 129, 0.8)', border: 'rgba(16, 185, 129, 1)' }, // Green
+        { background: 'rgba(245, 158, 11, 0.8)', border: 'rgba(245, 158, 11, 1)' }, // Yellow
+        { background: 'rgba(239, 68, 68, 0.8)', border: 'rgba(239, 68, 68, 1)' }, // Red
+        { background: 'rgba(139, 92, 246, 0.8)', border: 'rgba(139, 92, 246, 1)' }, // Purple
+        { background: 'rgba(236, 72, 153, 0.8)', border: 'rgba(236, 72, 153, 1)' }, // Pink
+        { background: 'rgba(14, 165, 233, 0.8)', border: 'rgba(14, 165, 233, 1)' }, // Sky
+        { background: 'rgba(34, 197, 94, 0.8)', border: 'rgba(34, 197, 94, 1)' }, // Emerald
+        { background: 'rgba(251, 146, 60, 0.8)', border: 'rgba(251, 146, 60, 1)' }, // Orange
+        { background: 'rgba(168, 85, 247, 0.8)', border: 'rgba(168, 85, 247, 1)' }  // Violet
+    ];
+
+    const backgroundColors = [];
+    const borderColors = [];
+
+    for (let i = 0; i < count; i++) {
+        const colorIndex = i % baseColors.length;
+        backgroundColors.push(baseColors[colorIndex].background);
+        borderColors.push(baseColors[colorIndex].border);
+    }
+
+    return {
+        background: backgroundColors,
+        border: borderColors
+    };
+}
+
 // Chart options for different chart types
 const doughnutChartOptions = {
     responsive: true,
@@ -1594,39 +1624,28 @@ const inStockCount = computed(() => props.inventoryStatusCounts.find(s => s.stat
 const lowStockCount = computed(() => props.inventoryStatusCounts.find(s => s.status === 'low_stock')?.count || 0);
 const outOfStockCount = computed(() => props.inventoryStatusCounts.find(s => s.status === 'out_of_stock')?.count || 0);
 
-// Chart data for top cards
-const productCategoryChartData = computed(() => ({
-    labels: ['Drugs', 'Consumable', 'Lab'],
-    datasets: [{
-        data: [
-            filteredProductCategoryCard.value.Drugs || 0,
-            filteredProductCategoryCard.value.Consumable || 0,
-            filteredProductCategoryCard.value.Lab || 0
-        ],
-        backgroundColor: [
-            'rgba(68, 114, 196, 1)',  // Excel Blue
-            'rgba(237, 125, 49, 1)',  // Excel Orange
-            'rgba(165, 165, 165, 1)'  // Excel Gray
-        ],
-        borderColor: [
-            'rgba(68, 114, 196, 1)',
-            'rgba(237, 125, 49, 1)',
-            'rgba(165, 165, 165, 1)'
-        ],
-        borderWidth: 1,
-        hoverBackgroundColor: [
-            'rgba(68, 114, 196, 1)',
-            'rgba(237, 125, 49, 1)',
-            'rgba(165, 165, 165, 1)'
-        ],
-        hoverBorderColor: [
-            'rgba(68, 114, 196, 1)',
-            'rgba(237, 125, 49, 1)',
-            'rgba(165, 165, 165, 1)'
-        ],
-        hoverBorderWidth: 0
-    }]
-}));
+// Chart data for top cards - dynamically generated from categories
+const productCategoryChartData = computed(() => {
+    const categoryData = filteredProductCategoryCard.value;
+    const labels = Object.keys(categoryData);
+    const data = Object.values(categoryData);
+    
+    // Generate colors dynamically based on number of categories
+    const colors = generateCategoryColors(labels.length);
+    
+    return {
+        labels: labels,
+        datasets: [{
+            data: data,
+            backgroundColor: colors.background,
+            borderColor: colors.border,
+            borderWidth: 1,
+            hoverBackgroundColor: colors.background.map(color => color.replace('0.8', '1')),
+            hoverBorderColor: colors.border,
+            hoverBorderWidth: 2
+        }]
+    };
+});
 
 const warehouseFacilitiesChartData = computed(() => {
     // Get the actual data from dashboardData.summary and use abbreviated labels
