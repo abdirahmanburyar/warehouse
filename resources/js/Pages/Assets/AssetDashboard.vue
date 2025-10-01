@@ -47,8 +47,8 @@
                     </div>
                 </div>
 
-                <!-- Statistics Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                 <!-- Statistics Cards -->
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Total Assets Card -->
                     <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 border-l-4 border-blue-500">
                         <div class="p-6">
@@ -83,51 +83,7 @@
                         </div>
                     </div>
 
-                    <!-- Pending Approval Card -->
-                    <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 border-l-4 border-yellow-500">
-                        <div class="p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Pending Approval</p>
-                                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ assetStatsData.pending_approval || 0 }}</p>
-                                    <p class="text-sm text-yellow-600 mt-1 flex items-center">
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        Requires attention
-                                    </p>
-                                </div>
-                                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Disposed Assets Card -->
-                    <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 border-l-4 border-red-500">
-                        <div class="p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Disposed Assets</p>
-                                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ assetStatsData.disposed_assets || 0 }}</p>
-                                    <p class="text-sm text-red-600 mt-1 flex items-center">
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        End of lifecycle
-                                    </p>
-                                </div>
-                                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
 
@@ -226,7 +182,7 @@
                         <p class="text-sm text-gray-600 mt-1">Common tasks and shortcuts</p>
                     </div>
                     <div class="p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Link 
                                 v-if="userPermissions.includes('asset-create')"
                                 :href="route('assets.get-create')" 
@@ -261,22 +217,6 @@
                                 </div>
                             </Link>
 
-                            <Link 
-                                v-if="userPermissions.includes('asset-approve')"
-                                :href="route('assets.approvals.index')" 
-                                class="group relative overflow-hidden bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl p-6 text-white hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
-                            >
-                                <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-                                <div class="relative">
-                                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mb-4">
-                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                    </div>
-                                    <h4 class="text-lg font-semibold mb-2">Pending Approvals</h4>
-                                    <p class="text-yellow-100 text-sm">Review and approve asset requests</p>
-                                </div>
-                            </Link>
                         </div>
                     </div>
                 </div>

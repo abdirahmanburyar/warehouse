@@ -109,11 +109,13 @@ class DashboardController extends Controller
             ->limit(5)
             ->get()
             ->map(function($asset) {
+                $firstAssetItem = $asset->assetItems->first();
                 return [
                     'id' => $asset->id,
                     'asset_number' => $asset->asset_number,
-                    'asset_name' => $asset->assetItems->first()->asset_name ?? 'Unnamed Asset',
-                    'status' => $asset->status,
+                    'asset_name' => $firstAssetItem->asset_name ?? 'Unnamed Asset',
+                    'asset_tag' => $firstAssetItem->asset_tag ?? $asset->asset_number,
+                    'status' => $firstAssetItem->status ?? 'unknown',
                     'created_at' => $asset->created_at
                 ];
             });
@@ -161,22 +163,38 @@ class DashboardController extends Controller
                 ];
             });
 
+        // Get asset categories for the chart
+        $assetCategories = AssetItem::query()
+            ->when($organizationFilter, function($query) use ($organizationFilter) {
+                $query->whereHas('asset', function($q) use ($organizationFilter) {
+                    $q->where('organization', $organizationFilter);
+                });
+            })
+            ->with('category')
+            ->get()
+            ->groupBy('category.name')
+            ->map(function($items, $categoryName) {
+                return [
+                    'name' => $categoryName ?: 'Uncategorized',
+                    'count' => $items->count()
+                ];
+            })
+            ->values()
+            ->toArray();
+
         $assetStats = [
-            'totalAssets' => $totalAssets,
-            'pendingApproval' => $pendingApproval,
-            'approved' => $approved,
-            'rejected' => $rejected,
-            'inUse' => $inUse,
-            'maintenance' => $maintenance,
-            'totalValue' => $totalValue,
-            'recentAssets' => $recentAssets,
-            'categoryBreakdown' => $categoryBreakdown,
-            'statusBreakdown' => $statusBreakdown,
-            'recentActivity' => $recentActivity
+            'total_assets' => $totalAssets,
+            'active_assets' => $inUse,
+            'inactive_assets' => $assetItemsQuery->where('status', 'inactive')->count(),
+            'pending_approval' => $pendingApproval,
+            'disposed_assets' => $assetItemsQuery->where('status', 'disposed')->count(),
+            'asset_categories' => $assetCategories
         ];
 
         return Inertia::render('Assets/AssetDashboard', [
             'assetStats' => $assetStats,
+            'recentAssets' => $recentAssets,
+            'recentActivity' => $recentActivity,
             'userPermissions' => $user->permissions->pluck('name')->toArray()
         ]);
     }
