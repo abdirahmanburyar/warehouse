@@ -852,9 +852,9 @@ const filteredInventoryItems = computed(() => {
                                 </button>
                                 <button
                                     @click="openUploadModal"
-                                    :disabled="!$page.props.auth.can.moh_inventory_upload"
+                                    :disabled="!$page.props.auth.can.moh_inventory_create"
                                     :class="[
-                                        $page.props.auth.can.moh_inventory_upload
+                                        $page.props.auth.can.moh_inventory_create
                                             ? 'bg-green-600 hover:bg-green-700 focus:bg-green-700 active:bg-green-800 focus:ring-green-500'
                                             : 'bg-gray-400 cursor-not-allowed',
                                     ]"
