@@ -529,6 +529,8 @@ const openAddReasonModal = () => {
                             Exit
                         </button>
                         <PrimaryButton 
+                        
+                            v-if="$page.props.auth.can.transfer_create || $page.props.auth.user.isAdmin"
                             :disabled="loading" 
                             class="relative px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                         >
