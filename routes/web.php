@@ -610,7 +610,7 @@ Route::controller(LocationController::class)
             Route::get('/asset-items/{assetItem}/detailed-history', 'showAssetItemHistory')->name('assets.items.history.index');
             
             // Create routes - require asset-create permission
-            Route::get('/get-create', 'create')->name('assets.get-create');
+            Route::get('/create', 'create')->name('assets.get-create');
             Route::post('/store', 'store')->name('assets.store');
             
             // Edit routes - require asset-edit permission

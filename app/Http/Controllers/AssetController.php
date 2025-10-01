@@ -30,7 +30,7 @@ class AssetController extends Controller
     {
         $assetItems = AssetItem::query();
 
-        // Organization filter - only show assets from the same organization if user has one
+        // Organization filter - only show asset items from the same organization if user has one
         if (auth()->check() && auth()->user() && !empty(auth()->user()->organization)) {
             $assetItems->whereHas('asset', function($query) {
                 $query->where('organization', auth()->user()->organization);
@@ -147,7 +147,11 @@ class AssetController extends Controller
 
         $assetItems->setPath(url()->current()); // Force Laravel to use full URLs
 
-        $count = AssetItem::count();
+        $count = AssetItem::when(auth()->check() && auth()->user() && !empty(auth()->user()->organization), function($query) {
+            $query->whereHas('asset', function($q) {
+                $q->where('organization', auth()->user()->organization);
+            });
+        })->count();
 
         $locations = AssetLocation::with('subLocations')->get();
         $categories = AssetCategory::select('id','name')->get();
@@ -331,8 +335,13 @@ class AssetController extends Controller
 
     public function edit(Asset $asset)
     {
-        // Load the asset with its actual relationships
+        // Load the asset with its actual relationships, filtered by organization through asset items
         $asset = Asset::with(['region', 'assetLocation', 'subLocation', 'fundSource'])
+            ->whereHas('assetItems', function($query) {
+                if (auth()->check() && auth()->user() && !empty(auth()->user()->organization)) {
+                    $query->where('organization', auth()->user()->organization);
+                }
+            })
             ->findOrFail($asset->id);
             
         // Get the first asset item for additional details
@@ -543,12 +552,12 @@ class AssetController extends Controller
     {
         // Load all assets that have been submitted (including approved ones)
         // This allows us to show the full approval workflow history
-        $assets = Asset::whereNotNull('submitted_at');
-        
-        // Organization filter - only show assets from the same organization if user has one
-        if (auth()->check() && auth()->user()->organization) {
-            $assets->where('organization', auth()->user()->organization);
-        }
+        $assets = Asset::whereNotNull('submitted_at')
+            ->whereHas('assetItems', function($query) {
+                if (auth()->check() && auth()->user() && !empty(auth()->user()->organization)) {
+                    $query->where('organization', auth()->user()->organization);
+                }
+            });
         
         $assets = $assets
                       ->with(['region', 'assetLocation', 'subLocation'])
@@ -568,6 +577,11 @@ class AssetController extends Controller
         $assetItem = null;
         if ($request->selectedAsset) {
             $assetItem = Asset::where('asset_number', $request->selectedAsset)
+                ->whereHas('assetItems', function($query) {
+                    if (auth()->check() && auth()->user() && !empty(auth()->user()->organization)) {
+                        $query->where('organization', auth()->user()->organization);
+                    }
+                })
                 ->with([
                     'assetItems.category', 
                     'assetItems.type', 
@@ -597,6 +611,17 @@ class AssetController extends Controller
     public function approve(Asset $asset)
     {
         try {
+            // Check if user has access to this asset through organization
+            if (auth()->check() && auth()->user() && !empty(auth()->user()->organization)) {
+                $hasAccess = $asset->organization === auth()->user()->organization;
+                if (!$hasAccess) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You do not have access to this asset'
+                    ], 403);
+                }
+            }
+
             // Check if asset is in reviewed status (has reviewed_at but no approved_at)
             if (!$asset->reviewed_at || $asset->approved_at) {
                 return response()->json([
@@ -653,6 +678,17 @@ class AssetController extends Controller
     public function reject(Request $request, Asset $asset)
     {
         try {
+            // Check if user has access to this asset through organization
+            if (auth()->check() && auth()->user() && !empty(auth()->user()->organization)) {
+                $hasAccess = $asset->organization === auth()->user()->organization;
+                if (!$hasAccess) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You do not have access to this asset'
+                    ], 403);
+                }
+            }
+
             // Check if asset is in reviewed status (has reviewed_at but no approved_at)
             if (!$asset->reviewed_at || $asset->approved_at) {
                 return response()->json([
@@ -714,6 +750,17 @@ class AssetController extends Controller
     public function review(Asset $asset)
     {
         try {
+            // Check if user has access to this asset through organization
+            if (auth()->check() && auth()->user() && !empty(auth()->user()->organization)) {
+                $hasAccess = $asset->organization === auth()->user()->organization;
+                if (!$hasAccess) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You do not have access to this asset'
+                    ], 403);
+                }
+            }
+
             // Check if asset is submitted for approval (has submitted_at but no reviewed_at)
             if (!$asset->submitted_at || $asset->reviewed_at) {
                 return response()->json([
@@ -804,7 +851,7 @@ class AssetController extends Controller
 
             $approvedCount = 0;
             foreach ($request->asset_ids as $assetId) {
-                $asset = Asset::find($assetId);
+                $asset = Asset::where('organization', auth()->user()->organization)->find($assetId);
                 if ($asset && $asset->status === 'pending_approval') {
                     $asset->update([
                         'approved_by' => auth()->id(),
@@ -922,8 +969,8 @@ class AssetController extends Controller
     public function show(Request $request, $asset)
     {
         try {
-            // Get the asset with its relationships
-            $assetWithRelations =  Asset::with([
+            // Get the asset with its relationships, filtered by organization through asset items
+            $assetWithRelations = Asset::with([
                 'documents',
                 'assetItems.assetHistory.performer',
                 'region',
@@ -938,8 +985,24 @@ class AssetController extends Controller
                 'assetItems.category',
                 'assetItems.type'
             ])
-            ->where('asset_number', $asset)
+            ->whereHas('assetItems', function($query) {
+                if (auth()->check() && auth()->user() && !empty(auth()->user()->organization)) {
+                    $query->where('organization', auth()->user()->organization);
+                }
+            })
+            ->where(function($query) use ($asset) {
+                // Try to match by ID first (if numeric), then by asset_tag
+                if (is_numeric($asset)) {
+                    $query->where('id', $asset);
+                } else {
+                    $query->where('asset_tag', $asset);
+                }
+            })
             ->first();
+
+            if (!$assetWithRelations) {
+                return back()->withErrors(['error' => 'Asset not found or you do not have access to this asset.']);
+            }
 
             return Inertia::render('Assets/Show', [
                 'asset' => $assetWithRelations,

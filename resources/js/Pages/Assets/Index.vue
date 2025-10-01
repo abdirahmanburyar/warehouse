@@ -321,11 +321,11 @@
                                  class="odd:bg-white even:bg-gray-50/60 hover:bg-indigo-50 transition-colors duration-150 border-b border-gray-100 group">
                                 <td class="px-4 py-3 align-top border-r border-gray-100">
                                     <div class="text-xs text-gray-900">
-                                        <Link :href="route('assets.show', asset.asset_tag)" class="text-blue-600 hover:text-blue-800 underline">
+                                        <Link :href="route('assets.show', asset.asset_id || asset.asset?.id)" class="text-blue-600 hover:text-blue-800 underline">
                                             {{ asset.asset_tag || 'N/A' }}
                                         </Link>
                                         <div class="text-xs font-semibold text-gray-900 mt-1">
-                                        {{ asset.name || asset.asset_tag || 'N/A' }}
+                                        {{ asset.asset_tag || 'N/A' }}
                                         </div>
                                     </div>
                                 </td>
