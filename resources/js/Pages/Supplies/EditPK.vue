@@ -312,7 +312,7 @@
                                     form.reviewed_at ||
                                     form.approved_at ||
                                     form.rejected_at ||
-                                    !$page.props.auth.can.purchase_order_review
+                                    !$page.props.auth.can.packing_list_review
                                 "
                                 class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <img src="/assets/images/review.png" class="w-5 h-5 mr-2" alt="Review" />
@@ -340,7 +340,7 @@
                                         ? 'bg-gray-300 cursor-not-allowed'
                                         : 'bg-green-500 hover:bg-green-600'
                                 ]"
-                                :disabled="form.approved_at || isApproving || !form.reviewed_at || !$page.props.auth.can.purchase_order_approve"
+                                :disabled="form.approved_at || isApproving || !form.reviewed_at || !$page.props.auth.can.packing_list_approve"
                                 class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <img src="/assets/images/approved.png" class="w-5 h-5 mr-2" alt="Approve" />
                                 <span class="text-sm font-bold text-white">{{ form.approved_at ? 'Approved' : 'Approve' }}</span>
@@ -372,7 +372,7 @@
                                     !form.reviewed_at ||
                                     form.rejected_at ||
                                     form.approved_at ||
-                                    !$page.props.auth.can.purchase_order_reject
+                                    !$page.props.auth.can.packing_list_reject
                                 "
                                 class="inline-flex items-center justify-center px-4 py-2 rounded-lg shadow-sm transition-colors duration-150 text-white min-w-[160px] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <img src="/assets/images/rejected.png" class="w-5 h-5 mr-2" alt="Reject" />
@@ -395,7 +395,7 @@
                     class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Exit
                 </Link>
-                <button v-if="!hasAllApproved" @click="submit" :disabled="isSubmitting || isApproving || isReviewing || isRejecting || !canSubmit || !$page.props.auth.can.purchase_order_create" :title="submitButtonTitle"
+                <button v-if="!hasAllApproved" @click="submit" :disabled="isSubmitting || isApproving || isReviewing || isRejecting || !canSubmit || !$page.props.auth.can.packing_list_edit" :title="submitButtonTitle"
                     class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                     {{ isSubmitting ? "Updating..." : "Update Changes" }}
                 </button>

@@ -336,6 +336,108 @@ class PermissionSeeder extends Seeder
                 'guard_name' => 'web',
             ],
 
+            // Purchase Order Management Module
+            [
+                'name' => 'purchase-order-view',
+                'display_name' => 'View Purchase Orders',
+                'description' => 'Can view purchase order list and details',
+                'module' => 'Purchase Order Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'purchase-order-create',
+                'display_name' => 'Create Purchase Orders',
+                'description' => 'Can create new purchase orders',
+                'module' => 'Purchase Order Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'purchase-order-edit',
+                'display_name' => 'Edit Purchase Orders',
+                'description' => 'Can edit existing purchase orders',
+                'module' => 'Purchase Order Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'purchase-order-delete',
+                'display_name' => 'Delete Purchase Orders',
+                'description' => 'Can delete purchase orders',
+                'module' => 'Purchase Order Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'purchase-order-review',
+                'display_name' => 'Review Purchase Orders',
+                'description' => 'Can review purchase orders',
+                'module' => 'Purchase Order Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'purchase-order-approve',
+                'display_name' => 'Approve Purchase Orders',
+                'description' => 'Can approve purchase orders',
+                'module' => 'Purchase Order Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'purchase-order-reject',
+                'display_name' => 'Reject Purchase Orders',
+                'description' => 'Can reject purchase orders',
+                'module' => 'Purchase Order Management',
+                'guard_name' => 'web',
+            ],
+
+            // Packing List Management Module
+            [
+                'name' => 'packing-list-view',
+                'display_name' => 'View Packing Lists',
+                'description' => 'Can view packing list details',
+                'module' => 'Packing List Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'packing-list-create',
+                'display_name' => 'Create Packing Lists',
+                'description' => 'Can create new packing lists',
+                'module' => 'Packing List Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'packing-list-edit',
+                'display_name' => 'Edit Packing Lists',
+                'description' => 'Can edit existing packing lists',
+                'module' => 'Packing List Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'packing-list-delete',
+                'display_name' => 'Delete Packing Lists',
+                'description' => 'Can delete packing lists',
+                'module' => 'Packing List Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'packing-list-review',
+                'display_name' => 'Review Packing Lists',
+                'description' => 'Can review packing lists',
+                'module' => 'Packing List Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'packing-list-approve',
+                'display_name' => 'Approve Packing Lists',
+                'description' => 'Can approve packing lists',
+                'module' => 'Packing List Management',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'packing-list-reject',
+                'display_name' => 'Reject Packing Lists',
+                'description' => 'Can reject packing lists',
+                'module' => 'Packing List Management',
+                'guard_name' => 'web',
+            ],
+
             // Reports Module (Update existing)
             [
                 'name' => 'reports-view',

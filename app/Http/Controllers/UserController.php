@@ -234,9 +234,9 @@ class UserController extends Controller
         // This allows admins to edit users and assign organizations
         
         // Only restrict cross-organization editing if user has organization
-        if (auth()->check() && auth()->user()->organization && $user->organization !== auth()->user()->organization) {
-            return redirect()->back()->with('error', 'You can only edit users from your organization.');
-        }
+        // if (auth()->check() && auth()->user()->isAdmin()) {
+        //     return redirect()->back()->with('error', 'You can only edit users from your organization.');
+        // }
         
         $user->load(['permissions', 'warehouse', 'facility']);
         $warehouses = Warehouse::all();

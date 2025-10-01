@@ -1723,6 +1723,11 @@ class SupplyController extends Controller
 
     public function editPK($id)
     {
+        // Check if user has permission to edit packing lists
+        if (!auth()->user()->hasPermission('packing-list-edit')) {
+            abort(403, 'You do not have permission to edit packing lists.');
+        }
+
         $packing_list = PackingList::with([
             'items.warehouse:id,name',
             'items.product:id,name',
@@ -1771,6 +1776,11 @@ class SupplyController extends Controller
 
     public function updatePK(Request $request)
     {
+        // Check if user has permission to edit packing lists
+        if (!auth()->user()->hasPermission('packing-list-edit')) {
+            return response()->json('Unauthorized: You do not have permission to edit packing lists', 403);
+        }
+
         try {
             return DB::transaction(function() use ($request){
                 $request->validate([
@@ -1899,6 +1909,11 @@ class SupplyController extends Controller
     public function reviewPK(Request $request)
     {
         try {
+            // Check permission
+            if (!auth()->user()->hasPermission('packing-list-review')) {
+                return response()->json('Unauthorized: You do not have permission to review packing lists', 403);
+            }
+
             $request->validate([
                 'id' => 'required',
                 'status' => 'required|in:reviewed'
@@ -1920,6 +1935,11 @@ class SupplyController extends Controller
     public function rejectPK(Request $request)
     {
         try {
+            // Check permission
+            if (!auth()->user()->hasPermission('packing-list-reject')) {
+                return response()->json('Unauthorized: You do not have permission to reject packing lists', 403);
+            }
+
             $request->validate([
                 'id' => 'required',
                 'status' => 'required|in:rejected'
@@ -1941,6 +1961,11 @@ class SupplyController extends Controller
     // approve packing list and release to the inventory
     public function approvePK(Request $request)
     {
+        // Check permission
+        if (!auth()->user()->hasPermission('packing-list-approve')) {
+            return response()->json('Unauthorized: You do not have permission to approve packing lists', 403);
+        }
+
         $request->validate([
             'id' => 'required|exists:packing_lists,id',
             'status' => 'required|in:approved',

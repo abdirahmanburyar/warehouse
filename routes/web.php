@@ -278,27 +278,45 @@ Route::controller(LocationController::class)
 
     // Supply Management Routes
     Route::prefix('supplies')->group(function () {
-            Route::get('/', [SupplyController::class, 'index'])->name('supplies.index');
+        // View routes - require supply-view permission
+        Route::get('/', [SupplyController::class, 'index'])->name('supplies.index')->middleware('can:supply-view');
+        Route::get('/show', [SupplyController::class, 'show'])->name('supplies.show')->middleware('can:supply-view');
+        Route::get('/{id}/showPO', [SupplyController::class, 'showPO'])->name('supplies.po-show')->middleware('can:purchase-order-view');
+        Route::get('/packing-list/show', [SupplyController::class, 'showPK'])->name('supplies.packing-list.showPK')->middleware('can:packing-list-view');
+        Route::get('/packing-list/{id}/show', [SupplyController::class, 'showPackingList'])->name('supplies.packing-list.show')->middleware('can:packing-list-view');
+        Route::get('/back-orders', [SupplyController::class, 'showBackOrder'])->name('supplies.showBackOrder')->middleware('can:supply-view');
 
-        // supplies.deletePO
-            Route::get('/{id}/delete', [SupplyController::class, 'destroy'])->name('supplies.deletePO');
+        // Create routes - require create permissions
+        Route::get('/create', [SupplyController::class, 'create'])->name('supplies.create')->middleware('can:supply-create');
+        Route::get('/purchase_orders', [SupplyController::class, 'newPO'])->name('supplies.purchase_order')->middleware('can:purchase-order-create');
+        Route::get('/packing-list/create', [SupplyController::class, 'newPackingList'])->name('supplies.packing-list.create')->middleware('can:packing-list-create');
+        Route::get('/packing-list', [SupplyController::class, 'newPackingList'])->name('supplies.packing-list')->middleware('can:packing-list-create');
 
-        // supplies.uploadDocument
-        Route::post('/{id}/upload-document', [SupplyController::class, 'uploadDocument'])->name('supplies.uploadDocument');
-            Route::get('/create', [SupplyController::class, 'create'])->name('supplies.create');
-            Route::get('/show', [SupplyController::class, 'show'])->name('supplies.show');
-            Route::get('/{id}/showPO', [SupplyController::class, 'showPO'])->name('supplies.po-show');
-            Route::get('/packing-list/{id}/get-po', [SupplyController::class, 'getPO'])->name('supplies.get-purchaseOrder');
-            Route::get('/packing-list/{id}/edit', [SupplyController::class, 'editPK'])->name('supplies.packing-list.edit');
-            Route::get('/packing-list/show', [SupplyController::class, 'showPK'])->name('supplies.packing-list.showPK');
-            Route::get('/packing-list/create', [SupplyController::class, 'newPackingList'])->name('supplies.packing-list.create');
-            Route::get('/packing-list', [SupplyController::class, 'newPackingList'])->name('supplies.packing-list');
-            Route::get('/back-orders', [SupplyController::class, 'showBackOrder'])->name('supplies.showBackOrder');
-            Route::get('/purchase_orders', [SupplyController::class, 'newPO'])->name('supplies.purchase_order');
-            Route::post('/purchase_orders/store', [SupplyController::class, 'storePO'])->name('supplies.storePO');
-            Route::get('/purchase_orders/{id}/edit', [SupplyController::class, 'editPO'])->name('supplies.editPO');
-            Route::post('/packing-list/store', [SupplyController::class, 'storePK'])->name('supplies.storePK');
-        Route::delete('/purchase_orders/documents/{document}', [SupplyController::class, 'deleteDocument'])->name('supplies.deleteDocument');
+        // Edit routes - require edit permissions
+        Route::get('/packing-list/{id}/edit', [SupplyController::class, 'editPK'])->name('supplies.packing-list.edit')->middleware('can:packing-list-edit');
+        Route::get('/purchase_orders/{id}/edit', [SupplyController::class, 'editPO'])->name('supplies.editPO')->middleware('can:purchase-order-edit');
+        Route::get('/{supply}/edit', [SupplyController::class, 'edit'])->name('supplies.edit')->middleware('can:supply-edit');
+
+        // Store/Update routes - require create/edit permissions
+        Route::post('/store', [SupplyController::class, 'store'])->name('supplies.store')->middleware('can:supply-create');
+        Route::put('/{supply}', [SupplyController::class, 'update'])->name('supplies.update')->middleware('can:supply-edit');
+        Route::post('/purchase_orders/store', [SupplyController::class, 'storePO'])->name('supplies.storePO')->middleware('can:purchase-order-create');
+        Route::put('/purchase_orders/{id}/update', [SupplyController::class, 'updatePurchaseOrder'])->name('supplies.updatePO')->middleware('can:purchase-order-edit');
+        Route::post('/packing-list/store', [SupplyController::class, 'storePK'])->name('supplies.storePK')->middleware('can:packing-list-create');
+        Route::post('/packing-list/update', [SupplyController::class, 'updatePK'])->name('supplies.packing-list.update')->middleware('can:packing-list-edit');
+
+        // Delete routes - require delete permissions
+        Route::get('/{id}/delete', [SupplyController::class, 'destroy'])->name('supplies.deletePO')->middleware('can:supply-delete');
+        Route::delete('/{supply}', [SupplyController::class, 'destroy'])->name('supplies.destroy')->middleware('can:supply-delete');
+        Route::delete('/purchase_orders/documents/{document}', [SupplyController::class, 'deleteDocument'])->name('supplies.deleteDocument')->middleware('can:purchase-order-edit');
+
+        // Document upload routes
+        Route::post('/{id}/upload-document', [SupplyController::class, 'uploadDocument'])->name('supplies.uploadDocument')->middleware('can:supply-edit');
+        Route::post('/packing-list/{id}/upload-document', [SupplyController::class, 'uploadPackingListDocument'])->name('supplies.packing-list.uploadDocument')->middleware('can:packing-list-edit');
+
+        // Utility routes
+        Route::get('/packing-list/{id}/get-po', [SupplyController::class, 'getPO'])->name('supplies.get-purchaseOrder')->middleware('can:purchase-order-view');
+        Route::get('/packing-list/{id}/get-back-order', [SupplyController::class, 'getBackOrder'])->name('supplies.get-back-order')->middleware('can:supply-view');
 
         // supplies.back-order
         Route::get('/back-order', [SupplyController::class, 'backOrder'])->name('supplies.back-order');
@@ -306,17 +324,15 @@ Route::controller(LocationController::class)
         // supplies.get-packingList
         Route::get('/packing-list/{id}/get-back-order', [SupplyController::class, 'getBackOrder'])->name('supplies.get-back-order');
 
-        // supplies.showBackOrder
-        // Route::get('/showBackOrder', [SupplyController::class, 'showBackOrder'])->name('supplies.showBackOrder');
-        // edit po - actions
-            Route::post('/purchase_orders/{id}/review', [SupplyController::class, 'reviewPO'])->name('supplies.reviewPO');
-            Route::post('/purchase_orders/{id}/approve', [SupplyController::class, 'approvePO'])->name('supplies.approvePO');
-            Route::post('/purchase_orders/{id}/reject', [SupplyController::class, 'rejectPO'])->name('supplies.rejectPO');
-            Route::put('/purchase_orders/{id}/update', [SupplyController::class, 'updatePurchaseOrder'])->name('supplies.updatePO');
+        // Purchase Order Actions - require specific permissions
+        Route::post('/purchase_orders/{id}/review', [SupplyController::class, 'reviewPO'])->name('supplies.reviewPO')->middleware('can:purchase-order-review');
+        Route::post('/purchase_orders/{id}/approve', [SupplyController::class, 'approvePO'])->name('supplies.approvePO')->middleware('can:purchase-order-approve');
+        Route::post('/purchase_orders/{id}/reject', [SupplyController::class, 'rejectPO'])->name('supplies.rejectPO')->middleware('can:purchase-order-reject');
 
-            Route::post('/packing-list/review', [SupplyController::class, 'reviewPK'])->name('supplies.reviewPK');
-            Route::post('/packing-list/approve', [SupplyController::class, 'approvePK'])->name('supplies.approvePK');
-            Route::post('/packing-list/reject', [SupplyController::class, 'rejectPK'])->name('supplies.rejectPK');
+        // Packing List Actions - require specific permissions
+        Route::post('/packing-list/review', [SupplyController::class, 'reviewPK'])->name('supplies.reviewPK')->middleware('can:packing-list-review');
+        Route::post('/packing-list/approve', [SupplyController::class, 'approvePK'])->name('supplies.approvePK')->middleware('can:packing-list-approve');
+        Route::post('/packing-list/reject', [SupplyController::class, 'rejectPK'])->name('supplies.rejectPK')->middleware('can:packing-list-reject');
 
             Route::post('/back-order/dispose', [SupplyController::class, 'dispose'])->name('back-order.dispose');
             Route::post('/back-order/receive', [SupplyController::class, 'receive'])->name('back-order.receive');
