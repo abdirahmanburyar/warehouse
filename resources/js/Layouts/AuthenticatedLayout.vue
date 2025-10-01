@@ -156,7 +156,7 @@
                 </Link>
                 <!-- Liquidate and disposals -->
                 <Link
-                    v-if="$page.props.auth.can.liquidate_view || $page.props.auth.isAdmin"
+                    v-if="$page.props.auth.can.wastage_view || $page.props.auth.isAdmin"
                     :href="route('liquidate-disposal.index')"
                     class="menu-item"
                     :class="{ active: route().current('liquidate-disposal.*') }"
