@@ -58,7 +58,7 @@ class MohInventory extends Model
     /**
      * Get the user who rejected the MOH inventory.
      */
-    public function rejectedBy(): BelongsTo
+    public function rejected(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rejected_by');
     }

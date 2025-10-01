@@ -1100,7 +1100,7 @@ const filteredInventoryItems = computed(() => {
                                     On {{ moment(props.selectedInventory?.reviewed_at).format('DD/MM/YYYY HH:mm') }}
                                 </span>
                                 <span v-show="props.selectedInventory?.reviewed_by" class="text-sm text-gray-600">
-                                    By {{ props.selectedInventory?.reviewed_by?.name }}
+                                    By {{ props.selectedInventory?.reviewer?.name }}
                                 </span>
                             </div>
                             <div v-if="!props.selectedInventory.reviewed_at && props.selectedInventory.status !== 'rejected'" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
@@ -1138,7 +1138,7 @@ const filteredInventoryItems = computed(() => {
                                     On {{ moment(props.selectedInventory?.approved_at).format('DD/MM/YYYY HH:mm') }}
                                 </span>
                                 <span v-show="props.selectedInventory?.approved_by" class="text-sm text-gray-600">
-                                    By {{ props.selectedInventory?.approved_by?.name }}
+                                    By {{ props.selectedInventory?.approver?.name }}
                                 </span>
                             </div>
                             <div v-if="props.selectedInventory.reviewed_at && !props.selectedInventory.approved_at" class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
@@ -1167,7 +1167,7 @@ const filteredInventoryItems = computed(() => {
                                     On {{ moment(props.selectedInventory?.rejected_at).format('DD/MM/YYYY HH:mm') }}
                                 </span>
                                 <span v-show="props.selectedInventory?.rejected_by" class="text-sm text-gray-600">
-                                    By {{ props.selectedInventory?.rejected_by?.name }}
+                                    By {{ props.selectedInventory?.rejected?.name }}
                                 </span>
                             </div>
                         </div>

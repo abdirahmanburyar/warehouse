@@ -171,8 +171,6 @@ class AssetController extends Controller
     {
         // Allow creating assets even without organization
         // This allows admins to create assets and assign organizations
-
-        logger()->info('Creating asset');
         
         $locations = AssetLocation::all();
         $categories = AssetCategory::all();

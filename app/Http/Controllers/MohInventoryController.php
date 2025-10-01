@@ -38,7 +38,7 @@ class MohInventoryController extends Controller
                     'mohInventoryItems.warehouse:id,name',
                     'reviewer:id,name',
                     'approver:id,name',
-                    'rejectedBy:id,name',
+                    'rejected:id,name',
                 ])
                 ->orderBy('created_at', 'desc')
                 ->get();
