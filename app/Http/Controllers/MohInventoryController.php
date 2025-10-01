@@ -52,7 +52,7 @@ class MohInventoryController extends Controller
                     'mohInventoryItems.warehouse:id,name',
                     'reviewer:id,name',
                     'approver:id,name',
-                    'rejectedBy:id,name'
+                    'rejected:id,name'
                 ])->find($request->inventory_id);
             }
 
@@ -334,7 +334,7 @@ class MohInventoryController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => $message,
-                'moh_inventory' => $mohInventory->fresh(['reviewer', 'approver', 'rejectedBy'])
+                'moh_inventory' => $mohInventory->fresh(['reviewer', 'approver', 'rejected'])
             ]);
 
         } catch (\Exception $e) {
