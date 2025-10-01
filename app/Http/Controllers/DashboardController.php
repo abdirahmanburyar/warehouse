@@ -33,13 +33,8 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         
-        // Check if user has all asset permissions - show regular dashboard
-        if ($this->hasAllAssetPermissions($user)) {
-            return $this->regularDashboard($request);
-        }
-        
-        // Check if user has only some asset permissions - show asset dashboard
-        if ($this->hasOnlySomeAssetPermissions($user)) {
+        // Check if user has ONLY asset permissions - show asset dashboard
+        if ($this->hasOnlyAssetPermissions($user)) {
             return $this->assetDashboard($request);
         }
         
@@ -48,47 +43,25 @@ class DashboardController extends Controller
     }
     
     /**
-     * Check if user has all asset permissions
+     * Check if user has ONLY asset permissions (and no other permissions)
      */
-    private function hasAllAssetPermissions($user)
+    private function hasOnlyAssetPermissions($user)
     {
         // Get all user permissions
         $permissions = $user->permissions->pluck('name')->toArray();
         
-        // Define all possible asset permissions
-        $allAssetPermissions = [
-            'asset-view',
-            'asset-create', 
-            'asset-edit',
-            'asset-delete'
-        ];
-        
-        // Check if user has all asset permissions
-        $hasAllAssetPermissions = collect($allAssetPermissions)->every(function($permission) use ($permissions) {
-            return in_array($permission, $permissions);
+        // Check if user has any non-asset permissions
+        $hasNonAssetPermissions = collect($permissions)->some(function($permission) {
+            return !str_starts_with($permission, 'asset-');
         });
-        
-        return $hasAllAssetPermissions;
-    }
-    
-    /**
-     * Check if user has only some asset permissions (not all)
-     */
-    private function hasOnlySomeAssetPermissions($user)
-    {
-        // Get all user permissions
-        $permissions = $user->permissions->pluck('name')->toArray();
         
         // Check if user has any asset permissions
         $hasAssetPermissions = collect($permissions)->some(function($permission) {
             return str_starts_with($permission, 'asset-');
         });
         
-        // Check if user has all asset permissions
-        $hasAllAssetPermissions = $this->hasAllAssetPermissions($user);
-        
-        // If user has some asset permissions but not all, show asset dashboard
-        return $hasAssetPermissions && !$hasAllAssetPermissions;
+        // If user has asset permissions but no other permissions, show asset dashboard
+        return $hasAssetPermissions && !$hasNonAssetPermissions;
     }
     
     /**
