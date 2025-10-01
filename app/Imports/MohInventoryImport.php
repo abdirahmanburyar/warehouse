@@ -6,8 +6,6 @@ use App\Models\Product;
 use App\Models\Warehouse;
 use App\Models\MohInventory;
 use App\Models\MohInventoryItem;
-use App\Models\Category;
-use App\Models\Dosage;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Bus\Queueable;
@@ -68,8 +66,13 @@ class MohInventoryImport implements
             return null;
         }
 
-        // Get product (will throw exception if not found)
+        // Get product (will return null if not found, causing row to be skipped)
         $product = $this->getOrCreateProduct($row, $itemName);
+        
+        // If product doesn't exist, skip this row
+        if (!$product) {
+            return null;
+        }
 
         // Get warehouse (will throw exception if not found)
         $warehouseName = $row['warehouse'] ?? $row['Warehouse'] ?? $row['WAREHOUSE'] ?? 'Main Warehouse';
@@ -109,62 +112,10 @@ class MohInventoryImport implements
             return $product;
         }
 
-        // Get or create category
-        $categoryName = trim($row['category'] ?? $row['Category'] ?? $row['CATEGORY'] ?? 'General');
-        $category = $this->getOrCreateCategory($categoryName);
-        
-        // Get or create dosage
-        $dosageName = trim($row['uom'] ?? $row['UoM'] ?? $row['UOM'] ?? $row['unit'] ?? 'Pcs');
-        $dosage = $this->getOrCreateDosage($dosageName);
-        
-        // Create the product
-        $product = Product::create([
-            'name' => $itemName,
-            'category_id' => $category->id,
-            'dosage_id' => $dosage->id,
-            'is_active' => true,
-            'tracert_type' => ['batch_number', 'expiry_date'] // Default tracking types
-        ]);
-
-        
-        return $product;
+        // If product doesn't exist, return null to skip this row
+        return null;
     }
 
-    protected function getOrCreateCategory($categoryName)
-    {
-        // Try to find existing category by name
-        $category = Category::where('name', $categoryName)->first();
-        
-        if ($category) {
-            return $category;
-        }
-
-        $category = Category::create([
-            'name' => $categoryName,
-            'description' => "Auto-created category for MOH inventory import",
-            'is_active' => true
-        ]);
-                
-        return $category;
-    }
-
-    protected function getOrCreateDosage($dosageName)
-    {
-        // Try to find existing dosage by name
-        $dosage = Dosage::where('name', $dosageName)->first();
-        
-        if ($dosage) {
-            return $dosage;
-        }
-
-        $dosage = Dosage::create([
-            'name' => $dosageName,
-            'description' => "Auto-created dosage for MOH inventory import",
-            'is_active' => true
-        ]);
-        
-        return $dosage;
-    }
 
     protected function getWarehouse($warehouseName)
     {
