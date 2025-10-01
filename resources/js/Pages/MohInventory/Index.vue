@@ -1428,7 +1428,7 @@ const filteredInventoryItems = computed(() => {
                     </button>
                     <button @click="uploadExcelFile"
                         class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 border border-transparent rounded-lg font-medium text-sm text-white hover:from-amber-600 hover:to-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200"
-                        :disabled="!uploadFile || isUploading || !$page.props.auth.can.moh_inventory_upload">
+                        :disabled="!uploadFile || isUploading || !$page.props.auth.can.moh_inventory_create">
                         <svg v-if="isUploading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none"
                             viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
