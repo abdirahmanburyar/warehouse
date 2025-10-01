@@ -963,6 +963,7 @@ class AssetController extends Controller
         }
     }
 
+
     /**
      * Show the details of an asset.
      */

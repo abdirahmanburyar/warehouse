@@ -19,6 +19,8 @@ use App\Models\Supplier;
 use App\Models\InventoryReport;
 use App\Models\Category;
 use App\Models\Asset;
+use App\Models\AssetItem;
+use App\Models\AssetHistory;
 use App\Models\InventoryItem;
 use App\Models\IssueQuantityReport;
 use App\Models\FacilityMonthlyReport;
@@ -28,6 +30,188 @@ use Illuminate\Support\Facades\Log;
 class DashboardController extends Controller
 {
     public function index(Request $request)
+    {
+        $user = auth()->user();
+        
+        // Check if user has all asset permissions - show regular dashboard
+        if ($this->hasAllAssetPermissions($user)) {
+            return $this->regularDashboard($request);
+        }
+        
+        // Check if user has only some asset permissions - show asset dashboard
+        if ($this->hasOnlySomeAssetPermissions($user)) {
+            return $this->assetDashboard($request);
+        }
+        
+        // Otherwise, show the regular dashboard
+        return $this->regularDashboard($request);
+    }
+    
+    /**
+     * Check if user has all asset permissions
+     */
+    private function hasAllAssetPermissions($user)
+    {
+        // Get all user permissions
+        $permissions = $user->permissions->pluck('name')->toArray();
+        
+        // Define all possible asset permissions
+        $allAssetPermissions = [
+            'asset-view',
+            'asset-create', 
+            'asset-edit',
+            'asset-delete'
+        ];
+        
+        // Check if user has all asset permissions
+        $hasAllAssetPermissions = collect($allAssetPermissions)->every(function($permission) use ($permissions) {
+            return in_array($permission, $permissions);
+        });
+        
+        return $hasAllAssetPermissions;
+    }
+    
+    /**
+     * Check if user has only some asset permissions (not all)
+     */
+    private function hasOnlySomeAssetPermissions($user)
+    {
+        // Get all user permissions
+        $permissions = $user->permissions->pluck('name')->toArray();
+        
+        // Check if user has any asset permissions
+        $hasAssetPermissions = collect($permissions)->some(function($permission) {
+            return str_starts_with($permission, 'asset-');
+        });
+        
+        // Check if user has all asset permissions
+        $hasAllAssetPermissions = $this->hasAllAssetPermissions($user);
+        
+        // If user has some asset permissions but not all, show asset dashboard
+        return $hasAssetPermissions && !$hasAllAssetPermissions;
+    }
+    
+    /**
+     * Show the asset dashboard
+     */
+    private function assetDashboard(Request $request)
+    {
+        $user = auth()->user();
+        
+        // Check if user has any asset permissions
+        if (!$user->hasPermission('asset-view') && 
+            !$user->hasPermission('asset-manage')) {
+            return redirect()->route('dashboard')->with('error', 'You do not have permission to access the asset dashboard.');
+        }
+
+        // Get organization filter
+        $organizationFilter = $user->organization;
+
+        // Get asset statistics
+        $assetQuery = Asset::query();
+        if ($organizationFilter) {
+            $assetQuery->where('organization', $organizationFilter);
+        }
+
+        $totalAssets = $assetQuery->count();
+        $pendingApproval = $assetQuery->whereNotNull('submitted_at')->whereNull('approved_at')->whereNull('rejected_at')->count();
+        $approved = $assetQuery->whereNotNull('approved_at')->count();
+        $rejected = $assetQuery->whereNotNull('rejected_at')->count();
+
+        // Get asset items statistics
+        $assetItemsQuery = AssetItem::query();
+        if ($organizationFilter) {
+            $assetItemsQuery->whereHas('asset', function($query) use ($organizationFilter) {
+                $query->where('organization', $organizationFilter);
+            });
+        }
+
+        $inUse = $assetItemsQuery->where('status', 'in_use')->count();
+        $maintenance = $assetItemsQuery->where('status', 'maintenance')->count();
+        $totalValue = $assetItemsQuery->sum('original_value');
+
+        // Get recent assets
+        $recentAssets = $assetQuery->with(['assetItems'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function($asset) {
+                return [
+                    'id' => $asset->id,
+                    'asset_number' => $asset->asset_number,
+                    'asset_name' => $asset->assetItems->first()->asset_name ?? 'Unnamed Asset',
+                    'status' => $asset->status,
+                    'created_at' => $asset->created_at
+                ];
+            });
+
+        // Get category breakdown
+        $categoryBreakdown = AssetItem::query()
+            ->when($organizationFilter, function($query) use ($organizationFilter) {
+                $query->whereHas('asset', function($q) use ($organizationFilter) {
+                    $q->where('organization', $organizationFilter);
+                });
+            })
+            ->with('category')
+            ->get()
+            ->groupBy('category.name')
+            ->map(function($items) {
+                return $items->count();
+            })
+            ->toArray();
+
+        // Get status breakdown
+        $statusBreakdown = $assetItemsQuery->get()
+            ->groupBy('status')
+            ->map(function($items) {
+                return $items->count();
+            })
+            ->toArray();
+
+        // Get recent activity (from asset history)
+        $recentActivity = AssetHistory::query()
+            ->when($organizationFilter, function($query) use ($organizationFilter) {
+                $query->whereHas('assetItem.asset', function($q) use ($organizationFilter) {
+                    $q->where('organization', $organizationFilter);
+                });
+            })
+            ->with(['assetItem.asset', 'performer'])
+            ->orderBy('performed_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function($history) {
+                return [
+                    'id' => $history->id,
+                    'description' => $history->action . ' - ' . ($history->assetItem->asset->asset_number ?? 'Unknown Asset'),
+                    'created_at' => $history->performed_at,
+                    'performer' => $history->performer->name ?? 'System'
+                ];
+            });
+
+        $assetStats = [
+            'totalAssets' => $totalAssets,
+            'pendingApproval' => $pendingApproval,
+            'approved' => $approved,
+            'rejected' => $rejected,
+            'inUse' => $inUse,
+            'maintenance' => $maintenance,
+            'totalValue' => $totalValue,
+            'recentAssets' => $recentAssets,
+            'categoryBreakdown' => $categoryBreakdown,
+            'statusBreakdown' => $statusBreakdown,
+            'recentActivity' => $recentActivity
+        ];
+
+        return Inertia::render('Assets/AssetDashboard', [
+            'assetStats' => $assetStats,
+            'userPermissions' => $user->permissions->pluck('name')->toArray()
+        ]);
+    }
+    
+    /**
+     * Show the regular dashboard
+     */
+    private function regularDashboard(Request $request)
     {
         // Get warehouse count and add it first
         $warehouseCount = Warehouse::count();

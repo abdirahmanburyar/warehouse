@@ -18,6 +18,7 @@ Chart.register(ChartDataLabels);
 
 
 
+
 const props = defineProps({
     dashboardData: {
         type: Object,
