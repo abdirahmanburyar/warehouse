@@ -169,6 +169,11 @@ class AssetController extends Controller
 
     public function create()
     {
+        // Check if user has permission to create assets
+        if (!auth()->user()->hasPermission('asset-create') && !auth()->user()->isAdmin()) {
+            return redirect()->route('assets.index')->with('error', 'You do not have permission to create assets.');
+        }
+
         // Allow creating assets even without organization
         // This allows admins to create assets and assign organizations
         
@@ -179,6 +184,7 @@ class AssetController extends Controller
         $types = AssetType::all();
         $users = User::select('id','name','email')->get();
         $assignees = Assignee::select('id','name')->orderBy('name')->get();
+        
         return Inertia::render('Assets/Create', [
             'locations' => $locations,
             'categories' => $categories,
@@ -192,16 +198,24 @@ class AssetController extends Controller
 
     public function store(Request $request)
     {
+        // Check if user has permission to create assets
+        if (!auth()->user()->hasPermission('asset-create') && !auth()->user()->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to create assets.'
+            ], 403);
+        }
+
         try {
             return DB::transaction(function() use ($request){
                 // Validate the main asset data
                 $validatedAsset = $request->validate([
                     'asset_number' => 'nullable|string|unique:assets,asset_number',
-                'acquisition_date' => 'required|date',
+                    'acquisition_date' => 'required|date',
                     'fund_source_id' => 'required|exists:fund_sources,id',
                     'region_id' => 'required|exists:regions,id',
                     'asset_location_id' => 'required|exists:asset_locations,id',
-                    'sub_location_id' => 'required|exists:sub_locations,id',
+                    'sub_location_id' => 'nullable|exists:sub_locations,id',
                 ]);
 
                 // Validate asset items array
@@ -228,6 +242,11 @@ class AssetController extends Controller
                 $validatedAsset['status'] = 'pending_approval';
                 $validatedAsset['submitted_by'] = auth()->id();
                 $validatedAsset['submitted_at'] = now();
+                
+                // Handle nullable sub_location_id
+                if (empty($validatedAsset['sub_location_id'])) {
+                    $validatedAsset['sub_location_id'] = null;
+                }
 
                 // Create the main asset record
                 $asset = Asset::create($validatedAsset);

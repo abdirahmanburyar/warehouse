@@ -116,7 +116,7 @@ class AuthServiceProvider extends ServiceProvider
 
         // Asset-specific permission gates
         Gate::define('asset-view', function ($user) {
-            return $user->hasPermissionTo('asset-view') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system') || $user->hasPermissionTo('view-system');
+            return $user->hasPermissionTo('asset-view') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system') || $user->isAdmin();
         });
 
         // Gate::define('asset-create', function ($user) {
@@ -124,7 +124,7 @@ class AuthServiceProvider extends ServiceProvider
         // });
 
         Gate::define('asset-edit', function ($user) {
-            return $user->hasPermissionTo('asset-edit') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system');
+            return $user->hasPermissionTo('asset-edit') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system') || $user->isAdmin();
         });
 
         Gate::define('asset-delete', function ($user) {
@@ -140,7 +140,11 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         Gate::define('asset-manage', function ($user) {
-            return $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system');
+            return $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system') || $user->isAdmin();
+        });
+
+        Gate::define('asset-create', function ($user) {
+            return $user->hasPermissionTo('asset-create') || $user->hasPermissionTo('asset-manage') || $user->hasPermissionTo('manage-system') || $user->isAdmin();
         });
 
         Gate::define('asset-bulk-import', function ($user) {

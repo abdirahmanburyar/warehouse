@@ -725,15 +725,19 @@ const submit = async () => {
             fund_source_id: form.value.fund_source_id,
             region_id: form.value.region_id,
             asset_location_id: form.value.asset_location_id,
-            sub_location_id: form.value.sub_location_id || "",
+            sub_location_id: form.value.sub_location_id || null,
             asset_items: form.value.asset_items
         };
 
+        console.log('Submitting asset data:', requestData);
+        
         const response = await axios.post(route("assets.store"), requestData, {
             headers: {
                 "Content-Type": "application/json",
             },
         });
+        
+        console.log('Asset creation response:', response.data);
 
         processing.value = false;
         isSubmitting.value = false;
@@ -757,8 +761,13 @@ const submit = async () => {
 
         if (error.response?.data?.message) {
             toast.error(error.response.data.message);
+        } else if (error.response?.data?.errors) {
+            // Handle validation errors
+            const errors = error.response.data.errors;
+            const firstError = Object.values(errors)[0][0];
+            toast.error(firstError);
         } else {
-            toast.error("Error creating asset");
+            toast.error("Error creating asset: " + (error.message || "Unknown error"));
         }
     }
 };

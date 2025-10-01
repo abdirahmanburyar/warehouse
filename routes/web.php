@@ -603,7 +603,7 @@ Route::controller(LocationController::class)
         ->group(function () {
             // View routes - require asset-view permission
             Route::get('/', 'index')->name('assets.index');
-            Route::get('/{asset}', 'show')->name('assets.show');
+            Route::get('/{asset}/show', 'show')->name('assets.show');
             Route::get('/approvals', 'approvalsIndex')->name('assets.approvals.index');
             Route::get('/workflow', 'approvalsIndex')->name('assets.workflow.index');
             Route::get('/asset-items/{assetItem}/history', 'showHistory')->name('assets.history.index');
@@ -615,10 +615,10 @@ Route::controller(LocationController::class)
             
             // Edit routes - require asset-edit permission
             Route::get('/{asset}/edit', 'edit')->name('assets.edit');
-            Route::put('/{asset}', 'update')->name('assets.update');
+            Route::put('/{asset}/update', 'update')->name('assets.update');
             
             // Delete routes - require asset-delete permission
-            Route::delete('/{asset}', 'destroy')->name('assets.destroy');
+            Route::delete('/{asset}/delete', 'destroy')->name('assets.destroy');
             
             // Approval routes - require asset-approve permission
             Route::post('/{asset}/approve', 'approve')->name('assets.approve');
