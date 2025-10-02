@@ -232,8 +232,25 @@ class SupplyController extends Controller
             }
             
             // Get packing list item to get unit cost
-            $packingListItem = PackingListItem::find($request->packing_list_item_id);
-            $unitCost = $packingListItem ? $packingListItem->cost_per_unit : 0;
+            $packingListItem = PackingListItem::with(['product', 'purchaseOrderItem'])->find($request->packing_list_item_id);
+            
+            // Try to get unit cost from multiple sources
+            $unitCost = 0;
+            if ($packingListItem) {
+                // First try packing list item unit cost
+                if ($packingListItem->unit_cost && $packingListItem->unit_cost > 0) {
+                    $unitCost = $packingListItem->unit_cost;
+                }
+                // If not available, try purchase order item cost
+                elseif ($packingListItem->purchaseOrderItem && $packingListItem->purchaseOrderItem->unit_cost) {
+                    $unitCost = $packingListItem->purchaseOrderItem->unit_cost;
+                }
+                // If still not available, use a default value of 1.00
+                else {
+                    $unitCost = 1.00;
+                }
+            }
+            
             $totalCost = $unitCost * $request->quantity;
             
             // Get current user's warehouse
@@ -331,8 +348,25 @@ class SupplyController extends Controller
             }
             
             // Get packing list item to get unit cost
-            $packingListItem = PackingListItem::find($request->packing_list_item_id);
-            $unitCost = $packingListItem ? $packingListItem->cost_per_unit : 0;
+            $packingListItem = PackingListItem::with(['product', 'purchaseOrderItem'])->find($request->packing_list_item_id);
+            
+            // Try to get unit cost from multiple sources
+            $unitCost = 0;
+            if ($packingListItem) {
+                // First try packing list item unit cost
+                if ($packingListItem->unit_cost && $packingListItem->unit_cost > 0) {
+                    $unitCost = $packingListItem->unit_cost;
+                }
+                // If not available, try purchase order item cost
+                elseif ($packingListItem->purchaseOrderItem && $packingListItem->purchaseOrderItem->unit_cost) {
+                    $unitCost = $packingListItem->purchaseOrderItem->unit_cost;
+                }
+                // If still not available, use a default value of 1.00
+                else {
+                    $unitCost = 1.00;
+                }
+            }
+            
             $totalCost = $unitCost * $request->quantity;
             
             // Get current user's warehouse
