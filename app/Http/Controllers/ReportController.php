@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\MonthlyQuantityReceived;
 use App\Http\Resources\ReceivedQuantityResource;
 use App\Models\MonthlyConsumptionReport;
+use App\Models\MonthlyConsumptionItem;
 use App\Models\PackingList;
 use App\Models\Warehouse;
 use App\Http\Resources\PackingListResource;
@@ -1084,6 +1085,46 @@ class ReportController extends Controller
         }
     }
 
+    /**
+     * Create MonthlyConsumptionReport records from approved facility LMIS report
+     */
+    private function createMonthlyConsumptionFromFacilityReport($facilityReport)
+    {
+        try {
+            // Get all report items (including those with zero stock issued)
+            $reportItems = $facilityReport->items()->get();
+
+            // Create or get the MonthlyConsumptionReport for this facility and period
+            $monthlyConsumptionReport = MonthlyConsumptionReport::updateOrCreate(
+                [
+                    'facility_id' => $facilityReport->facility_id,
+                    'month_year' => $facilityReport->report_period,
+                ],
+                [
+                    'generated_by' => auth()->id(),
+                ]
+            );
+
+            // Create/Update MonthlyConsumptionItem records
+            foreach ($reportItems as $item) {
+                MonthlyConsumptionItem::updateOrCreate(
+                    [
+                        'parent_id' => $monthlyConsumptionReport->id,
+                        'product_id' => $item->product_id,
+                    ],
+                    [
+                        'quantity' => (int) $item->stock_issued, // Convert decimal to integer
+                    ]
+                );
+            }
+
+            Log::info("Created MonthlyConsumptionReport for facility {$facilityReport->facility_id} period {$facilityReport->report_period} with " . $reportItems->count() . " items");
+
+        } catch (\Throwable $th) {
+            Log::error('Create MonthlyConsumptionReport from Facility Report Error: ' . $th->getMessage());
+            // Don't throw exception here to avoid breaking the approval process
+        }
+    }
 
     /**
      * Reject inventory report
@@ -1981,10 +2022,13 @@ class ReportController extends Controller
                 'approved_at' => now(),
             ]);
 
+            // Create/Update MonthlyConsumptionReport records from facility consumption data
+            $this->createMonthlyConsumptionFromFacilityReport($report);
+
             Log::info('LMIS Report approved successfully:', ['report_id' => $report->id]);
 
             return response()->json([
-                'message' => 'LMIS report approved successfully.',
+                'message' => 'LMIS report approved successfully and consumption records updated.',
                 'status' => 'approved'
             ]);
 
