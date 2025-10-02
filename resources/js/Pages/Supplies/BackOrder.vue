@@ -365,7 +365,6 @@ const groupedItems = computed(() => {
     items.value.forEach(item => {
         // Add defensive checks for required properties
         if (!item || !item.product || !item.product.productID) {
-            console.warn('Skipping item with missing required properties:', item);
             return;
         }
         
@@ -507,9 +506,13 @@ const receiveItems = async (item) => {
                     id: item.id,
                     status: item.status,
                     quantity: num,
-                    original_quantity: item.quantity
+                    original_quantity: item.quantity,
+                    back_order_id: backOrderInfo.value?.id,
+                    product_id: item.product?.id,
+                    packing_listitem_id: item.packing_listitem_id
                 });
                 console.log('Full item object:', item);
+                console.log('Back order info:', backOrderInfo.value);
                 await axios.post(route('back-order.receive'), {
                     id: item.id, // This is now the specific row ID from the merged object
                     back_order_id: backOrderInfo.value.id,
@@ -558,45 +561,36 @@ const receiveItems = async (item) => {
 
 
 // Event handlers
-const handlePoChange = async (po) => {
-    if (!po) {
-        items.value = [];
-        backOrderInfo.value = null;
-        return;
-    }
-    isLoading.value = true;
-    await axios.get(route('supplies.get-back-order', po.id))
-        .then((response) => {
-            isLoading.value = false;
-            console.log('API Response:', response.data);
-
-            // Check if there's debug information
-            if (response.data.debug) {
-                console.log('Debug Info:', response.data.debug);
-            }
-
-            // Handle the new response structure
-            const responseData = response.data.data || response.data;
-
-            // Sort items by created_at to ensure consistent grouping
-            items.value = responseData.sort((a, b) =>
-                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-            );
-
-            // Extract back order information from the first item (all items should have the same back order)
-            if (items.value.length > 0 && items.value[0].backOrder) {
-                backOrderInfo.value = items.value[0].backOrder;
-            } else {
-                backOrderInfo.value = null;
-            }
-        })
-        .catch((error) => {
-            isLoading.value = false;
+    const handlePoChange = async (po) => {
+        if (!po) {
             items.value = [];
             backOrderInfo.value = null;
-            toast.error(error.response?.data || 'Failed to fetch back order items')
-        });
-};
+            return;
+        }
+        isLoading.value = true;
+        await axios.get(route('supplies.get-back-order', po.id))
+            .then((response) => {
+                isLoading.value = false;
+
+                // Sort items by created_at to ensure consistent grouping
+                items.value = response.data.sort((a, b) =>
+                    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                );
+
+                // Extract back order information from the first item (all items should have the same back order)
+                if (items.value.length > 0 && items.value[0].backOrder) {
+                    backOrderInfo.value = items.value[0].backOrder;
+                } else {
+                    backOrderInfo.value = null;
+                }
+            })
+            .catch((error) => {
+                isLoading.value = false;
+                items.value = [];
+                backOrderInfo.value = null;
+                toast.error(error.response?.data?.error || 'Failed to fetch back order items')
+            });
+    };
 
 const submitLiquidation = async () => {
     isSubmitting.value = true;
