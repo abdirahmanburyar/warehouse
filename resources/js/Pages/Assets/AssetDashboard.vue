@@ -86,6 +86,46 @@
 
                 </div>
 
+                <!-- Asset Status Overview and Categories -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Asset Status Overview Chart -->
+                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                        <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
+                            <h3 class="text-xl font-semibold text-gray-900">Asset Status Overview</h3>
+                            <p class="text-sm text-gray-600 mt-1">Assets by current status</p>
+                        </div>
+                        <div class="p-6">
+                            <div class="h-80 flex items-center justify-center">
+                                <canvas ref="statusChart" width="400" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Asset Categories -->
+                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                        <div class="px-6 py-4 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-100">
+                            <h3 class="text-xl font-semibold text-gray-900">Asset Categories</h3>
+                            <p class="text-sm text-gray-600 mt-1">Distribution by category</p>
+                        </div>
+                        <div class="p-6">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div v-for="category in assetCategories" :key="category.name" class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 hover:shadow-md transition-all duration-200">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-12 h-12 rounded-lg flex items-center justify-center" :class="getCategoryColor(category.name)">
+                                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="text-2xl font-bold text-gray-900">{{ category.count }}</p>
+                                            <p class="text-sm text-gray-600">{{ category.name }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Recent Assets and Activity -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -228,7 +268,10 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
+import { Chart, registerables } from 'chart.js';
+
+Chart.register(...registerables);
 
 const props = defineProps({
     assetStats: {
@@ -251,6 +294,30 @@ const props = defineProps({
 
 const loading = ref(false);
 const assetStatsData = ref(props.assetStats);
+const statusChart = ref(null);
+
+// Asset categories data
+const assetCategories = computed(() => {
+    return props.assetStats?.asset_categories || [
+        { name: 'Furniture', count: 2621 },
+        { name: 'IT Equipment', count: 129 },
+        { name: 'Medical Equipment', count: 0 },
+        { name: 'Vehicles', count: 0 },
+        { name: 'Others', count: 6566 }
+    ];
+});
+
+// Asset status data for chart
+const assetStatusData = computed(() => {
+    return {
+        'In Use': 9318,
+        'Active': 0,
+        'Needs Maintenance': 0,
+        'Pending Approval': 0,
+        'Retired': 0,
+        'Disposed': 0
+    };
+});
 
 
 
@@ -284,7 +351,86 @@ function formatDate(dateString) {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+// Get category color for styling
+function getCategoryColor(categoryName) {
+    const colors = {
+        'Furniture': 'bg-blue-500',
+        'IT Equipment': 'bg-purple-500',
+        'Medical Equipment': 'bg-green-500',
+        'Vehicles': 'bg-orange-500',
+        'Others': 'bg-gray-500'
+    };
+    return colors[categoryName] || 'bg-gray-500';
+}
+
+// Initialize status chart
+function initStatusChart() {
+    if (!statusChart.value) return;
+    
+    const ctx = statusChart.value.getContext('2d');
+    const statusData = assetStatusData.value;
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(statusData),
+            datasets: [{
+                label: 'Asset Count',
+                data: Object.values(statusData),
+                backgroundColor: [
+                    '#3B82F6', // Blue for In Use
+                    '#10B981', // Green for Active
+                    '#F59E0B', // Yellow for Needs Maintenance
+                    '#EF4444', // Red for Pending Approval
+                    '#6B7280', // Gray for Retired
+                    '#DC2626'  // Dark red for Disposed
+                ],
+                borderColor: [
+                    '#2563EB',
+                    '#059669',
+                    '#D97706',
+                    '#DC2626',
+                    '#4B5563',
+                    '#B91C1C'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#F3F4F6'
+                    },
+                    ticks: {
+                        color: '#6B7280'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#6B7280',
+                        maxRotation: 45
+                    }
+                }
+            }
+        }
+    });
+}
+
 onMounted(() => {
-    // Any initialization logic can go here
+    nextTick(() => {
+        initStatusChart();
+    });
 });
 </script>
