@@ -183,13 +183,21 @@
             <div class="px-6 py-4 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-gray-900">Liquidations List</h3>
-                    <div class="flex items-center space-x-2">
-                        <label class="text-sm text-gray-600">Show:</label>
-                        <select v-model="per_page" @change="props.filters.page = 1" class="border-gray-300 rounded-md text-sm shadow-sm">
-                            <option value="25">25 Per page</option>
-                            <option value="50">50 Per page</option>
-                            <option value="100">100 Per page</option>
-                        </select>
+                    <div class="flex items-center space-x-3">
+                        <button @click="exportToExcel" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-medium text-sm text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Export to Excel
+                        </button>
+                        <div class="flex items-center space-x-2">
+                            <label class="text-sm text-gray-600">Show:</label>
+                            <select v-model="per_page" @change="props.filters.page = 1" class="border-gray-300 rounded-md text-sm shadow-sm">
+                                <option value="25">25 Per page</option>
+                                <option value="50">50 Per page</option>
+                                <option value="100">100 Per page</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -358,6 +366,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { TailwindPagination } from "laravel-vue-pagination";
+import * as XLSX from 'xlsx';
 
 const props = defineProps({
     liquidations: Object,
@@ -456,6 +465,51 @@ const clearFilters = () => {
     search.value = '';
     per_page.value = 25;
     props.filters.page = 1;
+};
+
+const exportToExcel = () => {
+    // Prepare data for export
+    const exportData = props.liquidations.data.map(liquidation => ({
+        'Liquidation ID': liquidation.liquidate_id,
+        'Source': liquidation.source || 'N/A',
+        'Facility': liquidation.facility || 'N/A',
+        'Warehouse': liquidation.warehouse || 'N/A',
+        'Status': getStatusLabel(liquidation.status),
+        'Liquidated By': liquidation.liquidated_by || 'N/A',
+        'Liquidation Date': formatDate(liquidation.liquidation_date),
+        'Items Count': liquidation.items_count || 0,
+        'Total Value': `$${formatCurrency(calculateTotalValue(liquidation.items))}`,
+        'Created At': formatDate(liquidation.created_at)
+    }));
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(exportData);
+
+    // Set column widths
+    const colWidths = [
+        { wch: 15 }, // Liquidation ID
+        { wch: 12 }, // Source
+        { wch: 20 }, // Facility
+        { wch: 15 }, // Warehouse
+        { wch: 12 }, // Status
+        { wch: 20 }, // Liquidated By
+        { wch: 15 }, // Liquidation Date
+        { wch: 12 }, // Items Count
+        { wch: 15 }, // Total Value
+        { wch: 15 }  // Created At
+    ];
+    ws['!cols'] = colWidths;
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Liquidations');
+
+    // Generate filename with current date
+    const currentDate = new Date().toISOString().split('T')[0];
+    const filename = `liquidations_report_${currentDate}.xlsx`;
+
+    // Save file
+    XLSX.writeFile(wb, filename);
 };
 
 // Watch for filter changes and apply them
