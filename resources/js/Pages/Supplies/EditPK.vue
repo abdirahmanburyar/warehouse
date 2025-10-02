@@ -395,7 +395,7 @@
                     class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Exit
                 </Link>
-                <button v-if="!hasAllApproved" @click="submit" :disabled="isSubmitting || isApproving || isReviewing || isRejecting || !canSubmit || !$page.props.auth.can.packing_list_edit" :title="submitButtonTitle"
+                <button v-if="!hasAllApproved" @click="submit" :disabled="isSubmitting || isApproving || isReviewing || isRejecting || !canSubmit || !$page.props.auth.can.packing_list_update" :title="submitButtonTitle"
                     class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                     {{ isSubmitting ? "Updating..." : "Update Changes" }}
                 </button>
