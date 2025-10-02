@@ -370,7 +370,7 @@ const groupedItems = computed(() => {
         
         const existingGroup = result.find(g =>
             g.product.productID === item.product.productID &&
-            g.packing_listitem_id === item.packing_listitem_id &&
+            g.packing_list_item_id === item.packing_list_item_id &&
             moment(g.created_at).isSame(item.created_at, 'day')
         );
 
@@ -378,7 +378,7 @@ const groupedItems = computed(() => {
             result.push({
                 id: item.id,
                 product: item.product,
-                packing_listitem_id: item.packing_listitem_id,
+                packing_list_item_id: item.packing_list_item_id,
                 packing_list: item.packingListItem?.packingList || null,
                 created_at: item.created_at,
                 back_order_id: item.back_order_id,
@@ -509,15 +509,15 @@ const receiveItems = async (item) => {
                     original_quantity: item.quantity,
                     back_order_id: backOrderInfo.value?.id,
                     product_id: item.product?.id,
-                    packing_listitem_id: item.packing_listitem_id
+                    packing_list_item_id: item.packing_list_item_id
                 });
                 console.log('Full item object:', item);
                 console.log('Back order info:', backOrderInfo.value);
                 await axios.post(route('back-order.receive'), {
                     id: item.id, // This is now the specific row ID from the merged object
-                    back_order_id: backOrderInfo.value.id,
+                    back_order_id: item.back_order_id || backOrderInfo.value?.id,
                     product_id: item.product.id,
-                    packing_listitem_id: item.packing_listitem_id,
+                    packing_list_item_id: item.packing_list_item_id,
                     quantity: num,
                     original_quantity: item.quantity,
                     status: item.status,
@@ -598,7 +598,7 @@ const submitLiquidation = async () => {
     console.log(selectedItem.value);
     formData.append('id', selectedItem.value.id);
     formData.append('product_id', selectedItem.value.product.id);
-    formData.append('packing_listitem_id', selectedItem.value.packing_listitem_id);
+    formData.append('packing_list_item_id', selectedItem.value.packing_list_item_id);
     formData.append('quantity', liquidateForm.value.quantity);
     formData.append('original_quantity', selectedItem.value.quantity);
     formData.append('status', selectedItem.value.status);
@@ -695,7 +695,7 @@ const submitDisposal = async () => {
     formData.append('note', disposeForm.value.note);
     formData.append('type', selectedItem.value.status);
     formData.append('quantity', selectedItem.value.quantity);
-    formData.append('packing_listitem_id', selectedItem.value.packing_listitem_id);
+    formData.append('packing_list_item_id', selectedItem.value.packing_list_item_id);
 
     // Get back_order_id from backOrderInfo or from the item itself
     const backOrderId = backOrderInfo.value?.id || selectedItem.value.back_order_id;

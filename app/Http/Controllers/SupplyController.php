@@ -159,12 +159,21 @@ class SupplyController extends Controller
             $results = PackingListDifference::whereHas('packingListItem', function($query) use ($id) {
                 $query->where('packing_list_id', $id);
             })
+                ->select('id', 'packing_list_item_id', 'back_order_id', 'product_id', 'quantity', 'status', 'finalized', 'created_at')
                 ->with([
                     'product:id,name,productID',
                     'packingListItem.packingList:id,packing_list_number',
                     'backOrder:id,back_order_number,back_order_date,status'
                 ])
                 ->get();
+
+            // Debug: Log the results to see what's being returned
+            logger()->info('BackOrder query results:', [
+                'count' => $results->count(),
+                'first_item_backOrder' => $results->first()?->backOrder,
+                'first_item_back_order_id' => $results->first()?->back_order_id,
+                'all_back_order_ids' => $results->pluck('back_order_id')->unique()->values()
+            ]);
 
             return response()->json($results, 200);
 
@@ -223,7 +232,7 @@ class SupplyController extends Controller
             }
             
             // Get packing list item to get unit cost
-            $packingListItem = PackingListItem::find($request->packing_listitem_id);
+            $packingListItem = PackingListItem::find($request->packing_list_item_id);
             $unitCost = $packingListItem ? $packingListItem->cost_per_unit : 0;
             $totalCost = $unitCost * $request->quantity;
             
@@ -322,7 +331,7 @@ class SupplyController extends Controller
             }
             
             // Get packing list item to get unit cost
-            $packingListItem = PackingListItem::find($request->packing_listitem_id);
+            $packingListItem = PackingListItem::find($request->packing_list_item_id);
             $unitCost = $packingListItem ? $packingListItem->cost_per_unit : 0;
             $totalCost = $unitCost * $request->quantity;
             
@@ -407,14 +416,14 @@ class SupplyController extends Controller
                 'id' => $request->id,
                 'back_order_id' => $request->back_order_id,
                 'product_id' => $request->product_id,
-                'packing_listitem_id' => $request->packing_listitem_id
+                'packing_list_item_id' => $request->packing_list_item_id
             ]);
             
             // Validate the request
             $validated = $request->validate([
                 'id' => 'required|exists:packing_list_differences,id',
                 'product_id' => 'required|exists:products,id',
-                'packing_listitem_id' => 'required|exists:packing_list_items,id',
+                'packing_list_item_id' => 'required|exists:packing_list_items,id',
                 'quantity' => 'required|integer|min:1',
                 'original_quantity' => 'required|integer|min:1',
                 'status' => 'nullable|string',
@@ -446,9 +455,9 @@ class SupplyController extends Controller
             $allRecordsWithId = PackingListDifference::where('id', $request->id)->get();
             logger()->info('All records with ID ' . $request->id . ':', $allRecordsWithId->toArray());
             
-            // Check all records for this packing_listitem_id to see if there are separate records for different statuses
-            $allRecordsForPackingListItem = PackingListDifference::where('packing_listitem_id', $request->packing_listitem_id)->get();
-            $packingListItem = PackingListItem::find($request->packing_listitem_id);
+            // Check all records for this packing_list_item_id to see if there are separate records for different statuses
+            $allRecordsForPackingListItem = PackingListDifference::where('packing_list_item_id', $request->packing_list_item_id)->get();
+            $packingListItem = PackingListItem::find($request->packing_list_item_id);
             $backOrder = BackOrder::with(['packingList', 'order', 'transfer'])->find($request->back_order_id);
             
             if (!$packingListDiff) {
@@ -2061,7 +2070,7 @@ class SupplyController extends Controller
                 if ($diff > 0) {
                     PackingListDifference::firstOrCreate(
                         [
-                            'packing_listitem_id' => $pli->id,
+                            'packing_list_item_id' => $pli->id,
                             'status'              => 'Missing'
                         ],
                         [
