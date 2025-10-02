@@ -1,7 +1,7 @@
 <template>
     <AuthenticatedLayout :title="'Back Order'" description="Track Your Back Orders" img="/assets/images/orders.png">
-        <div class="p-6 text-gray-900">
-            <div class="mb-4 w-[400px]">
+        <div class="text-gray-900">
+            <div class="mb-4 w-[400px] overflow-auto">
                 <label for="po" class="block text-sm font-medium text-gray-700">Select Packing List</label>
                 <Multiselect v-model="selectedPo" :options="props.packingList" :searchable="true" :create-option="false"
                     class="mt-1" placeholder="Select Packing List" label="packing_list_number" track-by="id"
@@ -122,7 +122,7 @@
                                                     <td class="px-3 py-2 text-xs text-center align-middle">
                                                         <div v-if="row.finalized" class="flex items-center justify-center space-x-2">
                                                             <span class="px-2 py-1 text-xs font-medium text-white bg-gray-500 rounded">
-                                                                {{ row.finalized === 'liquidated' ? 'Liquidated' : 'Processed' }}
+                                                                Processed
                                                             </span>
                                                         </div>
                                                         <div v-else class="flex items-center justify-center space-x-2">

@@ -159,7 +159,11 @@ class SupplyController extends Controller
             $results = PackingListDifference::whereHas('packingListItem', function($query) use ($id) {
                 $query->where('packing_list_id', $id);
             })
-                ->with('product:id,name,productID','packingListItem.packingList:id,packing_list_number','backOrder:id,back_order_number,back_order_date,status')
+                ->with([
+                    'product:id,name,productID',
+                    'packingListItem.packingList:id,packing_list_number',
+                    'backOrder:id,back_order_number,back_order_date,status'
+                ])
                 ->get();
 
             return response()->json($results, 200);
@@ -249,7 +253,7 @@ class SupplyController extends Controller
             $packingListDiff = PackingListDifference::find($request->id);
             if ($packingListDiff) {
                 $packingListDiff->update([
-                    'finalized' => 'liquidated'
+                    'finalized' => true
                 ]);
                 
                 // Update inventory allocation if it exists
@@ -348,7 +352,7 @@ class SupplyController extends Controller
             $packingListDiff = PackingListDifference::find($request->id);
             if ($packingListDiff) {
                 $packingListDiff->update([
-                    'finalized' => 'disposed'
+                    'finalized' => true
                 ]);
                 
                 // Update inventory allocation if it exists
@@ -414,7 +418,7 @@ class SupplyController extends Controller
                 'quantity' => 'required|integer|min:1',
                 'original_quantity' => 'required|integer|min:1',
                 'status' => 'nullable|string',
-                'packing_list_id' => 'required|exists:packing_lists,id',
+                'packing_list_id' => 'nullable|exists:packing_lists,id',
                 'packing_list_number' => 'nullable|string',
                 'purchase_order_id' => 'nullable',
                 'total_cost' => 'nullable|numeric',
