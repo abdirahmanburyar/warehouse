@@ -24,6 +24,7 @@ use App\Models\Inventory;
 use App\Models\InventoryItem;
 use App\Models\InventoryReport;
 use App\Models\InventoryReportItem;
+use App\Models\WarehouseAmc;
 use App\Models\InventoryAdjustment;
 use App\Models\InventoryAdjustmentItem;
 use App\Models\ReceivedBackorder;
@@ -1032,20 +1033,54 @@ class ReportController extends Controller
                 return response()->json(['message' => 'Only reports under review can be approved.'], 403);
             }
 
+            // Update report status
             $inventoryReport->update([
                 'status' => 'approved',
                 'approved_by' => auth()->id(),
                 'approved_at' => now(),
             ]);
 
+            // Create WarehouseAmc records from issued quantities
+            $this->createWarehouseAmcFromReport($inventoryReport);
+
             return response()->json([
-                'message' => 'Report approved successfully.',
+                'message' => 'Report approved successfully and AMC records created.',
                 'status' => 'approved'
             ]);
 
         } catch (\Throwable $th) {
             Log::error('Approve Report Error: ' . $th->getMessage());
             return response()->json(['message' => 'Failed to approve report.'], 500);
+        }
+    }
+
+    /**
+     * Create WarehouseAmc records from approved inventory report
+     */
+    private function createWarehouseAmcFromReport($inventoryReport)
+    {
+        try {
+            // Get all report items (including those with zero issued quantities)
+            $reportItems = $inventoryReport->items()->get();
+
+            foreach ($reportItems as $item) {
+                // Create or update WarehouseAmc record (even if quantity is zero)
+                WarehouseAmc::updateOrCreate(
+                    [
+                        'product_id' => $item->product_id,
+                        'month_year' => $inventoryReport->month_year,
+                    ],
+                    [
+                        'quantity' => $item->issued_quantity,
+                    ]
+                );
+            }
+
+            Log::info("Created WarehouseAmc records for report {$inventoryReport->month_year} with " . $reportItems->count() . " items");
+
+        } catch (\Throwable $th) {
+            Log::error('Create WarehouseAmc Error: ' . $th->getMessage());
+            // Don't throw exception here to avoid breaking the approval process
         }
     }
 
