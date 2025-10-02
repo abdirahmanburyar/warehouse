@@ -1998,6 +1998,7 @@ class SupplyController extends Controller
                     'inventory_id'   => $inventory->id,
                     'batch_number'   => $pli->batch_number,
                     'warehouse_id'   => $pli->warehouse_id,
+                    'source'         => 'PSI',
                 ]);
 
                 // fill or update fields
@@ -2008,6 +2009,7 @@ class SupplyController extends Controller
                     'barcode'       => $pli->barcode,
                     'location'      => $pli->location,
                     'uom'           => $pli->uom,
+                    'source'        => 'PSI',
                     'unit_cost'     => $pli->unit_cost,
                     'total_cost'    => $pli->unit_cost * $inventoryItem->quantity,
                 ]);
@@ -2022,6 +2024,7 @@ class SupplyController extends Controller
                     'packing_list_id'  => $pli->packing_list_id,
                     'expiry_date'      => $pli->expire_date,
                     'uom'              => $pli->uom,
+                    'source'           => 'PSI',
                     'warehouse_id'     => $pli->warehouse_id,
                     'barcode'          => $pli->barcode,
                     'batch_number'     => $pli->batch_number,
