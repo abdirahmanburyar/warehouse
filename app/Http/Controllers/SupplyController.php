@@ -149,17 +149,57 @@ class SupplyController extends Controller
     public function getBackOrder(Request $request, $id)
     {
         try {
+            // Debug: Check if packing list exists
+            $packingList = PackingList::find($id);
+            if (!$packingList) {
+                return response()->json(['error' => 'Packing list not found', 'id' => $id], 404);
+            }
+
+            // Debug: Check packing list items
+            $packingListItems = PackingListItem::where('packing_list_id', $id)->get();
+            
+            // Debug: Check packing list differences
+            $allDifferences = PackingListDifference::whereHas('packingListItem', function($query) use ($id) {
+                $query->where('packing_list_id', $id);
+            })->get();
+
+            // Debug: Check non-finalized differences
+            $nonFinalizedDifferences = PackingListDifference::whereNull('finalized')->whereHas('packingListItem', function($query) use ($id) {
+                $query->where('packing_list_id', $id);
+            })->get();
+
+            logger()->info('Getting back order for packing list: ' . $id, [
+                'packing_list_exists' => $packingList ? true : false,
+                'packing_list_items_count' => $packingListItems->count(),
+                'all_differences_count' => $allDifferences->count(),
+                'non_finalized_differences_count' => $nonFinalizedDifferences->count()
+            ]);
+
             // Join packing_list_differences, products, and packing_lists
-            $results = PackingListDifference::whereNull('finalized')->whereHas('packingListItem', function($query) use ($id) {
+            // Show all differences, not just non-finalized ones
+            $results = PackingListDifference::whereHas('packingListItem', function($query) use ($id) {
                 $query->where('packing_list_id', $id);
             })
                 ->with('product:id,name,productID','packingListItem.packingList:id,packing_list_number','backOrder:id,back_order_number,back_order_date,status')
                 ->get();
 
-            return response()->json($results, 200);
+            return response()->json([
+                'debug' => [
+                    'packing_list_exists' => $packingList ? true : false,
+                    'packing_list_items_count' => $packingListItems->count(),
+                    'all_differences_count' => $allDifferences->count(),
+                    'non_finalized_differences_count' => $nonFinalizedDifferences->count(),
+                    'packing_list_id' => $id
+                ],
+                'data' => $results
+            ], 200);
 
         } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
+            logger()->error('Error in getBackOrder: ' . $th->getMessage(), [
+                'packing_list_id' => $id,
+                'trace' => $th->getTraceAsString()
+            ]);
+            return response()->json(['error' => $th->getMessage(), 'trace' => $th->getTraceAsString()], 500);
         }
     }
     

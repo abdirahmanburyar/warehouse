@@ -88,7 +88,7 @@
                                                     </td>
                                                     <td class="px-3 py-2 text-xs text-gray-700 align-middle"
                                                         v-if="index === 0" :rowspan="item.rows.length">
-                                                        {{ item.packing_list?.packing_list_number }}
+                                                        {{ item.packingList?.packing_list_number }}
                                                     </td>
                                                     <td class="px-3 py-2 text-xs text-gray-700 align-middle"
                                                         v-if="index === 0" :rowspan="item.rows.length">
@@ -120,7 +120,12 @@
                                                         </span>
                                                     </td>
                                                     <td class="px-3 py-2 text-xs text-center align-middle">
-                                                        <div class="flex items-center justify-center space-x-2">
+                                                        <div v-if="row.finalized" class="flex items-center justify-center space-x-2">
+                                                            <span class="px-2 py-1 text-xs font-medium text-white bg-gray-500 rounded">
+                                                                {{ row.finalized === 'liquidated' ? 'Liquidated' : 'Processed' }}
+                                                            </span>
+                                                        </div>
+                                                        <div v-else class="flex items-center justify-center space-x-2">
                                                             <!-- Receive action - available for all statuses -->
                                                             <button
                                                                 @click="handleAction('Receive', { ...item, id: row.id, status: row.status, quantity: row.quantity })"
@@ -186,7 +191,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Packing List</p>
-                            <p class="text-sm text-gray-900">{{ selectedItem.packing_list?.packing_list_number }}</p>
+                            <p class="text-sm text-gray-900">{{ selectedItem.packingList?.packing_list_number }}</p>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Status</p>
@@ -268,7 +273,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Packing List</p>
-                            <p class="text-sm text-gray-900">{{ selectedItem.packing_list?.packing_list_number }}</p>
+                            <p class="text-sm text-gray-900">{{ selectedItem.packingList?.packing_list_number }}</p>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Status</p>
@@ -358,6 +363,12 @@ const groupedItems = computed(() => {
     const result = [];
     // Group items by product, packing list, and date
     items.value.forEach(item => {
+        // Add defensive checks for required properties
+        if (!item || !item.product || !item.product.productID) {
+            console.warn('Skipping item with missing required properties:', item);
+            return;
+        }
+        
         const existingGroup = result.find(g =>
             g.product.productID === item.product.productID &&
             g.packing_listitem_id === item.packing_listitem_id &&
@@ -369,7 +380,7 @@ const groupedItems = computed(() => {
                 id: item.id,
                 product: item.product,
                 packing_listitem_id: item.packing_listitem_id,
-                packing_list: item.packing_list_item.packing_list,
+                packing_list: item.packingListItem?.packingList || null,
                 created_at: item.created_at,
                 back_order_id: item.back_order_id,
                 rows: [{
@@ -386,7 +397,8 @@ const groupedItems = computed(() => {
                 id: item.id, // Include the specific row ID
                 quantity: item.quantity,
                 status: item.status,
-                actions: getAvailableActions(item.status)
+                actions: getAvailableActions(item.status),
+                finalized: item.finalized
             });
         }
     });
@@ -506,17 +518,17 @@ const receiveItems = async (item) => {
                     quantity: num,
                     original_quantity: item.quantity,
                     status: item.status,
-                    packing_list_id: item.packing_list?.id,
-                    packing_list_number: item.packing_list?.packing_list_number,
+                    packing_list_id: item.packingList?.id,
+                    packing_list_number: item.packingList?.packing_list_number,
                     purchase_order_id: selectedPo.value?.id,
                     purchase_order_number: selectedPo.value?.purchase_order_number,
                     supplier_id: selectedPo.value?.supplier?.id,
                     supplier_name: selectedPo.value?.supplier?.name,
-                    barcode: item.packing_list?.barcode,
-                    batch_number: item.packing_list?.batch_number,
-                    uom: item.packing_list?.uom,
-                    cost_per_unit: item.packing_list?.cost_per_unit,
-                    total_cost: (item.packing_list?.cost_per_unit || 0) * num
+                    barcode: item.packingList?.barcode,
+                    batch_number: item.packingList?.batch_number,
+                    uom: item.packingList?.uom,
+                    cost_per_unit: item.packingList?.cost_per_unit,
+                    total_cost: (item.packingList?.cost_per_unit || 0) * num
                 })
                     .then(response => {
                         Swal.fire({
@@ -556,16 +568,24 @@ const handlePoChange = async (po) => {
     await axios.get(route('supplies.get-back-order', po.id))
         .then((response) => {
             isLoading.value = false;
-            console.log(response.data);
+            console.log('API Response:', response.data);
+
+            // Check if there's debug information
+            if (response.data.debug) {
+                console.log('Debug Info:', response.data.debug);
+            }
+
+            // Handle the new response structure
+            const responseData = response.data.data || response.data;
 
             // Sort items by created_at to ensure consistent grouping
-            items.value = response.data.sort((a, b) =>
+            items.value = responseData.sort((a, b) =>
                 new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             );
 
             // Extract back order information from the first item (all items should have the same back order)
-            if (items.value.length > 0 && items.value[0].back_order) {
-                backOrderInfo.value = items.value[0].back_order;
+            if (items.value.length > 0 && items.value[0].backOrder) {
+                backOrderInfo.value = items.value[0].backOrder;
             } else {
                 backOrderInfo.value = null;
             }
@@ -588,8 +608,8 @@ const submitLiquidation = async () => {
     formData.append('quantity', liquidateForm.value.quantity);
     formData.append('original_quantity', selectedItem.value.quantity);
     formData.append('status', selectedItem.value.status);
-    formData.append('packing_list_id', selectedItem.value.packing_list.id);
-    formData.append('packing_list_number', selectedItem.value.packing_list.packing_list_number);
+    formData.append('packing_list_id', selectedItem.value.packingList?.id || '');
+    formData.append('packing_list_number', selectedItem.value.packingList?.packing_list_number || '');
     formData.append('purchase_order_id', selectedPo.value?.id);
     formData.append('type', selectedItem.value.status);
     formData.append('note', liquidateForm.value.note);
