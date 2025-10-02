@@ -424,13 +424,13 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                 </svg>
                             </Link>
-                            <Link :href="route('reports.lmis-monthly-consumption')"
+                            <!-- <Link :href="route('reports.lmis-monthly-consumption')"
                                 class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-cyan-50 rounded-lg transition-colors">
                                 <span>LMIS Monthly Consumption Report</span>
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                 </svg>
-                            </Link>
+                            </Link> -->
                             <Link :href="route('reports.facility-compliance')"
                                 class="flex items-center justify-between p-3 text-sm text-gray-700 hover:bg-cyan-50 rounded-lg transition-colors">
                                 <span>Facility Compliance Report</span>

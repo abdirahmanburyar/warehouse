@@ -1084,6 +1084,7 @@ class ReportController extends Controller
         }
     }
 
+
     /**
      * Reject inventory report
      */
