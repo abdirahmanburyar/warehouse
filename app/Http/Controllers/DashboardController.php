@@ -182,13 +182,36 @@ class DashboardController extends Controller
             ->values()
             ->toArray();
 
+        // Get asset status data for the chart (filtered by organization)
+        $assetStatusData = AssetItem::query()
+            ->when($organizationFilter, function($query) use ($organizationFilter) {
+                $query->whereHas('asset', function($q) use ($organizationFilter) {
+                    $q->where('organization', $organizationFilter);
+                });
+            })
+            ->select('status', DB::raw('count(*) as count'))
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        // Format status data with all possible statuses
+        $formattedStatusData = [
+            'In Use' => $assetStatusData['in_use'] ?? 0,
+            'Active' => $assetStatusData['active'] ?? 0,
+            'Needs Maintenance' => $assetStatusData['maintenance'] ?? 0,
+            'Pending Approval' => $assetStatusData['pending_approval'] ?? 0,
+            'Retired' => $assetStatusData['retired'] ?? 0,
+            'Disposed' => $assetStatusData['disposed'] ?? 0,
+        ];
+
         $assetStats = [
             'total_assets' => $totalAssets,
             'active_assets' => $inUse,
             'inactive_assets' => $assetItemsQuery->where('status', 'inactive')->count(),
             'pending_approval' => $pendingApproval,
             'disposed_assets' => $assetItemsQuery->where('status', 'disposed')->count(),
-            'asset_categories' => $assetCategories
+            'asset_categories' => $assetCategories,
+            'asset_status_data' => $formattedStatusData
         ];
 
         return Inertia::render('Assets/AssetDashboard', [

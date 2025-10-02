@@ -298,19 +298,13 @@ const statusChart = ref(null);
 
 // Asset categories data
 const assetCategories = computed(() => {
-    return props.assetStats?.asset_categories || [
-        { name: 'Furniture', count: 2621 },
-        { name: 'IT Equipment', count: 129 },
-        { name: 'Medical Equipment', count: 0 },
-        { name: 'Vehicles', count: 0 },
-        { name: 'Others', count: 6566 }
-    ];
+    return props.assetStats?.asset_categories || [];
 });
 
 // Asset status data for chart
 const assetStatusData = computed(() => {
-    return {
-        'In Use': 9318,
+    return props.assetStats?.asset_status_data || {
+        'In Use': 0,
         'Active': 0,
         'Needs Maintenance': 0,
         'Pending Approval': 0,
