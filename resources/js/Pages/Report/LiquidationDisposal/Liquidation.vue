@@ -468,23 +468,44 @@ const clearFilters = () => {
 };
 
 const exportToExcel = () => {
-    // Prepare data for export
-    const exportData = props.liquidations.data.map(liquidation => ({
-        'Liquidation ID': liquidation.liquidate_id,
-        'Source': liquidation.source || 'N/A',
-        'Facility': liquidation.facility || 'N/A',
-        'Warehouse': liquidation.warehouse || 'N/A',
-        'Status': getStatusLabel(liquidation.status),
-        'Liquidated By': liquidation.liquidated_by || 'N/A',
-        'Liquidation Date': formatDate(liquidation.liquidation_date),
-        'Items Count': liquidation.items_count || 0,
-        'Total Value': `$${formatCurrency(calculateTotalValue(liquidation.items))}`,
-        'Created At': formatDate(liquidation.created_at)
-    }));
+    // Define headers first
+    const headers = [
+        'Liquidation ID',
+        'Source',
+        'Facility',
+        'Warehouse',
+        'Status',
+        'Liquidated By',
+        'Liquidation Date',
+        'Items Count',
+        'Total Value',
+        'Created At'
+    ];
+
+    // Prepare data for export - always include headers even if no data
+    let exportData = [];
+    
+    if (props.liquidations.data && props.liquidations.data.length > 0) {
+        exportData = props.liquidations.data.map(liquidation => ({
+            'Liquidation ID': liquidation.liquidate_id,
+            'Source': liquidation.source || 'N/A',
+            'Facility': liquidation.facility || 'N/A',
+            'Warehouse': liquidation.warehouse || 'N/A',
+            'Status': getStatusLabel(liquidation.status),
+            'Liquidated By': liquidation.liquidated_by || 'N/A',
+            'Liquidation Date': formatDate(liquidation.liquidation_date),
+            'Items Count': liquidation.items_count || 0,
+            'Total Value': `$${formatCurrency(calculateTotalValue(liquidation.items))}`,
+            'Created At': formatDate(liquidation.created_at)
+        }));
+    } else {
+        // If no data, create empty row with headers
+        exportData = [{}];
+    }
 
     // Create workbook and worksheet
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(exportData);
+    const ws = XLSX.utils.json_to_sheet(exportData, { header: headers });
 
     // Set column widths
     const colWidths = [

@@ -440,21 +440,40 @@ const clearFilters = () => {
 };
 
 const exportToExcel = () => {
-    // Prepare data for export
-    const exportData = props.disposals.data.map(disposal => ({
-        'Disposal ID': disposal.disposal_id,
-        'Source': disposal.source || 'N/A',
-        'Status': getStatusLabel(disposal.status),
-        'Disposed By': disposal.disposed_by || 'N/A',
-        'Disposal Date': formatDate(disposal.disposal_date),
-        'Items Count': disposal.items_count || 0,
-        'Total Value': `$${formatCurrency(calculateTotalValue(disposal.items))}`,
-        'Created At': formatDate(disposal.created_at)
-    }));
+    // Define headers first
+    const headers = [
+        'Disposal ID',
+        'Source',
+        'Status',
+        'Disposed By',
+        'Disposal Date',
+        'Items Count',
+        'Total Value',
+        'Created At'
+    ];
+
+    // Prepare data for export - always include headers even if no data
+    let exportData = [];
+    
+    if (props.disposals.data && props.disposals.data.length > 0) {
+        exportData = props.disposals.data.map(disposal => ({
+            'Disposal ID': disposal.disposal_id,
+            'Source': disposal.source || 'N/A',
+            'Status': getStatusLabel(disposal.status),
+            'Disposed By': disposal.disposed_by || 'N/A',
+            'Disposal Date': formatDate(disposal.disposal_date),
+            'Items Count': disposal.items_count || 0,
+            'Total Value': `$${formatCurrency(calculateTotalValue(disposal.items))}`,
+            'Created At': formatDate(disposal.created_at)
+        }));
+    } else {
+        // If no data, create empty row with headers
+        exportData = [{}];
+    }
 
     // Create workbook and worksheet
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(exportData);
+    const ws = XLSX.utils.json_to_sheet(exportData, { header: headers });
 
     // Set column widths
     const colWidths = [
